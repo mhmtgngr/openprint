@@ -1,0 +1,70 @@
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+( 1/13) Installing brotli-libs (1.2.0-r0)
+( 2/13) Installing c-ares (1.34.6-r0)
+( 3/13) Installing libunistring (1.4.1-r0)
+( 4/13) Installing libidn2 (2.3.8-r0)
+( 5/13) Installing nghttp2-libs (1.68.0-r0)
+( 6/13) Installing nghttp3 (1.13.1-r0)
+( 7/13) Installing libpsl (0.21.5-r3)
+( 8/13) Installing zstd-libs (1.5.7-r2)
+( 9/13) Installing libcurl (8.17.0-r1)
+(10/13) Installing libexpat (2.7.4-r0)
+(11/13) Installing pcre2 (10.47-r0)
+(12/13) Installing git (2.52.0-r0)
+(13/13) Installing git-init-template (2.52.0-r0)
+Executing busybox-1.37.0-r30.trigger
+OK: 20.6 MiB in 30 packages
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> 4cf9d57669e5
+[1/2] STEP 5/7: RUN go mod download
+--> db5015e85ae8
+[1/2] STEP 6/7: COPY . .
+--> d1e523f26c2f
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o auth-service ./services/auth-service
+--> a54d8156ba51
+[2/2] STEP 1/10: FROM alpine:3.20
+Resolved "alpine" as an alias (/etc/containers/registries.conf.d/shortnames.conf)
+Trying to pull docker.io/library/alpine:3.20...
+Getting image source signatures
+Copying blob sha256:76eb174b37c3e263a212412822299b58d4098a7f96715f18c7eb6932c98b7efd
+Copying config sha256:cc9071bd161080c1a543f3023b7d0db905b497e6ae757fe078227803bc7e4dc8
+Writing manifest to image destination
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+(1/2) Installing ca-certificates (20250911-r0)
+(2/2) Installing tzdata (2025c-r0)
+Executing busybox-1.36.1-r31.trigger
+Executing ca-certificates-20250911-r0.trigger
+OK: 10 MiB in 16 packages
+--> 0121fb22d597
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> 70676f8533f2
+[2/2] STEP 4/10: WORKDIR /app
+--> 44808aa3488b
+[2/2] STEP 5/10: COPY --from=builder /build/auth-service .
+--> 2cc9ef3dc179
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> e2651c5b801f
+[2/2] STEP 7/10: USER appuser
+--> 19e746723785
+[2/2] STEP 8/10: EXPOSE 8001
+--> 25b2012af88c
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD wget --no-verbose --tries=1 --spider http://localhost:8001/health || exit 1
+time="2026-02-27T19:34:13Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> c8c7685dde10
+[2/2] STEP 10/10: CMD ["./auth-service"]
+[2/2] COMMIT openprint/auth-service:dev
+time="2026-02-27T19:34:14Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> 20d9aadae6da
+Successfully tagged localhost/openprint/auth-service:dev
+20d9aadae6da97388b6fcbbc3844b030fb16c444c4170049f32a398f38ac5dac
+[1/2] STEP 1/6: FROM node:20-alpine AS builder
+[1/2] STEP 2/6: WORKDIR /build
+--> abee84835820
+[1/2] STEP 3/6: COPY web/dashboard/package*.json ./
+Error: building at STEP "COPY web/dashboard/package*.json ./": no items matching glob "/home/cmit/openprint/web/dashboard/package*.json" copied (2 filtered out using /home/cmit/openprint/.dockerignore): no such file or directory

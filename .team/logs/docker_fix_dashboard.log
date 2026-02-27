@@ -1,0 +1,5 @@
+Dashboard Docker build now succeeds. Two fixes were made:
+
+1. **`.dockerignore`** - Added exception `!web/dashboard` after the `web/` exclusion line (line 60-61), allowing the dashboard source files to be copied during Docker build.
+
+2. **`Dockerfile.dashboard`** - Changed user/group IDs from 1000 to 1001 (line 26-27) to avoid conflict with existing GID 1000 in `node:20-alpine` base image.

@@ -179,3 +179,12 @@ All tests pass (`go test ./...`) and all packages build successfully.
 # Edit .env and set JWT_SECRET
 docker-compose up -d
 ```
+[0;35m[19:33:28][0m [1;37m🐳 DevOps[0m ✓ Committed
+[0;32m[19:33:28][0m   🐳 Building (1/6): auth-service
+[0;32m[19:34:15][0m   ✓ Built: auth-service (47s)
+[0;32m[19:34:15][0m   🐳 Building (2/6): dashboard
+[1;33m[19:34:15][0m   ✗ Build failed: dashboard (0s) — fixing...
+[0;35m[19:34:15][0m [1;37m🐳 DevOps[0m Working...
+1. **`.dockerignore`** - Added exception `!web/dashboard` after the `web/` exclusion line (line 60-61), allowing the dashboard source files to be copied during Docker build.
+
+2. **`Dockerfile.dashboard`** - Changed user/group IDs from 1000 to 1001 (line 26-27) to avoid conflict with existing GID 1000 in `node:20-alpine` base image.

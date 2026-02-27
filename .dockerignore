@@ -58,6 +58,8 @@ deployments/
 
 # Web (not needed for Go services)
 web/
+# But allow dashboard for its Dockerfile
+!web/dashboard
 
 # OS
 .DS_Store
