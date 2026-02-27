@@ -1,19 +1,19 @@
 {
   "project": {
-    "go_files": 14,
-    "test_files": 19,
+    "go_files": 15,
+    "test_files": 20,
     "tsx_files": 0,
     "todo_count": 0,
     "build": "yes",
-    "tests": "pass",
-    "test_count": 14,
+    "tests": "fail",
+    "test_count": 22,
     "test_passed": 14,
     "dockerfiles": 6,
     "compose": "yes",
     "frontend": "no"
   },
   "compile_errors": "",
-  "test_failures": "",
+  "test_failures": "--- FAIL: TestRegistryServiceEndpoints (0.09s)\n    --- FAIL: TestRegistryServiceEndpoints/register_agent (0.00s)\n        api_test.go:512: \n            \tError Trace:\t/home/cmit/openprint/tests/integration/api_test.go:512\n            \tError:      \tNot equal: \n            \t            \texpected: 201\n            \t            \tactual  : 500\n--\n--- FAIL: TestJobServiceEndpoints (0.10s)\n    --- FAIL: TestJobServiceEndpoints/create_job (0.00s)\n        api_test.go:686: \n            \tError Trace:\t/home/cmit/openprint/tests/integration/api_test.go:686\n            \tError:      \tNot equal: \n            \t            \texpected: 201\n            \t            \tactual  : 400\n--\n--- FAIL: TestStorageServiceEndpoints (0.10s)\n    --- FAIL: TestStorageServiceEndpoints/get_document_metadata (0.00s)\n        api_test.go:839: \n            \tError Trace:\t/home/cmit/openprint/tests/integration/api_test.go:839",
   "ts_errors": "",
   "todos": ""
 }

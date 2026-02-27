@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-02-27T20:29:18.767861",
-  "completion_pct": 61,
+  "timestamp": "2026-02-27T21:16:15.645420",
+  "completion_pct": 56,
   "pr_ready": true,
   "dimension_scores": {
     "backend_files": 100,
@@ -9,20 +9,26 @@
     "endpoints": 0,
     "migrations": 14,
     "build": 100,
-    "tests_pass": 100,
+    "tests_pass": 50,
     "docker": 100
   },
   "counts": {
-    "backend_files": "80/59",
+    "backend_files": "90/59",
     "frontend_files": "0/28",
-    "tests": "33/12",
+    "tests": "34/12",
     "endpoints": "0/17",
     "migrations": "2/14",
     "todos": 0,
     "build": true,
-    "tests_pass": true
+    "tests_pass": false
   },
   "gaps": [
+    {
+      "type": "tests",
+      "priority": "critical",
+      "item": "3 failing packages",
+      "description": "Fix 3 failing test packages"
+    },
     {
       "type": "migration",
       "priority": "critical",

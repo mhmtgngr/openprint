@@ -1,18 +1,13 @@
-Done! Created `CLAUDE.md` with comprehensive project documentation:
+Done. The fix has been committed. Summary of changes:
 
-**Contents:**
-- Project overview (module, Go version, architecture)
-- 5 microservices description with ports
-- Internal packages structure (`internal/auth/`, `internal/shared/`)
-- Infrastructure (PostgreSQL, Redis, S3)
-- Development commands for Go and TypeScript
-- Docker deployment details
-- Service port mappings
-- Health check endpoints
-- Development workflow guidelines
+**Root Cause**: The `organization_id` field was passed as an empty string `""` instead of `NULL` to PostgreSQL, which rejected it because empty strings are not valid UUID values.
 
-**Tests passed:**
-- `go test ./...` - All 19 test packages passed
-- `npx tsc --noEmit` - No type errors
+**Changes Made**:
+1. `services/registry-service/repository/agent.go` - Added `NULLIF($7, '')::uuid` to convert empty strings to NULL with proper UUID type casting
+2. `services/registry-service/handler/agent.go` - Added validation for required `name` field
+3. `services/registry-service/handler/agent.go` - Added error logging for debugging
 
-**Committed:** `c545afef` - `[docs] Add CLAUDE.md with project overview and development workflows`
+**Test Result**: Agent registration now returns `201 Created` as expected:
+```json
+{"agent_id":"9a717f37-38f0-42c8-8c04-8fd4044e03a7","created_at":"2026-02-27T21:26:45Z","name":"test-agent","status":"online"}
+```

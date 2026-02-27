@@ -269,3 +269,11 @@ go test ./tests/integration/ -v -run TestHealthChecks
 Files: 30 | Lines: 10347 | Issues: 0 (high severity)
 ```
 [0;35m[20:45:21][0m [1;37m🔒 Security[0m ✓ Committed
+[0;32m[21:16:08][0m ✓ go go1.24.0
+[0;32m[21:16:08][0m ✓ node v18.19.1
+[0;32m[21:16:08][0m ✓ go go1.24.0
+[0;32m[21:16:08][0m ✓ node v18.19.1
+[0;35m[21:16:47][0m [1;37m⚙️  Backend[0m Working...
+```json
+{"agent_id":"9a717f37-38f0-42c8-8c04-8fd4044e03a7","created_at":"2026-02-27T21:26:45Z","name":"test-agent","status":"online"}
+```

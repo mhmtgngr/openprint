@@ -2,53 +2,55 @@
   "phases": [
     {
       "order": 1,
-      "name": "Create CLAUDE.md",
-      "priority": "high",
-      "category": "devops",
-      "description": "Create CLAUDE.md in project root with: project overview, Go service architecture, Docker deployment details, testing commands ('go test ./...'), build commands ('go build ./...'), and key development workflows. This provides critical context for future AI-assisted development sessions.",
+      "name": "Fix Registry Service 500 Error",
+      "priority": "critical",
+      "category": "fix",
+      "description": "Fix the registry-service agent registration endpoint returning 500 instead of 201. Check services/registry-service/handlers.go for the RegisterAgent handler. Verify database connection in the agent creation logic and ensure required fields (agent_id, name, capabilities) are properly validated. Add error logging to identify the root cause. The test at tests/integration/api_test.go:512 expects 201. Run 'go test ./tests/integration/... -v -run TestRegistryServiceEndpoints' to verify.",
       "success_criteria": [
-        "CLAUDE.md exists at /home/cmit/openprint/CLAUDE.md",
-        "Contains build/test commands",
-        "Documents Docker setup"
+        "TestRegistryServiceEndpoints/register_agent passes with 201 status",
+        "go test ./tests/integration/... passes for registry tests"
+      ],
+      "estimated_minutes": 25
+    },
+    {
+      "order": 2,
+      "name": "Fix Job Service 400 Error",
+      "priority": "critical",
+      "category": "fix",
+      "description": "Fix the job-service create job endpoint returning 400 instead of 201. Check services/job-service/handlers.go for the CreateJob handler. Verify the request validation is not incorrectly rejecting valid payloads - the test at tests/integration/api_test.go:686 sends a valid job request. Ensure document_id, printer_id, and options fields are properly parsed. Check for missing Content-Type handling or JSON unmarshaling issues. Run 'go test ./tests/integration/... -v -run TestJobServiceEndpoints' to verify.",
+      "success_criteria": [
+        "TestJobServiceEndpoints/create_job passes with 201 status",
+        "go test ./tests/integration/... passes for job tests"
       ],
       "estimated_minutes": 20
     },
     {
-      "order": 2,
-      "name": "Add Integration Tests",
-      "priority": "medium",
-      "category": "test",
-      "description": "Add integration test suite in tests/integration/ covering end-to-end API workflows. Test actual HTTP requests to running service, database interactions, and Docker container communication. Create tests/integration/api_test.go with table-driven tests for main endpoints. Run with 'go test ./tests/integration/ -v'.",
-      "success_criteria": [
-        "tests/integration/api_test.go created",
-        "Tests validate real HTTP calls",
-        "go test ./tests/integration/ passes"
-      ],
-      "estimated_minutes": 45
-    },
-    {
       "order": 3,
-      "name": "Security Hardening",
-      "priority": "medium",
-      "category": "security",
-      "description": "Add input validation middleware in internal/middleware/validation.go. Implement rate limiting, request size limits, and sanitization for all user inputs. Add gosec security scanner to CI: run 'go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest' then 'gosec ./...'. Fix any high-severity findings.",
+      "name": "Fix Storage Service Metadata",
+      "priority": "critical",
+      "category": "fix",
+      "description": "Fix the storage-service document metadata endpoint failing at tests/integration/api_test.go:839. Check services/storage-service/handlers.go for the GetDocumentMetadata handler. The test likely calls GET /documents/{id}/metadata after uploading a document. Verify the document ID path parameter extraction, ensure the storage backend returns proper metadata (size, content_type, uploaded_at), and handle the case where document exists but metadata retrieval fails. Add proper 404 vs 500 error distinction. Run 'go test ./tests/integration/... -v -run TestStorageServiceEndpoints' to verify.",
       "success_criteria": [
-        "internal/middleware/validation.go created",
-        "gosec runs with no high-severity issues",
-        "Middleware wired into main.go"
+        "TestStorageServiceEndpoints/get_document_metadata passes",
+        "go test ./tests/integration/... passes all storage tests"
       ],
-      "estimated_minutes": 40
+      "estimated_minutes": 25
     }
   ],
   "project_health": {
-    "score": 82,
-    "critical_issues": [],
+    "score": 64,
+    "critical_issues": [
+      "Registry service agent registration returns HTTP 500",
+      "Job service job creation returns HTTP 400",
+      "Storage service metadata retrieval fails",
+      "8 out of 22 integration tests failing"
+    ],
     "strengths": [
-      "All tests passing (14/14)",
-      "Clean build",
-      "Docker setup complete",
-      "Good test coverage"
+      "Build compiles successfully",
+      "14 integration tests already passing",
+      "Security middleware implemented",
+      "Docker deployment configured"
     ]
   },
-  "rationale": "Project is healthy with passing builds and tests. Priorities: (1) CLAUDE.md enables better AI assistance going forward; (2) Integration tests catch real-world issues unit tests miss; (3) Security hardening protects the deployed service. No critical fixes needed."
+  "rationale": "Tests are failing (Rule 2 priority). Build passes, so compilation is not the issue. Three specific integration test failures point to runtime bugs in registry, job, and storage services. Each task isolates one failing test to ensure single-call completion. Fixing in dependency order (registry \u2192 job \u2192 storage) as job creation may depend on registered agents and storage documents."
 }
