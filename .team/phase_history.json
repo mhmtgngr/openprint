@@ -29,7 +29,13 @@
       "category": "project",
       "result": "done",
       "timestamp": "2026-02-27T22:00:13.422842"
+    },
+    {
+      "description": "Fix Storage Service Metadata: Fix the storage-service document metadata endpoint failing at tests/integration/api_test.go:839. Che",
+      "category": "project",
+      "result": "done",
+      "timestamp": "2026-02-27T22:10:25.573250"
     }
   ],
-  "current_round": 5
+  "current_round": 6
 }

@@ -290,3 +290,4 @@ Files: 30 | Lines: 10347 | Issues: 0 (high severity)
     --- PASS: TestStorageServiceEndpoints/upload_document (0.01s)
     --- PASS: TestStorageServiceEndpoints/get_document_metadata (0.00s)
 ```
+[0;35m[22:10:25][0m [1;37m⚙️  Backend[0m ✓ Committed
