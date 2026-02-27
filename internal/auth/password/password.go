@@ -209,6 +209,12 @@ func decodeHash(encodedHash string) (*Hash, error) {
 		return nil, ErrInvalidHashFormat
 	}
 
+	// len() returns int, but KeyLen and SaltLen are uint32
+	// The lengths are bounded by decodeHash's base64 decoding which produces
+	// values matching the hasher's configured sizes (max 32 bytes for hash, 16 for salt)
+	hashLen := uint32(len(hash)) // #nosec G115 -- bounded by argon2 key size
+	saltLen := uint32(len(salt)) // #nosec G115 -- bounded by argon2 salt size
+
 	return &Hash{
 		Version:  version,
 		Memory:   memory,
@@ -216,8 +222,8 @@ func decodeHash(encodedHash string) (*Hash, error) {
 		Threads:  threads,
 		Salt:     salt,
 		Hash:     hash,
-		KeyLen:   uint32(len(hash)),
-		SaltLen:  uint32(len(salt)),
+		KeyLen:   hashLen,
+		SaltLen:  saltLen,
 	}, nil
 }
 
