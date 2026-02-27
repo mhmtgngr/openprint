@@ -67,7 +67,16 @@ func AuthMiddleware(cfg JWTConfig) func(http.Handler) http.Handler {
 				claims, err = cfg.JWTManager.ValidateAccessToken(tokenString)
 			} else {
 				// Fallback: create a temporary manager if none provided
-				tmpManager := jwt.NewManager(jwt.DefaultConfig(cfg.SecretKey))
+				jwtCfg, jwtCfgErr := jwt.DefaultConfig(cfg.SecretKey)
+				if jwtCfgErr != nil {
+					respondAuthError(w, "server configuration error")
+					return
+				}
+				tmpManager, mgrErr := jwt.NewManager(jwtCfg)
+				if mgrErr != nil {
+					respondAuthError(w, "server configuration error")
+					return
+				}
 				claims, err = tmpManager.ValidateAccessToken(tokenString)
 			}
 
@@ -194,8 +203,13 @@ func OptionalAuthMiddleware(cfg JWTConfig) func(http.Handler) http.Handler {
 					if cfg.JWTManager != nil {
 						claims, err = cfg.JWTManager.ValidateAccessToken(tokenString)
 					} else {
-						tmpManager := jwt.NewManager(jwt.DefaultConfig(cfg.SecretKey))
-						claims, err = tmpManager.ValidateAccessToken(tokenString)
+						jwtCfg, jwtCfgErr := jwt.DefaultConfig(cfg.SecretKey)
+						if jwtCfgErr == nil {
+							tmpManager, mgrErr := jwt.NewManager(jwtCfg)
+							if mgrErr == nil {
+								claims, err = tmpManager.ValidateAccessToken(tokenString)
+							}
+						}
 					}
 
 					if err == nil && claims != nil {

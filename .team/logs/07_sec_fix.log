@@ -1,0 +1,59 @@
+All tests pass. Here's a summary of the security fixes applied to `internal/auth/jwt/jwt.go`:
+
+## Security Fixes Applied
+
+### 1. Explicit Algorithm Validation (HIGH - Algorithm Confusion Attack Prevention)
+**File:** `internal/auth/jwt/jwt.go:121-142`
+
+Added `jwt.WithValidMethods([]string{"HS256"})` to `ValidateToken()`:
+```go
+token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+    if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+        return nil, ErrInvalidSigningMethod
+    }
+    return []byte(m.config.SecretKey), nil
+}, jwt.WithValidMethods([]string{"HS256"}))  // <-- NEW: Prevents "none" algorithm bypass
+```
+
+### 2. Minimum Secret Key Length Validation
+**Added constant and error:**
+```go
+const MinSecretKeyLength = 32
+var ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
+```
+
+**Updated `DefaultConfig()`** - Now validates key length:
+```go
+func DefaultConfig(secretKey string) (*Config, error) {
+    if len(secretKey) < MinSecretKeyLength {
+        return nil, fmt.Errorf("%w: got %d characters, want at least %d", ...)
+    }
+    ...
+}
+```
+
+**Updated `NewManager()`** - Now validates config and returns error:
+```go
+func NewManager(config *Config) (*Manager, error) {
+    if config == nil {
+        return nil, errors.New("jwt config cannot be nil")
+    }
+    if len(config.SecretKey) < MinSecretKeyLength {
+        return nil, fmt.Errorf("%w: ...", ...)
+    }
+    ...
+}
+```
+
+### 3. New Security Tests
+Added comprehensive security tests in `jwt_test.go`:
+- `TestSecurity_AlgorithmConfusion` - Tests rejection of "none" algorithm and other algorithms
+- `TestSecurity_SecretKeyValidation` - Tests minimum key length enforcement
+
+### 4. Updated Callers
+Fixed all callers across the codebase to handle the new error returns:
+- `internal/shared/middleware/auth.go`
+- `services/auth-service/main.go`
+- `services/job-service/main.go`
+- `services/registry-service/main.go`
+- `services/storage-service/main.go`

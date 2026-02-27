@@ -67,7 +67,14 @@ func main() {
 	go h.HeartbeatMonitor(ctx)
 
 	// Create JWT manager for authentication
-	jwtManager := jwt.NewManager(jwt.DefaultConfig(cfg.JWTSecret))
+	jwtCfg, err := jwt.DefaultConfig(cfg.JWTSecret)
+	if err != nil {
+		log.Fatalf("Failed to create JWT config: %v", err)
+	}
+	jwtManager, err := jwt.NewManager(jwtCfg)
+	if err != nil {
+		log.Fatalf("Failed to create JWT manager: %v", err)
+	}
 
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()

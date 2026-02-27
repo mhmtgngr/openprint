@@ -10,6 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
+	MinSecretKeyLength = 32
+)
+
 var (
 	// ErrInvalidToken is returned when a token is invalid.
 	ErrInvalidToken = errors.New("invalid token")
@@ -17,6 +22,8 @@ var (
 	ErrExpiredToken = errors.New("token expired")
 	// ErrInvalidSigningMethod is returned when the signing method is invalid.
 	ErrInvalidSigningMethod = errors.New("invalid signing method")
+	// ErrSecretKeyTooShort is returned when the secret key is too short.
+	ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
 )
 
 // Claims represents the JWT claims structure.
@@ -49,13 +56,16 @@ type Config struct {
 }
 
 // DefaultConfig returns a JWT configuration with sensible defaults.
-func DefaultConfig(secretKey string) *Config {
+func DefaultConfig(secretKey string) (*Config, error) {
+	if len(secretKey) < MinSecretKeyLength {
+		return nil, fmt.Errorf("%w: got %d characters, want at least %d", ErrSecretKeyTooShort, len(secretKey), MinSecretKeyLength)
+	}
 	return &Config{
 		SecretKey:       secretKey,
 		AccessDuration:  15 * time.Minute,
 		RefreshDuration: 7 * 24 * time.Hour, // 7 days
 		Issuer:          "openprint.cloud",
-	}
+	}, nil
 }
 
 // Manager handles JWT token generation and validation.
@@ -64,11 +74,14 @@ type Manager struct {
 }
 
 // NewManager creates a new JWT manager.
-func NewManager(config *Config) *Manager {
+func NewManager(config *Config) (*Manager, error) {
 	if config == nil {
-		panic("jwt config cannot be nil")
+		return nil, errors.New("jwt config cannot be nil")
 	}
-	return &Manager{config: config}
+	if len(config.SecretKey) < MinSecretKeyLength {
+		return nil, fmt.Errorf("%w: got %d characters, want at least %d", ErrSecretKeyTooShort, len(config.SecretKey), MinSecretKeyLength)
+	}
+	return &Manager{config: config}, nil
 }
 
 // GenerateTokenPair generates both access and refresh tokens for a user.
@@ -120,11 +133,12 @@ func (m *Manager) GenerateToken(userID, email, role string, orgID string, scopes
 // ValidateToken validates a JWT token and returns the claims.
 func (m *Manager) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		// Explicitly verify the signing method to prevent algorithm confusion attacks
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidSigningMethod
 		}
 		return []byte(m.config.SecretKey), nil
-	})
+	}, jwt.WithValidMethods([]string{"HS256"}))
 
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {

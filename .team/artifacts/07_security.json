@@ -1,0 +1,97 @@
+{
+  "risk_level": "medium",
+  "security_score": 72,
+  "vulnerabilities": [
+    {
+      "id": "V-001",
+      "severity": "high",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "JWT implementation missing explicit algorithm validation - vulnerable to algorithm confusion attacks (none/HS256 bypass)",
+      "fix": "Add explicit algorithm validation: jwt.WithValidMethods([]string{\"HS256\"}) in token parsing"
+    },
+    {
+      "id": "V-002",
+      "severity": "medium",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "No minimum secret key length validation - weak secrets allowed",
+      "fix": "Add validation in DefaultConfig: if len(secretKey) < 32 { return error }"
+    },
+    {
+      "id": "V-003",
+      "severity": "medium",
+      "file": "internal/auth/saml/saml.go",
+      "description": "SAML signature validation logic not visible in snippet - incomplete code",
+      "fix": "Ensure full signature validation with IdP certificate and XML wrapping attack prevention"
+    },
+    {
+      "id": "V-004",
+      "severity": "medium",
+      "file": "internal/shared/middleware/auth.go",
+      "description": "AuthMiddleware uses prefix-based path skipping - could allow /api/v1/private to match /api/v1",
+      "fix": "Use exact path matching or suffix-based exclusion with proper path normalization"
+    },
+    {
+      "id": "V-005",
+      "severity": "low",
+      "file": "internal/auth/oidc/oidc.go",
+      "description": "No visible PKCE implementation for native/mobile OAuth flows",
+      "fix": "Add PKCE (Proof Key for Code Exchange) for non-confidential clients"
+    },
+    {
+      "id": "V-006",
+      "severity": "low",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "Refresh tokens valid for 7 days may be too long for sensitive applications",
+      "fix": "Consider reducing to 24-48 hours or implementing refresh token rotation"
+    },
+    {
+      "id": "V-007",
+      "severity": "low",
+      "file": "internal/auth/oidc/oidc.go",
+      "description": "State parameter uses crypto/rand but nonce expiration not visible",
+      "fix": "Add TTL for state nonces (5-10 minutes) and cleanup routine"
+    }
+  ],
+  "owasp_checks": [
+    {
+      "category": "A01:2021 \u2013 Broken Access Control",
+      "status": "pass",
+      "detail": "Auth middleware present with JWT validation"
+    },
+    {
+      "category": "A02:2021 \u2013 Cryptographic Failures",
+      "status": "pass",
+      "detail": "Argon2id with OWASP parameters, crypto/rand used"
+    },
+    {
+      "category": "A03:2021 \u2013 Injection",
+      "status": "pass",
+      "detail": "Parameterized queries implied, validation middleware present"
+    },
+    {
+      "category": "A04:2021 \u2013 Insecure Design",
+      "status": "fail",
+      "detail": "Missing explicit JWT algorithm validation"
+    },
+    {
+      "category": "A05:2021 \u2013 Security Misconfiguration",
+      "status": "pass",
+      "detail": "Default timeouts and params are secure"
+    },
+    {
+      "category": "A06:2021 \u2013 Vulnerable Components",
+      "status": "pass",
+      "detail": "Using golang-jwt/jwt v5, x/oauth2 - current versions"
+    },
+    {
+      "category": "A07:2021 \u2013 Authentication Failures",
+      "status": "partial",
+      "detail": "State validation present but JWT algo check missing"
+    }
+  ],
+  "verdict": "NEEDS_FIXES",
+  "critical_fixes": [
+    "Add explicit JWT algorithm validation: jwt.WithValidMethods([]string{\"HS256\"}) in token parsing to prevent algorithm confusion attacks",
+    "Add minimum secret key length validation (32+ characters) in DefaultConfig"
+  ]
+}

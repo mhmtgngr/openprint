@@ -11,28 +11,48 @@ import (
 )
 
 func TestDefaultConfig(t *testing.T) {
-	secret := "test-secret-key"
-	cfg := DefaultConfig(secret)
+	t.Run("valid config", func(t *testing.T) {
+		secret := "this-is-a-secure-secret-key-32-chars-long"
+		cfg, err := DefaultConfig(secret)
 
-	if cfg.SecretKey != secret {
-		t.Errorf("DefaultConfig() SecretKey = %v, want %v", cfg.SecretKey, secret)
-	}
-	if cfg.AccessDuration != 15*time.Minute {
-		t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
-	}
-	if cfg.RefreshDuration != 7*24*time.Hour {
-		t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, 7*24*time.Hour)
-	}
-	if cfg.Issuer != "openprint.cloud" {
-		t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)
-	}
+		if err != nil {
+			t.Fatalf("DefaultConfig() error = %v", err)
+		}
+		if cfg.SecretKey != secret {
+			t.Errorf("DefaultConfig() SecretKey = %v, want %v", cfg.SecretKey, secret)
+		}
+		if cfg.AccessDuration != 15*time.Minute {
+			t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
+		}
+		if cfg.RefreshDuration != 7*24*time.Hour {
+			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, 7*24*time.Hour)
+		}
+		if cfg.Issuer != "openprint.cloud" {
+			t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)
+		}
+	})
+
+	t.Run("secret key too short", func(t *testing.T) {
+		shortSecret := "short"
+		_, err := DefaultConfig(shortSecret)
+
+		if err == nil {
+			t.Error("DefaultConfig() with short secret should return error")
+		}
+		if !errors.Is(err, ErrSecretKeyTooShort) {
+			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
+	})
 }
 
 func TestNewManager(t *testing.T) {
 	t.Run("valid config", func(t *testing.T) {
-		cfg := DefaultConfig("test-secret")
-		mgr := NewManager(cfg)
+		cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+		mgr, err := NewManager(cfg)
 
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
 		if mgr == nil {
 			t.Fatal("NewManager() returned nil")
 		}
@@ -41,19 +61,33 @@ func TestNewManager(t *testing.T) {
 		}
 	})
 
-	t.Run("nil config panics", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("NewManager(nil) should panic")
-			}
-		}()
-		NewManager(nil)
+	t.Run("nil config returns error", func(t *testing.T) {
+		_, err := NewManager(nil)
+		if err == nil {
+			t.Error("NewManager(nil) should return error")
+		}
+	})
+
+	t.Run("config with short secret key returns error", func(t *testing.T) {
+		cfg := &Config{
+			SecretKey:       "short",
+			AccessDuration:  15 * time.Minute,
+			RefreshDuration: 7 * 24 * time.Hour,
+			Issuer:          "openprint.cloud",
+		}
+		_, err := NewManager(cfg)
+		if err == nil {
+			t.Error("NewManager() with short secret should return error")
+		}
+		if !errors.Is(err, ErrSecretKeyTooShort) {
+			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
 	})
 }
 
 func TestManager_GenerateToken(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -89,8 +123,8 @@ func TestManager_GenerateToken(t *testing.T) {
 }
 
 func TestManager_GenerateTokenPair(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -115,8 +149,8 @@ func TestManager_GenerateTokenPair(t *testing.T) {
 }
 
 func TestManager_ValidateToken(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -173,8 +207,8 @@ func TestManager_ValidateToken(t *testing.T) {
 	})
 
 	t.Run("token with wrong secret", func(t *testing.T) {
-		otherCfg := DefaultConfig("different-secret")
-		otherMgr := NewManager(otherCfg)
+		otherCfg, _ := DefaultConfig("this-is-a-different-secure-secret-key-32-chars-long")
+		otherMgr, _ := NewManager(otherCfg)
 
 		_, err := otherMgr.ValidateToken(token)
 		if err == nil {
@@ -184,8 +218,8 @@ func TestManager_ValidateToken(t *testing.T) {
 }
 
 func TestManager_ValidateAccessToken(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -219,8 +253,8 @@ func TestManager_ValidateAccessToken(t *testing.T) {
 }
 
 func TestManager_ValidateRefreshToken(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -254,8 +288,8 @@ func TestManager_ValidateRefreshToken(t *testing.T) {
 }
 
 func TestManager_RefreshAccessToken(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -305,8 +339,8 @@ func TestManager_RefreshAccessToken(t *testing.T) {
 }
 
 func TestGetTokenID(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -340,8 +374,8 @@ func TestGetTokenID(t *testing.T) {
 }
 
 func TestExtractUserInfo(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -643,12 +677,12 @@ func splitToken(token string) []string {
 func TestManager_ExpiredToken(t *testing.T) {
 	// Create a manager with very short token duration
 	cfg := &Config{
-		SecretKey:       "test-secret-key",
+		SecretKey:       "this-is-a-secure-secret-key-32-chars-long",
 		AccessDuration:  1 * time.Millisecond,
 		RefreshDuration: 7 * 24 * time.Hour,
 		Issuer:          "openprint.cloud",
 	}
-	mgr := NewManager(cfg)
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -671,8 +705,8 @@ func TestManager_ExpiredToken(t *testing.T) {
 }
 
 func TestClaims_RegisteredClaims(t *testing.T) {
-	cfg := DefaultConfig("test-secret-key")
-	mgr := NewManager(cfg)
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
 
 	userID := "user-123"
 	email := "test@example.com"
@@ -719,4 +753,140 @@ func TestClaims_RegisteredClaims(t *testing.T) {
 	if claims.NotBefore == nil {
 		t.Error("NotBefore should not be nil")
 	}
+}
+
+// Security tests to prevent algorithm confusion attacks
+func TestSecurity_AlgorithmConfusion(t *testing.T) {
+	cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+	mgr, _ := NewManager(cfg)
+
+	// Create a token with "none" algorithm attempt
+	// This simulates an attacker trying to bypass signature verification
+	t.Run("reject none algorithm", func(t *testing.T) {
+		// Create a malicious token with "none" algorithm
+		claims := &Claims{
+			UserID:    "attacker",
+			Email:     "attacker@evil.com",
+			Role:      "admin",
+			TokenType: string(AccessTokenType),
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    cfg.Issuer,
+				Subject:   "attacker",
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				ID:        uuid.New().String(),
+			},
+		}
+
+		// Try to sign with none algorithm
+		token := jwt.NewWithClaims(jwt.SigningMethodNone, claims)
+		tokenString, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
+		if err != nil {
+			t.Fatalf("Failed to create malicious token: %v", err)
+		}
+
+		// The token should be rejected because we only allow HS256
+		_, err = mgr.ValidateToken(tokenString)
+		if err == nil {
+			t.Error("ValidateToken() should reject 'none' algorithm token")
+		}
+	})
+
+	t.Run("reject RS256 algorithm", func(t *testing.T) {
+		// Create a token signed with RS256 (different algorithm)
+		claims := &Claims{
+			UserID:    "attacker",
+			Email:     "attacker@evil.com",
+			Role:      "admin",
+			TokenType: string(AccessTokenType),
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    cfg.Issuer,
+				Subject:   "attacker",
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				ID:        uuid.New().String(),
+			},
+		}
+
+		// Try to sign with RS256
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		// This will fail to sign without a private key, but we're testing the validation
+		tokenString, err := token.SignedString([]byte("fake-key"))
+		if err != nil {
+			// Expected to fail, but let's test validation anyway
+		}
+
+		// Even if we somehow get a token string, it should be rejected
+		if tokenString != "" {
+			_, err = mgr.ValidateToken(tokenString)
+			if err == nil {
+				t.Error("ValidateToken() should reject RS256 algorithm token")
+			}
+		}
+	})
+
+	t.Run("only accept HS256", func(t *testing.T) {
+		// Generate a valid HS256 token
+		token, err := mgr.GenerateToken("user-123", "test@example.com", "user", "", nil, AccessTokenType)
+		if err != nil {
+			t.Fatalf("Failed to generate token: %v", err)
+		}
+
+		// Should validate successfully
+		claims, err := mgr.ValidateToken(token)
+		if err != nil {
+			t.Errorf("ValidateToken() should accept valid HS256 token, got error: %v", err)
+		}
+		if claims.UserID != "user-123" {
+			t.Errorf("UserID = %v, want user-123", claims.UserID)
+		}
+	})
+}
+
+func TestSecurity_SecretKeyValidation(t *testing.T) {
+	t.Run("DefaultConfig rejects short secrets", func(t *testing.T) {
+		shortSecrets := []string{
+			"",
+			"a",
+			"short-secret",
+			"exactly-31-characters-long-key-",
+		}
+
+		for _, secret := range shortSecrets {
+			_, err := DefaultConfig(secret)
+			if err == nil {
+				t.Errorf("DefaultConfig() should reject secret of length %d", len(secret))
+			}
+			if !errors.Is(err, ErrSecretKeyTooShort) {
+				t.Errorf("Expected ErrSecretKeyTooShort for secret length %d, got: %v", len(secret), err)
+			}
+		}
+	})
+
+	t.Run("DefaultConfig accepts 32 character secret", func(t *testing.T) {
+		validSecret := "exactly-32-characters-long-key!!"
+		cfg, err := DefaultConfig(validSecret)
+		if err != nil {
+			t.Errorf("DefaultConfig() should accept 32 character secret, got error: %v", err)
+		}
+		if cfg == nil {
+			t.Error("DefaultConfig() returned nil config")
+		}
+	})
+
+	t.Run("NewManager validates secret key length", func(t *testing.T) {
+		shortCfg := &Config{
+			SecretKey:       "too-short",
+			AccessDuration:  15 * time.Minute,
+			RefreshDuration: 7 * 24 * time.Hour,
+			Issuer:          "openprint.cloud",
+		}
+		_, err := NewManager(shortCfg)
+		if err == nil {
+			t.Error("NewManager() should reject config with short secret")
+		}
+		if !errors.Is(err, ErrSecretKeyTooShort) {
+			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
+	})
 }

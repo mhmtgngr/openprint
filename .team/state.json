@@ -28,11 +28,16 @@
       "e2e": "skipped"
     },
     "qa": {
+      "status": "done",
+      "_updated": "2026-02-27T19:27:33.116946",
+      "verdict": "NEEDS_FIXES"
+    },
+    "security": {
       "status": "running",
-      "_updated": "2026-02-27T19:20:03.682790"
+      "_updated": "2026-02-27T19:27:33.189038"
     }
   },
   "project": "create new project like Ezeep (cloud-routed) \u2014 the only commercial product that could work because it routes print jobs through the cloud. i want to print remote windows print jobs locally",
   "branch": "team/create-new-project-like-ezeep-cloud-rout-1772213539",
-  "current_phase": "qa"
+  "current_phase": "security"
 }
