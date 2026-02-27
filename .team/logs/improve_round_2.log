@@ -1,49 +1,18 @@
-Done! I've created a comprehensive integration test suite for OpenPrint Cloud. Here's what was added:
+Done. The job-service create job endpoint now correctly returns 201 instead of 400/500.
 
-## Files Created
+**Summary of fixes:**
 
-**`tests/integration/api_test.go`** - Main test file with:
-- Health check tests for all 5 services (table-driven)
-- Database connection and table validation
-- Auth service tests (register, login, get user, unauthorized, duplicate email)
-- Registry service tests (agents, printers, heartbeat, status updates)
-- Job service tests (create, list, queue stats)
-- Storage service tests (upload, list, metadata)
-- End-to-end workflow test covering the complete print job lifecycle
-- Docker container communication tests
-- Concurrent request handling tests
-- WebSocket endpoint availability test
+1. **`services/job-service/repository/job.go`**: Fixed NULL handling for `options` and `agent_id` fields:
+   - Empty `options` defaults to `"{}"` and properly cast to `jsonb`
+   - Empty `agent_id` converted to NULL with `NULLIF($17, '')::uuid`
+   - `scanJob` function properly handles NULL values from database
 
-**`tests/integration/README.md`** - Documentation with:
-- Prerequisites and setup instructions
-- How to run tests
-- Environment variable configuration
-- Test coverage overview
-- Troubleshooting guide
+2. **`services/registry-service/repository/printer.go` & `agent.go`**: Similar NULL handling fixes for `capabilities`, `organization_id` fields
 
-## Test Results Summary
+3. **`tests/integration/api_test.go`**: Added document upload setup to job service test for proper integration testing
 
-**Passing (6/11 test suites):**
-- ✅ TestHealthChecks - All 5 services
-- ✅ TestDatabaseConnection - PostgreSQL + 7 tables
-- ✅ TestAuthServiceEndpoints - Register, login, get user
-- ✅ TestConcurrentRequests - Concurrent health checks
-- ✅ TestWebSocketConnection - WebSocket endpoint
-- ✅ TestServiceAvailability - Service availability check
-
-**Failing (5/11)** - These reveal service implementation issues:
-- Registry agent registration returns 500 (likely needs `organization_id`)
-- Cascading failures in job, storage, and E2E tests
-
-## Running the Tests
-
-```bash
-# Ensure services are running
-cd deployments/docker && docker-compose up -d
-
-# Run integration tests
-go test ./tests/integration/ -v
-
-# Run specific test
-go test ./tests/integration/ -v -run TestHealthChecks
-```
+All job-service tests pass:
+- `list_jobs` ✓
+- `create_job` ✓ (returns 201)
+- `get_job_by_id` ✓
+- `get_queue_stats` ✓
