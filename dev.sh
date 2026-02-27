@@ -73,6 +73,11 @@ MAX_PHASE_RETRIES=2
 MAX_CRASHES=5
 DOCKER_TIMEOUT=60
 
+# Timeout configuration with exponential backoff
+BASE_TIMEOUT=900
+MAX_TIMEOUT=3600
+TIMEOUT_BACKOFF=1.5
+
 # Master dev.sh — the SINGLE source of truth for self-improvement
 MASTER_DEV_SH="${MASTER_DEV_SH:-$HOME/dev.sh}"
 MASTER_DEV_DIR="${MASTER_DEV_DIR:-$HOME/.dev-master}"
@@ -170,7 +175,31 @@ if errors:
 # STATE MANAGEMENT (unified)
 # ═══════════════════════════════════════════════
 
+# Ensure only one phase is running at a time (crash recovery)
+state_ensure_single_running() {
+  local new_phase="$1"
+  python3 - "$STATE_FILE" "$new_phase" << 'PYEOF'
+import json, os, sys
+f, new_phase = sys.argv[1], sys.argv[2]
+d = json.load(open(f)) if os.path.exists(f) else {"phases": {}, "project": "", "branch": ""}
+
+# Set all other "running" phases to "failed" (crash recovery)
+for phase, data in d.get("phases", {}).items():
+    if phase != new_phase and data.get("status") == "running":
+        data["status"] = "failed"
+        data["crash_reason"] = "interrupted_by_new_phase"
+        data["crashed_at"] = d.get("phases", {}).get(phase, {}).get("_updated", "")
+
+json.dump(d, open(f, "w"), indent=2)
+PYEOF
+}
+
 state_set() {
+  # Before setting a phase to running, ensure no other phase is running
+  if [ "$2" = "status" ] && [ "$3" = "running" ]; then
+    state_ensure_single_running "$1"
+  fi
+
   python3 - "$STATE_FILE" "$1" "$2" "$3" << 'PYEOF'
 import json, os, sys
 from datetime import datetime
@@ -352,6 +381,13 @@ ai_think() {
     warn "  Z.ai failed — using Claude Code"
   fi
 
+  # Skip nested claude calls when already inside Claude Code
+  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
+    warn "  ⚠ [$role_name] Skipping nested Claude call"
+    echo '{"skipped": true, "reason": "nested_claude_session"}' > "$out_file"
+    return 1
+  fi
+
   team "$role_name" "Using Claude Code..."
   cd "$REPO_DIR"
   local prompt
@@ -430,7 +466,13 @@ PYEOF
     warn "  Z.ai search failed (HTTP $http_code) — falling back to Claude"
   fi
 
-  # Fallback: Claude Code
+  # Fallback: Claude Code (with nested session protection)
+  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
+    warn "  ⚠ Skipping web search (nested Claude Code session)"
+    echo '{"results": [{"title": "Skipped", "content": "Search skipped due to nested Claude Code session", "url": ""}]}' > "$out_file"
+    return 1
+  fi
+
   team "🔍 Research" "Using Claude Code for: $query"
   cd "$REPO_DIR"
   claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
@@ -536,9 +578,19 @@ PROMPT
 # CLAUDE CODE ENGINE (with in-process healing)
 # ═══════════════════════════════════════════════
 
+# Detect if running inside Claude Code (nested session protection)
+INSIDE_CLAUDE_CODE="${CLAUDECODE:-false}"
+
 # Safe Claude wrapper with timeout monitoring
 run_claude() {
   local max_secs="${1:-300}" out_file="${2:-/dev/null}" prompt="$3"
+
+  # Skip nested claude calls when already inside Claude Code
+  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
+    warn "  ⚠ Skipping nested Claude call (running inside Claude Code)"
+    echo "SKIPPED: Running inside Claude Code - prompt saved to $out_file" > "$out_file"
+    return 1
+  fi
 
   claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
     "$prompt" </dev/null > "$out_file" 2>&1 &
@@ -560,10 +612,27 @@ run_claude() {
   return $?
 }
 
-# Primary code execution: retry + prompt shrink + commit
+# Primary code execution: retry + exponential timeout backoff + commit
 claude_do() {
   local role_name="$1" prompt="$2" log_file="$3"
-  local timeout="${4:-900}"
+  local timeout="${4:-$BASE_TIMEOUT}"
+
+  # Skip nested claude calls when already inside Claude Code
+  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
+    warn "  ⚠ [$role_name] Skipping - running inside Claude Code session"
+    warn "  📝 Task saved to: $log_file"
+    echo "=== TASK SKIPPED (nested Claude Code session) ===" > "$log_file"
+    echo "" >> "$log_file"
+    echo "Role: $role_name" >> "$log_file"
+    echo "" >> "$log_file"
+    echo "Prompt:" >> "$log_file"
+    echo "$prompt" >> "$log_file"
+    echo "" >> "$log_file"
+    echo "Please run this task manually or exit Claude Code and retry." >> "$log_file"
+    record_error "$role_name" "nested_claude_skipped" "Skipped due to nested Claude Code session"
+    return 1
+  fi
+
   team "$role_name" "Working..."
   cd "$REPO_DIR"
 
@@ -576,14 +645,15 @@ claude_do() {
 [TRUNCATED — original was ${prompt_len} chars. Focus on the most important parts above.]"
   fi
 
-  local attempt=0 ok=false exit_code=0
-  while [ $attempt -lt 3 ]; do
+  local attempt=0 ok=false exit_code=0 current_timeout=$timeout
+
+  while [ $attempt -lt 4 ]; do
     attempt=$((attempt + 1))
-    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/3"
+    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/4 (timeout: ${current_timeout}s)"
 
     # Write to file directly (avoids pipefail + tee false failures)
     exit_code=0
-    timeout "$timeout" claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
+    timeout "$current_timeout" claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
       "$prompt" > "$log_file" 2>&1 || exit_code=$?
 
     # Show last few lines for monitoring
@@ -592,7 +662,13 @@ claude_do() {
     if [ $exit_code -eq 0 ]; then
       ok=true; break
     elif [ $exit_code -eq 124 ]; then
-      warn "  ⏰ Timeout after ${timeout}s"
+      warn "  ⏰ Timeout after ${current_timeout}s"
+      # Exponential backoff for timeout, capped at MAX_TIMEOUT
+      if [ $attempt -lt 4 ]; then
+        current_timeout=$(awk "BEGIN {printf \"%d\", $current_timeout * $TIMEOUT_BACKOFF}")
+        [ $current_timeout -gt $MAX_TIMEOUT ] && current_timeout=$MAX_TIMEOUT
+        warn "  📈 Increasing timeout to ${current_timeout}s for next attempt"
+      fi
     elif [ $exit_code -ge 137 ]; then
       warn "  💀 Killed (exit $exit_code) — likely OOM or rate limit"
       prompt="${prompt:0:6000}
@@ -600,6 +676,12 @@ claude_do() {
 [REDUCED — Claude was killed. Simplified prompt.]"
     else
       warn "  ⚠ Claude exited $exit_code"
+      # Special handling for nested session error
+      if grep -q "cannot be launched inside another Claude Code session" "$log_file" 2>/dev/null; then
+        warn "  🔄 Nested Claude session detected - marking as skipped"
+        record_error "$role_name" "nested_claude_session" "Claude Code called from within Claude Code"
+        return 1
+      fi
     fi
     sleep $((attempt * 5))
   done
@@ -613,7 +695,7 @@ claude_do() {
     return 0
   fi
   team "$role_name" "✗ Failed after $attempt attempts"
-  record_error "$role_name" "claude_terminated" "Failed after $attempt attempts, last exit: $exit_code"
+  record_error "$role_name" "claude_terminated" "Failed after $attempt attempts, last exit: $exit_code, final timeout: ${current_timeout}s"
   return 1
 }
 
@@ -649,13 +731,30 @@ docker_build_all() {
       warn "  ✗ Build failed: $svc (${elapsed}s) — fixing..."
       failed=$((failed+1))
       record_error "deploy" "docker_build_fail" "$svc: $(tail -5 "$PHASE_LOGS/docker_build.log" 2>/dev/null)"
-      claude_do "🐳 DevOps" "Read CLAUDE.md. Docker build failed for $svc. Error:
+
+      # Skip auto-fix when running inside Claude Code to avoid nested session errors
+      if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
+        warn "  ⚠ Skipping auto-fix (running inside Claude Code)"
+        warn "  📝 Fix task saved to: $PHASE_LOGS/docker_fix_${svc}.log"
+        echo "=== DOCKER BUILD FIX TASK ===" > "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "Service: $svc" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "Dockerfile: $df" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "Build Error:" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        tail -15 "$PHASE_LOGS/docker_build.log" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "" >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        echo "Please fix manually or run dev.sh outside Claude Code." >> "$PHASE_LOGS/docker_fix_${svc}.log"
+        ok=false
+      else
+        claude_do "🐳 DevOps" "Read CLAUDE.md. Docker build failed for $svc. Error:
 
 $(tail -15 "$PHASE_LOGS/docker_build.log" 2>/dev/null)
 
 Fix the Dockerfile or source code. Rebuild should pass." \
-        "$PHASE_LOGS/docker_fix_${svc}.log" 600
-      timeout 600 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
+          "$PHASE_LOGS/docker_fix_${svc}.log" 600
+        timeout 600 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
+      fi
     fi
   done
   log "  Docker: $built/$total built, $failed failed"
@@ -1234,6 +1333,9 @@ run_waterfall() {
   local project="$1"
   local slug; slug=$(echo "$project" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-' | cut -c1-40)
   BRANCH="team/${slug}-$(date +%s)"
+
+  # Clean up any stuck states from previous crashed runs
+  cleanup_stuck_states
 
   state_save_meta "$project" "$BRANCH"
   ensure_branch
@@ -2066,6 +2168,9 @@ run_full_improvement() {
   local phases="${1:-$AUTO_PHASES}" dev_steps="${2:-3}"
   AUTO_PHASES="$phases"
 
+  # Clean up any stuck states from previous crashed runs
+  cleanup_stuck_states
+
   slog "╔═══════════════════════════════════════════════════════╗"
   slog "║  🚀 FULL IMPROVEMENT: $dev_steps dev + $phases project       ║"
   slog "╠═══════════════════════════════════════════════════════╣"
@@ -2344,6 +2449,9 @@ PR_DOC
 smart_improve() {
   local t0; t0=$(date +%s)
 
+  # Clean up any stuck states from previous crashed runs
+  cleanup_stuck_states
+
   slog "╔═══════════════════════════════════════════════════════════╗"
   slog "║  🧠 SMART IMPROVE — Project-Focused Self-Improvement       ║"
   slog "╠═══════════════════════════════════════════════════════════╣"
@@ -2415,6 +2523,51 @@ Run 'go test ./...' and fix every failure until all pass." "$PHASE_LOGS/smart_te
 # BACKGROUND EXECUTION
 # ═══════════════════════════════════════════════
 
+# Clean up stuck "running" states from crashed processes
+cleanup_stuck_states() {
+  if [ ! -f "$STATE_FILE" ]; then return; fi
+
+  python3 - "$STATE_FILE" << 'PYEOF'
+import json, os, sys
+from datetime import datetime, timedelta
+
+f = sys.argv[1]
+if not os.path.exists(f): exit()
+
+d = json.load(open(f))
+now = datetime.now()
+stuck_found = False
+
+for phase, data in d.get("phases", {}).items():
+    if data.get("status") == "running":
+        updated_str = data.get("_updated", "")
+        if updated_str:
+            try:
+                updated = datetime.fromisoformat(updated_str)
+                # If phase has been "running" for more than 4 hours, mark as failed
+                if (now - updated) > timedelta(hours=4):
+                    data["status"] = "failed"
+                    data["crash_reason"] = "stuck_running_too_long"
+                    data["crashed_at"] = now.isoformat()
+                    stuck_found = True
+            except:
+                pass
+
+if stuck_found:
+    with open(f, "w") as fp:
+        json.dump(d, fp, indent=2)
+PYEOF
+
+  # Also clean up orphaned PID file if process isn't running
+  if [ -f "$PID_FILE" ]; then
+    local pid; pid=$(cat "$PID_FILE" 2>/dev/null)
+    if ! kill -0 "$pid" 2>/dev/null; then
+      warn "  🧹 Cleaning up orphaned PID file (process $pid not running)"
+      rm -f "$PID_FILE"
+    fi
+  fi
+}
+
 is_running() { [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; }
 
 stop_all() {
@@ -2464,6 +2617,7 @@ show_status() {
   if [ -f "$STATE_FILE" ]; then
     python3 - "$STATE_FILE" << 'PYEOF'
 import json, sys
+from datetime import datetime, timedelta
 d = json.load(open(sys.argv[1]))
 print(f"  Project: {d.get('project','')[:60]}")
 print(f"  Branch:  {d.get('branch','')}")
@@ -2474,6 +2628,9 @@ icons = {"done":"✅","running":"🔄","pending":"⬜","failed":"❌","skipped":
 roles = {"requirements":"PM","market_research":"Research","design":"Architect","backend":"Backend","frontend":"Frontend","testing":"Tester","qa":"QA","security":"Security","deploy":"DevOps"}
 
 done = 0
+stuck_found = False
+now = datetime.now()
+
 for p in phases:
     data = d.get("phases",{}).get(p,{})
     st = data.get("status","pending")
@@ -2482,12 +2639,26 @@ for p in phases:
     verdict_str = f" → {verdict}" if verdict else ""
     updated = data.get("_updated","")
     time_str = f" [{updated[11:19]}]" if updated else ""
-    print(f"  {icons.get(st,'⬜')} {roles.get(p,p):10s}{verdict_str}{time_str}")
+
+    # Detect stuck phases (running for too long)
+    extra = ""
+    if st == "running" and updated:
+        try:
+            upd_time = datetime.fromisoformat(updated)
+            if (now - upd_time) > timedelta(hours=2):
+                extra = " ⚠️ STUCK"
+                stuck_found = True
+        except: pass
+
+    print(f"  {icons.get(st,'⬜')} {roles.get(p,p):10s}{verdict_str}{time_str}{extra}")
     for k,v in sorted(data.items()):
         if k.startswith("_") or k in ("status","verdict"): continue
         print(f"     └─ {k}: {v}")
 
 print(f"\n  Progress: {done}/{len(phases)} phases ({done*100//len(phases)}%)")
+
+if stuck_found:
+    print("\n  ⚠️  Some phases appear stuck. Run './dev.sh recover' to clean up.")
 PYEOF
   fi
 
@@ -2541,6 +2712,7 @@ show_help() { cat << 'HELP'
     ./dev.sh status                     # Dashboard
     ./dev.sh stop                       # Stop everything
     ./dev.sh resume                     # Continue from last phase
+    ./dev.sh recover                    # Clean up stuck states after crash
     ./dev.sh phase backend              # Single phase (fg)
     ./dev.sh start "desc" --fg          # Foreground mode
 
@@ -2598,6 +2770,12 @@ case "$CMD" in
     command -v claude &>/dev/null || { err "Claude Code not found. Install: npm install -g @anthropic-ai/claude-code"; exit 1; }
     command -v go &>/dev/null && log "✓ go $(go version | awk '{print $3}')" || warn "⚠ go not found"
     command -v node &>/dev/null && log "✓ node $(node -v)" || warn "⚠ node not found"
+
+    # Warn about nested Claude Code sessions
+    if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
+      warn "⚠ Running inside Claude Code session - auto-fix features disabled"
+      warn "  For full functionality, run: ./dev.sh $CMD ${2:-} --fg"
+    fi
 
     # Auto-init git if needed
     if [ ! -d "$REPO_DIR/.git" ]; then
@@ -2658,6 +2836,7 @@ case "$CMD" in
   stop)            stop_all ;;
   stop-services)   docker_down; echo "✓ Stopped" ;;
   status)          show_status ;;
+  recover)         cleanup_stuck_states; echo "✓ Cleaned up stuck states"; ./dev.sh status ;;
   reset)           stop_all 2>/dev/null; rm -rf "$DEV_DIR"; echo "✓ Reset" ;;
 
   # ── Smart improve ──

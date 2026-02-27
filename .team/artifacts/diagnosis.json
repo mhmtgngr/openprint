@@ -1,0 +1,19 @@
+{
+  "project": {
+    "go_files": 14,
+    "test_files": 19,
+    "tsx_files": 0,
+    "todo_count": 0,
+    "build": "yes",
+    "tests": "pass",
+    "test_count": 14,
+    "test_passed": 14,
+    "dockerfiles": 6,
+    "compose": "yes",
+    "frontend": "no"
+  },
+  "compile_errors": "",
+  "test_failures": "",
+  "ts_errors": "",
+  "todos": ""
+}

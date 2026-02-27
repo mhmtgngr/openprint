@@ -1,0 +1,535 @@
+{
+  "timestamp": "2026-02-27T20:29:18.767861",
+  "completion_pct": 61,
+  "pr_ready": true,
+  "dimension_scores": {
+    "backend_files": 100,
+    "frontend_files": 0,
+    "tests": 100,
+    "endpoints": 0,
+    "migrations": 14,
+    "build": 100,
+    "tests_pass": 100,
+    "docker": 100
+  },
+  "counts": {
+    "backend_files": "80/59",
+    "frontend_files": "0/28",
+    "tests": "33/12",
+    "endpoints": "0/17",
+    "migrations": "2/14",
+    "todos": 0,
+    "build": true,
+    "tests_pass": true
+  },
+  "gaps": [
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000001_create_organizations.up.sql",
+      "description": "Create migration: migrations/000001_create_organizations.up.sql",
+      "sql": "CREATE TABLE organizations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  slug VARCHAR(100) UNIQUE NOT NULL,\n  plan VARCHAR(50) DEFAULT 'free' CHECK (plan IN ('free"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000002_create_users.up.sql",
+      "description": "Create migration: migrations/000002_create_users.up.sql",
+      "sql": "CREATE TABLE users (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  email VARCHAR(255) UNIQUE NOT NULL,\n  password_hash VARCHAR(255),\n  name VARCHAR(255),\n  role VARCHAR(50) DEFAULT 'user' CHECK ("
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000003_create_sessions.up.sql",
+      "description": "Create migration: migrations/000003_create_sessions.up.sql",
+      "sql": "CREATE TABLE sessions (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  refresh_token_hash VARCHAR(255) NOT NULL,\n  user_agent TEXT,\n"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000004_create_agents.up.sql",
+      "description": "Create migration: migrations/000004_create_agents.up.sql",
+      "sql": "CREATE TABLE agents (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  status VARCHAR(50) DEFAULT"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000005_create_printers.up.sql",
+      "description": "Create migration: migrations/000005_create_printers.up.sql",
+      "sql": "CREATE TABLE printers (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,\n  org_id UUID NOT NULL REFERENC"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000006_create_printer_permissions.up.sql",
+      "description": "Create migration: migrations/000006_create_printer_permissions.up.sql",
+      "sql": "CREATE TABLE printer_permissions (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  printer_id UUID NOT NULL REFERENCES printers(id) ON DELETE CASCADE,\n  user_id UUID NOT NULL REFERENCES users(id) O"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000007_create_print_jobs.up.sql",
+      "description": "Create migration: migrations/000007_create_print_jobs.up.sql",
+      "sql": "CREATE TABLE print_jobs (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  printer_id UUID REFERENCES printers(id) ON DELETE SET NULL,"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000008_create_job_history.up.sql",
+      "description": "Create migration: migrations/000008_create_job_history.up.sql",
+      "sql": "CREATE TABLE job_history (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  job_id UUID NOT NULL REFERENCES print_jobs(id) ON DELETE CASCADE,\n  status VARCHAR(50) NOT NULL,\n  message TEXT,\n  metadat"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000009_create_audit_logs.up.sql",
+      "description": "Create migration: migrations/000009_create_audit_logs.up.sql",
+      "sql": "CREATE TABLE audit_logs (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID REFERENCES users(id) ON DELETE SET NULL,\n  org_id UUID REFERENCES organizations(id) ON DELETE SET NULL,\n  acti"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000010_create_usage_stats.up.sql",
+      "description": "Create migration: migrations/000010_create_usage_stats.up.sql",
+      "sql": "CREATE TABLE usage_stats (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  user_id UUID REFERENCES users(id) ON DELETE SET NUL"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000011_create_api_keys.up.sql",
+      "description": "Create migration: migrations/000011_create_api_keys.up.sql",
+      "sql": "CREATE TABLE api_keys (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE C"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000012_create_webhooks.up.sql",
+      "description": "Create migration: migrations/000012_create_webhooks.up.sql",
+      "sql": "CREATE TABLE webhooks (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  name VARCHAR(255) NOT NULL,\n  url VARCHAR(2048) NOT NU"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000013_create_invitations.up.sql",
+      "description": "Create migration: migrations/000013_create_invitations.up.sql",
+      "sql": "CREATE TABLE invitations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  email VARCHAR(255) NOT NULL,\n  role VARCHAR(50) DEF"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000014_create_devices.up.sql",
+      "description": "Create migration: migrations/000014_create_devices.up.sql",
+      "sql": "CREATE TABLE devices (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  device_type VARCHAR(50) NOT NULL CHECK (device_type IN ('ios',"
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/notification-service/pusher/pusher.go",
+      "description": "Push notification integration (mobile)",
+      "key_functions": [
+        "SendPushNotification",
+        "RegisterDevice",
+        "UnregisterDevice"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/organization-service/main.go",
+      "description": "Organization and user management service",
+      "key_functions": [
+        "main",
+        "startServer"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/organization-service/handler/org.go",
+      "description": "Organization management handlers",
+      "key_functions": [
+        "CreateOrg",
+        "GetOrg",
+        "UpdateOrg",
+        "DeleteOrg",
+        "InviteUser",
+        "RemoveUser",
+        "ListUsers"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/organization-service/handler/permission.go",
+      "description": "Printer permission management",
+      "key_functions": [
+        "GrantPrinterAccess",
+        "RevokePrinterAccess",
+        "ListPrinterPermissions",
+        "SetUserQuota"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/organization-service/repository/org.go",
+      "description": "Organization repository",
+      "key_functions": [
+        "Create",
+        "GetByID",
+        "Update",
+        "Delete",
+        "ListByUser"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/analytics-service/main.go",
+      "description": "Usage analytics and reporting service",
+      "key_functions": [
+        "main",
+        "startServer"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/analytics-service/handler/analytics.go",
+      "description": "Analytics and reporting handlers",
+      "key_functions": [
+        "GetUsageStats",
+        "GetJobHistory",
+        "GetEnvironmentReport",
+        "GetCostAllocation"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/analytics-service/processor/aggregator.go",
+      "description": "Background aggregation of usage stats",
+      "key_functions": [
+        "AggregateDailyStats",
+        "AggregateUserStats",
+        "AggregatePrinterStats"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/gateway/main.go",
+      "description": "API Gateway with authentication middleware",
+      "key_functions": [
+        "main",
+        "startServer",
+        "ProxyRequest"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/gateway/middleware/auth.go",
+      "description": "JWT authentication middleware",
+      "key_functions": [
+        "Authenticate",
+        "Authorize",
+        "ExtractToken"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/gateway/middleware/rate_limit.go",
+      "description": "Rate limiting middleware (security)",
+      "key_functions": [
+        "RateLimitMiddleware",
+        "GetQuota",
+        "CheckQuota"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "services/gateway/middleware/audit.go",
+      "description": "Audit logging middleware",
+      "key_functions": [
+        "LogRequest",
+        "LogResponse",
+        "LogAuthEvent"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/main.go",
+      "description": "Windows print agent main entry point",
+      "key_functions": [
+        "main",
+        "StartAgent",
+        "ConnectToCloud",
+        "RunHeartbeat"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/discovery/discovery.go",
+      "description": "Printer discovery (mDNS, USB, network)",
+      "key_functions": [
+        "DiscoverNetworkPrinters",
+        "DiscoverUSBPrinters",
+        "DiscoverWindowsPrinters",
+        "TestPrinter"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/discovery/mdns.go",
+      "description": "mDNS/Bonjour printer discovery",
+      "key_functions": [
+        "BrowseServices",
+        "ResolvePrinter",
+        "GetPrinterCapabilities"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/printer/printer.go",
+      "description": "Windows printer integration",
+      "key_functions": [
+        "ListPrinters",
+        "GetPrinterDriver",
+        "PrintPDF",
+        "GetJobStatus",
+        "CancelJob"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/queue/queue.go",
+      "description": "Local print queue management",
+      "key_functions": [
+        "EnqueueJob",
+        "ProcessQueue",
+        "RetryFailedJob",
+        "ClearQueue"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/client/client.go",
+      "description": "Cloud service client for agent",
+      "key_functions": [
+        "Register",
+        "Heartbeat",
+        "FetchJobs",
+        "ReportStatus",
+        "DownloadJob"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "agents/printer-agent/websocket/agent_ws.go",
+      "description": "WebSocket client for real-time communication",
+      "key_functions": [
+        "Connect",
+        "SubscribeToJobs",
+        "SendStatus",
+        "HandleCommands"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/windows-client/driver/installer/installer.go",
+      "description": "Windows printer driver installer",
+      "key_functions": [
+        "InstallDriver",
+        "UninstallDriver",
+        "UpdateDriver",
+        "IsInstalled"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/windows-client/driver/port/port.go",
+      "description": "Virtual printer port monitor",
+      "key_functions": [
+        "CreatePort",
+        "DeletePort",
+        "WriteToPort",
+        "ReadFromPort"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/windows-client/converter/pdf.go",
+      "description": "Print job to PDF conversion",
+      "key_functions": [
+        "ConvertToPDF",
+        "CompressPDF",
+        "GetPageCount",
+        "ValidatePDF"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/windows-client/uploader/uploader.go",
+      "description": "Encrypted print job upload to cloud",
+      "key_functions": [
+        "EncryptJob",
+        "UploadJob",
+        "GetUploadProgress",
+        "RetryUpload"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/windows-client/ui/dialog.go",
+      "description": "Printer selection dialog",
+      "key_functions": [
+        "ShowDialog",
+        "LoadPrinters",
+        "SelectPrinter",
+        "ShowProgress"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/mac-client/main.go",
+      "description": "macOS print agent (market-driven feature)",
+      "key_functions": [
+        "main",
+        "StartAgent",
+        "DiscoverPrinters",
+        "PrintPDF"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "clients/linux-client/main.go",
+      "description": "Linux print agent (CUPS integration) (market-driven feature)",
+      "key_functions": [
+        "main",
+        "StartAgent",
+        "DiscoverCUPSPrinters",
+        "SubmitToCUPS"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "api/openapi.yaml",
+      "description": "OpenAPI 3.1 specification for all REST APIs",
+      "key_functions": [
+        "API documentation",
+        "SDK generation"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "proto/auth.proto",
+      "description": "gRPC service definitions for auth",
+      "key_functions": [
+        "AuthService",
+        "ValidateToken",
+        "GetUser"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "proto/registry.proto",
+      "description": "gRPC service definitions for printer registry",
+      "key_functions": [
+        "RegistryService",
+        "RegisterPrinter",
+        "GetPrinter"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "proto/jobs.proto",
+      "description": "gRPC service definitions for job queue",
+      "key_functions": [
+        "JobService",
+        "CreateJob",
+        "UpdateJobStatus"
+      ]
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "scripts/migrate/migrate.go",
+      "description": "Database migration tool",
+      "key_functions": [
+        "Up",
+        "Down",
+        "Create",
+        "Status"
+      ]
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/app.json",
+      "description": "Expo app configuration"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/app.tsx",
+      "description": "React Native entry point"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/src/screens/Home.tsx",
+      "description": "Mobile home screen"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/src/screens/Print.tsx",
+      "description": "Document selection and print screen"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/src/screens/Printers.tsx",
+      "description": "Printer selection screen"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/src/screens/Jobs.tsx",
+      "description": "Job history screen"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/src/services/api.ts",
+      "description": "Mobile API client"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "mobile/src/components/DocumentPicker.tsx",
+      "description": "Document picker component (cloud storage, device)"
+    }
+  ]
+}

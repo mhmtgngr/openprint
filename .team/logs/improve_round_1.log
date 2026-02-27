@@ -1,0 +1,18 @@
+Done! Created `CLAUDE.md` with comprehensive project documentation:
+
+**Contents:**
+- Project overview (module, Go version, architecture)
+- 5 microservices description with ports
+- Internal packages structure (`internal/auth/`, `internal/shared/`)
+- Infrastructure (PostgreSQL, Redis, S3)
+- Development commands for Go and TypeScript
+- Docker deployment details
+- Service port mappings
+- Health check endpoints
+- Development workflow guidelines
+
+**Tests passed:**
+- `go test ./...` - All 19 test packages passed
+- `npx tsc --noEmit` - No type errors
+
+**Committed:** `c545afef` - `[docs] Add CLAUDE.md with project overview and development workflows`

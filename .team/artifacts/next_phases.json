@@ -1,0 +1,54 @@
+{
+  "phases": [
+    {
+      "order": 1,
+      "name": "Create CLAUDE.md",
+      "priority": "high",
+      "category": "devops",
+      "description": "Create CLAUDE.md in project root with: project overview, Go service architecture, Docker deployment details, testing commands ('go test ./...'), build commands ('go build ./...'), and key development workflows. This provides critical context for future AI-assisted development sessions.",
+      "success_criteria": [
+        "CLAUDE.md exists at /home/cmit/openprint/CLAUDE.md",
+        "Contains build/test commands",
+        "Documents Docker setup"
+      ],
+      "estimated_minutes": 20
+    },
+    {
+      "order": 2,
+      "name": "Add Integration Tests",
+      "priority": "medium",
+      "category": "test",
+      "description": "Add integration test suite in tests/integration/ covering end-to-end API workflows. Test actual HTTP requests to running service, database interactions, and Docker container communication. Create tests/integration/api_test.go with table-driven tests for main endpoints. Run with 'go test ./tests/integration/ -v'.",
+      "success_criteria": [
+        "tests/integration/api_test.go created",
+        "Tests validate real HTTP calls",
+        "go test ./tests/integration/ passes"
+      ],
+      "estimated_minutes": 45
+    },
+    {
+      "order": 3,
+      "name": "Security Hardening",
+      "priority": "medium",
+      "category": "security",
+      "description": "Add input validation middleware in internal/middleware/validation.go. Implement rate limiting, request size limits, and sanitization for all user inputs. Add gosec security scanner to CI: run 'go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest' then 'gosec ./...'. Fix any high-severity findings.",
+      "success_criteria": [
+        "internal/middleware/validation.go created",
+        "gosec runs with no high-severity issues",
+        "Middleware wired into main.go"
+      ],
+      "estimated_minutes": 40
+    }
+  ],
+  "project_health": {
+    "score": 82,
+    "critical_issues": [],
+    "strengths": [
+      "All tests passing (14/14)",
+      "Clean build",
+      "Docker setup complete",
+      "Good test coverage"
+    ]
+  },
+  "rationale": "Project is healthy with passing builds and tests. Priorities: (1) CLAUDE.md enables better AI assistance going forward; (2) Integration tests catch real-world issues unit tests miss; (3) Security hardening protects the deployed service. No critical fixes needed."
+}
