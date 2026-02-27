@@ -63,6 +63,12 @@ func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate required fields
+	if req.Name == "" {
+		respondError(w, apperrors.New("name is required", http.StatusBadRequest))
+		return
+	}
+
 	// Generate agent ID
 	agentID := uuid.New().String()
 
@@ -82,6 +88,8 @@ func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.agentRepo.Create(ctx, agent); err != nil {
+		// Log the underlying error for debugging
+		fmt.Printf("[ERROR] Failed to register agent: %v\n", err)
 		respondError(w, apperrors.Wrap(err, "failed to register agent", http.StatusInternalServerError))
 		return
 	}
