@@ -1,0 +1,37 @@
+Created the Docker setup in `deployments/docker/`:
+
+## Dockerfiles (multi-stage, non-root user, HEALTHCHECK)
+
+| Service | Dockerfile | Port |
+|---------|-----------|------|
+| auth-service | `Dockerfile.auth-service` | 8001 |
+| registry-service | `Dockerfile.registry-service` | 8002 |
+| job-service | `Dockerfile.job-service` | 8003 |
+| storage-service | `Dockerfile.storage-service` | 8004 |
+| notification-service | `Dockerfile.notification-service` | 8005 |
+| dashboard | `Dockerfile.dashboard` | 3000 |
+
+## docker-compose.yml
+
+Includes all services plus:
+- **PostgreSQL 16** on port 5432
+- **Redis 7** on port 6379
+- **Networking**: `openprint-network` bridge
+- **Volumes**: postgres_data, redis_data, storage_data
+- **Health checks** for all services with proper dependency chains
+- **Environment variables** via `.env`
+
+## Additional Files
+
+- `.env.example` - Environment variable template
+- `init-db.sql` - PostgreSQL initialization script
+- `README.md` - Deployment documentation
+- `.dockerignore` - Root-level for Go services
+
+To use:
+```bash
+cd /home/cmit/openprint/deployments/docker
+cp .env.example .env
+# Edit .env and set JWT_SECRET
+docker-compose up -d
+```

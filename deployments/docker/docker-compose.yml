@@ -1,0 +1,255 @@
+version: "3.9"
+
+services:
+  # PostgreSQL 16 Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: openprint-postgres
+    environment:
+      POSTGRES_DB: openprint
+      POSTGRES_USER: openprint
+      POSTGRES_PASSWORD: openprint
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openprint -d openprint"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: openprint-redis
+    command: redis-server --appendonly yes --requirepass openprint
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "openprint", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Auth Service (Port 8001)
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.auth-service
+    container_name: openprint-auth-service
+    environment:
+      SERVER_ADDR: ":8001"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      REDIS_URL: redis://:openprint@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      SERVICE_NAME: auth-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Registry Service (Port 8002)
+  registry-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.registry-service
+    container_name: openprint-registry-service
+    environment:
+      SERVER_ADDR: ":8002"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      SERVICE_NAME: registry-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Job Service (Port 8003)
+  job-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.job-service
+    container_name: openprint-job-service
+    environment:
+      SERVER_ADDR: ":8003"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      REDIS_URL: redis://:openprint@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      SERVICE_NAME: job-service
+      PROCESSOR_WORKERS: 10
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      registry-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Storage Service (Port 8004)
+  storage-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.storage-service
+    container_name: openprint-storage-service
+    environment:
+      SERVER_ADDR: ":8004"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-openprint-documents}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      SERVICE_NAME: storage-service
+      MAX_UPLOAD_MB: 100
+    ports:
+      - "8004:8004"
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Notification Service (Port 8005)
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.notification-service
+    container_name: openprint-notification-service
+    environment:
+      SERVER_ADDR: ":8005"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      REDIS_URL: redis://:openprint@redis:6379
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      SERVICE_NAME: notification-service
+    ports:
+      - "8005:8005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Dashboard Web App (Port 3000)
+  dashboard:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.dashboard
+    container_name: openprint-dashboard
+    environment:
+      NODE_ENV: production
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      registry-service:
+        condition: service_healthy
+      job-service:
+        condition: service_healthy
+      storage-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+# Networks
+networks:
+  openprint-network:
+    name: openprint-network
+    driver: bridge
+
+# Volumes
+volumes:
+  postgres_data:
+    name: openprint-postgres-data
+  redis_data:
+    name: openprint-redis-data
+  storage_data:
+    name: openprint-storage-data

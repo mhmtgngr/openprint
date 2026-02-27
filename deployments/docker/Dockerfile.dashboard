@@ -1,0 +1,55 @@
+# Build stage
+FROM node:20-alpine AS builder
+
+# Set working directory
+WORKDIR /build
+
+# Copy package files
+COPY web/dashboard/package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY web/dashboard/ ./
+
+# Build the application
+RUN npm run build
+
+# Final stage
+FROM node:20-alpine
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init tzdata
+
+# Create non-root user
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy built assets from builder
+COPY --from=builder --chown=appuser:appuser /build/dist ./dist
+
+# Copy package files for serve
+COPY --chown=appuser:appuser web/dashboard/package.json ./
+
+# Install a simple HTTP server
+RUN npm install -g serve@14
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Run the service
+CMD ["serve", "-s", "dist", "-l", "3000"]
