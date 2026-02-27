@@ -263,3 +263,8 @@ The port conflicts were caused by the **openidx** project using the same default
 # Run specific test
 go test ./tests/integration/ -v -run TestHealthChecks
 ```
+[0;35m[20:39:55][0m [1;37m🧪 Tester[0m ✓ Committed
+[0;35m[20:40:00][0m [1;37m🔒 Security[0m Working...
+```
+Files: 30 | Lines: 10347 | Issues: 0 (high severity)
+```
