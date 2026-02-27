@@ -285,3 +285,8 @@ Files: 30 | Lines: 10347 | Issues: 0 (high severity)
 - `create_job` ✓ (returns 201)
 - `get_job_by_id` ✓
 - `get_queue_stats` ✓
+[0;35m[22:00:13][0m [1;37m⚙️  Backend[0m ✓ Committed
+[0;35m[22:00:18][0m [1;37m⚙️  Backend[0m Working...
+    --- PASS: TestStorageServiceEndpoints/upload_document (0.01s)
+    --- PASS: TestStorageServiceEndpoints/get_document_metadata (0.00s)
+```

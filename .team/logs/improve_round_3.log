@@ -1,25 +1,27 @@
-Done! Here's a summary of the changes:
-
 ## Summary
 
-### 1. Created `internal/middleware/validation.go` (569 lines)
-Features implemented:
-- **Rate Limiting**: Sliding window algorithm supporting IP-based and user-based limiting
-- **Request Size Limits**: Configurable limits for body, headers, query string, and URL length
-- **Input Sanitization**: SQL injection and XSS prevention for query parameters and headers
-- **JSON Schema Validation**: Required fields, max fields, and custom field validators
-- **Validators**: Email, UUID, URL, string length, integer range
-- **Security Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, etc.
+I successfully fixed the storage-service document metadata endpoint. Here's what was done:
 
-### 2. Fixed High-Severity gosec Findings
-Added `#nosec G115` annotations in `internal/auth/password/password.go` for bounded integer conversions (hash/salt lengths are limited by Argon2 parameters)
+### Changes Made:
 
-### 3. Added CI Security Scanning (`.github/workflows/security.yml`)
-- **gosec**: Security scanner with SARIF output for GitHub code scanning
-- **govulncheck**: Official Go vulnerability checker
-- **Unit tests**: With race detection and coverage reporting
+1. **Added `GET /documents/{id}/metadata` endpoint** (`services/storage-service/handler/storage.go`)
+   - New `getDocumentMetadata()` function that returns JSON metadata including `document_id`, `name`, `content_type`, `size`, `checksum`, `user_email`, and `created_at`
+   - Proper error handling: distinguishes between 404 (document not found) and 500 (database error) using `pgx.ErrNoRows`
 
-### gosec Results
+2. **Updated `DocumentHandler`** to route metadata requests
+   - Checks if path ends with `/metadata` and routes accordingly
+   - Added `DocumentMetadataHandler` to handle the new endpoint
+
+3. **Fixed integration test** (`tests/integration/api_test.go`)
+   - Added `urlFunc` field for dynamic URL construction (fixing the bug where URL was built before `client.DocumentID` was set)
+   - Updated to call `/documents/{id}/metadata` endpoint
+   - Added validation of metadata response fields
+
+### Test Results:
 ```
-Files: 30 | Lines: 10347 | Issues: 0 (high severity)
+=== RUN   TestStorageServiceEndpoints
+--- PASS: TestStorageServiceEndpoints (0.12s)
+    --- PASS: TestStorageServiceEndpoints/list_documents (0.02s)
+    --- PASS: TestStorageServiceEndpoints/upload_document (0.01s)
+    --- PASS: TestStorageServiceEndpoints/get_document_metadata (0.00s)
 ```
