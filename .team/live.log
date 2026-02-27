@@ -188,3 +188,30 @@ docker-compose up -d
 1. **`.dockerignore`** - Added exception `!web/dashboard` after the `web/` exclusion line (line 60-61), allowing the dashboard source files to be copied during Docker build.
 
 2. **`Dockerfile.dashboard`** - Changed user/group IDs from 1000 to 1001 (line 26-27) to avoid conflict with existing GID 1000 in `node:20-alpine` base image.
+[0;35m[19:35:58][0m [1;37m🐳 DevOps[0m ✓ Committed
+[0;32m[19:36:07][0m   🐳 Building (3/6): job-service
+[0;32m[19:36:45][0m   ✓ Built: job-service (38s)
+[0;32m[19:36:45][0m   🐳 Building (4/6): notification-service
+[0;32m[19:37:11][0m   ✓ Built: notification-service (26s)
+[0;32m[19:37:11][0m   🐳 Building (5/6): registry-service
+[0;32m[19:37:38][0m   ✓ Built: registry-service (27s)
+[0;32m[19:37:38][0m   🐳 Building (6/6): storage-service
+[0;32m[19:38:23][0m   ✓ Built: storage-service (45s)
+[0;32m[19:38:23][0m   Docker: 5/6 built, 1 failed
+[0;32m[19:38:23][0m   🚀 Starting services...
+[0;32m[19:42:33][0m   ✓ :8001
+[1;33m[19:42:33][0m   ✗ :8002
+[1;33m[19:42:33][0m   ✗ :8003
+[1;33m[19:42:33][0m   ✗ :8004
+[0;32m[19:42:33][0m   ✓ :8005
+[0;32m[19:42:33][0m   Health: 2/5
+[0;35m[19:42:33][0m [1;37m🐳 DevOps[0m Smoke testing...
+[0;32m[19:42:33][0m   ✓ :8001
+[1;33m[19:42:33][0m   ✗ :8002
+[1;33m[19:42:33][0m   ✗ :8003
+[1;33m[19:42:33][0m   ✗ :8004
+[0;32m[19:42:34][0m   ✓ :8005
+[0;35m[19:42:35][0m [1;37m🐳 DevOps[0m Working...
+- Updated `VITE_API_BASE_URL` to point to `http://localhost:18001`
+
+The port conflicts were caused by the **openidx** project using the same default ports. Access the dashboard at http://localhost:3000.

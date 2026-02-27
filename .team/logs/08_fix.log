@@ -1,0 +1,21 @@
+Fixed. All services are now running successfully:
+
+| Service | Port | Status |
+|---------|------|--------|
+| postgres | 15432 | healthy |
+| redis | 16379 | healthy |
+| auth-service | 18001 | healthy |
+| registry-service | 8002 | healthy |
+| job-service | 8003 | healthy |
+| storage-service | 8004 | healthy |
+| notification-service | 18005 | healthy |
+| dashboard | 3000 | running |
+
+**Changes made**:
+- Changed PostgreSQL from port `5432` → `15432`
+- Changed Redis from port `6379` → `16379`
+- Changed auth-service from port `8001` → `18001`
+- Changed notification-service from port `8005` → `18005`
+- Updated `VITE_API_BASE_URL` to point to `http://localhost:18001`
+
+The port conflicts were caused by the **openidx** project using the same default ports. Access the dashboard at http://localhost:3000.
