@@ -329,6 +329,7 @@ func (h *Handler) RegisterPrinter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.printerRepo.Create(ctx, printer); err != nil {
+		fmt.Printf("[ERROR] Failed to create printer: %v\n", err)
 		respondError(w, apperrors.Wrap(err, "failed to register printer", http.StatusInternalServerError))
 		return
 	}

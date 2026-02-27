@@ -56,18 +56,24 @@ func (r *JobRepository) Create(ctx context.Context, job *PrintJob) error {
 		job.ID = uuid.New().String()
 	}
 
+	// Handle empty options by setting it to a valid empty JSON object
+	options := job.Options
+	if options == "" {
+		options = "{}"
+	}
+
 	query := `
 		INSERT INTO print_jobs (id, document_id, printer_id, user_name, user_email, title, copies,
 		                       color_mode, duplex, media_type, quality, pages, status, priority,
 		                       retries, options, agent_id, started_at, completed_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, NULLIF($17, '')::uuid, $18, $19, $20, $21)
 		RETURNING id
 	`
 
 	err := r.db.QueryRow(ctx, query,
 		job.ID, job.DocumentID, job.PrinterID, job.UserName, job.UserEmail, job.Title, job.Copies,
 		job.ColorMode, job.Duplex, job.MediaType, job.Quality, job.Pages, job.Status, job.Priority,
-		job.Retries, job.Options, job.AgentID, job.StartedAt, job.CompletedAt, job.CreatedAt, job.UpdatedAt,
+		job.Retries, options, job.AgentID, job.StartedAt, job.CompletedAt, job.CreatedAt, job.UpdatedAt,
 	).Scan(&job.ID)
 
 	if err != nil {
@@ -404,10 +410,23 @@ func (r *JobRepository) GetJobsNeedingRetry(ctx context.Context, maxRetries int,
 // scanJob scans a print job from a database row.
 func (r *JobRepository) scanJob(row interface{ Scan(...interface{}) error }) (*PrintJob, error) {
 	var job PrintJob
+	// Use pointers for fields that can be NULL
+	var options *string
+	var agentID *string
 	err := row.Scan(
 		&job.ID, &job.DocumentID, &job.PrinterID, &job.UserName, &job.UserEmail, &job.Title, &job.Copies,
 		&job.ColorMode, &job.Duplex, &job.MediaType, &job.Quality, &job.Pages, &job.Status, &job.Priority,
-		&job.Retries, &job.Options, &job.AgentID, &job.StartedAt, &job.CompletedAt, &job.CreatedAt, &job.UpdatedAt,
+		&job.Retries, &options, &agentID, &job.StartedAt, &job.CompletedAt, &job.CreatedAt, &job.UpdatedAt,
 	)
-	return &job, err
+	if err != nil {
+		return nil, err
+	}
+	// Convert pointers to strings, defaulting to empty string if NULL
+	if options != nil {
+		job.Options = *options
+	}
+	if agentID != nil {
+		job.AgentID = *agentID
+	}
+	return &job, nil
 }

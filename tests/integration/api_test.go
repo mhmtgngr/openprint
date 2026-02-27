@@ -594,6 +594,34 @@ func TestJobServiceEndpoints(t *testing.T) {
 		printerResp.Body.Close()
 	}
 
+	// Setup: Upload a document for the job
+	var cleanupDocumentID string
+	{
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		part, err := writer.CreateFormFile("file", "test-job-document.txt")
+		if err == nil {
+			part.Write([]byte("This is a test document for job printing."))
+			writer.WriteField("title", "Test Document for Job")
+			writer.Close()
+			req, err := http.NewRequest("POST", storageServiceURL+"/documents", body)
+			if err == nil {
+				req.Header.Set("Content-Type", writer.FormDataContentType())
+				if client.AuthToken != "" {
+					req.Header.Set("Authorization", "Bearer "+client.AuthToken)
+				}
+				documentResp, err := client.Client.Do(req)
+				if err == nil && documentResp.StatusCode == http.StatusCreated {
+					var result map[string]interface{}
+					json.NewDecoder(documentResp.Body).Decode(&result)
+					client.DocumentID = result["document_id"].(string)
+					cleanupDocumentID = client.DocumentID
+					documentResp.Body.Close()
+				}
+			}
+		}
+	}
+
 	// Track cleanup IDs
 	var cleanupJobID string
 	skipNext := false
@@ -602,6 +630,7 @@ func TestJobServiceEndpoints(t *testing.T) {
 		name           string
 		method         string
 		url            string
+		urlFunc        func() string
 		body           interface{}
 		validateFunc   func(*testing.T, *http.Response)
 		expectedStatus int
@@ -625,7 +654,7 @@ func TestJobServiceEndpoints(t *testing.T) {
 			method:     "POST",
 			url:        jobServiceURL + "/jobs",
 			body: map[string]interface{}{
-				"document_id": "test-doc-123",
+				"document_id": client.DocumentID,
 				"printer_id":  client.PrinterID,
 				"user_name":   "Test User",
 				"user_email":  testEmail,
@@ -651,7 +680,7 @@ func TestJobServiceEndpoints(t *testing.T) {
 		{
 			name:           "get job by id",
 			method:         "GET",
-			url:            jobServiceURL + "/jobs/" + client.JobID,
+			urlFunc:        func() string { return jobServiceURL + "/jobs/" + client.JobID },
 			body:           nil,
 			expectedStatus: http.StatusOK,
 			skipOnFail:     true,
@@ -679,7 +708,12 @@ func TestJobServiceEndpoints(t *testing.T) {
 				t.Skip("Skipping due to previous test failure")
 			}
 
-			resp, err := client.makeRequest(tt.method, tt.url, tt.body, nil)
+			url := tt.url
+			if tt.urlFunc != nil {
+				url = tt.urlFunc()
+			}
+
+			resp, err := client.makeRequest(tt.method, url, tt.body, nil)
 			require.NoError(t, err, "Request should succeed")
 			defer resp.Body.Close()
 
@@ -704,13 +738,16 @@ func TestJobServiceEndpoints(t *testing.T) {
 		defer conn.Close(ctx)
 
 		if cleanupJobID != "" {
-			conn.Exec(ctx, "DELETE FROM print_jobs WHERE job_id = $1", cleanupJobID)
+			conn.Exec(ctx, "DELETE FROM print_jobs WHERE id = $1", cleanupJobID)
+		}
+		if cleanupDocumentID != "" {
+			conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupDocumentID)
 		}
 		if client.PrinterID != "" {
-			conn.Exec(ctx, "DELETE FROM printers WHERE printer_id = $1", client.PrinterID)
+			conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", client.PrinterID)
 		}
 		if client.AgentID != "" {
-			conn.Exec(ctx, "DELETE FROM agents WHERE agent_id = $1", client.AgentID)
+			conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", client.AgentID)
 		}
 		conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
 	})

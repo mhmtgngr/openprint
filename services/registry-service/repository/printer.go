@@ -38,9 +38,15 @@ func (r *PrinterRepository) Create(ctx context.Context, printer *Printer) error 
 	printer.CreatedAt = now
 	printer.UpdatedAt = now
 
+	// Handle empty capabilities by setting it to a valid empty JSON object
+	capabilities := printer.Capabilities
+	if capabilities == "" {
+		capabilities = "{}"
+	}
+
 	query := `
 		INSERT INTO printers (id, name, agent_id, organization_id, status, capabilities, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		VALUES ($1, $2, $3, NULLIF($4, '')::uuid, $5, $6, $7, $8)
 		RETURNING id
 	`
 
@@ -50,7 +56,7 @@ func (r *PrinterRepository) Create(ctx context.Context, printer *Printer) error 
 		printer.AgentID,
 		printer.OrganizationID,
 		printer.Status,
-		printer.Capabilities,
+		capabilities,
 		printer.CreatedAt,
 		printer.UpdatedAt,
 	).Scan(&printer.ID)
@@ -379,15 +385,24 @@ func (r *PrinterRepository) GetPrintersByAgents(ctx context.Context, agentIDs []
 // scanPrinter scans a printer from a database row.
 func (r *PrinterRepository) scanPrinter(row interface{ Scan(...interface{}) error }) (*Printer, error) {
 	var printer Printer
+	// Use a pointer for organization_id to handle NULL values
+	var orgID *string
 	err := row.Scan(
 		&printer.ID,
 		&printer.Name,
 		&printer.AgentID,
-		&printer.OrganizationID,
+		&orgID,
 		&printer.Status,
 		&printer.Capabilities,
 		&printer.CreatedAt,
 		&printer.UpdatedAt,
 	)
-	return &printer, err
+	if err != nil {
+		return nil, err
+	}
+	// Convert pointer to string, defaulting to empty string if NULL
+	if orgID != nil {
+		printer.OrganizationID = *orgID
+	}
+	return &printer, nil
 }

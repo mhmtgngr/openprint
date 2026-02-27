@@ -375,6 +375,8 @@ func (r *AgentRepository) RegisterOrFindByHostname(ctx context.Context, name, ve
 // scanAgent scans an agent from a database row.
 func (r *AgentRepository) scanAgent(row interface{ Scan(...interface{}) error }) (*Agent, error) {
 	var agent Agent
+	// Use a pointer for organization_id to handle NULL values
+	var orgID *string
 	err := row.Scan(
 		&agent.ID,
 		&agent.Name,
@@ -382,11 +384,18 @@ func (r *AgentRepository) scanAgent(row interface{ Scan(...interface{}) error })
 		&agent.OS,
 		&agent.Architecture,
 		&agent.Hostname,
-		&agent.OrganizationID,
+		&orgID,
 		&agent.Status,
 		&agent.LastHeartbeat,
 		&agent.CreatedAt,
 		&agent.UpdatedAt,
 	)
-	return &agent, err
+	if err != nil {
+		return nil, err
+	}
+	// Convert pointer to string, defaulting to empty string if NULL
+	if orgID != nil {
+		agent.OrganizationID = *orgID
+	}
+	return &agent, nil
 }
