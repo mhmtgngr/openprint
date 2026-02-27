@@ -96,3 +96,9 @@ The app will run at `http://localhost:3000` with API proxy to `http://localhost:
 5. **Fixed type mismatches** between concrete types and mock types
 
 The test framework is solid. The remaining failures are primarily due to the lack of integration test databases, which is expected for unit tests.
+[0;35m[18:51:11][0m [1;37m🧪 Tester[0m ✓ Committed
+[0;35m[18:51:12][0m [1;37m🧪 Tester[0m Running Go tests...
+[0;35m[18:51:15][0m [1;37m🧪 Tester[0m Working...
+Fixed. The `TestManager_ACSHandler/wrong_method` test now passes. 
+
+The issue was that `ACSHandler` didn't check the HTTP method before processing the request. I added a method check that returns `http.StatusMethodNotAllowed` (405) for non-POST requests.

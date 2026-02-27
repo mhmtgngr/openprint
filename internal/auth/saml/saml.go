@@ -301,6 +301,11 @@ func (m *Manager) MetadataHandler() http.Handler {
 // ACSHandler handles the Assertion Consumer Service endpoint.
 func (m *Manager) ACSHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
 		assertion, err := m.HandleResponse(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

@@ -1,0 +1,1142 @@
+=== RUN   TestDefaultConfig
+--- PASS: TestDefaultConfig (0.00s)
+=== RUN   TestNewManager
+=== RUN   TestNewManager/valid_config
+=== RUN   TestNewManager/nil_config_panics
+--- PASS: TestNewManager (0.00s)
+    --- PASS: TestNewManager/valid_config (0.00s)
+    --- PASS: TestNewManager/nil_config_panics (0.00s)
+=== RUN   TestManager_GenerateToken
+=== RUN   TestManager_GenerateToken/generate_access_token
+=== RUN   TestManager_GenerateToken/generate_refresh_token
+--- PASS: TestManager_GenerateToken (0.00s)
+    --- PASS: TestManager_GenerateToken/generate_access_token (0.00s)
+    --- PASS: TestManager_GenerateToken/generate_refresh_token (0.00s)
+=== RUN   TestManager_GenerateTokenPair
+--- PASS: TestManager_GenerateTokenPair (0.00s)
+=== RUN   TestManager_ValidateToken
+=== RUN   TestManager_ValidateToken/valid_token
+=== RUN   TestManager_ValidateToken/invalid_token
+=== RUN   TestManager_ValidateToken/malformed_token
+=== RUN   TestManager_ValidateToken/token_with_wrong_secret
+--- PASS: TestManager_ValidateToken (0.00s)
+    --- PASS: TestManager_ValidateToken/valid_token (0.00s)
+    --- PASS: TestManager_ValidateToken/invalid_token (0.00s)
+    --- PASS: TestManager_ValidateToken/malformed_token (0.00s)
+    --- PASS: TestManager_ValidateToken/token_with_wrong_secret (0.00s)
+=== RUN   TestManager_ValidateAccessToken
+=== RUN   TestManager_ValidateAccessToken/valid_access_token
+=== RUN   TestManager_ValidateAccessToken/refresh_token_rejected
+--- PASS: TestManager_ValidateAccessToken (0.00s)
+    --- PASS: TestManager_ValidateAccessToken/valid_access_token (0.00s)
+    --- PASS: TestManager_ValidateAccessToken/refresh_token_rejected (0.00s)
+=== RUN   TestManager_ValidateRefreshToken
+=== RUN   TestManager_ValidateRefreshToken/valid_refresh_token
+=== RUN   TestManager_ValidateRefreshToken/access_token_rejected
+--- PASS: TestManager_ValidateRefreshToken (0.00s)
+    --- PASS: TestManager_ValidateRefreshToken/valid_refresh_token (0.00s)
+    --- PASS: TestManager_ValidateRefreshToken/access_token_rejected (0.00s)
+=== RUN   TestManager_RefreshAccessToken
+=== RUN   TestManager_RefreshAccessToken/valid_refresh_token_generates_new_access_token
+=== RUN   TestManager_RefreshAccessToken/invalid_refresh_token
+=== RUN   TestManager_RefreshAccessToken/access_token_cannot_be_used_to_refresh
+--- PASS: TestManager_RefreshAccessToken (0.00s)
+    --- PASS: TestManager_RefreshAccessToken/valid_refresh_token_generates_new_access_token (0.00s)
+    --- PASS: TestManager_RefreshAccessToken/invalid_refresh_token (0.00s)
+    --- PASS: TestManager_RefreshAccessToken/access_token_cannot_be_used_to_refresh (0.00s)
+=== RUN   TestGetTokenID
+=== RUN   TestGetTokenID/extract_token_ID
+=== RUN   TestGetTokenID/invalid_token
+--- PASS: TestGetTokenID (0.00s)
+    --- PASS: TestGetTokenID/extract_token_ID (0.00s)
+    --- PASS: TestGetTokenID/invalid_token (0.00s)
+=== RUN   TestExtractUserInfo
+=== RUN   TestExtractUserInfo/extract_user_info
+=== RUN   TestExtractUserInfo/invalid_token
+--- PASS: TestExtractUserInfo (0.00s)
+    --- PASS: TestExtractUserInfo/extract_user_info (0.00s)
+    --- PASS: TestExtractUserInfo/invalid_token (0.00s)
+=== RUN   TestClaims_HasScope
+=== RUN   TestClaims_HasScope/scope_exists
+=== RUN   TestClaims_HasScope/scope_does_not_exist
+=== RUN   TestClaims_HasScope/empty_scopes
+=== RUN   TestClaims_HasScope/nil_scopes
+--- PASS: TestClaims_HasScope (0.00s)
+    --- PASS: TestClaims_HasScope/scope_exists (0.00s)
+    --- PASS: TestClaims_HasScope/scope_does_not_exist (0.00s)
+    --- PASS: TestClaims_HasScope/empty_scopes (0.00s)
+    --- PASS: TestClaims_HasScope/nil_scopes (0.00s)
+=== RUN   TestClaims_HasAnyScope
+=== RUN   TestClaims_HasAnyScope/has_one_of_the_scopes
+=== RUN   TestClaims_HasAnyScope/does_not_have_any_of_the_scopes
+=== RUN   TestClaims_HasAnyScope/nil_scopes
+--- PASS: TestClaims_HasAnyScope (0.00s)
+    --- PASS: TestClaims_HasAnyScope/has_one_of_the_scopes (0.00s)
+    --- PASS: TestClaims_HasAnyScope/does_not_have_any_of_the_scopes (0.00s)
+    --- PASS: TestClaims_HasAnyScope/nil_scopes (0.00s)
+=== RUN   TestClaims_IsAdmin
+=== RUN   TestClaims_IsAdmin/admin
+=== RUN   TestClaims_IsAdmin/user
+=== RUN   TestClaims_IsAdmin/org_admin
+=== RUN   TestClaims_IsAdmin/#00
+--- PASS: TestClaims_IsAdmin (0.00s)
+    --- PASS: TestClaims_IsAdmin/admin (0.00s)
+    --- PASS: TestClaims_IsAdmin/user (0.00s)
+    --- PASS: TestClaims_IsAdmin/org_admin (0.00s)
+    --- PASS: TestClaims_IsAdmin/#00 (0.00s)
+=== RUN   TestClaims_IsOrgAdmin
+=== RUN   TestClaims_IsOrgAdmin/org_admin
+=== RUN   TestClaims_IsOrgAdmin/admin
+=== RUN   TestClaims_IsOrgAdmin/user
+=== RUN   TestClaims_IsOrgAdmin/#00
+--- PASS: TestClaims_IsOrgAdmin (0.00s)
+    --- PASS: TestClaims_IsOrgAdmin/org_admin (0.00s)
+    --- PASS: TestClaims_IsOrgAdmin/admin (0.00s)
+    --- PASS: TestClaims_IsOrgAdmin/user (0.00s)
+    --- PASS: TestClaims_IsOrgAdmin/#00 (0.00s)
+=== RUN   TestClaims_IsValidForOrg
+=== RUN   TestClaims_IsValidForOrg/matching_org
+=== RUN   TestClaims_IsValidForOrg/different_org
+=== RUN   TestClaims_IsValidForOrg/empty_org_ID
+=== RUN   TestClaims_IsValidForOrg/empty_test_org
+--- PASS: TestClaims_IsValidForOrg (0.00s)
+    --- PASS: TestClaims_IsValidForOrg/matching_org (0.00s)
+    --- PASS: TestClaims_IsValidForOrg/different_org (0.00s)
+    --- PASS: TestClaims_IsValidForOrg/empty_org_ID (0.00s)
+    --- PASS: TestClaims_IsValidForOrg/empty_test_org (0.00s)
+=== RUN   TestScopeConstants
+=== RUN   TestScopeConstants/PrintRead
+=== RUN   TestScopeConstants/PrintWrite
+=== RUN   TestScopeConstants/PrintDelete
+=== RUN   TestScopeConstants/PrinterRead
+=== RUN   TestScopeConstants/PrinterWrite
+=== RUN   TestScopeConstants/UserRead
+=== RUN   TestScopeConstants/UserWrite
+=== RUN   TestScopeConstants/Admin
+--- PASS: TestScopeConstants (0.00s)
+    --- PASS: TestScopeConstants/PrintRead (0.00s)
+    --- PASS: TestScopeConstants/PrintWrite (0.00s)
+    --- PASS: TestScopeConstants/PrintDelete (0.00s)
+    --- PASS: TestScopeConstants/PrinterRead (0.00s)
+    --- PASS: TestScopeConstants/PrinterWrite (0.00s)
+    --- PASS: TestScopeConstants/UserRead (0.00s)
+    --- PASS: TestScopeConstants/UserWrite (0.00s)
+    --- PASS: TestScopeConstants/Admin (0.00s)
+=== RUN   TestAllScopes
+--- PASS: TestAllScopes (0.00s)
+=== RUN   TestDefaultScopes
+--- PASS: TestDefaultScopes (0.00s)
+=== RUN   TestAdminScopes
+--- PASS: TestAdminScopes (0.00s)
+=== RUN   TestTokenType_String
+=== RUN   TestTokenType_String/access
+=== RUN   TestTokenType_String/refresh
+--- PASS: TestTokenType_String (0.00s)
+    --- PASS: TestTokenType_String/access (0.00s)
+    --- PASS: TestTokenType_String/refresh (0.00s)
+=== RUN   TestManager_ExpiredToken
+--- PASS: TestManager_ExpiredToken (0.01s)
+=== RUN   TestClaims_RegisteredClaims
+--- PASS: TestClaims_RegisteredClaims (0.00s)
+PASS
+ok  	github.com/openprint/openprint/internal/auth/jwt	0.021s
+=== RUN   TestNewManager
+=== RUN   TestNewManager/valid_config
+=== RUN   TestNewManager/nil_config
+=== RUN   TestNewManager/missing_client_ID
+=== RUN   TestNewManager/default_scopes
+--- PASS: TestNewManager (0.00s)
+    --- PASS: TestNewManager/valid_config (0.00s)
+    --- PASS: TestNewManager/nil_config (0.00s)
+    --- PASS: TestNewManager/missing_client_ID (0.00s)
+    --- PASS: TestNewManager/default_scopes (0.00s)
+=== RUN   TestManager_AuthURL
+=== RUN   TestManager_AuthURL/generate_auth_URL
+=== RUN   TestManager_AuthURL/generate_auth_URL_with_empty_state
+--- PASS: TestManager_AuthURL (0.00s)
+    --- PASS: TestManager_AuthURL/generate_auth_URL (0.00s)
+    --- PASS: TestManager_AuthURL/generate_auth_URL_with_empty_state (0.00s)
+=== RUN   TestManager_ValidateState
+=== RUN   TestManager_ValidateState/valid_state
+=== RUN   TestManager_ValidateState/empty_state
+=== RUN   TestManager_ValidateState/unknown_state
+--- PASS: TestManager_ValidateState (0.00s)
+    --- PASS: TestManager_ValidateState/valid_state (0.00s)
+    --- PASS: TestManager_ValidateState/empty_state (0.00s)
+    --- PASS: TestManager_ValidateState/unknown_state (0.00s)
+=== RUN   TestRegistry
+=== RUN   TestRegistry/new_registry
+=== RUN   TestRegistry/register_and_get_provider
+=== RUN   TestRegistry/get_unregistered_provider
+=== RUN   TestRegistry/register_multiple_providers
+--- PASS: TestRegistry (0.00s)
+    --- PASS: TestRegistry/new_registry (0.00s)
+    --- PASS: TestRegistry/register_and_get_provider (0.00s)
+    --- PASS: TestRegistry/get_unregistered_provider (0.00s)
+    --- PASS: TestRegistry/register_multiple_providers (0.00s)
+=== RUN   TestProviderConfigForType
+=== RUN   TestProviderConfigForType/Google_provider
+=== RUN   TestProviderConfigForType/Azure_AD_provider
+=== RUN   TestProviderConfigForType/Okta_provider
+--- PASS: TestProviderConfigForType (0.00s)
+    --- PASS: TestProviderConfigForType/Google_provider (0.00s)
+    --- PASS: TestProviderConfigForType/Azure_AD_provider (0.00s)
+    --- PASS: TestProviderConfigForType/Okta_provider (0.00s)
+=== RUN   TestBuildEndpoint
+=== RUN   TestBuildEndpoint/Google_provider
+=== RUN   TestBuildEndpoint/Azure_AD_provider
+=== RUN   TestBuildEndpoint/custom_endpoint
+--- PASS: TestBuildEndpoint (0.00s)
+    --- PASS: TestBuildEndpoint/Google_provider (0.00s)
+    --- PASS: TestBuildEndpoint/Azure_AD_provider (0.00s)
+    --- PASS: TestBuildEndpoint/custom_endpoint (0.00s)
+=== RUN   TestParseCallbackURL
+=== RUN   TestParseCallbackURL/valid_callback_URL
+=== RUN   TestParseCallbackURL/callback_URL_with_error
+=== RUN   TestParseCallbackURL/invalid_URL
+--- PASS: TestParseCallbackURL (0.00s)
+    --- PASS: TestParseCallbackURL/valid_callback_URL (0.00s)
+    --- PASS: TestParseCallbackURL/callback_URL_with_error (0.00s)
+    --- PASS: TestParseCallbackURL/invalid_URL (0.00s)
+=== RUN   TestHandler
+=== RUN   TestHandler/invalid_state
+=== RUN   TestHandler/missing_code
+--- PASS: TestHandler (0.00s)
+    --- PASS: TestHandler/invalid_state (0.00s)
+    --- PASS: TestHandler/missing_code (0.00s)
+=== RUN   TestUserInfo
+=== RUN   TestUserInfo/create_UserInfo
+--- PASS: TestUserInfo (0.00s)
+    --- PASS: TestUserInfo/create_UserInfo (0.00s)
+=== RUN   TestProviderType_String
+--- PASS: TestProviderType_String (0.00s)
+=== RUN   TestProviderType_Constants
+=== RUN   TestProviderType_Constants/AzureAD
+=== RUN   TestProviderType_Constants/Google
+=== RUN   TestProviderType_Constants/Okta
+=== RUN   TestProviderType_Constants/Auth0
+=== RUN   TestProviderType_Constants/GenericOIDC
+--- PASS: TestProviderType_Constants (0.00s)
+    --- PASS: TestProviderType_Constants/AzureAD (0.00s)
+    --- PASS: TestProviderType_Constants/Google (0.00s)
+    --- PASS: TestProviderType_Constants/Okta (0.00s)
+    --- PASS: TestProviderType_Constants/Auth0 (0.00s)
+    --- PASS: TestProviderType_Constants/GenericOIDC (0.00s)
+=== RUN   TestDiscoveryDocument
+--- PASS: TestDiscoveryDocument (0.00s)
+=== RUN   TestTokenResponse
+--- PASS: TestTokenResponse (0.00s)
+=== RUN   TestManager_RefreshToken
+=== RUN   TestManager_RefreshToken/refresh_token_requires_real_provider
+--- PASS: TestManager_RefreshToken (0.00s)
+    --- PASS: TestManager_RefreshToken/refresh_token_requires_real_provider (0.00s)
+=== RUN   TestManager_GetUserInfo
+=== RUN   TestManager_GetUserInfo/get_user_info_requires_valid_token
+--- PASS: TestManager_GetUserInfo (0.00s)
+    --- PASS: TestManager_GetUserInfo/get_user_info_requires_valid_token (0.00s)
+=== RUN   TestExchange
+=== RUN   TestExchange/empty_code_returns_error
+--- PASS: TestExchange (0.00s)
+    --- PASS: TestExchange/empty_code_returns_error (0.00s)
+PASS
+ok  	github.com/openprint/openprint/internal/auth/oidc	0.010s
+# github.com/openprint/openprint/services/storage-service/handler [github.com/openprint/openprint/services/storage-service/handler.test]
+services/storage-service/handler/storage_test.go:541:2: declared and not used: h
+=== RUN   TestDefaultParameters
+--- PASS: TestDefaultParameters (0.00s)
+=== RUN   TestNewHasher
+--- PASS: TestNewHasher (0.00s)
+=== RUN   TestDefaultHasher
+--- PASS: TestDefaultHasher (0.00s)
+=== RUN   TestHasher_Generate
+=== RUN   TestHasher_Generate/generate_valid_hash
+=== RUN   TestHasher_Generate/generate_different_hashes_for_same_password
+=== RUN   TestHasher_Generate/empty_password_returns_error
+--- PASS: TestHasher_Generate (0.57s)
+    --- PASS: TestHasher_Generate/generate_valid_hash (0.18s)
+    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.39s)
+    --- PASS: TestHasher_Generate/empty_password_returns_error (0.00s)
+=== RUN   TestHasher_Verify
+=== RUN   TestHasher_Verify/verify_correct_password
+=== RUN   TestHasher_Verify/verify_incorrect_password
+=== RUN   TestHasher_Verify/verify_invalid_hash_format
+--- PASS: TestHasher_Verify (0.33s)
+    --- PASS: TestHasher_Verify/verify_correct_password (0.18s)
+    --- PASS: TestHasher_Verify/verify_incorrect_password (0.15s)
+    --- PASS: TestHasher_Verify/verify_invalid_hash_format (0.00s)
+=== RUN   TestHasher_MustGenerate
+=== RUN   TestHasher_MustGenerate/successful_generation
+=== RUN   TestHasher_MustGenerate/panics_on_empty_password
+--- PASS: TestHasher_MustGenerate (0.13s)
+    --- PASS: TestHasher_MustGenerate/successful_generation (0.13s)
+    --- PASS: TestHasher_MustGenerate/panics_on_empty_password (0.00s)
+=== RUN   TestGenerate
+--- PASS: TestGenerate (0.13s)
+=== RUN   TestVerify
+=== RUN   TestVerify/verify_correct_password
+=== RUN   TestVerify/verify_incorrect_password
+--- PASS: TestVerify (0.18s)
+    --- PASS: TestVerify/verify_correct_password (0.06s)
+    --- PASS: TestVerify/verify_incorrect_password (0.06s)
+=== RUN   TestMustVerify
+=== RUN   TestMustVerify/successful_verification
+=== RUN   TestMustVerify/panics_on_invalid_password
+--- PASS: TestMustVerify (0.17s)
+    --- PASS: TestMustVerify/successful_verification (0.06s)
+    --- PASS: TestMustVerify/panics_on_invalid_password (0.05s)
+=== RUN   TestDecodeHash
+=== RUN   TestDecodeHash/decode_valid_hash
+=== RUN   TestDecodeHash/decode_invalid_hash_format
+=== RUN   TestDecodeHash/decode_hash_with_wrong_version
+--- PASS: TestDecodeHash (0.06s)
+    --- PASS: TestDecodeHash/decode_valid_hash (0.00s)
+    --- PASS: TestDecodeHash/decode_invalid_hash_format (0.00s)
+    --- PASS: TestDecodeHash/decode_hash_with_wrong_version (0.00s)
+=== RUN   TestStrengthChecker
+=== RUN   TestStrengthChecker/default_checker_configuration
+--- PASS: TestStrengthChecker (0.00s)
+    --- PASS: TestStrengthChecker/default_checker_configuration (0.00s)
+=== RUN   TestNewStrengthChecker
+--- PASS: TestNewStrengthChecker (0.00s)
+=== RUN   TestStrengthChecker_Check
+=== RUN   TestStrengthChecker_Check/valid_strong_password
+=== RUN   TestStrengthChecker_Check/too_short
+=== RUN   TestStrengthChecker_Check/missing_uppercase
+=== RUN   TestStrengthChecker_Check/missing_lowercase
+=== RUN   TestStrengthChecker_Check/missing_number
+=== RUN   TestStrengthChecker_Check/missing_special_character
+=== RUN   TestStrengthChecker_Check/all_requirements_met
+--- PASS: TestStrengthChecker_Check (0.00s)
+    --- PASS: TestStrengthChecker_Check/valid_strong_password (0.00s)
+    --- PASS: TestStrengthChecker_Check/too_short (0.00s)
+    --- PASS: TestStrengthChecker_Check/missing_uppercase (0.00s)
+    --- PASS: TestStrengthChecker_Check/missing_lowercase (0.00s)
+    --- PASS: TestStrengthChecker_Check/missing_number (0.00s)
+    --- PASS: TestStrengthChecker_Check/missing_special_character (0.00s)
+    --- PASS: TestStrengthChecker_Check/all_requirements_met (0.00s)
+=== RUN   TestStrengthChecker_CustomRequirements
+=== RUN   TestStrengthChecker_CustomRequirements/meets_minimal_requirements
+=== RUN   TestStrengthChecker_CustomRequirements/too_short
+=== RUN   TestStrengthChecker_CustomRequirements/missing_lowercase
+--- PASS: TestStrengthChecker_CustomRequirements (0.00s)
+    --- PASS: TestStrengthChecker_CustomRequirements/meets_minimal_requirements (0.00s)
+    --- PASS: TestStrengthChecker_CustomRequirements/too_short (0.00s)
+    --- PASS: TestStrengthChecker_CustomRequirements/missing_lowercase (0.00s)
+=== RUN   TestStrengthChecker_CalculateStrength
+=== RUN   TestStrengthChecker_CalculateStrength/maximum_strength
+=== RUN   TestStrengthChecker_CalculateStrength/weak_password
+--- PASS: TestStrengthChecker_CalculateStrength (0.00s)
+    --- PASS: TestStrengthChecker_CalculateStrength/maximum_strength (0.00s)
+    --- PASS: TestStrengthChecker_CalculateStrength/weak_password (0.00s)
+=== RUN   TestHash_String
+--- PASS: TestHash_String (0.06s)
+=== RUN   TestConstantTimeComparison
+--- PASS: TestConstantTimeComparison (0.19s)
+=== RUN   TestCrossCompatibility
+--- PASS: TestCrossCompatibility (0.11s)
+=== RUN   TestEmptyPasswordHash
+=== RUN   TestEmptyPasswordHash/hash_empty_password
+=== RUN   TestEmptyPasswordHash/verify_empty_password
+--- PASS: TestEmptyPasswordHash (0.13s)
+    --- PASS: TestEmptyPasswordHash/hash_empty_password (0.00s)
+    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.13s)
+=== RUN   TestSpecialCharactersInPassword
+=== RUN   TestSpecialCharactersInPassword/special_chars
+=== RUN   TestSpecialCharactersInPassword/special_chars#01
+=== RUN   TestSpecialCharactersInPassword/special_chars#02
+=== RUN   TestSpecialCharactersInPassword/special_chars#03
+--- PASS: TestSpecialCharactersInPassword (0.49s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars (0.12s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.13s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.13s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.12s)
+PASS
+ok  	github.com/openprint/openprint/internal/auth/password	2.593s
+=== RUN   TestNewManager
+=== RUN   TestNewManager/valid_config
+=== RUN   TestNewManager/nil_config
+--- PASS: TestNewManager (0.00s)
+    --- PASS: TestNewManager/valid_config (0.00s)
+    --- PASS: TestNewManager/nil_config (0.00s)
+=== RUN   TestManager_Metadata
+--- PASS: TestManager_Metadata (0.00s)
+=== RUN   TestManager_AuthURL
+=== RUN   TestManager_AuthURL/generate_auth_URL_with_relay_state
+=== RUN   TestManager_AuthURL/generate_auth_URL_without_relay_state
+=== RUN   TestManager_AuthURL/unconfigured_SSO_URL
+--- PASS: TestManager_AuthURL (0.00s)
+    --- PASS: TestManager_AuthURL/generate_auth_URL_with_relay_state (0.00s)
+    --- PASS: TestManager_AuthURL/generate_auth_URL_without_relay_state (0.00s)
+    --- PASS: TestManager_AuthURL/unconfigured_SSO_URL (0.00s)
+=== RUN   TestManager_LogoutURL
+=== RUN   TestManager_LogoutURL/generate_logout_URL
+=== RUN   TestManager_LogoutURL/unconfigured_SLO_URL
+--- PASS: TestManager_LogoutURL (0.00s)
+    --- PASS: TestManager_LogoutURL/generate_logout_URL (0.00s)
+    --- PASS: TestManager_LogoutURL/unconfigured_SLO_URL (0.00s)
+=== RUN   TestManager_HandleResponse
+=== RUN   TestManager_HandleResponse/missing_SAML_response
+=== RUN   TestManager_HandleResponse/malformed_SAML_response
+--- PASS: TestManager_HandleResponse (0.00s)
+    --- PASS: TestManager_HandleResponse/missing_SAML_response (0.00s)
+    --- PASS: TestManager_HandleResponse/malformed_SAML_response (0.00s)
+=== RUN   TestManager_MetadataHandler
+--- PASS: TestManager_MetadataHandler (0.00s)
+=== RUN   TestManager_ACSHandler
+=== RUN   TestManager_ACSHandler/invalid_SAML_response
+=== RUN   TestManager_ACSHandler/wrong_method
+    saml_test.go:284: ACSHandler() status = 400, want 405
+--- FAIL: TestManager_ACSHandler (0.00s)
+    --- PASS: TestManager_ACSHandler/invalid_SAML_response (0.00s)
+    --- FAIL: TestManager_ACSHandler/wrong_method (0.00s)
+=== RUN   TestExtractAssertion
+--- PASS: TestExtractAssertion (0.00s)
+=== RUN   TestGenerateID
+--- PASS: TestGenerateID (0.00s)
+=== RUN   TestAssertion
+--- PASS: TestAssertion (0.00s)
+=== RUN   TestSAMLResponse_Struct
+--- PASS: TestSAMLResponse_Struct (0.00s)
+=== RUN   TestSAMLIssuer
+--- PASS: TestSAMLIssuer (0.00s)
+=== RUN   TestSAMLSubject
+--- PASS: TestSAMLSubject (0.00s)
+=== RUN   TestSAMLAttributeStatement
+--- PASS: TestSAMLAttributeStatement (0.00s)
+=== RUN   TestSAMLConditions
+--- PASS: TestSAMLConditions (0.00s)
+FAIL
+FAIL	github.com/openprint/openprint/internal/auth/saml	0.012s
+=== RUN   TestAppError_Error
+=== RUN   TestAppError_Error/error_without_underlying_error
+=== RUN   TestAppError_Error/error_with_underlying_error
+--- PASS: TestAppError_Error (0.00s)
+    --- PASS: TestAppError_Error/error_without_underlying_error (0.00s)
+    --- PASS: TestAppError_Error/error_with_underlying_error (0.00s)
+=== RUN   TestAppError_Unwrap
+--- PASS: TestAppError_Unwrap (0.00s)
+=== RUN   TestAppError_Unwrap_nil
+--- PASS: TestAppError_Unwrap_nil (0.00s)
+=== RUN   TestNew
+--- PASS: TestNew (0.00s)
+=== RUN   TestWrap
+--- PASS: TestWrap (0.00s)
+=== RUN   TestWrap_nil
+--- PASS: TestWrap_nil (0.00s)
+=== RUN   TestAppError_WithCode
+--- PASS: TestAppError_WithCode (0.00s)
+=== RUN   TestAppError_WithDetail
+--- PASS: TestAppError_WithDetail (0.00s)
+=== RUN   TestAppError_WithDetail_multiple
+--- PASS: TestAppError_WithDetail_multiple (0.00s)
+=== RUN   TestIsNotFound
+=== RUN   TestIsNotFound/ErrNotFound_standard_error
+=== RUN   TestIsNotFound/AppError_with_404_status
+=== RUN   TestIsNotFound/AppError_with_500_status
+=== RUN   TestIsNotFound/other_error
+=== RUN   TestIsNotFound/nil_error
+--- PASS: TestIsNotFound (0.00s)
+    --- PASS: TestIsNotFound/ErrNotFound_standard_error (0.00s)
+    --- PASS: TestIsNotFound/AppError_with_404_status (0.00s)
+    --- PASS: TestIsNotFound/AppError_with_500_status (0.00s)
+    --- PASS: TestIsNotFound/other_error (0.00s)
+    --- PASS: TestIsNotFound/nil_error (0.00s)
+=== RUN   TestIsUnauthorized
+=== RUN   TestIsUnauthorized/ErrUnauthorized_standard_error
+=== RUN   TestIsUnauthorized/AppError_with_401_status
+=== RUN   TestIsUnauthorized/AppError_with_500_status
+=== RUN   TestIsUnauthorized/other_error
+--- PASS: TestIsUnauthorized (0.00s)
+    --- PASS: TestIsUnauthorized/ErrUnauthorized_standard_error (0.00s)
+    --- PASS: TestIsUnauthorized/AppError_with_401_status (0.00s)
+    --- PASS: TestIsUnauthorized/AppError_with_500_status (0.00s)
+    --- PASS: TestIsUnauthorized/other_error (0.00s)
+=== RUN   TestIsConflict
+=== RUN   TestIsConflict/ErrConflict_standard_error
+=== RUN   TestIsConflict/AppError_with_409_status
+=== RUN   TestIsConflict/AppError_with_500_status
+=== RUN   TestIsConflict/other_error
+--- PASS: TestIsConflict (0.00s)
+    --- PASS: TestIsConflict/ErrConflict_standard_error (0.00s)
+    --- PASS: TestIsConflict/AppError_with_409_status (0.00s)
+    --- PASS: TestIsConflict/AppError_with_500_status (0.00s)
+    --- PASS: TestIsConflict/other_error (0.00s)
+=== RUN   TestCodeFromStatus
+=== RUN   TestCodeFromStatus/BAD_REQUEST
+=== RUN   TestCodeFromStatus/UNAUTHORIZED
+=== RUN   TestCodeFromStatus/FORBIDDEN
+=== RUN   TestCodeFromStatus/NOT_FOUND
+=== RUN   TestCodeFromStatus/CONFLICT
+=== RUN   TestCodeFromStatus/TOO_MANY_REQUESTS
+=== RUN   TestCodeFromStatus/INTERNAL_ERROR
+=== RUN   TestCodeFromStatus/SERVICE_UNAVAILABLE
+=== RUN   TestCodeFromStatus/UNKNOWN_ERROR
+=== RUN   TestCodeFromStatus/UNKNOWN_ERROR#01
+--- PASS: TestCodeFromStatus (0.00s)
+    --- PASS: TestCodeFromStatus/BAD_REQUEST (0.00s)
+    --- PASS: TestCodeFromStatus/UNAUTHORIZED (0.00s)
+    --- PASS: TestCodeFromStatus/FORBIDDEN (0.00s)
+    --- PASS: TestCodeFromStatus/NOT_FOUND (0.00s)
+    --- PASS: TestCodeFromStatus/CONFLICT (0.00s)
+    --- PASS: TestCodeFromStatus/TOO_MANY_REQUESTS (0.00s)
+    --- PASS: TestCodeFromStatus/INTERNAL_ERROR (0.00s)
+    --- PASS: TestCodeFromStatus/SERVICE_UNAVAILABLE (0.00s)
+    --- PASS: TestCodeFromStatus/UNKNOWN_ERROR (0.00s)
+    --- PASS: TestCodeFromStatus/UNKNOWN_ERROR#01 (0.00s)
+=== RUN   TestNewValidationError
+--- PASS: TestNewValidationError (0.00s)
+=== RUN   TestHTTPStatus
+=== RUN   TestHTTPStatus/AppError_with_custom_status
+=== RUN   TestHTTPStatus/standard_error
+=== RUN   TestHTTPStatus/nil_error
+--- PASS: TestHTTPStatus (0.00s)
+    --- PASS: TestHTTPStatus/AppError_with_custom_status (0.00s)
+    --- PASS: TestHTTPStatus/standard_error (0.00s)
+    --- PASS: TestHTTPStatus/nil_error (0.00s)
+=== RUN   TestToJSON
+=== RUN   TestToJSON/AppError_without_details
+=== RUN   TestToJSON/AppError_with_details
+=== RUN   TestToJSON/standard_error
+--- PASS: TestToJSON (0.00s)
+    --- PASS: TestToJSON/AppError_without_details (0.00s)
+    --- PASS: TestToJSON/AppError_with_details (0.00s)
+    --- PASS: TestToJSON/standard_error (0.00s)
+=== RUN   TestStandardErrors
+=== RUN   TestStandardErrors/ErrNotFound
+=== RUN   TestStandardErrors/ErrUnauthorized
+=== RUN   TestStandardErrors/ErrForbidden
+=== RUN   TestStandardErrors/ErrConflict
+=== RUN   TestStandardErrors/ErrInvalidInput
+=== RUN   TestStandardErrors/ErrInternal
+=== RUN   TestStandardErrors/ErrServiceUnavailable
+=== RUN   TestStandardErrors/ErrDuplicate
+=== RUN   TestStandardErrors/ErrExpired
+--- PASS: TestStandardErrors (0.00s)
+    --- PASS: TestStandardErrors/ErrNotFound (0.00s)
+    --- PASS: TestStandardErrors/ErrUnauthorized (0.00s)
+    --- PASS: TestStandardErrors/ErrForbidden (0.00s)
+    --- PASS: TestStandardErrors/ErrConflict (0.00s)
+    --- PASS: TestStandardErrors/ErrInvalidInput (0.00s)
+    --- PASS: TestStandardErrors/ErrInternal (0.00s)
+    --- PASS: TestStandardErrors/ErrServiceUnavailable (0.00s)
+    --- PASS: TestStandardErrors/ErrDuplicate (0.00s)
+    --- PASS: TestStandardErrors/ErrExpired (0.00s)
+=== RUN   TestAppError_Chaining
+--- PASS: TestAppError_Chaining (0.00s)
+=== RUN   TestValidationErrorType
+--- PASS: TestValidationErrorType (0.00s)
+PASS
+ok  	github.com/openprint/openprint/internal/shared/errors	0.009s
+=== RUN   TestInitTracer
+=== RUN   TestInitTracer/no_jaeger_endpoint_returns_noop_tracer
+=== RUN   TestInitTracer/with_jaeger_endpoint_creates_stdout_tracer
+--- PASS: TestInitTracer (0.00s)
+    --- PASS: TestInitTracer/no_jaeger_endpoint_returns_noop_tracer (0.00s)
+    --- PASS: TestInitTracer/with_jaeger_endpoint_creates_stdout_tracer (0.00s)
+=== RUN   TestMiddleware
+=== RUN   TestMiddleware/middleware_creates_span
+--- PASS: TestMiddleware (0.01s)
+    --- PASS: TestMiddleware/middleware_creates_span (0.01s)
+=== RUN   TestHTTPMiddleware
+=== RUN   TestHTTPMiddleware/http_middleware_adds_duration_attribute
+=== RUN   TestHTTPMiddleware/http_middleware_captures_status_code
+--- PASS: TestHTTPMiddleware (0.01s)
+    --- PASS: TestHTTPMiddleware/http_middleware_adds_duration_attribute (0.01s)
+    --- PASS: TestHTTPMiddleware/http_middleware_captures_status_code (0.00s)
+=== RUN   TestResponseWriter_WriteHeader
+=== RUN   TestResponseWriter_WriteHeader/WriteHeader_is_called_only_once
+=== RUN   TestResponseWriter_WriteHeader/default_status_is_OK
+=== RUN   TestResponseWriter_WriteHeader/wroteHeader_flag_is_set
+--- PASS: TestResponseWriter_WriteHeader (0.00s)
+    --- PASS: TestResponseWriter_WriteHeader/WriteHeader_is_called_only_once (0.00s)
+    --- PASS: TestResponseWriter_WriteHeader/default_status_is_OK (0.00s)
+    --- PASS: TestResponseWriter_WriteHeader/wroteHeader_flag_is_set (0.00s)
+=== RUN   TestLooksLikeID
+=== RUN   TestLooksLikeID/valid_UUID
+=== RUN   TestLooksLikeID/numeric_ID
+=== RUN   TestLooksLikeID/empty_string
+=== RUN   TestLooksLikeID/path_with_ID
+=== RUN   TestLooksLikeID/invalid_UUID_format
+=== RUN   TestLooksLikeID/mixed_alphanumeric
+=== RUN   TestLooksLikeID/UUID_without_dashes
+=== RUN   TestLooksLikeID/long_numeric
+--- PASS: TestLooksLikeID (0.00s)
+    --- PASS: TestLooksLikeID/valid_UUID (0.00s)
+    --- PASS: TestLooksLikeID/numeric_ID (0.00s)
+    --- PASS: TestLooksLikeID/empty_string (0.00s)
+    --- PASS: TestLooksLikeID/path_with_ID (0.00s)
+    --- PASS: TestLooksLikeID/invalid_UUID_format (0.00s)
+    --- PASS: TestLooksLikeID/mixed_alphanumeric (0.00s)
+    --- PASS: TestLooksLikeID/UUID_without_dashes (0.00s)
+    --- PASS: TestLooksLikeID/long_numeric (0.00s)
+=== RUN   TestFmtSpanName
+=== RUN   TestFmtSpanName/simple_path
+=== RUN   TestFmtSpanName/path_with_ID
+=== RUN   TestFmtSpanName/nested_path_with_ID
+=== RUN   TestFmtSpanName/root_path
+    middleware_test.go:246: fmtSpanName() = GET /, want GET
+=== RUN   TestFmtSpanName/path_with_internal_prefix
+    middleware_test.go:246: fmtSpanName() = GET /internal, want GET /health
+=== RUN   TestFmtSpanName/empty_path
+--- FAIL: TestFmtSpanName (0.00s)
+    --- PASS: TestFmtSpanName/simple_path (0.00s)
+    --- PASS: TestFmtSpanName/path_with_ID (0.00s)
+    --- PASS: TestFmtSpanName/nested_path_with_ID (0.00s)
+    --- FAIL: TestFmtSpanName/root_path (0.00s)
+    --- FAIL: TestFmtSpanName/path_with_internal_prefix (0.00s)
+    --- FAIL: TestFmtSpanName/empty_path (0.00s)
+panic: invalid NewRequest arguments; parse "": empty url [recovered]
+	panic: invalid NewRequest arguments; parse "": empty url
+
+goroutine 83 [running]:
+testing.tRunner.func1.2({0x7dbec0, 0xc000036e20})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x7dbec0?, 0xc000036e20?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+net/http/httptest.NewRequestWithContext({0x91d538, 0xc119c0}, {0x87ed43?, 0x66b?}, {0x915ef0, 0x0}, {0x0, 0x0})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/net/http/httptest/httptest.go:52 +0x6b4
+net/http/httptest.NewRequest(...)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/net/http/httptest/httptest.go:20
+github.com/openprint/openprint/internal/shared/telemetry.TestFmtSpanName.func1(0xc0000d2fc0)
+	/home/cmit/openprint/internal/shared/telemetry/middleware_test.go:243 +0x48
+testing.tRunner(0xc0000d2fc0, 0xc000022f50)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 77
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/internal/shared/telemetry	0.036s
+?   	github.com/openprint/openprint/services/auth-service	[no test files]
+?   	github.com/openprint/openprint/services/auth-service/handler	[no test files]
+=== RUN   TestNewSessionRepository
+--- PASS: TestNewSessionRepository (0.00s)
+=== RUN   TestSessionRepository_key
+=== RUN   TestSessionRepository_key/simple_token
+=== RUN   TestSessionRepository_key/empty_token
+=== RUN   TestSessionRepository_key/uuid_token
+--- PASS: TestSessionRepository_key (0.00s)
+    --- PASS: TestSessionRepository_key/simple_token (0.00s)
+    --- PASS: TestSessionRepository_key/empty_token (0.00s)
+    --- PASS: TestSessionRepository_key/uuid_token (0.00s)
+=== RUN   TestSessionRepository_userKey
+=== RUN   TestSessionRepository_userKey/simple_user_ID
+=== RUN   TestSessionRepository_userKey/empty_user_ID
+=== RUN   TestSessionRepository_userKey/uuid_user_ID
+--- PASS: TestSessionRepository_userKey (0.00s)
+    --- PASS: TestSessionRepository_userKey/simple_user_ID (0.00s)
+    --- PASS: TestSessionRepository_userKey/empty_user_ID (0.00s)
+    --- PASS: TestSessionRepository_userKey/uuid_user_ID (0.00s)
+=== RUN   TestSession_Struct
+--- PASS: TestSession_Struct (0.00s)
+=== RUN   TestSessionRepository_Store
+=== RUN   TestSessionRepository_Store/store_session
+--- FAIL: TestSessionRepository_Store (0.00s)
+    --- FAIL: TestSessionRepository_Store/store_session (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x5f5ff4]
+
+goroutine 31 [running]:
+testing.tRunner.func1.2({0x671360, 0x933580})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x671360?, 0x933580?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/redis/go-redis/v9.(*Client).Pipeline(...)
+	/home/cmit/go/pkg/mod/github.com/redis/go-redis/v9@v9.7.0/redis.go:721
+github.com/openprint/openprint/services/auth-service/repository.(*SessionRepository).Store(0xc0001a6360, {0x740da8, 0x964720}, {0x6db6aa, 0x8}, {0x6dbc7d, 0x9}, 0x4e94914f0000)
+	/home/cmit/openprint/services/auth-service/repository/session.go:39 +0xd4
+github.com/openprint/openprint/services/auth-service/repository.TestSessionRepository_Store.func1(0xc000222000)
+	/home/cmit/openprint/services/auth-service/repository/session_test.go:126 +0x47
+testing.tRunner(0xc000222000, 0xc0001a0700)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 30
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/services/auth-service/repository	0.016s
+?   	github.com/openprint/openprint/services/job-service	[no test files]
+=== RUN   TestNewHandler
+--- PASS: TestNewHandler (0.00s)
+=== RUN   TestCreateJobRequest_Validation
+=== RUN   TestCreateJobRequest_Validation/valid_request
+=== RUN   TestCreateJobRequest_Validation/missing_document_id
+=== RUN   TestCreateJobRequest_Validation/missing_printer_id
+=== RUN   TestCreateJobRequest_Validation/missing_user_email
+--- PASS: TestCreateJobRequest_Validation (0.00s)
+    --- PASS: TestCreateJobRequest_Validation/valid_request (0.00s)
+    --- PASS: TestCreateJobRequest_Validation/missing_document_id (0.00s)
+    --- PASS: TestCreateJobRequest_Validation/missing_printer_id (0.00s)
+    --- PASS: TestCreateJobRequest_Validation/missing_user_email (0.00s)
+=== RUN   TestCreateJobRequest_Defaults
+--- PASS: TestCreateJobRequest_Defaults (0.00s)
+=== RUN   TestJobToResponse
+--- PASS: TestJobToResponse (0.00s)
+=== RUN   TestHandler_CreateJob_Success
+--- PASS: TestHandler_CreateJob_Success (0.00s)
+=== RUN   TestHandler_CreateJob_MissingFields
+--- PASS: TestHandler_CreateJob_MissingFields (0.00s)
+=== RUN   TestHandler_GetJob_Success
+--- PASS: TestHandler_GetJob_Success (0.00s)
+=== RUN   TestHandler_GetJob_NotFound
+--- PASS: TestHandler_GetJob_NotFound (0.00s)
+=== RUN   TestHandler_ListJobs
+--- PASS: TestHandler_ListJobs (0.00s)
+=== RUN   TestHandler_CancelJob
+--- PASS: TestHandler_CancelJob (0.00s)
+=== RUN   TestHandler_CancelJob_Completed
+--- PASS: TestHandler_CancelJob_Completed (0.00s)
+=== RUN   TestHandler_RetryJob
+--- PASS: TestHandler_RetryJob (0.00s)
+=== RUN   TestHandler_PauseJob
+--- PASS: TestHandler_PauseJob (0.00s)
+=== RUN   TestHandler_ResumeJob
+--- PASS: TestHandler_ResumeJob (0.00s)
+=== RUN   TestHandler_QueueStats
+--- PASS: TestHandler_QueueStats (0.00s)
+=== RUN   TestHandler_JobHistory
+--- PASS: TestHandler_JobHistory (0.00s)
+=== RUN   TestRespondJSON
+--- PASS: TestRespondJSON (0.00s)
+=== RUN   TestRespondError_AppError
+--- PASS: TestRespondError_AppError (0.00s)
+=== RUN   TestRespondError_GenericError
+--- PASS: TestRespondError_GenericError (0.00s)
+PASS
+ok  	github.com/openprint/openprint/services/job-service/handler	0.015s
+=== RUN   TestNewProcessor
+--- PASS: TestNewProcessor (0.00s)
+=== RUN   TestProcessor_Stats
+--- PASS: TestProcessor_Stats (0.00s)
+=== RUN   TestProcessor_Cancel
+    processor_test.go:220: Job marked for cancellation while still in processing map
+--- PASS: TestProcessor_Cancel (0.00s)
+=== RUN   TestProcessor_CompleteJob
+--- PASS: TestProcessor_CompleteJob (0.00s)
+=== RUN   TestProcessor_CompleteJobFailure
+--- PASS: TestProcessor_CompleteJobFailure (0.00s)
+=== RUN   TestProcessor_UpdateJobProgress
+--- PASS: TestProcessor_UpdateJobProgress (0.00s)
+=== RUN   TestProcessor_RequeueFailedJobs
+--- PASS: TestProcessor_RequeueFailedJobs (0.00s)
+=== RUN   TestProcessor_ConfigDefaults
+=== RUN   TestProcessor_ConfigDefaults/default_config
+=== RUN   TestProcessor_ConfigDefaults/single_worker
+=== RUN   TestProcessor_ConfigDefaults/many_workers
+--- PASS: TestProcessor_ConfigDefaults (0.00s)
+    --- PASS: TestProcessor_ConfigDefaults/default_config (0.00s)
+    --- PASS: TestProcessor_ConfigDefaults/single_worker (0.00s)
+    --- PASS: TestProcessor_ConfigDefaults/many_workers (0.00s)
+=== RUN   TestProcessor_JobQueue
+--- PASS: TestProcessor_JobQueue (0.00s)
+=== RUN   TestProcessor_TrackingMaps
+--- PASS: TestProcessor_TrackingMaps (0.00s)
+=== RUN   TestProcessor_Stop
+--- PASS: TestProcessor_Stop (0.00s)
+=== RUN   TestStats_Struct
+--- PASS: TestStats_Struct (0.00s)
+=== RUN   TestProcessor_ConcurrentAccess
+    processor_test.go:592: Concurrent access test passed
+--- PASS: TestProcessor_ConcurrentAccess (0.00s)
+PASS
+ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
+=== RUN   TestNewJobHistoryRepository
+--- PASS: TestNewJobHistoryRepository (0.00s)
+=== RUN   TestJobHistory_Struct
+--- PASS: TestJobHistory_Struct (0.00s)
+=== RUN   TestJobHistoryRepository_CRUD
+    job_history_test.go:47: Requires database connection
+--- SKIP: TestJobHistoryRepository_CRUD (0.00s)
+=== RUN   TestJobHistoryRepository_QueryMethods
+=== RUN   TestJobHistoryRepository_QueryMethods/get_latest_by_job_ID
+--- FAIL: TestJobHistoryRepository_QueryMethods (0.00s)
+    --- FAIL: TestJobHistoryRepository_QueryMethods/get_latest_by_job_ID (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x80 pc=0x5a06d0]
+
+goroutine 26 [running]:
+testing.tRunner.func1.2({0x6191a0, 0x85e7d0})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x6191a0?, 0x85e7d0?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/jackc/pgx/v5/pgxpool.(*Pool).Acquire(0x0, {0x6bbb38?, 0x88d880?})
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/pgxpool/pool.go:513 +0x50
+github.com/jackc/pgx/v5/pgxpool.(*Pool).QueryRow(0x663e4d?, {0x6bbb38, 0x88d880}, {0x674c0d, 0x7f}, {0xc000112610, 0x1, 0x1})
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/pgxpool/pool.go:652 +0x4f
+github.com/openprint/openprint/services/job-service/repository.(*JobHistoryRepository).GetLatestByJobID(0xc000126178, {0x6bbb38, 0x88d880}, {0x663e4d, 0x7})
+	/home/cmit/openprint/services/job-service/repository/job_history.go:173 +0xc9
+github.com/openprint/openprint/services/job-service/repository.TestJobHistoryRepository_QueryMethods.func1(0xc000103880)
+	/home/cmit/openprint/services/job-service/repository/job_history_test.go:101 +0x30
+testing.tRunner(0xc000103880, 0xc00012c620)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 25
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/services/job-service/repository	0.012s
+?   	github.com/openprint/openprint/services/notification-service	[no test files]
+=== RUN   TestNewHandler
+--- PASS: TestNewHandler (0.00s)
+=== RUN   TestHandler_BroadcastHandler
+=== RUN   TestHandler_BroadcastHandler/broadcast_to_all
+=== RUN   TestHandler_BroadcastHandler/broadcast_to_user
+=== RUN   TestHandler_BroadcastHandler/broadcast_to_org
+=== RUN   TestHandler_BroadcastHandler/invalid_method
+=== RUN   TestHandler_BroadcastHandler/invalid_JSON
+--- PASS: TestHandler_BroadcastHandler (0.00s)
+    --- PASS: TestHandler_BroadcastHandler/broadcast_to_all (0.00s)
+    --- PASS: TestHandler_BroadcastHandler/broadcast_to_user (0.00s)
+    --- PASS: TestHandler_BroadcastHandler/broadcast_to_org (0.00s)
+    --- PASS: TestHandler_BroadcastHandler/invalid_method (0.00s)
+    --- PASS: TestHandler_BroadcastHandler/invalid_JSON (0.00s)
+=== RUN   TestHandler_ConnectionsHandler
+=== RUN   TestHandler_ConnectionsHandler/get_total_connections
+=== RUN   TestHandler_ConnectionsHandler/get_user_connections
+=== RUN   TestHandler_ConnectionsHandler/get_org_connections
+=== RUN   TestHandler_ConnectionsHandler/invalid_method
+--- PASS: TestHandler_ConnectionsHandler (0.00s)
+    --- PASS: TestHandler_ConnectionsHandler/get_total_connections (0.00s)
+    --- PASS: TestHandler_ConnectionsHandler/get_user_connections (0.00s)
+    --- PASS: TestHandler_ConnectionsHandler/get_org_connections (0.00s)
+    --- PASS: TestHandler_ConnectionsHandler/invalid_method (0.00s)
+=== RUN   TestHandler_SendJobStatusUpdate
+--- PASS: TestHandler_SendJobStatusUpdate (0.00s)
+=== RUN   TestHandler_SendJobProgressUpdate
+--- PASS: TestHandler_SendJobProgressUpdate (0.00s)
+=== RUN   TestHandler_BroadcastPrinterStatus
+--- PASS: TestHandler_BroadcastPrinterStatus (0.00s)
+=== RUN   TestHandler_NotifyUser
+--- PASS: TestHandler_NotifyUser (0.00s)
+=== RUN   TestHandler_BroadcastSystemNotification
+--- PASS: TestHandler_BroadcastSystemNotification (0.00s)
+=== RUN   TestHandler_GetActiveUsers
+2026/02/27 18:51:13 Client registered: client-1 (user: user-123, org: )
+--- PASS: TestHandler_GetActiveUsers (0.00s)
+=== RUN   TestHandler_GetConnectionStats
+--- PASS: TestHandler_GetConnectionStats (0.00s)
+=== RUN   TestHandler_ServeWS
+    handler_test.go:463: WebSocket connection established (unexpected in test)
+--- PASS: TestHandler_ServeWS (0.00s)
+=== RUN   TestHandler_ServeWS_QueryParams
+=== RUN   TestHandler_ServeWS_QueryParams/with_user_id_and_org_id
+=== RUN   TestHandler_ServeWS_QueryParams/with_only_user_id
+=== RUN   TestHandler_ServeWS_QueryParams/without_params
+--- PASS: TestHandler_ServeWS_QueryParams (0.00s)
+    --- PASS: TestHandler_ServeWS_QueryParams/with_user_id_and_org_id (0.00s)
+    --- PASS: TestHandler_ServeWS_QueryParams/with_only_user_id (0.00s)
+    --- PASS: TestHandler_ServeWS_QueryParams/without_params (0.00s)
+=== RUN   TestClient_HandleMessage
+=== RUN   TestClient_HandleMessage/ping_message
+=== RUN   TestClient_HandleMessage/subscribe_message
+=== RUN   TestClient_HandleMessage/unsubscribe_message
+=== RUN   TestClient_HandleMessage/unknown_message_type
+2026/02/27 18:51:13 Unknown message type: unknown
+=== RUN   TestClient_HandleMessage/invalid_JSON
+2026/02/27 18:51:13 Failed to unmarshal message: invalid character 'i' looking for beginning of value
+--- PASS: TestClient_HandleMessage (0.00s)
+    --- PASS: TestClient_HandleMessage/ping_message (0.00s)
+    --- PASS: TestClient_HandleMessage/subscribe_message (0.00s)
+    --- PASS: TestClient_HandleMessage/unsubscribe_message (0.00s)
+    --- PASS: TestClient_HandleMessage/unknown_message_type (0.00s)
+    --- PASS: TestClient_HandleMessage/invalid_JSON (0.00s)
+=== RUN   TestWritePump_Timeout
+    handler_test.go:607: writePump exit test passed
+--- PASS: TestWritePump_Timeout (0.00s)
+=== RUN   TestReadPump_CloseOnPongTimeout
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: )
+2026/02/27 18:51:13 Client unregistered: client-1
+--- PASS: TestReadPump_CloseOnPongTimeout (0.00s)
+=== RUN   TestHandler_URLParsing
+--- PASS: TestHandler_URLParsing (0.00s)
+=== RUN   TestHandler_ServeWS_WithAuthHeader
+--- PASS: TestHandler_ServeWS_WithAuthHeader (0.00s)
+=== RUN   TestNewHub
+--- PASS: TestNewHub (0.00s)
+=== RUN   TestHub_RegisterClient
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+--- PASS: TestHub_RegisterClient (0.00s)
+=== RUN   TestHub_UnregisterClient
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/27 18:51:13 Client unregistered: client-1
+--- PASS: TestHub_UnregisterClient (0.00s)
+=== RUN   TestHub_Broadcast
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/27 18:51:13 Client registered: client-2 (user: user-2, org: org-1)
+2026/02/27 18:51:13 Client registered: client-3 (user: user-3, org: org-1)
+--- PASS: TestHub_Broadcast (0.00s)
+=== RUN   TestHub_SendToUser
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/27 18:51:13 Client registered: client-2 (user: user-1, org: org-1)
+2026/02/27 18:51:13 Client registered: client-3 (user: user-2, org: org-1)
+--- PASS: TestHub_SendToUser (0.00s)
+=== RUN   TestHub_BroadcastToOrg
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/27 18:51:13 Client registered: client-2 (user: user-2, org: org-1)
+2026/02/27 18:51:13 Client registered: client-3 (user: user-3, org: org-2)
+--- PASS: TestHub_BroadcastToOrg (0.00s)
+=== RUN   TestHub_GetConnectionCount
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: )
+2026/02/27 18:51:13 Client registered: client-2 (user: user-2, org: )
+2026/02/27 18:51:13 Client registered: client-3 (user: user-3, org: )
+2026/02/27 18:51:13 Client registered: client-4 (user: user-4, org: )
+2026/02/27 18:51:13 Client registered: client-5 (user: user-5, org: )
+--- PASS: TestHub_GetConnectionCount (0.00s)
+=== RUN   TestHub_GetConnectionsByUser
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: )
+2026/02/27 18:51:13 Client registered: client-2 (user: user-1, org: )
+2026/02/27 18:51:13 Client registered: client-3 (user: user-1, org: )
+2026/02/27 18:51:13 Client registered: client-other (user: user-2, org: )
+--- PASS: TestHub_GetConnectionsByUser (0.00s)
+=== RUN   TestHub_GetConnectionsByOrg
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/27 18:51:13 Client registered: client-2 (user: user-2, org: org-1)
+2026/02/27 18:51:13 Client registered: client-3 (user: user-3, org: org-1)
+2026/02/27 18:51:13 Client registered: client-4 (user: user-4, org: org-1)
+2026/02/27 18:51:13 Client registered: client-5 (user: user-5, org: org-2)
+2026/02/27 18:51:13 Client registered: client-6 (user: user-6, org: org-2)
+--- PASS: TestHub_GetConnectionsByOrg (0.00s)
+=== RUN   TestHub_Shutdown
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: )
+2026/02/27 18:51:13 Client registered: client-2 (user: user-2, org: )
+2026/02/27 18:51:13 Client registered: client-3 (user: user-3, org: )
+--- PASS: TestHub_Shutdown (0.00s)
+=== RUN   TestMessage_CreationFunctions
+=== RUN   TestMessage_CreationFunctions/JobStatusUpdate
+=== RUN   TestMessage_CreationFunctions/JobProgressUpdate
+=== RUN   TestMessage_CreationFunctions/PrinterStatusUpdate
+=== RUN   TestMessage_CreationFunctions/NewNotification
+--- PASS: TestMessage_CreationFunctions (0.00s)
+    --- PASS: TestMessage_CreationFunctions/JobStatusUpdate (0.00s)
+    --- PASS: TestMessage_CreationFunctions/JobProgressUpdate (0.00s)
+    --- PASS: TestMessage_CreationFunctions/PrinterStatusUpdate (0.00s)
+    --- PASS: TestMessage_CreationFunctions/NewNotification (0.00s)
+=== RUN   TestHub_SendMethods
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: org-1)
+=== RUN   TestHub_SendMethods/SendToUser
+=== RUN   TestHub_SendMethods/BroadcastToOrg
+=== RUN   TestHub_SendMethods/Broadcast
+--- PASS: TestHub_SendMethods (0.01s)
+    --- PASS: TestHub_SendMethods/SendToUser (0.00s)
+    --- PASS: TestHub_SendMethods/BroadcastToOrg (0.00s)
+    --- PASS: TestHub_SendMethods/Broadcast (0.00s)
+=== RUN   TestClient_NoOrg
+2026/02/27 18:51:13 Client registered: client-1 (user: user-1, org: )
+--- PASS: TestClient_NoOrg (0.00s)
+=== RUN   TestHub_Run_ContextCancellation
+--- PASS: TestHub_Run_ContextCancellation (0.00s)
+=== RUN   TestRemoveClient
+--- PASS: TestRemoveClient (0.00s)
+=== RUN   TestRemoveClient_NotFound
+--- PASS: TestRemoveClient_NotFound (0.00s)
+PASS
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.027s
+?   	github.com/openprint/openprint/services/registry-service	[no test files]
+?   	github.com/openprint/openprint/services/registry-service/handler	[no test files]
+=== RUN   TestNewAgentRepository
+--- PASS: TestNewAgentRepository (0.00s)
+=== RUN   TestAgent_Struct
+--- PASS: TestAgent_Struct (0.00s)
+=== RUN   TestAgentRepository_CRUD
+=== RUN   TestAgentRepository_CRUD/create_agent
+    agent_test.go:67: Requires database connection
+=== RUN   TestAgentRepository_CRUD/find_by_ID
+    agent_test.go:75: Requires database connection
+=== RUN   TestAgentRepository_CRUD/find_by_hostname
+    agent_test.go:83: Requires database connection
+=== RUN   TestAgentRepository_CRUD/update_agent
+--- FAIL: TestAgentRepository_CRUD (0.00s)
+    --- SKIP: TestAgentRepository_CRUD/create_agent (0.00s)
+    --- SKIP: TestAgentRepository_CRUD/find_by_ID (0.00s)
+    --- SKIP: TestAgentRepository_CRUD/find_by_hostname (0.00s)
+    --- FAIL: TestAgentRepository_CRUD/update_agent (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x80 pc=0x59f570]
+
+goroutine 26 [running]:
+testing.tRunner.func1.2({0x615d80, 0x8577f0})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x615d80?, 0x8577f0?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/jackc/pgx/v5/pgxpool.(*Pool).Acquire(0x0, {0x6b6b98?, 0x8866e0?})
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/pgxpool/pool.go:513 +0x50
+github.com/jackc/pgx/v5/pgxpool.(*Pool).Exec(0x65b100?, {0x6b6b98, 0x8866e0}, {0x670be5, 0xa5}, {0xc00018c090, 0x9, 0x9})
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/pgxpool/pool.go:605 +0x6c
+github.com/openprint/openprint/services/registry-service/repository.(*AgentRepository).Update(0xc00011e178, {0x6b6b98, 0x8866e0}, 0xc00012ab60)
+	/home/cmit/openprint/services/registry-service/repository/agent.go:212 +0x31c
+github.com/openprint/openprint/services/registry-service/repository.TestAgentRepository_CRUD.func4(0xc000103a40)
+	/home/cmit/openprint/services/registry-service/repository/agent_test.go:91 +0x28
+testing.tRunner(0xc000103a40, 0xc00011d3e0)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 22
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/services/registry-service/repository	0.013s
+?   	github.com/openprint/openprint/services/storage-service	[no test files]
+FAIL	github.com/openprint/openprint/services/storage-service/handler [build failed]
+=== RUN   TestNewEncryptedBackend
+--- PASS: TestNewEncryptedBackend (0.00s)
+=== RUN   TestNewEncryptedBackend_KeyDerivation
+--- PASS: TestNewEncryptedBackend_KeyDerivation (0.00s)
+=== RUN   TestEncryptedBackend_PutAndGet
+--- PASS: TestEncryptedBackend_PutAndGet (0.00s)
+=== RUN   TestEncryptedBackend_Get_NotFound
+--- PASS: TestEncryptedBackend_Get_NotFound (0.00s)
+=== RUN   TestEncryptedBackend_Get_TooShort
+--- PASS: TestEncryptedBackend_Get_TooShort (0.00s)
+=== RUN   TestEncryptedBackend_Get_WrongKey
+--- PASS: TestEncryptedBackend_Get_WrongKey (0.00s)
+=== RUN   TestEncryptedBackend_Delete
+--- PASS: TestEncryptedBackend_Delete (0.00s)
+=== RUN   TestEncryptedBackend_Exists
+--- PASS: TestEncryptedBackend_Exists (0.00s)
+=== RUN   TestEncryptedBackend_List
+--- PASS: TestEncryptedBackend_List (0.00s)
+=== RUN   TestEncryptedBackend_GetURL
+--- PASS: TestEncryptedBackend_GetURL (0.00s)
+=== RUN   TestEncryptedBackend_EncryptString
+--- PASS: TestEncryptedBackend_EncryptString (0.00s)
+=== RUN   TestEncryptedBackend_DecryptString_InvalidBase64
+--- PASS: TestEncryptedBackend_DecryptString_InvalidBase64 (0.00s)
+=== RUN   TestEncryptedBackend_DecryptString_TooShort
+--- PASS: TestEncryptedBackend_DecryptString_TooShort (0.00s)
+=== RUN   TestGenerateKey
+--- PASS: TestGenerateKey (0.00s)
+=== RUN   TestDeriveKey
+--- PASS: TestDeriveKey (0.00s)
+=== RUN   TestEncryptedBackend_EmptyData
+--- PASS: TestEncryptedBackend_EmptyData (0.00s)
+=== RUN   TestEncryptedBackend_LargeData
+--- PASS: TestEncryptedBackend_LargeData (0.01s)
+=== RUN   TestEncryptedBackend_MultipleFiles
+--- PASS: TestEncryptedBackend_MultipleFiles (0.00s)
+=== RUN   TestEncryptedBackend_SpecialCharacters
+--- PASS: TestEncryptedBackend_SpecialCharacters (0.00s)
+=== RUN   TestLocalBackend
+    encryption_test.go:519: Skipping LocalBackend tests in unit test environment
+--- SKIP: TestLocalBackend (0.00s)
+=== RUN   TestS3Backend
+    encryption_test.go:524: Skipping S3Backend tests - requires external dependencies
+--- SKIP: TestS3Backend (0.00s)
+=== RUN   TestDataBuffer_Read
+=== RUN   TestDataBuffer_Read/read_all_data
+    s3_test.go:51: Expected EOF error
+=== RUN   TestDataBuffer_Read/read_in_chunks
+    s3_test.go:60: Expected to read 11 bytes, got 5
+=== RUN   TestDataBuffer_Read/empty_buffer
+=== RUN   TestDataBuffer_Read/single_byte
+    s3_test.go:51: Expected EOF error
+--- FAIL: TestDataBuffer_Read (0.00s)
+    --- FAIL: TestDataBuffer_Read/read_all_data (0.00s)
+    --- FAIL: TestDataBuffer_Read/read_in_chunks (0.00s)
+    --- PASS: TestDataBuffer_Read/empty_buffer (0.00s)
+    --- FAIL: TestDataBuffer_Read/single_byte (0.00s)
+=== RUN   TestDataBuffer_MultipleReads
+    s3_test.go:102: Expected EOF on second read
+--- FAIL: TestDataBuffer_MultipleReads (0.00s)
+=== RUN   TestS3Config_Defaults
+--- PASS: TestS3Config_Defaults (0.00s)
+=== RUN   TestS3Config_AllFields
+--- PASS: TestS3Config_AllFields (0.00s)
+=== RUN   TestBackend_Interface
+--- PASS: TestBackend_Interface (0.00s)
+=== RUN   TestLocalBackend_Paths
+=== RUN   TestLocalBackend_Paths/simple_path
+=== RUN   TestLocalBackend_Paths/nested_path
+=== RUN   TestLocalBackend_Paths/root_path
+--- PASS: TestLocalBackend_Paths (0.00s)
+    --- PASS: TestLocalBackend_Paths/simple_path (0.00s)
+    --- PASS: TestLocalBackend_Paths/nested_path (0.00s)
+    --- PASS: TestLocalBackend_Paths/root_path (0.00s)
+=== RUN   TestLocalBackend_MethodSignatures
+=== RUN   TestLocalBackend_MethodSignatures/Put_signature
+=== RUN   TestLocalBackend_MethodSignatures/Get_signature
+=== RUN   TestLocalBackend_MethodSignatures/Delete_signature
+=== RUN   TestLocalBackend_MethodSignatures/Exists_signature
+=== RUN   TestLocalBackend_MethodSignatures/List_signature
+=== RUN   TestLocalBackend_MethodSignatures/GetURL_signature
+--- PASS: TestLocalBackend_MethodSignatures (0.00s)
+    --- PASS: TestLocalBackend_MethodSignatures/Put_signature (0.00s)
+    --- PASS: TestLocalBackend_MethodSignatures/Get_signature (0.00s)
+    --- PASS: TestLocalBackend_MethodSignatures/Delete_signature (0.00s)
+    --- PASS: TestLocalBackend_MethodSignatures/Exists_signature (0.00s)
+    --- PASS: TestLocalBackend_MethodSignatures/List_signature (0.00s)
+    --- PASS: TestLocalBackend_MethodSignatures/GetURL_signature (0.00s)
+=== RUN   TestS3Backend_MethodSignatures
+=== RUN   TestS3Backend_MethodSignatures/Put_method_exists
+=== RUN   TestS3Backend_MethodSignatures/Get_method_exists
+=== RUN   TestS3Backend_MethodSignatures/Delete_method_exists
+=== RUN   TestS3Backend_MethodSignatures/Exists_method_exists
+=== RUN   TestS3Backend_MethodSignatures/List_method_exists
+=== RUN   TestS3Backend_MethodSignatures/GetURL_method_exists
+--- PASS: TestS3Backend_MethodSignatures (0.00s)
+    --- PASS: TestS3Backend_MethodSignatures/Put_method_exists (0.00s)
+    --- PASS: TestS3Backend_MethodSignatures/Get_method_exists (0.00s)
+    --- PASS: TestS3Backend_MethodSignatures/Delete_method_exists (0.00s)
+    --- PASS: TestS3Backend_MethodSignatures/Exists_method_exists (0.00s)
+    --- PASS: TestS3Backend_MethodSignatures/List_method_exists (0.00s)
+    --- PASS: TestS3Backend_MethodSignatures/GetURL_method_exists (0.00s)
+=== RUN   TestEncryptedBackend_Wrapping
+--- PASS: TestEncryptedBackend_Wrapping (0.00s)
+=== RUN   TestEncryptedBackend_Delegates
+--- PASS: TestEncryptedBackend_Delegates (0.00s)
+=== RUN   TestBackend_PutGetDelete_Lifecycle
+--- PASS: TestBackend_PutGetDelete_Lifecycle (0.00s)
+=== RUN   TestBackend_List_PrefixMatching
+=== RUN   TestBackend_List_PrefixMatching/list_docs_prefix
+=== RUN   TestBackend_List_PrefixMatching/list_images_prefix
+=== RUN   TestBackend_List_PrefixMatching/list_all
+--- PASS: TestBackend_List_PrefixMatching (0.00s)
+    --- PASS: TestBackend_List_PrefixMatching/list_docs_prefix (0.00s)
+    --- PASS: TestBackend_List_PrefixMatching/list_images_prefix (0.00s)
+    --- PASS: TestBackend_List_PrefixMatching/list_all (0.00s)
+=== RUN   TestS3Backend_IntegrationNotes
+    s3_test.go:400: S3Backend integration tests require:
+    s3_test.go:401: - A running MinIO or S3 instance
+    s3_test.go:402: - Proper credentials configuration
+    s3_test.go:403: - Network connectivity
+    s3_test.go:404: 
+    s3_test.go:405: For integration testing, consider using:
+    s3_test.go:406: - testcontainers-go for MinIO
+    s3_test.go:407: - Environment-based configuration
+    s3_test.go:408: - Fixture files for upload/download testing
+--- PASS: TestS3Backend_IntegrationNotes (0.00s)
+=== RUN   TestLocalBackend_IntegrationNotes
+    s3_test.go:412: LocalBackend integration tests require:
+    s3_test.go:413: - Temporary directory creation and cleanup
+    s3_test.go:414: - File system permissions
+    s3_test.go:415: - Proper cleanup of test files
+--- PASS: TestLocalBackend_IntegrationNotes (0.00s)
+=== RUN   TestBackend_GetURL
+=== RUN   TestBackend_GetURL/mock_backend_GetURL
+=== RUN   TestBackend_GetURL/local_backend_GetURL_format
+=== RUN   TestBackend_GetURL/encrypted_backend_GetURL_not_supported
+--- PASS: TestBackend_GetURL (0.00s)
+    --- PASS: TestBackend_GetURL/mock_backend_GetURL (0.00s)
+    --- PASS: TestBackend_GetURL/local_backend_GetURL_format (0.00s)
+    --- PASS: TestBackend_GetURL/encrypted_backend_GetURL_not_supported (0.00s)
+=== RUN   TestBackend_ErrorHandling
+=== RUN   TestBackend_ErrorHandling/Put_with_error
+--- FAIL: TestBackend_ErrorHandling (0.00s)
+    --- FAIL: TestBackend_ErrorHandling/Put_with_error (0.00s)
+panic: assignment to entry in nil map [recovered]
+	panic: assignment to entry in nil map
+
+goroutine 78 [running]:
+testing.tRunner.func1.2({0x696e40, 0x945f80})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x696e40?, 0x945f80?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/openprint/openprint/services/storage-service/storage.(*mockBackend).Put(...)
+	/home/cmit/openprint/services/storage-service/storage/encryption_test.go:23
+github.com/openprint/openprint/services/storage-service/storage.TestBackend_ErrorHandling.func1(0xc000603c00)
+	/home/cmit/openprint/services/storage-service/storage/s3_test.go:458 +0x57
+testing.tRunner(0xc000603c00, 0xc000076e40)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 77
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/services/storage-service/storage	0.021s
+FAIL

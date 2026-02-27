@@ -22,7 +22,8 @@
     },
     "testing": {
       "status": "running",
-      "_updated": "2026-02-27T18:19:59.917647"
+      "_updated": "2026-02-27T18:51:11.995329",
+      "write_tests": "done"
     }
   },
   "project": "create new project like Ezeep (cloud-routed) \u2014 the only commercial product that could work because it routes print jobs through the cloud. i want to print remote windows print jobs locally",
