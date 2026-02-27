@@ -1,0 +1,191 @@
+REQUIREMENTS (enriched with market research):
+{
+  "project_name": "OpenPrint Cloud",
+  "summary": "A cloud-routed printing service that enables remote Windows print jobs to be printed on local printers. Print jobs are routed through a cloud service similar to Ezeep Cloud, allowing users to print from any location to any connected printer without requiring direct network access.",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "as_a": "remote worker",
+      "i_want": "print documents from my remote Windows computer to my home printer",
+      "so_that": "I can get physical copies of documents without being physically present",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "User can install a lightweight print server agent on any network with printers",
+        "User can install a print client on remote Windows machines",
+        "Print jobs appear on the remote computer's print queue",
+        "Print jobs are securely transmitted through the cloud to the destination printer",
+        "User receives confirmation when print job completes",
+        "Print job status is visible in real-time"
+      ]
+    },
+    {
+      "id": "US-002",
+      "as_a": "system administrator",
+      "i_want": "manage users and their printer permissions centrally",
+      "so_that": "I can control who can print to which printers",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Admin can invite users to the organization",
+        "Admin can assign printers to users or groups",
+        "Admin can view print job history and usage statistics",
+        "Admin can disable printers or users",
+        "Admin can set print quotas per user"
+      ]
+    },
+    {
+      "id": "US-003",
+      "as_a": "end user",
+      "i_want": "view my print job history and current status",
+      "so_that": "I can track my printing activity and troubleshoot issues",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "User can view list of all print jobs submitted",
+        "User can see current status (queued, processing, completed, failed)",
+        "User can see page count and document name for each job",
+        "User can cancel pending print jobs",
+        "User can re-submit failed print jobs"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "print agent installer",
+      "i_want": "the agent to auto-discover printers on the local network",
+      "so_that": "I don't have to manually configure each printer",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Agent discovers network printers via mDNS/Bonjour",
+        "Agent discovers USB printers connected to the host machine",
+        "Agent can test printer connectivity",
+        "User can enable/disable specific printers for cloud printing"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "mobile user",
+      "i_want": "print documents from my phone to a remote printer",
+      "so_that": "I can print without needing a computer",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Mobile app available for iOS and Android",
+        "User can select documents from cloud storage or device",
+        "User can select destination printer",
+        "User receives push notification on completion"
+      ]
+    },
+    {
+      "id": "US-006",
+      "as_a": "security conscious user",
+      "i_want": "all print jobs encrypted in transit and at rest",
+      "so_that": "my sensitive documents cannot be intercepted",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "All communication uses TLS 1.3",
+        "Print jobs are encrypted with end-to-end encryption",
+        "Stored print jobs are encrypted at rest",
+        "Authentication required for all operations",
+        "Option for print job to auto-delete after printing"
+      ]
+    },
+    {
+      "id": "US-007",
+      "as_a": "user with multiple printers",
+      "i_want": "select which printer to use for each job",
+      "so_that": "I can route to the appropriate printer (color, duplex, etc.)",
+      "priority
+
+MARKET ANALYSIS:
+{
+ "competitor_summary": [
+  {
+   "name": "PaperCut",
+   "strengths": [
+    "100M+ users",
+    "Cross-platform support",
+    "Mobile printing",
+    "Job tracking & cost estimation",
+    "Quotas & scripting",
+    "Watermarking",
+    "Environmental reporting"
+   ],
+   "weaknesses": [
+    "Higher cost for enterprise features",
+    "Complex setup for small deployments"
+   ],
+   "pricing_model": "Per-user licensing, enterprise tiered pricing"
+  },
+  {
+   "name": "Printix",
+   "strengths": [
+    "Cloud-native",
+    "GDPR compliant",
+    "$1.99/user/month starting",
+    "Auto-discovery",
+    "Secure release",
+    "Role-based access"
+   ],
+   "weaknesses": [
+    "Limited offline printing",
+    "Dependent on internet connectivity"
+   ],
+   "pricing_model": "$1.99-$4.99/user/month subscription"
+  },
+  {
+   "name": "Microsoft Azure Universal Print",
+   "strengths": [
+    "Microsoft 365 integration",
+    "SSO with Azure AD",
+    "No on-prem infrastructure",
+    "Enterprise security"
+   ],
+   "weaknesses": [
+    "Windows-centric",
+    "Requires Microsoft ecosystem",
+    "Limited printer driver support"
+   ],
+   "pricing_model": "Included in Microsoft 365 subscriptions"
+  },
+  {
+   "name": "ezeep Cloud",
+   "strengths": [
+    "Similar cloud routing model",
+    "Mobile apps",
+    "Multi-tenant",
+    "Auto-discovery",
+    "Secure printing"
+   ],
+   "weaknesses": [
+    "Pricing higher for SMBs",
+    "Limited advanced admin features"
+   ],
+   "pricing_model": "Subscription-based, tiered by users"
+  },
+  {
+   "name": "Google Workspace Print",
+   "strengths": [
+    "Google ecosystem integration",
+    "Zero infrastructure",
+    "ChromeOS native support"
+   ],
+   "weaknesses": [
+    "Limited to Chrome/Google ecosystem",
+    "Fewer admin controls"
+   ],
+   "pricing_model": "Included in Google Workspace"
+  }
+ ],
+ "feature_comparison": [
+  {
+   "feature": "Cross-platform client support (macOS, Linux, ChromeOS)",
+   "competitors_with_feature": [
+    "PaperCut",
+    "Printix",
+    "ezeep"
+   
+
+PROJECT CONTEXT (from CLAUDE.md):
+Project: openprint (no CLAUDE.md found)
+
+EXISTING FILES:
+
+
+Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.

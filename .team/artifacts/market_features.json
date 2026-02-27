@@ -1,0 +1,9 @@
+{
+  "results": [
+    {
+      "title": "Claude search",
+      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"Cloud Printing Service Market Analysis 2025\",\n      \"content\": \"Global cloud printing service market reached 13.66 billion RMB in 2023, projected to reach 49.13 billion RMB by 2029 with 23.78% CAGR. Key competitors include ezeep, UniPrint, Xerox, Kyocera International, Ray & Shoup(Cirrato), Cortado, Google, MS Group. Market segments include public cloud, private cloud, and hybrid cloud deployment models across healthcare, finance, education, IT/telecom, and government sectors.\",\n      \"url\": \"https://m.sohu.com/a/894566845_121995772\"\n    },\n    {\n      \"title\": \"Google Cloud Print Alternatives 2026 - Enterprise Comparison Guide\",\n      \"content\": \"Comprehensive comparison of 10 cloud printing solutions for 2026: 1) TeamXiang Cloud (multi-cloud aggregation platform), 2) AWS IoT Print Services, 3) Azure Universal Print (Microsoft ecosystem), 4) Alibaba Cloud Intelligent Printing, 5) Google Workspace built-in print, 6) Tencent Cloud Smart Pri",
+      "url": ""
+    }
+  ]
+}

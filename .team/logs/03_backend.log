@@ -1,0 +1,30 @@
+All backend services build successfully. Here's a summary of the bugs that were fixed:
+
+**Build errors fixed:**
+
+1. **SAML implementation** (`internal/auth/saml/saml.go`):
+   - Added missing `crypto/rand` import (aliased as `cryptoRand`)
+   - Fixed `assertion.Attributes` → `assertion.AttributeStatements` (struct field mismatch)
+
+2. **Session repository** (`services/auth-service/repository/session.go`):
+   - Fixed `SAdd` call - converted `[]string` to `[]interface{}` for Redis client compatibility
+
+3. **Telemetry middleware** (`internal/shared/telemetry/middleware.go`):
+   - Fixed `semconv.DeploymentEnvironmentKey` → `semconv.DeploymentEnvironmentNameKey`
+
+4. **HTTP handlers** (all services):
+   - Fixed import conflicts between standard library `errors` package and custom `apperrors` package
+   - Added `stderrors` alias for standard library `errors.As()` calls
+   - Replaced all `errors.New*`, `errors.Wrap`, `errors.Err` with `apperrors` equivalents
+
+5. **Registry service** (`services/registry-service/`):
+   - Fixed `RegisterAgentRequest.Organization` → `OrganizationID` (field name mismatch)
+   - Fixed `List()` return values - captured all 3 return values instead of 2
+   - Removed unused `uuid` import from printer repository
+
+6. **Storage service** (`services/storage-service/storage/s3.go`):
+   - Fixed type assertion syntax in `Exists()` method
+   - Fixed `GetURL()` - converted `*url.URL` to string via `.String()`
+
+7. **Auth service** (`services/auth-service/main.go`):
+   - Added blank identifier `_` for unused `errors` import
