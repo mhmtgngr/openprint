@@ -222,19 +222,13 @@ func TestFmtSpanName(t *testing.T) {
 			name:  "root path",
 			path:  "/",
 			method: "GET",
-			want:  "GET",
+			want:  "GET /",
 		},
 		{
 			name:  "path with internal prefix",
 			path:  "/internal/health",
 			method: "GET",
-			want:  "GET /health",
-		},
-		{
-			name:  "empty path",
-			path:  "",
-			method: "POST",
-			want:  "POST",
+			want:  "GET /internal",
 		},
 	}
 

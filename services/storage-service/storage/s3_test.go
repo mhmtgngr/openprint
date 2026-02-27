@@ -12,31 +12,31 @@ func TestDataBuffer_Read(t *testing.T) {
 		name      string
 		data      []byte
 		readSize  int
-		wantEOF   bool
+		expectEOF bool // EOF on first read
 	}{
 		{
-			name:     "read all data",
-			data:     []byte("hello world"),
-			readSize: 100,
-			wantEOF:  true,
+			name:      "read all data",
+			data:      []byte("hello world"),
+			readSize:  100,
+			expectEOF: false, // EOF only on next read
 		},
 		{
-			name:     "read in chunks",
-			data:     []byte("hello world"),
-			readSize: 5,
-			wantEOF:  false,
+			name:      "read in chunks",
+			data:      []byte("hello world"),
+			readSize:  5,
+			expectEOF: false,
 		},
 		{
-			name:     "empty buffer",
-			data:     []byte(""),
-			readSize: 10,
-			wantEOF:  true,
+			name:      "empty buffer",
+			data:      []byte(""),
+			readSize:  10,
+			expectEOF: true, // Empty buffer returns EOF immediately
 		},
 		{
-			name:     "single byte",
-			data:     []byte("x"),
-			readSize: 10,
-			wantEOF:  true,
+			name:      "single byte",
+			data:      []byte("x"),
+			readSize:  10,
+			expectEOF: false, // Reads 1 byte, EOF on next read
 		},
 	}
 
@@ -47,13 +47,21 @@ func TestDataBuffer_Read(t *testing.T) {
 			result := make([]byte, tt.readSize)
 			n, err := buf.Read(result)
 
-			if tt.wantEOF && err == nil {
-				t.Error("Expected EOF error")
+			// Empty buffer should return EOF immediately
+			if len(tt.data) == 0 {
+				if n != 0 {
+					t.Errorf("Expected 0 bytes for empty buffer, got %d", n)
+				}
+				if err == nil {
+					t.Error("Expected EOF error for empty buffer")
+				}
+				return
 			}
 
-			expected := len(tt.data)
-			if n > expected {
-				n = expected
+			// For non-empty data, we read up to readSize or available data
+			expected := tt.readSize
+			if expected > len(tt.data) {
+				expected = len(tt.data)
 			}
 
 			if n != expected {
@@ -66,6 +74,19 @@ func TestDataBuffer_Read(t *testing.T) {
 					t.Errorf("Byte %d mismatch", i)
 				}
 			}
+
+			// Check that next read returns EOF after all data consumed
+			if n == len(tt.data) {
+				// All data consumed, next read should return EOF
+				result2 := make([]byte, 1)
+				n2, err2 := buf.Read(result2)
+				if n2 != 0 {
+					t.Errorf("Expected 0 bytes on second read, got %d", n2)
+				}
+				if err2 == nil {
+					t.Error("Expected EOF on second read")
+				}
+			}
 		})
 	}
 }
@@ -76,7 +97,7 @@ func TestDataBuffer_MultipleReads(t *testing.T) {
 
 	// First read of 5 bytes
 	result1 := make([]byte, 5)
-	n1, _ := buf.Read(result1)
+	n1, err1 := buf.Read(result1)
 
 	if n1 != 5 {
 		t.Errorf("Expected 5 bytes, got %d", n1)
@@ -84,6 +105,10 @@ func TestDataBuffer_MultipleReads(t *testing.T) {
 
 	if string(result1) != "01234" {
 		t.Errorf("Expected '01234', got '%s'", string(result1))
+	}
+
+	if err1 != nil {
+		t.Errorf("Unexpected error on first read: %v", err1)
 	}
 
 	// Second read of remaining
@@ -98,11 +123,12 @@ func TestDataBuffer_MultipleReads(t *testing.T) {
 		t.Errorf("Expected '56789', got '%s'", string(result2[:n2]))
 	}
 
-	if err2 == nil {
-		t.Error("Expected EOF on second read")
+	// No EOF on second read - dataBuffer only returns EOF on next call
+	if err2 != nil {
+		t.Errorf("Unexpected error on second read: %v", err2)
 	}
 
-	// Third read should return EOF immediately
+	// Third read should return EOF
 	result3 := make([]byte, 10)
 	n3, err3 := buf.Read(result3)
 
@@ -451,7 +477,10 @@ func TestBackend_GetURL(t *testing.T) {
 }
 
 func TestBackend_ErrorHandling(t *testing.T) {
-	mockBackend := &mockBackend{err: &testError{"simulated error"}}
+	mockBackend := &mockBackend{
+		data: make(map[string][]byte),
+		err:  &testError{"simulated error"},
+	}
 	ctx := context.Background()
 
 	t.Run("Put with error", func(t *testing.T) {

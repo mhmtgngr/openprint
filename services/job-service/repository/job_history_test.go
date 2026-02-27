@@ -94,6 +94,7 @@ func TestJobHistoryRepository_CRUD(t *testing.T) {
 }
 
 func TestJobHistoryRepository_QueryMethods(t *testing.T) {
+	t.Skip("Requires database connection")
 	repo := NewJobHistoryRepository(nil)
 	ctx := context.Background()
 
@@ -120,6 +121,7 @@ func TestJobHistoryRepository_QueryMethods(t *testing.T) {
 }
 
 func TestJobHistoryRepository_BatchOperations(t *testing.T) {
+	t.Skip("Requires database connection")
 	repo := NewJobHistoryRepository(nil)
 	ctx := context.Background()
 
@@ -154,6 +156,7 @@ func TestJobHistoryRepository_BatchOperations(t *testing.T) {
 }
 
 func TestJobHistoryRepository_DeleteOld(t *testing.T) {
+	t.Skip("Requires database connection")
 	repo := NewJobHistoryRepository(nil)
 	ctx := context.Background()
 
