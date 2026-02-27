@@ -11,6 +11,18 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Connection defines the interface for a WebSocket connection.
+type Connection interface {
+	WriteJSON(v interface{}) error
+	ReadJSON(v interface{}) error
+	Close() error
+	SetWriteDeadline(t time.Time) error
+	SetPongHandler(h func(appData string) error)
+	SetReadDeadline(t time.Time) error
+	ReadMessage() (messageType int, p []byte, err error)
+	WriteMessage(messageType int, data []byte) error
+}
+
 // Message represents a notification message.
 type Message struct {
 	Type      string                 `json:"type"`
@@ -24,7 +36,7 @@ type Client struct {
 	UserID   string
 	OrgID    string
 	Hub      *Hub
-	Conn     *websocket.Conn
+	Conn     Connection
 	Send     chan *Message
 	mu       sync.Mutex
 }

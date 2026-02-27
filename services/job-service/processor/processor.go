@@ -12,10 +12,42 @@ import (
 	"github.com/openprint/openprint/services/job-service/repository"
 )
 
+// JobRepository defines the interface for job repository operations.
+type JobRepository interface {
+	Create(ctx context.Context, job *repository.PrintJob) error
+	FindByID(ctx context.Context, id string) (*repository.PrintJob, error)
+	Update(ctx context.Context, job *repository.PrintJob) error
+	FindByStatus(ctx context.Context, status string, limit int) ([]*repository.PrintJob, error)
+	CountByStatus(ctx context.Context, status string) (int64, error)
+	UpdateStatus(ctx context.Context, jobID, status string) error
+	Delete(ctx context.Context, id string) error
+	FindByPrinter(ctx context.Context, printerID string, limit, offset int) ([]*repository.PrintJob, error)
+	FindByUser(ctx context.Context, userEmail string, limit, offset int) ([]*repository.PrintJob, error)
+	ListWithFilters(ctx context.Context, limit, offset int, printerID, status, userEmail string) ([]*repository.PrintJob, int, error)
+	GetNextPendingJob(ctx context.Context, printerID string) (*repository.PrintJob, error)
+	UpdateJobProgress(ctx context.Context, jobID string, progress int) error
+	GetJobsNeedingRetry(ctx context.Context, maxRetries, limit int) ([]*repository.PrintJob, error)
+	AssignAgent(ctx context.Context, jobID, agentID string) error
+}
+
+// JobHistoryRepository defines the interface for job history repository operations.
+type JobHistoryRepository interface {
+	Create(ctx context.Context, history *repository.JobHistory) error
+	FindByID(ctx context.Context, id string) (*repository.JobHistory, error)
+	FindByJobID(ctx context.Context, jobID string) ([]*repository.JobHistory, error)
+	FindByStatus(ctx context.Context, status string, limit, offset int) ([]*repository.JobHistory, error)
+	DeleteByJobID(ctx context.Context, jobID string) error
+	DeleteOld(ctx context.Context, olderThan time.Duration) (int64, error)
+	GetLatestByJobID(ctx context.Context, jobID string) (*repository.JobHistory, error)
+	CountByJobID(ctx context.Context, jobID string) (int, error)
+	List(ctx context.Context, limit, offset int) ([]*repository.JobHistory, int, error)
+	CreateBatch(ctx context.Context, entries []*repository.JobHistory) error
+}
+
 // Config holds processor configuration.
 type Config struct {
-	JobRepo      *repository.JobRepository
-	HistoryRepo  *repository.JobHistoryRepository
+	JobRepo      JobRepository
+	HistoryRepo  JobHistoryRepository
 	Redis        *redis.Client
 	Workers      int
 	PollInterval time.Duration
@@ -32,8 +64,8 @@ type Stats struct {
 
 // Processor handles background job processing.
 type Processor struct {
-	jobRepo     *repository.JobRepository
-	historyRepo *repository.JobHistoryRepository
+	jobRepo     JobRepository
+	historyRepo JobHistoryRepository
 	redis       *redis.Client
 	workers     int
 	pollInterval time.Duration
@@ -208,6 +240,10 @@ func (p *Processor) processJob(ctx context.Context, job *repository.PrintJob, wo
 
 // Enqueue adds a job to the processing queue.
 func (p *Processor) Enqueue(ctx context.Context, job *repository.PrintJob) error {
+	if p.redis == nil {
+		// No redis configured, job will be picked up by polling
+		return nil
+	}
 	// Add to Redis queue for persistence
 	data, err := json.Marshal(job)
 	if err != nil {
@@ -227,8 +263,10 @@ func (p *Processor) Cancel(ctx context.Context, jobID string) {
 		p.cancelled[jobID] = struct{}{}
 	}
 
-	// Remove from Redis queue
-	p.redis.LRem(ctx, "print:queue", 0, jobID)
+	// Remove from Redis queue (if redis is configured)
+	if p.redis != nil {
+		p.redis.LRem(ctx, "print:queue", 0, jobID)
+	}
 }
 
 // GetStats returns current processor statistics.

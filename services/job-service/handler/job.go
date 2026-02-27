@@ -16,18 +16,45 @@ import (
 	"github.com/openprint/openprint/services/job-service/repository"
 )
 
+// Repository defines the interface for job repository operations used by handlers.
+type Repository interface {
+	Create(ctx context.Context, job *repository.PrintJob) error
+	FindByID(ctx context.Context, id string) (*repository.PrintJob, error)
+	Update(ctx context.Context, job *repository.PrintJob) error
+	FindByStatus(ctx context.Context, status string, limit int) ([]*repository.PrintJob, error)
+	CountByStatus(ctx context.Context, status string) (int64, error)
+	UpdateStatus(ctx context.Context, jobID, status string) error
+	Delete(ctx context.Context, id string) error
+	FindByPrinter(ctx context.Context, printerID string, limit, offset int) ([]*repository.PrintJob, error)
+	FindByUser(ctx context.Context, userEmail string, limit, offset int) ([]*repository.PrintJob, error)
+	ListWithFilters(ctx context.Context, limit, offset int, printerID, status, userEmail string) ([]*repository.PrintJob, int, error)
+}
+
+// HistoryRepository defines the interface for job history repository operations used by handlers.
+type HistoryRepository interface {
+	FindByJobID(ctx context.Context, jobID string) ([]*repository.JobHistory, error)
+	Create(ctx context.Context, history *repository.JobHistory) error
+}
+
+// Processor defines the interface for processor operations used by handlers.
+type Processor interface {
+	Cancel(ctx context.Context, jobID string)
+	GetStats(ctx context.Context) (*processor.Stats, error)
+	Enqueue(ctx context.Context, job *repository.PrintJob) error
+}
+
 // Config holds handler dependencies.
 type Config struct {
-	JobRepo     *repository.JobRepository
-	HistoryRepo *repository.JobHistoryRepository
-	Processor   *processor.Processor
+	JobRepo     Repository
+	HistoryRepo HistoryRepository
+	Processor   Processor
 }
 
 // Handler provides job service HTTP handlers.
 type Handler struct {
-	jobRepo     *repository.JobRepository
-	historyRepo *repository.JobHistoryRepository
-	processor   *processor.Processor
+	jobRepo     Repository
+	historyRepo HistoryRepository
+	processor   Processor
 }
 
 // New creates a new handler instance.
