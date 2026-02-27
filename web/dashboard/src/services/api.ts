@@ -14,6 +14,7 @@ import type {
   PaginatedResponse,
   Agent,
   PrinterPermission,
+  PermissionType,
   AuditLog,
   Invitation,
   InviteUserRequest,

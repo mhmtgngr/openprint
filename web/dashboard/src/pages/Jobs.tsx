@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useJobs } from '@/hooks/useJobs';
 import { JobList } from '@/components/JobList';
-import { JobStatusBadge } from '@/components/JobStatusBadge';
-import { SearchIcon, FilterIcon, DownloadIcon } from './icons';
+import { SearchIcon, FilterIcon } from '@/components/icons';
 import type { JobStatus } from '@/types';
 
 const statusFilters: { value: JobStatus | 'all'; label: string }[] = [
@@ -34,15 +33,16 @@ export const Jobs = () => {
     }
   };
 
-  const handleSelectJob = (jobId: string) => {
-    const newSelected = new Set(selectedJobs);
-    if (newSelected.has(jobId)) {
-      newSelected.delete(jobId);
-    } else {
-      newSelected.add(jobId);
-    }
-    setSelectedJobs(newSelected);
-  };
+  // TODO: Implement individual job selection
+  // const handleSelectJob = (jobId: string) => {
+  //   const newSelected = new Set(selectedJobs);
+  //   if (newSelected.has(jobId)) {
+  //     newSelected.delete(jobId);
+  //   } else {
+  //     newSelected.add(jobId);
+  //   }
+  //   setSelectedJobs(newSelected);
+  // };
 
   const filteredJobs = jobs.filter((job) =>
     job.documentName.toLowerCase().includes(search.toLowerCase()) ||

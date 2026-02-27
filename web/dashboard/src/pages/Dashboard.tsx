@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,8 +6,7 @@ import { printersApi } from '@/services/api';
 import { analyticsApi } from '@/services/api';
 import { JobStatusBadge } from '@/components/JobStatusBadge';
 import { EnvironmentReport } from '@/components/EnvironmentReport';
-import { PrinterIcon } from './icons';
-import type { PrintJob, Printer } from '@/types';
+import { PrinterIcon } from '@/components/icons';
 
 export const Dashboard = () => {
   const { user } = useAuth();

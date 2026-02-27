@@ -66,7 +66,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                     ${isActive
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }
                   `}

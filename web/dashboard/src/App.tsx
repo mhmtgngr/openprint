@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useRequireAuth } from './hooks/useAuth';
+import { useRequireAuth, useAuth } from './hooks/useAuth';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading, hasRole } = useRequireAuth();
+  const { isAuthenticated, isLoading, hasRole } = useAuth();
 
   if (isLoading) {
     return (

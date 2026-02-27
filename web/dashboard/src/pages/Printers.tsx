@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printersApi } from '@/services/api';
 import { PrinterCard, PrinterIcon } from '@/components/PrinterCard';
-import { PlusIcon, SearchIcon, FilterIcon } from './icons';
+import { PlusIcon, SearchIcon, FilterIcon } from '@/components/icons';
 
 export const Printers = () => {
   const queryClient = useQueryClient();
@@ -22,12 +22,13 @@ export const Printers = () => {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => printersApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['printers'] });
-    },
-  });
+  // TODO: Implement printer deletion
+  // const deleteMutation = useMutation({
+  //   mutationFn: (id: string) => printersApi.delete(id),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['printers'] });
+  //   },
+  // });
 
   const filteredPrinters = printers?.filter((printer) => {
     const matchesSearch = printer.name.toLowerCase().includes(search.toLowerCase());

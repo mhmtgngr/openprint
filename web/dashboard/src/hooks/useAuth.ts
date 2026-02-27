@@ -169,7 +169,12 @@ export const useAuth = (): AuthContextValue => {
   };
 };
 
-export const useRequireAuth = (redirectTo: string = '/login') => void => {
+interface RequireAuthReturn {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+export const useRequireAuth = (redirectTo: string = '/login'): RequireAuthReturn => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 

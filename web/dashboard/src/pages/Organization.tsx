@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { organizationApi, userApi, printersApi } from '@/services/api';
-import { PlusIcon, TrashIcon, EditIcon, CheckIcon, AlertIcon } from './icons';
+import { organizationApi, printersApi } from '@/services/api';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, AlertIcon } from '@/components/icons';
 
 export const Organization = () => {
   const { user } = useAuth();

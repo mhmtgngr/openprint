@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { jobsApi } from '@/services/api';
-import { useJobUpdates } from './useWebSocket';
-import type { CreateJobRequest, JobStatus } from '@/types';
+import { useJobUpdates, useWebSocket } from './useWebSocket';
+import type { CreateJobRequest } from '@/types';
 
 export const useJobs = (params?: { status?: string; limit?: number; offset?: number }) => {
   return useQuery({

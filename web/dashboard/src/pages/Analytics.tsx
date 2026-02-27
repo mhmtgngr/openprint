@@ -24,7 +24,9 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export const Analytics = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState<'7d' | '30d' | '90d' | '12m'>('30d');
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  // TODO: Implement groupBy selector
+  // const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const groupBy: 'day' | 'week' | 'month' = 'day';
 
   const { data: usageStats, isLoading: statsLoading } = useQuery({
     queryKey: ['analytics', 'usage', period, groupBy],
@@ -216,7 +218,7 @@ export const Analytics = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {statusData.map((entry, index) => (
+                {statusData.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

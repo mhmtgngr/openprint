@@ -1,7 +1,4 @@
 import type { Printer } from '@/types';
-import { PrinterIcon } from './icons/Printer';
-import { WifiIcon, WifiOffIcon } from './icons/Wifi';
-import { CheckCircleIcon, XCircleIcon } from './icons/Status';
 
 interface PrinterCardProps {
   printer: Printer;
@@ -17,8 +14,8 @@ export const PrinterCard = ({ printer, onClick, onToggle, isSelected }: PrinterC
     <div
       className={`
         bg-white dark:bg-gray-800 rounded-lg border-2 transition-all duration-200
-        ${isSelected ? 'border-primary-500 ring-2 ring-primary-100 dark:ring-primary-900' : 'border-gray-200 dark:border-gray-700'}
-        ${onClick ? 'cursor-pointer hover:border-primary-300 hover:shadow-md' : ''}
+        ${isSelected ? 'border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900' : 'border-gray-200 dark:border-gray-700'}
+        ${onClick ? 'cursor-pointer hover:border-blue-300 hover:shadow-md' : ''}
         ${!isActive ? 'opacity-60' : ''}
       `}
       onClick={onClick}
@@ -115,51 +112,42 @@ export const PrinterCard = ({ printer, onClick, onToggle, isSelected }: PrinterC
 };
 
 // Icon components (simple SVG icons)
-namespace Icons {
-  export const PrinterIcon = ({ className = '' }: { className?: string }) => (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-      />
-    </svg>
-  );
+export const PrinterIcon = ({ className = '' }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+    />
+  </svg>
+);
 
-  export const WifiIcon = ({ className = '' }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-    </svg>
-  );
+export const WifiIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+  </svg>
+);
 
-  export const WifiOffIcon = ({ className = '' }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.58 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01" />
-    </svg>
-  );
+export const WifiOffIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.58 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01" />
+  </svg>
+);
 
-  export const CheckCircleIcon = ({ className = '' }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
+export const CheckCircleIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
 
-  export const XCircleIcon = ({ className = '' }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-
-// Export icons for use in other components
-export const PrinterIcon = Icons.PrinterIcon;
-export const WifiIcon = Icons.WifiIcon;
-export const WifiOffIcon = Icons.WifiOffIcon;
-export const CheckCircleIcon = Icons.CheckCircleIcon;
-export const XCircleIcon = Icons.XCircleIcon;
+export const XCircleIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
