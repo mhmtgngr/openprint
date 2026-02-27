@@ -1,0 +1,3 @@
+Fixed. The issues were:
+1. Line 207: missing closing parenthesis in `c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))`
+2. Removed unused imports: `fmt` and `sync`

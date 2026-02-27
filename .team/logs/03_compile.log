@@ -1,0 +1,3 @@
+# github.com/openprint/openprint/services/notification-service/websocket
+services/notification-service/websocket/handler.go:207:60: syntax error: unexpected newline in argument list; possibly missing comma or )
+services/notification-service/websocket/handler.go:208:4: syntax error: unexpected keyword if at end of statement

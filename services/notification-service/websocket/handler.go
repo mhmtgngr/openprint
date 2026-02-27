@@ -4,10 +4,8 @@ package websocket
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -204,7 +202,7 @@ func (c *Client) writePump() {
 			}
 
 		case <-ticker.C:
-			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second)
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}

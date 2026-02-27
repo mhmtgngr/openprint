@@ -1,0 +1,1 @@
+{"timestamp": "2026-02-27T18:09:58.342504", "phase": "backend", "type": "compile_fail", "detail": "# github.com/openprint/openprint/services/notification-service/websocket\nservices/notification-service/websocket/handler.go:207:60: syntax error: unexpected newline in argument list; possibly missing "}
