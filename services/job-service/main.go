@@ -15,6 +15,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
 	"github.com/openprint/openprint/services/job-service/handler"
 	"github.com/openprint/openprint/services/job-service/processor"
@@ -26,6 +28,7 @@ type Config struct {
 	ServerAddr       string
 	DatabaseURL      string
 	RedisURL         string
+	JWTSecret        string
 	JaegerEndpoint   string
 	ServiceName      string
 	ProcessorWorkers int
@@ -88,6 +91,9 @@ func main() {
 		Processor:   jobProcessor,
 	})
 
+	// Create JWT manager for authentication
+	jwtManager := jwt.NewManager(jwt.DefaultConfig(cfg.JWTSecret))
+
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
@@ -97,8 +103,21 @@ func main() {
 	mux.HandleFunc("/history", h.HistoryHandler)
 	mux.HandleFunc("/queue/stats", h.QueueStatsHandler)
 
-	// Apply telemetry middleware
-	wrappedMux := telemetry.HTTPMiddleware(cfg.ServiceName)(mux)
+	// Build middleware chain: logging -> recovery -> auth -> telemetry -> security headers -> handler
+	middlewareChain := middleware.Chain(
+		middleware.LoggingMiddleware(log.New(os.Stdout, "[JOB] ", log.LstdFlags)),
+		middleware.RecoveryMiddleware(log.New(os.Stdout, "[JOB] ", log.LstdFlags)),
+		middleware.AuthMiddleware(middleware.JWTConfig{
+			SecretKey:  cfg.JWTSecret,
+			JWTManager: jwtManager,
+			SkipPaths:  []string{"/health"},
+		}),
+		telemetry.HTTPMiddleware(cfg.ServiceName),
+		middleware.SecurityHeadersMiddleware(),
+		middleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization"}),
+	)
+
+	wrappedMux := middlewareChain(mux)
 
 	server := &http.Server{
 		Addr:         cfg.ServerAddr,
@@ -137,10 +156,16 @@ func main() {
 }
 
 func loadConfig() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+
 	return &Config{
 		ServerAddr:       getEnv("SERVER_ADDR", ":8003"),
 		DatabaseURL:      getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379"),
+		JWTSecret:        jwtSecret,
 		JaegerEndpoint:   getEnv("JAEGER_ENDPOINT", ""),
 		ServiceName:      getEnv("SERVICE_NAME", "job-service"),
 		ProcessorWorkers: getEnvInt("PROCESSOR_WORKERS", 10),

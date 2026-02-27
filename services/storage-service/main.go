@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
 	"github.com/openprint/openprint/services/storage-service/handler"
 	"github.com/openprint/openprint/services/storage-service/storage"
@@ -29,6 +31,7 @@ type Config struct {
 	S3SecretKey      string
 	S3Region         string
 	EncryptionKey    string
+	JWTSecret        string
 	JaegerEndpoint   string
 	ServiceName      string
 	MaxUploadSize    int64
@@ -90,6 +93,9 @@ func main() {
 		MaxUploadSize: cfg.MaxUploadSize,
 	})
 
+	// Create JWT manager for authentication
+	jwtManager := jwt.NewManager(jwt.DefaultConfig(cfg.JWTSecret))
+
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
@@ -98,8 +104,21 @@ func main() {
 	mux.HandleFunc("/upload", h.UploadHandler)
 	mux.HandleFunc("/download/", h.DownloadHandler)
 
-	// Apply telemetry middleware
-	wrappedMux := telemetry.HTTPMiddleware(cfg.ServiceName)(mux)
+	// Build middleware chain: logging -> recovery -> auth -> telemetry -> security headers -> handler
+	middlewareChain := middleware.Chain(
+		middleware.LoggingMiddleware(log.New(os.Stdout, "[STORAGE] ", log.LstdFlags)),
+		middleware.RecoveryMiddleware(log.New(os.Stdout, "[STORAGE] ", log.LstdFlags)),
+		middleware.AuthMiddleware(middleware.JWTConfig{
+			SecretKey:  cfg.JWTSecret,
+			JWTManager: jwtManager,
+			SkipPaths:  []string{"/health"},
+		}),
+		telemetry.HTTPMiddleware(cfg.ServiceName),
+		middleware.SecurityHeadersMiddleware(),
+		middleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization"}),
+	)
+
+	wrappedMux := middlewareChain(mux)
 
 	server := &http.Server{
 		Addr:         cfg.ServerAddr,
@@ -138,6 +157,11 @@ func main() {
 }
 
 func loadConfig() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+
 	return &Config{
 		ServerAddr:     getEnv("SERVER_ADDR", ":8004"),
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
@@ -147,6 +171,7 @@ func loadConfig() *Config {
 		S3SecretKey:    getEnv("S3_SECRET_KEY", ""),
 		S3Region:       getEnv("S3_REGION", "us-east-1"),
 		EncryptionKey:  getEnv("ENCRYPTION_KEY", ""),
+		JWTSecret:      jwtSecret,
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
 		ServiceName:    getEnv("SERVICE_NAME", "storage-service"),
 		MaxUploadSize:  int64(getEnvInt("MAX_UPLOAD_MB", 100)) * 1024 * 1024,

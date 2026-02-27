@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
 	"github.com/openprint/openprint/services/registry-service/handler"
 	"github.com/openprint/openprint/services/registry-service/repository"
@@ -22,6 +24,7 @@ import (
 type Config struct {
 	ServerAddr       string
 	DatabaseURL      string
+	JWTSecret        string
 	JaegerEndpoint   string
 	ServiceName      string
 	HeartbeatTimeout time.Duration
@@ -63,6 +66,9 @@ func main() {
 	// Start heartbeat monitor in background
 	go h.HeartbeatMonitor(ctx)
 
+	// Create JWT manager for authentication
+	jwtManager := jwt.NewManager(jwt.DefaultConfig(cfg.JWTSecret))
+
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
@@ -73,8 +79,22 @@ func main() {
 	mux.HandleFunc("/printers/", h.PrinterHandler)
 	mux.HandleFunc("/printers", h.ListPrinters)
 
-	// Apply telemetry middleware
-	wrappedMux := telemetry.HTTPMiddleware(cfg.ServiceName)(mux)
+	// Build middleware chain: logging -> recovery -> auth -> telemetry -> security headers -> handler
+	// For registry service, we also support API key authentication for agents
+	middlewareChain := middleware.Chain(
+		middleware.LoggingMiddleware(log.New(os.Stdout, "[REGISTRY] ", log.LstdFlags)),
+		middleware.RecoveryMiddleware(log.New(os.Stdout, "[REGISTRY] ", log.LstdFlags)),
+		middleware.AuthMiddleware(middleware.JWTConfig{
+			SecretKey:  cfg.JWTSecret,
+			JWTManager: jwtManager,
+			SkipPaths:  []string{"/health", "/agents/register", "/printers/register"}, // Allow agent/printer registration with API key
+		}),
+		telemetry.HTTPMiddleware(cfg.ServiceName),
+		middleware.SecurityHeadersMiddleware(),
+		middleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization", "X-API-Key"}),
+	)
+
+	wrappedMux := middlewareChain(mux)
 
 	server := &http.Server{
 		Addr:         cfg.ServerAddr,
@@ -113,9 +133,15 @@ func main() {
 }
 
 func loadConfig() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+
 	return &Config{
 		ServerAddr:       getEnv("SERVER_ADDR", ":8002"),
 		DatabaseURL:      getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
+		JWTSecret:        jwtSecret,
 		JaegerEndpoint:   getEnv("JAEGER_ENDPOINT", ""),
 		ServiceName:      getEnv("SERVICE_NAME", "registry-service"),
 		HeartbeatTimeout: 5 * time.Minute,

@@ -120,6 +120,19 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate organization_id if provided
+	if req.OrganizationID != "" {
+		hasAccess, err := h.userRepo.ValidateOrganizationAccess(ctx, req.OrganizationID, req.Email)
+		if err != nil {
+			respondError(w, apperrors.Wrap(err, "failed to validate organization access", http.StatusInternalServerError))
+			return
+		}
+		if !hasAccess {
+			respondError(w, apperrors.New("you do not have permission to join this organization", http.StatusForbidden))
+			return
+		}
+	}
+
 	// Hash password
 	hashedPassword, err := h.passwordHasher.Generate(req.Password)
 	if err != nil {

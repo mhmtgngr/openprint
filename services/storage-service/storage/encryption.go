@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
@@ -140,9 +141,23 @@ func GenerateKey() (string, error) {
 	return base64.StdEncoding.EncodeToString(key), nil
 }
 
-// DeriveKey derives a key from a password and salt using PBKDF2.
+// DeriveKey derives a key from a password and salt using Argon2id.
+// This is a memory-hard KDF resistant to GPU/ASIC attacks.
 func DeriveKey(password, salt string) [32]byte {
-	// In production, use proper KDF like scrypt or Argon2
-	// This is simplified for the example
-	return sha256.Sum256([]byte(password + salt))
+	// Convert salt string to bytes if it's not already
+	saltBytes := []byte(salt)
+	if len(saltBytes) < 8 {
+		// If salt is too short, use SHA256 to extend it
+		saltHash := sha256.Sum256([]byte(salt))
+		saltBytes = saltHash[:]
+	}
+
+	// Use Argon2id with OWASP recommended parameters:
+	// - Time: 1 iteration
+	// - Memory: 64 MiB (65536 KiB)
+	// - Threads: 4
+	// - Key length: 32 bytes (256 bits)
+	var key [32]byte
+	copy(key[:], argon2.IDKey([]byte(password), saltBytes, 1, 64*1024, 4, 32))
+	return key
 }

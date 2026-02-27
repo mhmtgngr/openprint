@@ -311,6 +311,46 @@ func (r *UserRepository) ExistsByID(ctx context.Context, id string) (bool, error
 	return exists, err
 }
 
+// ValidateOrganizationAccess checks if an organization exists and the user can join it.
+// This verifies against invitations table or public organization settings.
+func (r *UserRepository) ValidateOrganizationAccess(ctx context.Context, orgID, email string) (bool, error) {
+	// Check if organization exists
+	var orgExists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM organizations WHERE id = $1)", orgID).Scan(&orgExists)
+	if err != nil {
+		return false, fmt.Errorf("check organization: %w", err)
+	}
+	if !orgExists {
+		return false, nil
+	}
+
+	// Check if there's a valid invitation for this email
+	var hasInvitation bool
+	err = r.db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM invitations
+			WHERE organization_id = $1
+			AND email = $2
+			AND status = 'pending'
+			AND expires_at > NOW()
+		)`, orgID, email).Scan(&hasInvitation)
+
+	if err != nil {
+		return false, fmt.Errorf("check invitation: %w", err)
+	}
+
+	// Also check if organization allows open registration
+	var openRegistration bool
+	err = r.db.QueryRow(ctx, `
+		SELECT allows_open_registration FROM organizations WHERE id = $1
+	`, orgID).Scan(&openRegistration)
+	if err != nil {
+		return false, fmt.Errorf("check open registration: %w", err)
+	}
+
+	return hasInvitation || openRegistration, nil
+}
+
 // FindOrCreateOrganizationUser finds a user by email within an organization, or creates one.
 func (r *UserRepository) FindOrCreateOrganizationUser(ctx context.Context, orgID, email, firstName, lastName string) (*User, error) {
 	// Try to find first

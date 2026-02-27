@@ -147,11 +147,20 @@ func main() {
 }
 
 func loadConfig() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required and must be set")
+	}
+	// Validate JWT secret is not too short (minimum 32 characters recommended)
+	if len(jwtSecret) < 16 {
+		log.Fatal("JWT_SECRET must be at least 16 characters long")
+	}
+
 	return &Config{
 		ServerAddr:     getEnv("SERVER_ADDR", ":8001"),
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
-		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
+		JWTSecret:      jwtSecret,
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
 		ServiceName:    getEnv("SERVICE_NAME", "auth-service"),
 	}

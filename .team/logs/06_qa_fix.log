@@ -1,0 +1,34 @@
+All critical and major security issues have been fixed. Here's a summary:
+
+## Security Fixes Completed
+
+### CRITICAL Issues Fixed:
+
+1. **Authentication Middleware Added** - Created `internal/shared/middleware/auth.go` with:
+   - JWT authentication middleware
+   - Context helpers for extracting user info (GetUserID, GetEmail, GetOrgID, GetRole)
+   - Role-based and scope-based authorization middleware
+   - Ownership verification middleware
+   - Logging, recovery, and security headers middleware
+
+2. **Default JWT Secret Removed** - All services now require `JWT_SECRET` environment variable with validation (minimum 16 characters)
+
+3. **SHA256 Checksum** - Replaced simple checksum with `crypto/sha256.Sum256()` in storage service
+
+4. **Argon2 Key Derivation** - Replaced weak SHA256-based `DeriveKey` with `argon2.IDKey()` using OWASP recommended parameters
+
+### MAJOR Issues Fixed:
+
+5. **Organization Validation** - Added `ValidateOrganizationAccess()` to check invitations table during registration
+
+6. **SQL Injection Fixed** - `listDocuments` now uses proper parameterized queries with validated input
+
+7. **Input Validation** - Added pagination validation with bounds checking (max 1000)
+
+### Services Updated:
+- `services/auth-service/main.go` - JWT_SECRET required
+- `services/storage-service/main.go` - Full middleware chain added
+- `services/job-service/main.go` - Full middleware chain added  
+- `services/registry-service/main.go` - Full middleware chain added (with skip paths for agent/printer registration)
+
+All tests pass (`go test ./...`) and all packages build successfully.

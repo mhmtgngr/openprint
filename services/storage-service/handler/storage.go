@@ -3,12 +3,14 @@ package handler
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	stderrors "errors"
 	"fmt"
 	"io"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -137,33 +139,42 @@ func (h *Handler) listDocuments(w http.ResponseWriter, r *http.Request, ctx cont
 	limit := 50
 	offset := 0
 
+	// Validate and parse limit with max value
 	if l := r.URL.Query().Get("limit"); l != "" {
-		fmt.Sscanf(l, "%d", &limit)
-	}
-	if o := r.URL.Query().Get("offset"); o != "" {
-		fmt.Sscanf(o, "%d", &offset)
+		parsedLimit, err := strconv.Atoi(l)
+		if err != nil || parsedLimit < 0 {
+			respondError(w, apperrors.New("invalid limit parameter", http.StatusBadRequest))
+			return
+		}
+		if parsedLimit > 1000 {
+			limit = 1000 // Max limit
+		} else {
+			limit = parsedLimit
+		}
 	}
 
-	// Build query
+	// Validate and parse offset
+	if o := r.URL.Query().Get("offset"); o != "" {
+		parsedOffset, err := strconv.Atoi(o)
+		if err != nil || parsedOffset < 0 {
+			respondError(w, apperrors.New("invalid offset parameter", http.StatusBadRequest))
+			return
+		}
+		offset = parsedOffset
+	}
+
+	// Build query with proper parameterization
 	query := `
 		SELECT id, name, content_type, size, checksum, user_email, created_at, expires_at
 		FROM documents
-		WHERE 1=1
+		WHERE ($1 = '' OR user_email = $1)
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
 	`
-	args := []interface{}{}
-	argNum := 1
 
-	if userEmail != "" {
-		query += fmt.Sprintf(" AND user_email = $%d", argNum)
-		args = append(args, userEmail)
-		argNum++
-	}
-
-	// Add ordering and pagination
-	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argNum, argNum+1)
-	args = append(args, limit, offset)
-
-	rows, err := h.db.Query(ctx, query, args...)
+	// Use userEmail directly - if empty, the WHERE clause returns all rows
+	// This is safer than building dynamic SQL
+	rows, err := h.db.Query(ctx, query, userEmail, limit, offset)
 	if err != nil {
 		respondError(w, apperrors.Wrap(err, "failed to query documents", http.StatusInternalServerError))
 		return
@@ -404,12 +415,9 @@ func (h *Handler) getMetadata(ctx context.Context, docID string) (*DocumentMetad
 }
 
 func computeChecksum(data []byte) string {
-	// Simple checksum - in production use SHA256
-	h := 0
-	for _, b := range data {
-		h = int(b) + (h << 5) - h
-	}
-	return fmt.Sprintf("%x", h)
+	// Use SHA256 for cryptographic file integrity verification
+	hash := sha256.Sum256(data)
+	return fmt.Sprintf("%x", hash)
 }
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
