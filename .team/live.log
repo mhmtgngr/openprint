@@ -268,3 +268,4 @@ go test ./tests/integration/ -v -run TestHealthChecks
 ```
 Files: 30 | Lines: 10347 | Issues: 0 (high severity)
 ```
+[0;35m[20:45:21][0m [1;37m🔒 Security[0m ✓ Committed
