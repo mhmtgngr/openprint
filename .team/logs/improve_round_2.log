@@ -1,0 +1,49 @@
+Done! I've created a comprehensive integration test suite for OpenPrint Cloud. Here's what was added:
+
+## Files Created
+
+**`tests/integration/api_test.go`** - Main test file with:
+- Health check tests for all 5 services (table-driven)
+- Database connection and table validation
+- Auth service tests (register, login, get user, unauthorized, duplicate email)
+- Registry service tests (agents, printers, heartbeat, status updates)
+- Job service tests (create, list, queue stats)
+- Storage service tests (upload, list, metadata)
+- End-to-end workflow test covering the complete print job lifecycle
+- Docker container communication tests
+- Concurrent request handling tests
+- WebSocket endpoint availability test
+
+**`tests/integration/README.md`** - Documentation with:
+- Prerequisites and setup instructions
+- How to run tests
+- Environment variable configuration
+- Test coverage overview
+- Troubleshooting guide
+
+## Test Results Summary
+
+**Passing (6/11 test suites):**
+- ✅ TestHealthChecks - All 5 services
+- ✅ TestDatabaseConnection - PostgreSQL + 7 tables
+- ✅ TestAuthServiceEndpoints - Register, login, get user
+- ✅ TestConcurrentRequests - Concurrent health checks
+- ✅ TestWebSocketConnection - WebSocket endpoint
+- ✅ TestServiceAvailability - Service availability check
+
+**Failing (5/11)** - These reveal service implementation issues:
+- Registry agent registration returns 500 (likely needs `organization_id`)
+- Cascading failures in job, storage, and E2E tests
+
+## Running the Tests
+
+```bash
+# Ensure services are running
+cd deployments/docker && docker-compose up -d
+
+# Run integration tests
+go test ./tests/integration/ -v
+
+# Run specific test
+go test ./tests/integration/ -v -run TestHealthChecks
+```
