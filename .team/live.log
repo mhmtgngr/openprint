@@ -102,3 +102,6 @@ The test framework is solid. The remaining failures are primarily due to the lac
 Fixed. The `TestManager_ACSHandler/wrong_method` test now passes. 
 
 The issue was that `ACSHandler` didn't check the HTTP method before processing the request. I added a method check that returns `http.StatusMethodNotAllowed` (405) for non-POST requests.
+[0;35m[18:51:49][0m [1;37m🧪 Tester[0m ✓ Committed
+[0;35m[18:51:49][0m [1;37m🧪 Tester[0m Running Go tests...
+[1;33m[18:51:53][0m   Unit tests still failing — marking and continuing
