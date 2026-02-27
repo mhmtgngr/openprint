@@ -784,6 +784,7 @@ func TestStorageServiceEndpoints(t *testing.T) {
 		name           string
 		method         string
 		url            string
+		urlFunc        func() string
 		body           interface{}
 		isMultipart    bool
 		filename       string
@@ -824,10 +825,19 @@ func TestStorageServiceEndpoints(t *testing.T) {
 		{
 			name:           "get document metadata",
 			method:         "GET",
-			url:            storageServiceURL + "/documents/" + client.DocumentID,
+			urlFunc:        func() string { return storageServiceURL + "/documents/" + client.DocumentID + "/metadata" },
 			body:           nil,
 			expectedStatus: http.StatusOK,
 			skipOnFail:     true,
+			validateFunc: func(t *testing.T, resp *http.Response) {
+				var result map[string]interface{}
+				err := json.NewDecoder(resp.Body).Decode(&result)
+				require.NoError(t, err)
+				assert.Contains(t, result, "document_id")
+				assert.Contains(t, result, "name")
+				assert.Contains(t, result, "size")
+				assert.Contains(t, result, "content_type")
+			},
 		},
 	}
 
@@ -867,7 +877,12 @@ func TestStorageServiceEndpoints(t *testing.T) {
 
 				resp, err = client.Client.Do(req)
 			} else {
-				resp, err = client.makeRequest(tt.method, tt.url, tt.body, nil)
+				// Use urlFunc if provided, otherwise use static url
+				url := tt.url
+				if tt.urlFunc != nil {
+					url = tt.urlFunc()
+				}
+				resp, err = client.makeRequest(tt.method, url, tt.body, nil)
 			}
 
 			require.NoError(t, err, "Request should succeed")

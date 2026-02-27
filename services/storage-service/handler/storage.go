@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/storage-service/storage"
@@ -207,8 +208,21 @@ func (h *Handler) listDocuments(w http.ResponseWriter, r *http.Request, ctx cont
 func (h *Handler) DocumentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	// Check if this is a metadata request (/documents/{id}/metadata)
+	if strings.HasSuffix(r.URL.Path, "/metadata") {
+		h.DocumentMetadataHandler(w, r)
+		return
+	}
+
 	// Extract document ID from path
 	docID := strings.TrimPrefix(r.URL.Path, "/documents/")
+	if docID == "" {
+		respondError(w, apperrors.New("document ID is required", http.StatusBadRequest))
+		return
+	}
+
+	// Handle trailing slash in document ID (e.g., /documents/abc-123/)
+	docID = strings.TrimSuffix(docID, "/")
 	if docID == "" {
 		respondError(w, apperrors.New("document ID is required", http.StatusBadRequest))
 		return
@@ -222,6 +236,29 @@ func (h *Handler) DocumentHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// DocumentMetadataHandler handles document metadata requests.
+func (h *Handler) DocumentMetadataHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract document ID from path (/documents/{id}/metadata)
+	pathWithoutPrefix := strings.TrimPrefix(r.URL.Path, "/documents/")
+	// Remove "/metadata" suffix
+	docID := strings.TrimSuffix(pathWithoutPrefix, "/metadata")
+	docID = strings.TrimSuffix(docID, "/") // Handle potential trailing slash
+
+	if docID == "" {
+		respondError(w, apperrors.New("document ID is required", http.StatusBadRequest))
+		return
+	}
+
+	h.getDocumentMetadata(w, r, ctx, docID)
 }
 
 func (h *Handler) getDocument(w http.ResponseWriter, r *http.Request, ctx context.Context, docID string) {
@@ -245,6 +282,32 @@ func (h *Handler) getDocument(w http.ResponseWriter, r *http.Request, ctx contex
 	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s", metadata.Name))
 
 	w.Write(content)
+}
+
+// getDocumentMetadata returns JSON metadata for a document.
+func (h *Handler) getDocumentMetadata(w http.ResponseWriter, r *http.Request, ctx context.Context, docID string) {
+	// Get metadata from database
+	metadata, err := h.getMetadata(ctx, docID)
+	if err != nil {
+		// Distinguish between not found (404) and other errors (500)
+		if err == pgx.ErrNoRows {
+			respondError(w, apperrors.ErrNotFound)
+			return
+		}
+		respondError(w, apperrors.Wrap(err, "failed to retrieve metadata", http.StatusInternalServerError))
+		return
+	}
+
+	// Return metadata as JSON
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"document_id":  metadata.ID,
+		"name":         metadata.Name,
+		"content_type": metadata.ContentType,
+		"size":         metadata.Size,
+		"checksum":     metadata.Checksum,
+		"user_email":   metadata.UserEmail,
+		"created_at":   metadata.CreatedAt.Format(time.RFC3339),
+	})
 }
 
 func (h *Handler) deleteDocument(w http.ResponseWriter, r *http.Request, ctx context.Context, docID string) {
