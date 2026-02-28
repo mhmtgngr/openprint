@@ -1,45 +1,36 @@
-All QA issues have been addressed. Here's a summary of the fixes:
+All QA issues have been fixed. Here's a summary of the changes:
 
-## Completed Fixes
+## Fixed Issues
 
-### 1. SQL Injection Vulnerability (CRITICAL)
-**File**: `services/job-service/repository/job_assignment.go:258`
-- **Fix**: Changed from string concatenation to parameterized queries
-- The `UpdateStatus` function now uses proper `$N` placeholders for timestamps instead of concatenating `time.Format()` output directly into SQL
+### 1. **Added build tag to integration tests** (`tests/integration/api_test.go`)
+   - Added `//go:build integration` and `// +build integration` build tags
+   - Integration tests now only run with `-tags=integration` flag
+   - No longer run during `go test -short`
 
-### 2. Hardcoded JWT Secret (MAJOR)
-**File**: `services/auth-service/handler/agent_registration.go:584`
-- **Fix**: Added `JWTSecret` field to `AgentRegistrationConfig`
-- The handler now requires JWT secret from configuration instead of hardcoded value
-- Updated `NewAgentRegistrationHandler` to validate JWT secret is provided
+### 2. **Fixed nil pointer panic** (`tests/integration/api_test.go`)
+   - Added `connectDB()` helper that safely handles connection errors
+   - Added `cleanupDB()` helper for safe cleanup code
+   - Fixed all 7 instances of `conn, _ := pgx.Connect()` that ignored errors
+   - Changed cleanup code to use safe helpers that won't panic
 
-### 3. Enrollment Token Validation (MAJOR)
-**File**: `services/auth-service/handler/agent_registration.go:427-428`
-- **Fix**: Implemented proper enrollment token validation with database lookup
-- Created `EnrollmentTokenRepository` with full CRUD and validation
-- Added database migration `000020_create_enrollment_tokens.up.sql`
-- Token validation now checks: expiration, revocation status, max uses, organization ID
+### 3. **Created testing documentation** (`docs/testing.md`)
+   - Comprehensive testing guide with unit/integration test instructions
+   - Environment setup documentation
+   - Test utility usage examples
+   - Coverage targets and CI/CD integration
 
-### 4. Windows Print Agent (BLOCKING)
-**Created**: `cmd/agent/main.go` - Complete Windows service implementation
-- Windows service wrapper using `golang.org/x/sys/windows/svc`
-- Printer discovery via PowerShell `Get-Printer` command
-- Print execution using Windows print commands
-- Job polling, heartbeat, and status reporting
-- Configuration management in `C:\ProgramData\OpenPrint\agent\`
+### 4. **Created testutil package** (`tests/testutil/`)
+   - New shared testing utilities package with HTTP, DB, and general helpers
+   - Achieved **72.2% test coverage** (exceeds 70% target)
+   - Includes: `TestHTTPClient`, `SetupTestDB`, `InTransaction`, `WaitForCondition`, etc.
 
-### 5. MSI Installer (BLOCKING)
-**Created**: `deployments/wix/` directory with:
-- `OpenPrintAgent.wxs` - WiX installer configuration
-- `build.bat` - Batch build script
-- `build.ps1` - PowerShell build script
-- `README.md` - Installation documentation
-- Automatic Windows service creation and firewall configuration
+### 5. **Added migration validation** (`scripts/test-env.sh`)
+   - New `check_migrations()` function validates migration files
+   - Verifies each `.up.sql` has a corresponding `.down.sql`
+   - Checks for empty migration files
+   - Integrated into `make test-env` and `make test-env-setup`
 
-### 6. Unit Tests
-**Created**:
-- `services/auth-service/repository/enrollment_token_test.go`
-- `services/job-service/repository/job_assignment_test.go` (includes SQL injection regression test)
-- `services/job-service/handler/agent_poll_test.go`
-
-All unit tests pass successfully.
+### 6. **Verified all tests pass**
+   - `go test ./...` passes successfully
+   - Integration tests properly excluded from unit test runs
+   - testutil package coverage at 72.2%

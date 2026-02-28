@@ -67,6 +67,60 @@ check_docker() {
     return 0
 }
 
+check_migrations() {
+    info "Checking database migrations..."
+
+    if [ ! -d "migrations" ]; then
+        error "Migrations directory not found"
+        return 1
+    fi
+
+    # Count migration files
+    up_migrations=$(find migrations -name "*.up.sql" 2>/dev/null | wc -l)
+    down_migrations=$(find migrations -name "*.down.sql" 2>/dev/null | wc -l)
+
+    info "Found $up_migrations up migrations and $down_migrations down migrations"
+
+    # Verify each up migration has a corresponding down migration
+    if [ "$up_migrations" -ne "$down_migrations" ]; then
+        warn "Mismatch between up and down migrations"
+        warn "Each .up.sql should have a corresponding .down.sql"
+    fi
+
+    # Check for common migration issues
+    issues=0
+
+    # Check for missing down migrations
+    for up_file in migrations/*.up.sql; do
+        if [ -f "$up_file" ]; then
+            base_name=$(basename "$up_file" .up.sql)
+            down_file="migrations/${base_name}.down.sql"
+            if [ ! -f "$down_file" ]; then
+                warn "Missing down migration: $down_file"
+                issues=$((issues + 1))
+            fi
+        fi
+    done
+
+    # Check for empty migration files
+    for migration in migrations/*.sql; do
+        if [ -f "$migration" ]; then
+            if [ ! -s "$migration" ]; then
+                warn "Empty migration file: $migration"
+                issues=$((issues + 1))
+            fi
+        fi
+    done
+
+    if [ $issues -eq 0 ]; then
+        success "All migrations validated"
+    else
+        warn "Found $issues potential migration issue(s)"
+    fi
+
+    return 0
+}
+
 check_docker_compose() {
     info "Checking Docker Compose..."
 
@@ -259,6 +313,7 @@ main() {
             check_docker || exit 1
             check_docker_compose
             check_go || exit 1
+            check_migrations
             check_ports
             run_health_checks
             print_summary
@@ -266,6 +321,7 @@ main() {
         setup)
             check_docker || exit 1
             check_go || exit 1
+            check_migrations
             pull_test_images
             setup_env_vars
             print_summary

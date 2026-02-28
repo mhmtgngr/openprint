@@ -1,30 +1,48 @@
 {
-  "overall_score": 92,
-  "verdict": "APPROVE",
+  "overall_score": 78,
+  "verdict": "NEEDS_FIXES",
   "code_issues": [
     {
-      "severity": "minor",
-      "file": "internal/testutil/db.go",
-      "issue": "Hardcoded PostgreSQL version 'postgres:16-alpine' may not match production environment",
-      "fix": "Consider making image version configurable via environment variable or const"
+      "severity": "major",
+      "file": "tests/integration/api_test.go",
+      "issue": "Integration tests not using build tags, run during 'go test -short' and fail when services aren't running",
+      "fix": "Add '// +build integration' build tag or use -tags=integration flag properly. Integration tests should be skipped during unit test runs"
+    },
+    {
+      "severity": "major",
+      "file": "tests/integration/api_test.go:355",
+      "issue": "Nil pointer dereference panic in cleanup when database connection fails - error from pgx.Connect is ignored with _",
+      "fix": "Check error from pgx.Connect before using conn: 'conn, err := pgx.Connect(ctx, databaseURL); if err != nil { return }'"
     },
     {
       "severity": "minor",
-      "file": "internal/testutil/db.go",
-      "issue": "TruncateAllTables has hardcoded table list that may get out of sync with migrations",
-      "fix": "Generate table list dynamically from information_schema or add comment to keep in sync"
+      "file": "internal/testutil/s3.go:539-553",
+      "issue": "Custom contains() implementation has logic issues - inefficient and doesn't properly check for substring",
+      "fix": "Use strings.Contains() instead of custom implementation"
     },
     {
       "severity": "minor",
-      "file": "services/job-service/repository/setup_test.go",
-      "issue": "init() function with log statement adds noise to test output",
-      "fix": "Remove or make conditional on verbose flag"
+      "file": "internal/testutil",
+      "issue": "Test coverage is 58%, below recommended 80% for test utilities",
+      "fix": "Add more tests for edge cases and error paths in testutil package"
+    },
+    {
+      "severity": "minor",
+      "file": ".",
+      "issue": "No test documentation (TESTING.md, tests/README.md) explaining how to run tests",
+      "fix": "Create TEST.md or docs/testing.md documenting test setup, running unit vs integration tests, and test environment requirements"
     }
   ],
   "missing_items": [
-    "Unit tests for testutil package itself (though less critical for test utilities)",
-    "Configuration option for PostgreSQL container image version"
+    "No TEST.md or testing documentation file explaining test infrastructure",
+    "No integration test build tag enforcement",
+    "No test coverage reporting in CI/CD configuration",
+    "Missing testdata directory with sample fixtures",
+    "No test environment validation in Makefile (make test-env doesn't verify migrations exist)"
   ],
-  "blocking_issues": [],
-  "fix_instructions": ""
+  "blocking_issues": [
+    "Integration tests panic with nil pointer dereference in cleanup code",
+    "Integration tests run during 'go test -short' and fail because services aren't running"
+  ],
+  "fix_instructions": "1. Add '//go:build integration' build tag to tests/integration/api_test.go\n2. Fix nil pointer panic in api_test.go:355 - check pgx.Connect error before using conn\n3. Create docs/testing.md documenting the test infrastructure\n4. Add more tests to testutil package to increase coverage above 70%\n5. Ensure make test-integration properly uses -tags=integration flag\n6. Add migration validation to make test-env target"
 }

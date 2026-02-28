@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 // Package integration provides end-to-end API tests for OpenPrint Cloud services.
 // These tests require running services (via Docker Compose) and test actual HTTP requests,
 // database interactions, and inter-service communication.
@@ -48,6 +51,29 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// connectDB safely connects to the database and returns the connection.
+// Returns nil if connection fails (to prevent panics in cleanup code).
+func connectDB(ctx context.Context) *pgx.Conn {
+	conn, err := pgx.Connect(ctx, databaseURL)
+	if err != nil {
+		// Log the error but don't panic in cleanup code
+		fmt.Printf("Warning: failed to connect to database for cleanup: %v\n", err)
+		return nil
+	}
+	return conn
+}
+
+// cleanupDB executes a cleanup function with a safe database connection.
+// If the database connection fails, the cleanup function is not called.
+func cleanupDB(ctx context.Context, cleanupFunc func(*pgx.Conn)) {
+	conn := connectDB(ctx)
+	if conn == nil {
+		return
+	}
+	defer conn.Close(ctx)
+	cleanupFunc(conn)
 }
 
 // TestMain checks if services are available before running tests
@@ -352,16 +378,15 @@ func TestAuthServiceEndpoints(t *testing.T) {
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		conn, _ := pgx.Connect(ctx, databaseURL)
-		defer conn.Close(ctx)
-
-		// Clean up test emails
-		testEmails := []string{
-			"duplicate@example.com",
-		}
-		for _, email := range testEmails {
-			conn.Exec(ctx, "DELETE FROM users WHERE email = $1", email)
-		}
+		cleanupDB(ctx, func(conn *pgx.Conn) {
+			// Clean up test emails
+			testEmails := []string{
+				"duplicate@example.com",
+			}
+			for _, email := range testEmails {
+				conn.Exec(ctx, "DELETE FROM users WHERE email = $1", email)
+			}
+		})
 	})
 }
 
@@ -540,16 +565,15 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		conn, _ := pgx.Connect(ctx, databaseURL)
-		defer conn.Close(ctx)
-
-		if cleanupPrinterID != "" {
-			conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", cleanupPrinterID)
-		}
-		if cleanupAgentID != "" {
-			conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", cleanupAgentID)
-		}
-		conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+		cleanupDB(ctx, func(conn *pgx.Conn) {
+			if cleanupPrinterID != "" {
+				conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", cleanupPrinterID)
+			}
+			if cleanupAgentID != "" {
+				conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", cleanupAgentID)
+			}
+			conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+		})
 	})
 }
 
@@ -748,22 +772,21 @@ func TestJobServiceEndpoints(t *testing.T) {
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		conn, _ := pgx.Connect(ctx, databaseURL)
-		defer conn.Close(ctx)
-
-		if cleanupJobID != "" {
-			conn.Exec(ctx, "DELETE FROM print_jobs WHERE id = $1", cleanupJobID)
-		}
-		if cleanupDocumentID != "" {
-			conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupDocumentID)
-		}
-		if client.PrinterID != "" {
-			conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", client.PrinterID)
-		}
-		if client.AgentID != "" {
-			conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", client.AgentID)
-		}
-		conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+		cleanupDB(ctx, func(conn *pgx.Conn) {
+			if cleanupJobID != "" {
+				conn.Exec(ctx, "DELETE FROM print_jobs WHERE id = $1", cleanupJobID)
+			}
+			if cleanupDocumentID != "" {
+				conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupDocumentID)
+			}
+			if client.PrinterID != "" {
+				conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", client.PrinterID)
+			}
+			if client.AgentID != "" {
+				conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", client.AgentID)
+			}
+			conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+		})
 	})
 }
 
@@ -919,13 +942,12 @@ func TestStorageServiceEndpoints(t *testing.T) {
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		conn, _ := pgx.Connect(ctx, databaseURL)
-		defer conn.Close(ctx)
-
-		if cleanupDocumentID != "" {
-			conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupDocumentID)
-		}
-		conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+		cleanupDB(ctx, func(conn *pgx.Conn) {
+			if cleanupDocumentID != "" {
+				conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupDocumentID)
+			}
+			conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+		})
 	})
 }
 
@@ -1066,7 +1088,8 @@ func TestEndToEndWorkflow(t *testing.T) {
 		t.Log("Step 8: Verify job in database")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		conn, _ := pgx.Connect(ctx, databaseURL)
+		conn, err := pgx.Connect(ctx, databaseURL)
+		require.NoError(t, err, "Failed to connect to database for verification")
 		defer conn.Close(ctx)
 
 		var jobCount int
@@ -1101,24 +1124,23 @@ func TestEndToEndWorkflow(t *testing.T) {
 		t.Cleanup(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			conn, _ := pgx.Connect(ctx, databaseURL)
-			defer conn.Close(ctx)
-
-			if cleanupIDs.jobID != "" {
-				conn.Exec(ctx, "DELETE FROM print_jobs WHERE id = $1", cleanupIDs.jobID)
-			}
-			if cleanupIDs.documentID != "" {
-				conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupIDs.documentID)
-			}
-			if cleanupIDs.printerID != "" {
-				conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", cleanupIDs.printerID)
-			}
-			if cleanupIDs.agentID != "" {
-				conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", cleanupIDs.agentID)
-			}
-			if cleanupIDs.userID != "" {
-				conn.Exec(ctx, "DELETE FROM users WHERE id = $1", cleanupIDs.userID)
-			}
+			cleanupDB(ctx, func(conn *pgx.Conn) {
+				if cleanupIDs.jobID != "" {
+					conn.Exec(ctx, "DELETE FROM print_jobs WHERE id = $1", cleanupIDs.jobID)
+				}
+				if cleanupIDs.documentID != "" {
+					conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupIDs.documentID)
+				}
+				if cleanupIDs.printerID != "" {
+					conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", cleanupIDs.printerID)
+				}
+				if cleanupIDs.agentID != "" {
+					conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", cleanupIDs.agentID)
+				}
+				if cleanupIDs.userID != "" {
+					conn.Exec(ctx, "DELETE FROM users WHERE id = $1", cleanupIDs.userID)
+				}
+			})
 		})
 	})
 }
@@ -1172,12 +1194,12 @@ func TestDockerContainerCommunication(t *testing.T) {
 			// Cleanup
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			conn, _ := pgx.Connect(ctx, databaseURL)
-			defer conn.Close(ctx)
-			if agentID != "" {
-				conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", agentID)
-			}
-			conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+			cleanupDB(ctx, func(conn *pgx.Conn) {
+				if agentID != "" {
+					conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", agentID)
+				}
+				conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
+			})
 		}
 	})
 
