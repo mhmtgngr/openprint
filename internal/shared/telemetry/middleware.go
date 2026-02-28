@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -33,39 +34,94 @@ const (
 // Tracer is a global tracer instance.
 var Tracer trace.Tracer
 
-// InitTracer initializes the OpenTelemetry tracer with stdout exporter.
-// In production, configure OTLP or Jaeger exporter.
+// InitTracer initializes the OpenTelemetry tracer with OTLP/Jaeger exporter.
+// In production, configure OTEL_EXPORTER_OTLP_ENDPOINT or JAEGER_ENDPOINT.
+// For development without a collector, tracing is disabled (noop tracer).
 func InitTracer(serviceName, serviceVersion, jaegerEndpoint string) (func(context.Context) error, error) {
-	// If Jaeger endpoint is not configured, use stdout exporter (or noop)
-	if jaegerEndpoint == "" {
-		// No tracing endpoint configured, use noop tracer
+	ctx := context.Background()
+
+	// Check for OTLP endpoint environment variable
+	otlpEndpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if otlpEndpoint == "" {
+		otlpEndpoint = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+	}
+
+	var exporter tracesdk.SpanExporter
+	var err error
+
+	// Try OTLP exporter first (recommended for production)
+	if otlpEndpoint != "" {
+		exporter, err = otlptracegrpc.New(ctx,
+			otlptracegrpc.WithInsecure(),
+			otlptracegrpc.WithEndpoint(otlpEndpoint),
+		)
+		if err != nil {
+			// Log error but don't fail - use noop tracer
+			fmt.Printf("Warning: failed to create OTLP exporter: %v (using noop tracer)\n", err)
+			Tracer = trace.NewNoopTracerProvider().Tracer(serviceName)
+			return func(ctx context.Context) error { return nil }, nil
+		}
+	} else if jaegerEndpoint != "" {
+		// Legacy Jaeger endpoint support
+		// Jaeger accepts OTLP format directly on port 4317
+		exporter, err = otlptracegrpc.New(ctx,
+			otlptracegrpc.WithInsecure(),
+			otlptracegrpc.WithEndpoint(jaegerEndpoint),
+		)
+		if err != nil {
+			fmt.Printf("Warning: failed to create Jaeger exporter: %v (using noop tracer)\n", err)
+			Tracer = trace.NewNoopTracerProvider().Tracer(serviceName)
+			return func(ctx context.Context) error { return nil }, nil
+		}
+	} else {
+		// No tracing endpoint configured - use noop tracer for security
+		// Stdout exporter is intentionally NOT used in production to prevent
+		// sensitive data (tokens, credentials, user data) from being logged
 		Tracer = trace.NewNoopTracerProvider().Tracer(serviceName)
 		return func(ctx context.Context) error { return nil }, nil
 	}
 
-	// Use stdout exporter for development
-	// In production, replace with OTLP or Jaeger exporter
-	exp, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-	if err != nil {
-		return nil, fmt.Errorf("create stdout exporter: %w", err)
+	// Get deployment environment
+	env := os.Getenv("OTEL_ENVIRONMENT_NAME")
+	if env == "" {
+		env = os.Getenv("ENVIRONMENT")
+	}
+	if env == "" {
+		env = "production" // Default to production for security
 	}
 
 	res, err := resource.New(
-		context.Background(),
+		ctx,
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String(serviceName),
 			ServiceVersionKey.String(serviceVersion),
-			semconv.DeploymentEnvironmentNameKey.String("production"),
+			semconv.DeploymentEnvironmentNameKey.String(env),
 		),
+		resource.WithFromEnv(), // Also use OTEL_RESOURCE_ATTRIBUTES
 	)
 	if err != nil {
+		exporter.Shutdown(ctx)
 		return nil, err
 	}
 
+	// Configure sampling based on environment
+	var sampler tracesdk.Sampler
+	switch env {
+	case "production", "prod":
+		// Sample 1% in production to reduce costs while maintaining observability
+		sampler = tracesdk.TraceIDRatioBased(0.01)
+	case "staging":
+		// Sample 10% in staging
+		sampler = tracesdk.TraceIDRatioBased(0.1)
+	default:
+		// Always sample in development
+		sampler = tracesdk.AlwaysSample()
+	}
+
 	tracerProvider := tracesdk.NewTracerProvider(
-		tracesdk.WithBatcher(exp),
+		tracesdk.WithBatcher(exporter),
 		tracesdk.WithResource(res),
-		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(0.1)), // Sample 10% of traces
+		tracesdk.WithSampler(sampler),
 	)
 
 	otel.SetTracerProvider(tracerProvider)

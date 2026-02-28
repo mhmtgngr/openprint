@@ -86,8 +86,11 @@ func TestManager_AuthURL(t *testing.T) {
 
 	t.Run("generate auth URL", func(t *testing.T) {
 		state := "test-state-123"
-		authURL := mgr.AuthURL(state)
+		authURL, err := mgr.AuthURL(context.Background(), state)
 
+		if err != nil {
+			t.Fatalf("AuthURL() error = %v", err)
+		}
 		if authURL == "" {
 			t.Fatal("AuthURL() returned empty URL")
 		}
@@ -105,8 +108,11 @@ func TestManager_AuthURL(t *testing.T) {
 	})
 
 	t.Run("generate auth URL with empty state", func(t *testing.T) {
-		authURL := mgr.AuthURL("")
+		authURL, err := mgr.AuthURL(context.Background(), "")
 
+		if err != nil {
+			t.Fatalf("AuthURL() error = %v", err)
+		}
 		if authURL == "" {
 			t.Fatal("AuthURL() returned empty URL")
 		}
@@ -135,24 +141,31 @@ func TestManager_ValidateState(t *testing.T) {
 
 	t.Run("valid state", func(t *testing.T) {
 		state := "test-state-123"
-		// First, generate auth URL to store the state
-		_ = mgr.AuthURL(state)
+		// First, generate auth URL to store the state and get signed state
+		authURL, err := mgr.AuthURL(context.Background(), state)
+		if err != nil {
+			t.Fatalf("AuthURL() error = %v", err)
+		}
 
-		err := mgr.ValidateState(state)
+		// Extract the signed state from the URL
+		parsedURL, _ := url.Parse(authURL)
+		signedState := parsedURL.Query().Get("state")
+
+		err = mgr.ValidateState(context.Background(), signedState)
 		if err != nil {
 			t.Errorf("ValidateState() error = %v", err)
 		}
 	})
 
 	t.Run("empty state", func(t *testing.T) {
-		err := mgr.ValidateState("")
+		err := mgr.ValidateState(context.Background(), "")
 		if err != ErrInvalidState {
 			t.Errorf("ValidateState() error = %v, want %v", err, ErrInvalidState)
 		}
 	})
 
 	t.Run("unknown state", func(t *testing.T) {
-		err := mgr.ValidateState("unknown-state")
+		err := mgr.ValidateState(context.Background(), "unknown-state")
 		if err != ErrInvalidState {
 			t.Errorf("ValidateState() error = %v, want %v", err, ErrInvalidState)
 		}
@@ -398,11 +411,13 @@ func TestHandler(t *testing.T) {
 			}
 		})
 
-		// First store valid state
+		// First store valid state and get signed state
 		state := "test-state"
-		_ = mgr.AuthURL(state)
+		authURL, _ := mgr.AuthURL(context.Background(), state)
+		parsedURL, _ := url.Parse(authURL)
+		signedState := parsedURL.Query().Get("state")
 
-		req := httptest.NewRequest("GET", "/callback?state="+state, nil)
+		req := httptest.NewRequest("GET", "/callback?state="+signedState, nil)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)

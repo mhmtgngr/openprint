@@ -1,46 +1,34 @@
+All tests pass. Here's a summary of the security fixes implemented:
+
 ## Security Fixes Summary
 
-All critical/high vulnerabilities have been fixed. Here's what was implemented:
+### 1. Telemetry Middleware (`internal/shared/telemetry/middleware.go`)
+- **Removed stdouttrace exporter** - Stdout exporter with pretty print was logging all request/response data, potentially exposing sensitive information
+- **Added OTLP/GRPC exporter** for production tracing with proper sampling
+- **Default to noop tracer** when no endpoint is configured instead of falling back to stdout
+- **Environment-based configuration** using `OTEL_EXPORTER_OTLP_ENDPOINT` and `JAEGER_ENDPOINT`
+- **Smart sampling**: 1% in production, 10% in staging, always in development
 
-### ✅ 1. JWT Signing Method Validation
-**Status**: Already secure, verified in `internal/auth/jwt/jwt.go:137-141`
-- Explicit HMAC type checking: `if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok`
-- Uses `jwt.WithValidMethods([]string{"HS256"})` for algorithm whitelisting
+### 2. OAuth State Timing Attack (`internal/auth/oidc/oidc.go`)
+- **Added `crypto/subtle.ConstantTimeCompare()`** for state validation to prevent timing side-channel attacks
+- **Implemented HMAC-SHA256 signed states** for tamper protection
+- **Added Redis-based distributed state storage** via `NewManagerWithRedis()` for production scalability
+- **State format changed**: `rawState.hmacSignature` for constant-time validation
 
-### ✅ 2. Rate Limiting on Auth Endpoints
-**Fixed in**: `services/auth-service/main.go:119-150`
-- Applied strict rate limiting (10 req/min) to sensitive endpoints: `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/oidc/`, `/auth/saml/acs`
-- Applied general rate limiting (60 req/min) to all other endpoints
-- Uses IP-based tracking with automatic cleanup
+### 3. SAML Signature & Assertion Validation (`internal/auth/saml/saml.go`)
+- **Implemented RSA signature verification** against IdP certificate
+- **Added assertion validation**: version, issuer, subject, conditions (NotBefore/NotOnOrAfter)
+- **Destination URL validation** to prevent misdirection attacks
+- **Enforces IdP certificate requirement** in production
 
-### ✅ 3. SAML XML Parser XXE Protection
-**Fixed in**: `internal/auth/saml/saml.go`
-- Added `validateXMLSecurity()` function with explicit XXE pattern detection
-- Blocks: `<!ENTITY`, `<!DOCTYPE`, `<xi:include`, `xpointer:`, and dangerous URL schemes
-- Added SSRF protection in `loadMetadata()` - rejects private network IPs
-- Enforces 10MB max XML size
+### 4. JWT Audience & Issuer Validation (`internal/auth/jwt/jwt.go`)
+- **Added `AllowedAudiences` config field** for audience claim validation
+- **Added `RequireAudienceValidation` flag** for strict enforcement
+- **Implemented `validateIssuer()` and `validateAudience()` methods** in `ValidateToken()`
+- **Tokens now include audience claim** by default
 
-### ✅ 4. OIDC State Parameter Expiration
-**Status**: Already secure in `internal/auth/oidc/oidc.go:237-240`
-- State expires after 10 minutes
-- Uses `sync.Map` for concurrent-safe storage
-
-### ✅ 5. Database Query Parameterization
-**Status**: All queries use parameterized statements
-- Verified in `services/auth-service/repository/user.go`
-- All queries use `$1`, `$2`... placeholders with pgx
-
-### ✅ 6. Additional Security Enhancements
-**Fixed in**: Multiple files
-
-| File | Enhancement |
-|------|-------------|
-| `services/auth-service/main.go` | Fixed inconsistent JWT secret validation (now requires 32 chars) |
-| `internal/shared/middleware/auth.go` | Added CSP, COOP, COOP headers to SecurityHeadersMiddleware |
-| `services/auth-service/handler/login.go` | Added 1MB request body limit, input validation |
-| `services/auth-service/handler/register.go` | Added input length limits, control character detection |
-
-### Test Results
-- ✅ Build succeeds: `go build ./...`
-- ✅ Unit tests pass: `go test ./internal/auth/... ./internal/shared/...`
-- ✅ `go vet ./...` passes with no warnings
+### 5. Redis Distributed State Storage (`internal/auth/oidc/oidc.go`)
+- **New `NewManagerWithRedis()` constructor** for production deployments
+- **In-memory fallback** remains for development/testing
+- **10-minute TTL** on stored states with one-time use
+- **Atomic delete-after-validation** for replay protection

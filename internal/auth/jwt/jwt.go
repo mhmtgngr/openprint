@@ -53,6 +53,9 @@ type Config struct {
 	AccessDuration  time.Duration
 	RefreshDuration time.Duration
 	Issuer          string
+	AllowedAudiences []string // Allowed audiences for JWT validation
+	// RequireAudienceValidation forces audience validation even if no allowed audiences are set
+	RequireAudienceValidation bool
 }
 
 // DefaultConfig returns a JWT configuration with sensible defaults.
@@ -65,6 +68,8 @@ func DefaultConfig(secretKey string) (*Config, error) {
 		AccessDuration:  15 * time.Minute,
 		RefreshDuration: 7 * 24 * time.Hour, // 7 days
 		Issuer:          "openprint.cloud",
+		AllowedAudiences: []string{"openprint.cloud", "api.openprint.cloud"},
+		RequireAudienceValidation: true,
 	}, nil
 }
 
@@ -99,7 +104,7 @@ func (m *Manager) GenerateTokenPair(userID, email, role string, orgID string, sc
 	return accessToken, refreshToken, nil
 }
 
-// GenerateToken generates a JWT token.
+// GenerateToken generates a JWT token with proper audience and issuer claims.
 func (m *Manager) GenerateToken(userID, email, role string, orgID string, scopes []string, tokenType TokenType) (string, error) {
 	now := time.Now()
 	var duration time.Duration
@@ -107,6 +112,14 @@ func (m *Manager) GenerateToken(userID, email, role string, orgID string, scopes
 		duration = m.config.AccessDuration
 	} else {
 		duration = m.config.RefreshDuration
+	}
+
+	// Set audience - use the first allowed audience or default to issuer
+	audience := m.config.AllowedAudiences
+	if len(audience) == 0 {
+		if m.config.Issuer != "" {
+			audience = []string{m.config.Issuer}
+		}
 	}
 
 	claims := Claims{
@@ -119,6 +132,7 @@ func (m *Manager) GenerateToken(userID, email, role string, orgID string, scopes
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    m.config.Issuer,
 			Subject:   userID,
+			Audience:  audience,
 			ExpiresAt: jwt.NewNumericDate(now.Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
@@ -131,6 +145,7 @@ func (m *Manager) GenerateToken(userID, email, role string, orgID string, scopes
 }
 
 // ValidateToken validates a JWT token and returns the claims.
+// It performs comprehensive validation including signature, expiration, issuer, and audience.
 func (m *Manager) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Explicitly verify the signing method to prevent algorithm confusion attacks
@@ -152,7 +167,62 @@ func (m *Manager) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, ErrInvalidToken
 	}
 
+	// Validate issuer claim
+	if err := m.validateIssuer(claims); err != nil {
+		return nil, err
+	}
+
+	// Validate audience claim
+	if err := m.validateAudience(claims); err != nil {
+		return nil, err
+	}
+
 	return claims, nil
+}
+
+// validateIssuer validates the issuer claim of the token.
+func (m *Manager) validateIssuer(claims *Claims) error {
+	// If no issuer configured, skip validation
+	if m.config.Issuer == "" {
+		return nil
+	}
+
+	// Check if issuer matches
+	if claims.Issuer != m.config.Issuer {
+		return fmt.Errorf("invalid issuer: expected %q, got %q", m.config.Issuer, claims.Issuer)
+	}
+
+	return nil
+}
+
+// validateAudience validates the audience claim of the token.
+func (m *Manager) validateAudience(claims *Claims) error {
+	// Skip validation if not required and no allowed audiences configured
+	if !m.config.RequireAudienceValidation && len(m.config.AllowedAudiences) == 0 {
+		return nil
+	}
+
+	// Check if token has any audience
+	if len(claims.Audience) == 0 {
+		return errors.New("token missing audience claim")
+	}
+
+	// If no specific audiences configured, just check that audience is present
+	if len(m.config.AllowedAudiences) == 0 {
+		return nil
+	}
+
+	// Check if token's audience matches any of the allowed audiences
+	for _, allowedAud := range m.config.AllowedAudiences {
+		for _, tokenAud := range claims.Audience {
+			if tokenAud == allowedAud {
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("invalid audience: token audiences %v, allowed audiences %v",
+		claims.Audience, m.config.AllowedAudiences)
 }
 
 // ValidateAccessToken validates an access token specifically.

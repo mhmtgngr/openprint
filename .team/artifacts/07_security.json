@@ -1,67 +1,115 @@
 {
-  "risk_level": "low",
-  "security_score": 82,
+  "risk_level": "medium",
+  "security_score": 72,
   "vulnerabilities": [
     {
       "id": "V-001",
-      "severity": "low",
+      "severity": "high",
+      "file": "internal/shared/telemetry/middleware.go",
+      "description": "stdouttrace exporter may expose sensitive data (tokens, credentials, user data) in logs in production. Default stdout tracing with pretty print logs all request/response data.",
+      "fix": "Remove stdout exporter in production. Use OTLP or Jaeger with proper sampling and sensitive data filtering. Add config check to disable tracing in production."
+    },
+    {
+      "id": "V-002",
+      "severity": "high",
+      "file": "internal/auth/oidc/oidc.go",
+      "description": "State parameter comparison may be vulnerable to timing attacks. Using simple string comparison for OAuth state allows timing side-channel attacks.",
+      "fix": "Use crypto/subtle.ConstantTimeCompare() for state parameter validation to prevent timing attacks."
+    },
+    {
+      "id": "V-003",
+      "severity": "medium",
       "file": "internal/auth/saml/saml.go",
-      "description": "XML parsing uses xml.Unmarshal without explicit XXE protection configuration. While Go 1.17+ disables external entities by default, explicit decoder configuration is recommended for defense-in-depth against XML External Entity attacks in SAML responses.",
-      "fix": "Add explicit XML decoder configuration: decoder := xml.NewDecoder(reader). Set decoder.Strict to true and consider adding maximum entity size limits."
+      "description": "Incomplete SAML implementation visible. No evidence of XML Signature validation, assertion encryption, or replay attack protection (NotOnOrAfter Before conditions).",
+      "fix": "Implement full XML signature validation with IdP certificate, check assertion conditions (NotBefore/NotOnOrAfter), validate audience restriction, implement replay protection with unique ID tracking."
+    },
+    {
+      "id": "V-004",
+      "severity": "medium",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "Claims structure includes sensitive information (email, org_id, role) in JWT. If tokens are logged or leaked, PII is exposed. No evidence of audience (aud) or issuer (iss) claim validation in ValidateToken.",
+      "fix": "Add audience and issuer claim validation. Minimize sensitive data in access tokens - use opaque reference tokens or store minimal claims. Implement token fingerprinting."
+    },
+    {
+      "id": "V-005",
+      "severity": "medium",
+      "file": "internal/auth/oidc/oidc.go",
+      "description": "OAuth state stored only in memory (map with mutex). Not scalable across multiple service instances. State can be replayed within expiration window. No cleanup of expired states.",
+      "fix": "Use Redis or similar distributed cache for state storage. Implement state expiration and cleanup. Add PKCE (RFC 7636) for additional security."
+    },
+    {
+      "id": "V-006",
+      "severity": "low",
+      "file": "internal/shared/middleware/validation.go",
+      "description": "Pagination validation does not protect against excessive resource consumption. Very large limit values (up to maxLimit) could be abused.",
+      "fix": "Add reasonable default maxLimit (e.g., 100). Consider rate limiting per user/IP. Monitor for abuse patterns."
+    },
+    {
+      "id": "V-007",
+      "severity": "low",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "No evidence of key rotation mechanism. JWT secrets must be rotated periodically for security.",
+      "fix": "Implement key rotation support with kid (key ID) header. Maintain multiple valid keys during rotation period."
     }
   ],
   "owasp_checks": [
     {
-      "category": "A01",
+      "category": "A01:2021-Broken Access Control",
       "status": "pass",
-      "detail": "No SQL injection vectors found - input validation in place, no raw SQL visible"
+      "detail": "JWT validation present, middleware structure exists for auth"
     },
     {
-      "category": "A02",
+      "category": "A02:2021-Cryptographic Failures",
       "status": "pass",
-      "detail": "No XSS vectors found - provided code is backend-only, no HTML output rendering"
+      "detail": "Argon2id used for passwords with proper parameters (OWASP compliant)"
     },
     {
-      "category": "A03",
+      "category": "A03:2021-Injection",
       "status": "pass",
-      "detail": "XXE risk mitigated - Go 1.17+ disables external entities by default, though explicit config recommended"
+      "detail": "No SQL injection patterns found in provided code. Uses parameterized patterns."
     },
     {
-      "category": "A04",
-      "status": "pass",
-      "detail": "Argon2id with OWASP-compliant parameters (64MB, 3 iterations, 4 threads, 32-byte key)"
+      "category": "A04:2021-Insecure Design",
+      "status": "fail",
+      "detail": "Missing rate limiting, state management not distributed, no replay protection evident in SAML"
     },
     {
-      "category": "A05",
-      "status": "pass",
-      "detail": "No authentication misconfigurations found - JWT, OIDC, SAML properly implemented"
+      "category": "A05:2021-Security Misconfiguration",
+      "status": "fail",
+      "detail": "stdout tracer may leak sensitive data in production. No evidence of security headers."
     },
     {
-      "category": "A06",
+      "category": "A06:2021-Vulnerable and Outdated Components",
       "status": "pass",
-      "detail": "No XSS vectors in provided code"
+      "detail": "Using current libraries (golang.org/x/crypto, jwt/v5, opentelemetry)"
     },
     {
-      "category": "A07",
-      "status": "pass",
-      "detail": "Cryptography properly implemented - uses Argon2id, crypto/rand, golang-jwt"
+      "category": "A07:2021-Identification and Authentication Failures",
+      "status": "partial",
+      "detail": "Good password hashing. Timing attack vulnerability in OAuth state. Missing key rotation."
     },
     {
-      "category": "A08",
-      "status": "pass",
-      "detail": "No authentication/authorization issues in provided code"
+      "category": "A08:2021-Software and Data Integrity Failures",
+      "status": "fail",
+      "detail": "SAML signature validation not visible. No evidence of subresource integrity checks."
     },
     {
-      "category": "A09",
+      "category": "A09:2021-Security Logging and Monitoring",
       "status": "pass",
-      "detail": "No security logging/monitoring issues - telemetry with OpenTelemetry"
+      "detail": "OpenTelemetry implemented for distributed tracing"
     },
     {
-      "category": "A10",
+      "category": "A10:2021-Server-Side Request Forgery",
       "status": "pass",
-      "detail": "No SSRF vectors in provided code"
+      "detail": "No SSRF patterns found in provided code"
     }
   ],
-  "verdict": "APPROVE",
-  "critical_fixes": []
+  "verdict": "NEEDS_FIXES",
+  "critical_fixes": [
+    "1. Remove/fix stdouttrace exporter to prevent sensitive data logging in production",
+    "2. Fix OAuth state timing attack vulnerability using ConstantTimeCompare",
+    "3. Implement complete SAML signature and assertion validation",
+    "4. Add JWT audience and issuer claim validation",
+    "5. Implement distributed state storage (Redis) for OAuth flow scalability"
+  ]
 }

@@ -110,7 +110,11 @@ func (h *Handler) OIDCHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle redirect to provider
 	if r.Method == http.MethodGet && r.URL.Query().Get("code") == "" {
 		state := uuid.New().String()
-		authURL := manager.AuthURL(state)
+		authURL, err := manager.AuthURL(ctx, state)
+		if err != nil {
+			respondError(w, apperrors.Wrap(err, "failed to generate auth URL", http.StatusInternalServerError))
+			return
+		}
 		http.Redirect(w, r, authURL, http.StatusFound)
 		return
 	}

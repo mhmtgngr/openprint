@@ -4,16 +4,21 @@ package oidc
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/oauth2"
 )
 
@@ -79,11 +84,14 @@ type UserInfo struct {
 type Manager struct {
 	config       *Config
 	oauth2Config *oauth2.Config
-	stateStore   sync.Map // state -> creation time
+	stateStore   sync.Map              // state -> creation time (fallback, in-memory)
+	redisClient  *redis.Client         // Redis client for distributed state storage
+	stateSecret  []byte                // Secret key for HMAC state signing
 	userInfoURL  string
 }
 
-// NewManager creates a new OIDC manager.
+// NewManager creates a new OIDC manager with in-memory state storage.
+// Use NewManagerWithRedis for distributed state storage in production.
 func NewManager(ctx context.Context, config *Config) (*Manager, error) {
 	if config == nil {
 		return nil, errors.New("oidc config cannot be nil")
@@ -93,7 +101,67 @@ func NewManager(ctx context.Context, config *Config) (*Manager, error) {
 		return nil, errors.New("client ID is required")
 	}
 
-	m := &Manager{config: config}
+	// Generate a secure state secret for HMAC signing
+	// In production, this should come from configuration
+	stateSecret := make([]byte, 32)
+	if _, err := rand.Read(stateSecret); err != nil {
+		return nil, fmt.Errorf("generate state secret: %w", err)
+	}
+
+	m := &Manager{
+		config:      config,
+		stateSecret: stateSecret,
+	}
+
+	// Set default scopes if none provided
+	if len(config.Scopes) == 0 {
+		config.Scopes = []string{"openid", "profile", "email"}
+	}
+
+	// Build OAuth2 config
+	endpoint := m.buildEndpoint()
+
+	m.oauth2Config = &oauth2.Config{
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+		RedirectURL:  config.RedirectURL,
+		Scopes:       config.Scopes,
+		Endpoint:     endpoint,
+	}
+
+	// Set userinfo URL based on provider type
+	m.userInfoURL = config.EndpointURL + "/userinfo"
+	if config.ProviderType == ProviderGoogle {
+		m.userInfoURL = "https://www.googleapis.com/oauth2/v2/userinfo"
+	}
+
+	return m, nil
+}
+
+// NewManagerWithRedis creates a new OIDC manager with Redis-backed distributed state storage.
+// This is recommended for production environments with multiple service instances.
+func NewManagerWithRedis(ctx context.Context, config *Config, redisClient *redis.Client, stateSecret []byte) (*Manager, error) {
+	if config == nil {
+		return nil, errors.New("oidc config cannot be nil")
+	}
+
+	if config.ClientID == "" {
+		return nil, errors.New("client ID is required")
+	}
+
+	if redisClient == nil {
+		return nil, errors.New("redis client cannot be nil")
+	}
+
+	if len(stateSecret) < 32 {
+		return nil, errors.New("state secret must be at least 32 bytes")
+	}
+
+	m := &Manager{
+		config:      config,
+		redisClient: redisClient,
+		stateSecret: stateSecret,
+	}
 
 	// Set default scopes if none provided
 	if len(config.Scopes) == 0 {
@@ -156,16 +224,36 @@ func (m *Manager) buildEndpoint() oauth2.Endpoint {
 	return endpoint
 }
 
-// AuthURL generates the OAuth authorization URL.
-func (m *Manager) AuthURL(state string) string {
+// AuthURL generates the OAuth authorization URL with a signed state parameter.
+// The state is HMAC-signed to prevent tampering and enable constant-time comparison.
+func (m *Manager) AuthURL(ctx context.Context, state string) (string, error) {
 	if state == "" {
-		state = generateState()
+		var err error
+		state, err = generateState()
+		if err != nil {
+			return "", fmt.Errorf("generate state: %w", err)
+		}
 	}
 
-	// Store state with timestamp for validation
-	m.stateStore.Store(state, time.Now())
+	// Create HMAC signature for the state
+	sig := hmacState(m.stateSecret, state)
+	signedState := state + "." + sig
 
-	return m.oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	now := time.Now().UnixNano()
+
+	// Store state with timestamp for validation
+	if m.redisClient != nil {
+		// Use Redis for distributed state storage
+		key := "oauth:state:" + state
+		if err := m.redisClient.Set(ctx, key, now, 10*time.Minute).Err(); err != nil {
+			return "", fmt.Errorf("store state in redis: %w", err)
+		}
+	} else {
+		// Fall back to in-memory storage (not recommended for production)
+		m.stateStore.Store(state, now)
+	}
+
+	return m.oauth2Config.AuthCodeURL(signedState, oauth2.AccessTypeOffline), nil
 }
 
 // Exchange exchanges the authorization code for tokens.
@@ -223,20 +311,70 @@ func (m *Manager) RefreshToken(ctx context.Context, refreshToken string) (*oauth
 	return m.oauth2Config.TokenSource(ctx, token).Token()
 }
 
-// ValidateState validates the OAuth state parameter.
-func (m *Manager) ValidateState(state string) error {
+// ValidateState validates the OAuth state parameter using constant-time comparison.
+// This prevents timing attacks on the state validation.
+func (m *Manager) ValidateState(ctx context.Context, state string) error {
 	if state == "" {
 		return ErrInvalidState
 	}
 
-	value, ok := m.stateStore.LoadAndDelete(state)
+	// Split state into raw value and signature
+	parts := strings.SplitN(state, ".", 2)
+	if len(parts) != 2 {
+		return ErrInvalidState
+	}
+
+	rawState, providedSig := parts[0], parts[1]
+
+	// Verify HMAC signature using constant-time comparison
+	expectedSig := hmacState(m.stateSecret, rawState)
+	if subtle.ConstantTimeCompare([]byte(providedSig), []byte(expectedSig)) != 1 {
+		return ErrInvalidState
+	}
+
+	var storedTime int64
+	var ok bool
+
+	if m.redisClient != nil {
+		// Use Redis for distributed state storage
+		key := "oauth:state:" + rawState
+		val, err := m.redisClient.Get(ctx, key).Result()
+		if err != nil {
+			if err == redis.Nil {
+				return ErrInvalidState
+			}
+			return fmt.Errorf("get state from redis: %w", err)
+		}
+		_, err = fmt.Sscanf(val, "%d", &storedTime)
+		if err != nil {
+			return ErrInvalidState
+		}
+		// Delete the state after validation (one-time use)
+		m.redisClient.Del(ctx, key)
+		ok = true
+	} else {
+		// Fall back to in-memory storage
+		value, exists := m.stateStore.LoadAndDelete(rawState)
+		if !exists {
+			return ErrInvalidState
+		}
+		storedTime, ok = value.(int64)
+		if !ok {
+			// Try old time.Time format for backward compatibility
+			if oldTime, isTime := value.(time.Time); isTime {
+				storedTime = oldTime.UnixNano()
+				ok = true
+			}
+		}
+	}
+
 	if !ok {
 		return ErrInvalidState
 	}
 
 	// Check if state is too old (10 minutes)
-	creationTime, ok := value.(time.Time)
-	if !ok || time.Since(creationTime) > 10*time.Minute {
+	age := time.Now().UnixNano() - storedTime
+	if age > int64(10*time.Minute) {
 		return ErrInvalidState
 	}
 
@@ -250,7 +388,7 @@ func (m *Manager) Handler(callback func(w http.ResponseWriter, r *http.Request, 
 
 		// Validate state
 		state := r.URL.Query().Get("state")
-		if err := m.ValidateState(state); err != nil {
+		if err := m.ValidateState(ctx, state); err != nil {
 			callback(w, r, nil, fmt.Errorf("validate state: %w", err))
 			return
 		}
@@ -279,11 +417,21 @@ func (m *Manager) Handler(callback func(w http.ResponseWriter, r *http.Request, 
 	})
 }
 
-// generateState generates a secure random state parameter.
-func generateState() string {
+// generateState generates a cryptographically secure random state parameter.
+func generateState() (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generate random bytes: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// hmacState generates an HMAC-SHA256 signature for the state parameter.
+// This enables constant-time comparison during validation to prevent timing attacks.
+func hmacState(secret []byte, state string) string {
+	h := hmac.New(sha256.New, secret)
+	h.Write([]byte(state))
+	return base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 }
 
 // Registry manages multiple OIDC providers.
