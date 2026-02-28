@@ -2,7 +2,7 @@
   "results": [
     {
       "title": "Claude search",
-      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"20 Best Print Management Software in 2025 - SoftwareSuggest\",\n      \"content\": \"The best print management software are HP Service Manager, InfoFlo Print, Xerox FreeFlow Print Server, PrintSmith Vision, and Printlogic. Top solutions include PaperCut (#1 ranked, 100M+ users, supports any device/platform, features include mobile printing, job tracking, cost estimation, quotas, scripting, watermarking), Printix (cloud-based, GDPR compliant, $1.99/user/month starting), Print Manager Plus (real-time tracking, cost control, environmental reporting, role-based access control, secure release), and PressWise (job costing, order management, real-time pricing). Global market valued at $2.38B in 2024, projected to reach $4.39B by 2032 (8.1% CAGR).\",\n      \"url\": \"https://www.softwaresuggest.com/print-management-software\"\n    },\n    {\n      \"title\": \"Print Management Software Market Size & Analysis 2032\",\n      \"content\": \"Global print management softwa",
+      "content": "",
       "url": ""
     }
   ]

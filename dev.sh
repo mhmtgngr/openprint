@@ -873,7 +873,7 @@ phase_design() {
 
   cd "$REPO_DIR"
   local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 4000)
-  local files; files=$(find internal frontend/src -name "*.go" -o -name "*.tsx" 2>/dev/null | grep -v _test | grep -v node_modules | sort | head -50 || true)
+  local files; files=$(find internal services frontend/src web/dashboard/src web/frontend/src -name "*.go" -o -name "*.tsx" 2>/dev/null | grep -v _test | grep -v node_modules | sort | head -50 || true)
   local market; market=$(summarize_artifact "$ARTIFACTS/03_market_analysis.json" 2000)
 
   cat > "$DEV_DIR/tmp_sys.txt" << 'PROMPT'
@@ -1729,15 +1729,20 @@ diagnose_project() {
   cd "$REPO_DIR"
   local report="$ARTIFACTS/diagnosis.json"
 
-  local go_files; go_files=$(find "$REPO_DIR/internal" "$REPO_DIR/cmd" -name "*.go" 2>/dev/null | wc -l || true)
+  local go_files; go_files=$(find "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/services" -name "*.go" 2>/dev/null | wc -l || true)
   go_files="${go_files//[^0-9]/}"; go_files="${go_files:-0}"
   local test_files; test_files=$(find "$REPO_DIR" -name "*_test.go" 2>/dev/null | wc -l || true)
   test_files="${test_files//[^0-9]/}"; test_files="${test_files:-0}"
-  local tsx_files; tsx_files=$(find "$REPO_DIR/frontend/src" -name "*.tsx" -o -name "*.ts" 2>/dev/null | wc -l || true)
+  local tsx_files=0
+  local fe_dir=""
+  for d in frontend/src web/dashboard/src web/frontend/src web/src src/frontend client/src; do
+    [ -d "$REPO_DIR/$d" ] && { fe_dir="$REPO_DIR/$d"; break; }
+  done
+  [ -n "$fe_dir" ] && tsx_files=$(find "$fe_dir" -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" 2>/dev/null | grep -v node_modules | wc -l || true)
   tsx_files="${tsx_files//[^0-9]/}"; tsx_files="${tsx_files:-0}"
-  local todo_count; todo_count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/frontend/src" 2>/dev/null | wc -l || true)
+  local todo_count; todo_count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/services" ${fe_dir:-} 2>/dev/null | wc -l || true)
   todo_count="${todo_count//[^0-9]/}"; todo_count="${todo_count:-0}"
-  local todo_list; todo_list=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/frontend/src" 2>/dev/null | head -20 || true)
+  local todo_list; todo_list=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/services" ${fe_dir:-} 2>/dev/null | head -20 || true)
 
   local build_ok="yes" compile_errors=""
   go build ./... 2>/dev/null || { build_ok="no"; compile_errors=$(go build ./... 2>&1 | tail -20 || true); }
@@ -2185,17 +2190,27 @@ scan_project_completion() {
     planned_migrations=$(python3 -c "import json; print(len(json.load(open('$ARTIFACTS/02_design.json')).get('database_migrations',[])))" 2>/dev/null || echo "0")
   fi
 
-  local exist_go; exist_go=$(find internal cmd -name "*.go" 2>/dev/null | grep -v _test | wc -l || echo "0")
+  local exist_go; exist_go=$(find internal cmd services -name "*.go" 2>/dev/null | grep -v _test | wc -l || echo "0")
   exist_go="${exist_go//[^0-9]/}"; exist_go="${exist_go:-0}"
-  local exist_tsx; exist_tsx=$(find frontend/src -name "*.tsx" -o -name "*.ts" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
+
+  # Auto-detect frontend directory
+  local fe_dir=""
+  for d in frontend/src web/dashboard/src web/frontend/src web/src src/frontend client/src; do
+    [ -d "$REPO_DIR/$d" ] && { fe_dir="$d"; break; }
+  done
+  local exist_tsx=0
+  if [ -n "$fe_dir" ]; then
+    exist_tsx=$(find "$fe_dir" -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" 2>/dev/null | grep -v node_modules | grep -v "\.d\.ts$" | wc -l || echo "0")
+  fi
   exist_tsx="${exist_tsx//[^0-9]/}"; exist_tsx="${exist_tsx:-0}"
-  local exist_tests; exist_tests=$(find . -name "*_test.go" -o -name "*.spec.ts" -o -name "*.spec.tsx" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
+
+  local exist_tests; exist_tests=$(find . -name "*_test.go" -o -name "*.spec.ts" -o -name "*.spec.tsx" -o -name "*.test.ts" -o -name "*.test.tsx" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
   exist_tests="${exist_tests//[^0-9]/}"; exist_tests="${exist_tests:-0}"
   local exist_migrations; exist_migrations=$(find migrations -name "*.sql" 2>/dev/null | wc -l || echo "0")
   exist_migrations="${exist_migrations//[^0-9]/}"; exist_migrations="${exist_migrations:-0}"
   local exist_endpoints=0
-  exist_endpoints=$(grep -rn "\.GET\|\.POST\|\.PUT\|\.DELETE\|\.PATCH\|router\.Handle\|http\.HandleFunc\|r\.Route\|e\.GET\|e\.POST\|mux\.Handle" \
-    internal cmd 2>/dev/null | grep -v "_test.go" | wc -l || echo "0")
+  exist_endpoints=$(grep -rn "\.GET\|\.POST\|\.PUT\|\.DELETE\|\.PATCH\|router\.Handle\|http\.HandleFunc\|r\.Route\|e\.GET\|e\.POST\|mux\.Handle\|\.HandleFunc\|\.Handler\|\.Methods(" \
+    internal cmd services 2>/dev/null | grep -v "_test.go" | wc -l || echo "0")
   exist_endpoints="${exist_endpoints//[^0-9]/}"; exist_endpoints="${exist_endpoints:-0}"
 
   local build_ok="no" test_ok="no" test_pass=0 test_fail=0
@@ -2207,7 +2222,7 @@ scan_project_completion() {
   test_fail="${test_fail//[^0-9]/}"; test_fail="${test_fail:-0}"
   [ "$test_fail" -eq 0 ] && [ "$test_pass" -gt 0 ] && test_ok="yes"
 
-  local todos; todos=$(grep -rn "TODO\|FIXME\|HACK\|XXX" internal cmd frontend/src 2>/dev/null | wc -l || echo "0")
+  local todos; todos=$(grep -rn "TODO\|FIXME\|HACK\|XXX" internal cmd services ${fe_dir:-frontend/src} 2>/dev/null | wc -l || echo "0")
   todos="${todos//[^0-9]/}"; todos="${todos:-0}"
   local docker_ok="no"
   { ls deployments/docker/Dockerfile.* >/dev/null 2>&1 || [ -f Dockerfile ]; } && docker_ok="yes"
