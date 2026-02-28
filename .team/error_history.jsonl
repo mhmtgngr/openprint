@@ -4,3 +4,4 @@
 {"timestamp": "2026-02-27T19:34:15.899118", "phase": "deploy", "type": "docker_build_fail", "detail": "dashboard: [1/2] STEP 1/6: FROM node:20-alpine AS builder\n[1/2] STEP 2/6: WORKDIR /build\n--> abee84835820\n[1/2] STEP 3/6: COPY web/dashboard/package*.json ./\nError: building at STEP \"COPY web/dashboar"}
 {"timestamp": "2026-02-28T06:14:35.292523", "phase": "\u2699\ufe0f  Backend", "type": "claude_terminated", "detail": "Failed after 3 attempts, last exit: 1"}
 {"timestamp": "2026-02-28T06:15:07.846045", "phase": "\ud83c\udfa8 Frontend", "type": "claude_terminated", "detail": "Failed after 3 attempts, last exit: 1"}
+{"timestamp": "2026-02-28T07:36:54.970774", "phase": "testing", "type": "go_test_fail", "detail": "=== RUN   TestManager_RefreshAccessToken/access_token_cannot_be_used_to_refresh\n--- PASS: TestManager_RefreshAccessToken (0.00s)\n    --- PASS: TestManager_RefreshAccessToken/valid_refresh_token_genera"}

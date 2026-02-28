@@ -1,3 +1,4 @@
+?   	github.com/openprint/openprint/internal/agent	[no test files]
 === RUN   TestDefaultConfig
 === RUN   TestDefaultConfig/valid_config
 === RUN   TestDefaultConfig/secret_key_too_short
@@ -161,7 +162,7 @@
     --- PASS: TestSecurity_SecretKeyValidation/DefaultConfig_accepts_32_character_secret (0.00s)
     --- PASS: TestSecurity_SecretKeyValidation/NewManager_validates_secret_key_length (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/jwt	0.022s
+ok  	github.com/openprint/openprint/internal/auth/jwt	0.020s
 === RUN   TestNewManager
 === RUN   TestNewManager/valid_config
 === RUN   TestNewManager/nil_config
@@ -261,7 +262,7 @@ ok  	github.com/openprint/openprint/internal/auth/jwt	0.022s
 --- PASS: TestExchange (0.00s)
     --- PASS: TestExchange/empty_code_returns_error (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/oidc	0.008s
+ok  	github.com/openprint/openprint/internal/auth/oidc	0.010s
 === RUN   TestDefaultParameters
 --- PASS: TestDefaultParameters (0.00s)
 === RUN   TestNewHasher
@@ -272,43 +273,43 @@ ok  	github.com/openprint/openprint/internal/auth/oidc	0.008s
 === RUN   TestHasher_Generate/generate_valid_hash
 === RUN   TestHasher_Generate/generate_different_hashes_for_same_password
 === RUN   TestHasher_Generate/empty_password_returns_error
---- PASS: TestHasher_Generate (0.53s)
-    --- PASS: TestHasher_Generate/generate_valid_hash (0.17s)
-    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.36s)
+--- PASS: TestHasher_Generate (0.61s)
+    --- PASS: TestHasher_Generate/generate_valid_hash (0.21s)
+    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.39s)
     --- PASS: TestHasher_Generate/empty_password_returns_error (0.00s)
 === RUN   TestHasher_Verify
 === RUN   TestHasher_Verify/verify_correct_password
 === RUN   TestHasher_Verify/verify_incorrect_password
 === RUN   TestHasher_Verify/verify_invalid_hash_format
---- PASS: TestHasher_Verify (0.38s)
-    --- PASS: TestHasher_Verify/verify_correct_password (0.23s)
-    --- PASS: TestHasher_Verify/verify_incorrect_password (0.16s)
+--- PASS: TestHasher_Verify (0.49s)
+    --- PASS: TestHasher_Verify/verify_correct_password (0.27s)
+    --- PASS: TestHasher_Verify/verify_incorrect_password (0.21s)
     --- PASS: TestHasher_Verify/verify_invalid_hash_format (0.00s)
 === RUN   TestHasher_MustGenerate
 === RUN   TestHasher_MustGenerate/successful_generation
 === RUN   TestHasher_MustGenerate/panics_on_empty_password
---- PASS: TestHasher_MustGenerate (0.14s)
-    --- PASS: TestHasher_MustGenerate/successful_generation (0.14s)
+--- PASS: TestHasher_MustGenerate (0.18s)
+    --- PASS: TestHasher_MustGenerate/successful_generation (0.18s)
     --- PASS: TestHasher_MustGenerate/panics_on_empty_password (0.00s)
 === RUN   TestGenerate
---- PASS: TestGenerate (0.14s)
+--- PASS: TestGenerate (0.20s)
 === RUN   TestVerify
 === RUN   TestVerify/verify_correct_password
 === RUN   TestVerify/verify_incorrect_password
---- PASS: TestVerify (0.22s)
+--- PASS: TestVerify (0.23s)
     --- PASS: TestVerify/verify_correct_password (0.07s)
     --- PASS: TestVerify/verify_incorrect_password (0.07s)
 === RUN   TestMustVerify
 === RUN   TestMustVerify/successful_verification
 === RUN   TestMustVerify/panics_on_invalid_password
---- PASS: TestMustVerify (0.19s)
-    --- PASS: TestMustVerify/successful_verification (0.06s)
+--- PASS: TestMustVerify (0.21s)
+    --- PASS: TestMustVerify/successful_verification (0.08s)
     --- PASS: TestMustVerify/panics_on_invalid_password (0.07s)
 === RUN   TestDecodeHash
 === RUN   TestDecodeHash/decode_valid_hash
 === RUN   TestDecodeHash/decode_invalid_hash_format
 === RUN   TestDecodeHash/decode_hash_with_wrong_version
---- PASS: TestDecodeHash (0.06s)
+--- PASS: TestDecodeHash (0.07s)
     --- PASS: TestDecodeHash/decode_valid_hash (0.00s)
     --- PASS: TestDecodeHash/decode_invalid_hash_format (0.00s)
     --- PASS: TestDecodeHash/decode_hash_with_wrong_version (0.00s)
@@ -349,29 +350,29 @@ ok  	github.com/openprint/openprint/internal/auth/oidc	0.008s
     --- PASS: TestStrengthChecker_CalculateStrength/maximum_strength (0.00s)
     --- PASS: TestStrengthChecker_CalculateStrength/weak_password (0.00s)
 === RUN   TestHash_String
---- PASS: TestHash_String (0.06s)
+--- PASS: TestHash_String (0.07s)
 === RUN   TestConstantTimeComparison
---- PASS: TestConstantTimeComparison (0.18s)
+--- PASS: TestConstantTimeComparison (0.20s)
 === RUN   TestCrossCompatibility
---- PASS: TestCrossCompatibility (0.12s)
+--- PASS: TestCrossCompatibility (0.14s)
 === RUN   TestEmptyPasswordHash
 === RUN   TestEmptyPasswordHash/hash_empty_password
 === RUN   TestEmptyPasswordHash/verify_empty_password
---- PASS: TestEmptyPasswordHash (0.12s)
+--- PASS: TestEmptyPasswordHash (0.15s)
     --- PASS: TestEmptyPasswordHash/hash_empty_password (0.00s)
-    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.12s)
+    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.15s)
 === RUN   TestSpecialCharactersInPassword
 === RUN   TestSpecialCharactersInPassword/special_chars
 === RUN   TestSpecialCharactersInPassword/special_chars#01
 === RUN   TestSpecialCharactersInPassword/special_chars#02
 === RUN   TestSpecialCharactersInPassword/special_chars#03
---- PASS: TestSpecialCharactersInPassword (0.54s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars (0.15s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.13s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.14s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.12s)
+--- PASS: TestSpecialCharactersInPassword (0.53s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars (0.13s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.14s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.13s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.13s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/password	2.702s
+ok  	github.com/openprint/openprint/internal/auth/password	3.101s
 === RUN   TestNewManager
 === RUN   TestNewManager/valid_config
 === RUN   TestNewManager/nil_config
@@ -425,7 +426,8 @@ ok  	github.com/openprint/openprint/internal/auth/password	2.702s
 === RUN   TestSAMLConditions
 --- PASS: TestSAMLConditions (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/saml	0.007s
+ok  	github.com/openprint/openprint/internal/auth/saml	0.006s
+?   	github.com/openprint/openprint/internal/middleware	[no test files]
 === RUN   TestAppError_Error
 === RUN   TestAppError_Error/error_without_underlying_error
 === RUN   TestAppError_Error/error_with_underlying_error
@@ -545,7 +547,7 @@ ok  	github.com/openprint/openprint/internal/auth/saml	0.007s
 === RUN   TestValidationErrorType
 --- PASS: TestValidationErrorType (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/errors	0.011s
+ok  	github.com/openprint/openprint/internal/shared/errors	0.012s
 ?   	github.com/openprint/openprint/internal/shared/middleware	[no test files]
 === RUN   TestInitTracer
 === RUN   TestInitTracer/no_jaeger_endpoint_returns_noop_tracer
@@ -560,8 +562,8 @@ ok  	github.com/openprint/openprint/internal/shared/errors	0.011s
 === RUN   TestHTTPMiddleware
 === RUN   TestHTTPMiddleware/http_middleware_adds_duration_attribute
 === RUN   TestHTTPMiddleware/http_middleware_captures_status_code
---- PASS: TestHTTPMiddleware (0.01s)
-    --- PASS: TestHTTPMiddleware/http_middleware_adds_duration_attribute (0.01s)
+--- PASS: TestHTTPMiddleware (0.02s)
+    --- PASS: TestHTTPMiddleware/http_middleware_adds_duration_attribute (0.02s)
     --- PASS: TestHTTPMiddleware/http_middleware_captures_status_code (0.00s)
 === RUN   TestResponseWriter_WriteHeader
 === RUN   TestResponseWriter_WriteHeader/WriteHeader_is_called_only_once
@@ -642,9 +644,83 @@ ok  	github.com/openprint/openprint/internal/shared/errors	0.011s
     --- PASS: TestHTTPMiddleware_status_capture/Not_Found (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/Internal_Server_Error (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/telemetry	0.034s
+ok  	github.com/openprint/openprint/internal/shared/telemetry	0.041s
 ?   	github.com/openprint/openprint/services/auth-service	[no test files]
 ?   	github.com/openprint/openprint/services/auth-service/handler	[no test files]
+=== RUN   TestEnrollmentTokenRepository_Create
+    enrollment_token_test.go:33: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:33
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Create
+--- FAIL: TestEnrollmentTokenRepository_Create (0.00s)
+=== RUN   TestEnrollmentTokenRepository_FindByToken
+    enrollment_token_test.go:58: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:58
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_FindByToken
+--- FAIL: TestEnrollmentTokenRepository_FindByToken (0.00s)
+=== RUN   TestEnrollmentTokenRepository_Validate
+=== RUN   TestEnrollmentTokenRepository_Validate/valid_token
+    enrollment_token_test.go:87: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:87
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Validate/valid_token
+=== RUN   TestEnrollmentTokenRepository_Validate/non-existent_token
+=== RUN   TestEnrollmentTokenRepository_Validate/expired_token
+    enrollment_token_test.go:110: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:110
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Validate/expired_token
+=== RUN   TestEnrollmentTokenRepository_Validate/revoked_token
+    enrollment_token_test.go:126: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:126
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Validate/revoked_token
+=== RUN   TestEnrollmentTokenRepository_Validate/max_uses_exceeded
+    enrollment_token_test.go:146: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:146
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Validate/max_uses_exceeded
+=== RUN   TestEnrollmentTokenRepository_Validate/wrong_organization
+    enrollment_token_test.go:169: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:169
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Validate/wrong_organization
+--- FAIL: TestEnrollmentTokenRepository_Validate (0.00s)
+    --- FAIL: TestEnrollmentTokenRepository_Validate/valid_token (0.00s)
+    --- PASS: TestEnrollmentTokenRepository_Validate/non-existent_token (0.00s)
+    --- FAIL: TestEnrollmentTokenRepository_Validate/expired_token (0.00s)
+    --- FAIL: TestEnrollmentTokenRepository_Validate/revoked_token (0.00s)
+    --- FAIL: TestEnrollmentTokenRepository_Validate/max_uses_exceeded (0.00s)
+    --- FAIL: TestEnrollmentTokenRepository_Validate/wrong_organization (0.00s)
+=== RUN   TestEnrollmentTokenRepository_IncrementUseCount
+    enrollment_token_test.go:196: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:196
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_IncrementUseCount
+--- FAIL: TestEnrollmentTokenRepository_IncrementUseCount (0.00s)
+=== RUN   TestEnrollmentTokenRepository_Revoke
+    enrollment_token_test.go:229: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:229
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_Revoke
+--- FAIL: TestEnrollmentTokenRepository_Revoke (0.00s)
+=== RUN   TestEnrollmentTokenRepository_List
+    enrollment_token_test.go:262: 
+        	Error Trace:	/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:262
+        	Error:      	Received unexpected error:
+        	            	create enrollment token: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+        	Test:       	TestEnrollmentTokenRepository_List
+--- FAIL: TestEnrollmentTokenRepository_List (0.00s)
 === RUN   TestNewSessionRepository
 --- PASS: TestNewSessionRepository (0.00s)
 === RUN   TestSessionRepository_key
@@ -777,57 +853,35 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.034s
 === RUN   TestUser_CRUD/create,_read,_update,_delete_flow
 --- PASS: TestUser_CRUD (0.00s)
     --- PASS: TestUser_CRUD/create,_read,_update,_delete_flow (0.00s)
-PASS
-ok  	github.com/openprint/openprint/services/auth-service/repository	0.015s
+FAIL
+FAIL	github.com/openprint/openprint/services/auth-service/repository	0.020s
 ?   	github.com/openprint/openprint/services/job-service	[no test files]
-=== RUN   TestNewHandler
---- PASS: TestNewHandler (0.00s)
-=== RUN   TestCreateJobRequest_Validation
-=== RUN   TestCreateJobRequest_Validation/valid_request
-=== RUN   TestCreateJobRequest_Validation/missing_document_id
-=== RUN   TestCreateJobRequest_Validation/missing_printer_id
-=== RUN   TestCreateJobRequest_Validation/missing_user_email
---- PASS: TestCreateJobRequest_Validation (0.00s)
-    --- PASS: TestCreateJobRequest_Validation/valid_request (0.00s)
-    --- PASS: TestCreateJobRequest_Validation/missing_document_id (0.00s)
-    --- PASS: TestCreateJobRequest_Validation/missing_printer_id (0.00s)
-    --- PASS: TestCreateJobRequest_Validation/missing_user_email (0.00s)
-=== RUN   TestCreateJobRequest_Defaults
---- PASS: TestCreateJobRequest_Defaults (0.00s)
-=== RUN   TestJobToResponse
---- PASS: TestJobToResponse (0.00s)
-=== RUN   TestHandler_CreateJob_Success
---- PASS: TestHandler_CreateJob_Success (0.00s)
-=== RUN   TestHandler_CreateJob_MissingFields
---- PASS: TestHandler_CreateJob_MissingFields (0.00s)
-=== RUN   TestHandler_GetJob_Success
---- PASS: TestHandler_GetJob_Success (0.00s)
-=== RUN   TestHandler_GetJob_NotFound
---- PASS: TestHandler_GetJob_NotFound (0.00s)
-=== RUN   TestHandler_ListJobs
---- PASS: TestHandler_ListJobs (0.00s)
-=== RUN   TestHandler_CancelJob
---- PASS: TestHandler_CancelJob (0.00s)
-=== RUN   TestHandler_CancelJob_Completed
---- PASS: TestHandler_CancelJob_Completed (0.00s)
-=== RUN   TestHandler_RetryJob
---- PASS: TestHandler_RetryJob (0.00s)
-=== RUN   TestHandler_PauseJob
---- PASS: TestHandler_PauseJob (0.00s)
-=== RUN   TestHandler_ResumeJob
---- PASS: TestHandler_ResumeJob (0.00s)
-=== RUN   TestHandler_QueueStats
---- PASS: TestHandler_QueueStats (0.00s)
-=== RUN   TestHandler_JobHistory
---- PASS: TestHandler_JobHistory (0.00s)
-=== RUN   TestRespondJSON
---- PASS: TestRespondJSON (0.00s)
-=== RUN   TestRespondError_AppError
---- PASS: TestRespondError_AppError (0.00s)
-=== RUN   TestRespondError_GenericError
---- PASS: TestRespondError_GenericError (0.00s)
-PASS
-ok  	github.com/openprint/openprint/services/job-service/handler	0.014s
+=== RUN   TestAgentPollHandler_PollJobs_Success
+--- PASS: TestAgentPollHandler_PollJobs_Success (0.00s)
+=== RUN   TestAgentPollHandler_PollJobs_MissingAgentID
+--- PASS: TestAgentPollHandler_PollJobs_MissingAgentID (0.00s)
+=== RUN   TestAgentPollHandler_PollJobs_InvalidLimit
+--- FAIL: TestAgentPollHandler_PollJobs_InvalidLimit (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x8 pc=0x60f141]
+
+goroutine 22 [running]:
+testing.tRunner.func1.2({0x688f00, 0x939c80})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x688f00?, 0x939c80?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/openprint/openprint/services/job-service/handler.(*AgentPollHandler).PollJobs(0xc00019ff30, {0x741c68, 0xc000133240}, 0xc00018da40)
+	/home/cmit/openprint/services/job-service/handler/agent_poll.go:96 +0x461
+github.com/openprint/openprint/services/job-service/handler.TestAgentPollHandler_PollJobs_InvalidLimit(0xc000103500)
+	/home/cmit/openprint/services/job-service/handler/agent_poll_test.go:184 +0x2b6
+testing.tRunner(0xc000103500, 0x6f2ed8)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+created by testing.(*T).Run in goroutine 1
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/services/job-service/handler	0.012s
 === RUN   TestNewProcessor
 --- PASS: TestNewProcessor (0.00s)
 === RUN   TestProcessor_Stats
@@ -863,7 +917,34 @@ ok  	github.com/openprint/openprint/services/job-service/handler	0.014s
     processor_test.go:592: Concurrent access test passed
 --- PASS: TestProcessor_ConcurrentAccess (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/job-service/processor	0.012s
+ok  	github.com/openprint/openprint/services/job-service/processor	0.016s
+=== RUN   TestJobAssignmentRepository_AssignJob
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_AssignJob (0.00s)
+=== RUN   TestJobAssignmentRepository_UpdateStatus
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_UpdateStatus (0.00s)
+=== RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_UpdateStatus_SQLInjection (0.00s)
+=== RUN   TestJobAssignmentRepository_FindByAgent
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_FindByAgent (0.00s)
+=== RUN   TestJobAssignmentRepository_FindByJobAndAgent
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_FindByJobAndAgent (0.00s)
+=== RUN   TestJobAssignmentRepository_UpdateHeartbeat
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_UpdateHeartbeat (0.00s)
+=== RUN   TestJobAssignmentRepository_IncrementRetry
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_IncrementRetry (0.00s)
+=== RUN   TestJobAssignmentRepository_SetError
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_SetError (0.00s)
+=== RUN   TestJobAssignmentRepository_GetStaleAssignments
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_GetStaleAssignments (0.00s)
 === RUN   TestNewJobHistoryRepository
 --- PASS: TestNewJobHistoryRepository (0.00s)
 === RUN   TestJobHistory_Struct
@@ -978,8 +1059,8 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.012s
 --- PASS: TestPrintJob_MediaTypes (0.00s)
 === RUN   TestPrintJob_QualityLevels
 --- PASS: TestPrintJob_QualityLevels (0.00s)
-PASS
-ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
+FAIL
+FAIL	github.com/openprint/openprint/services/job-service/repository	0.022s
 ?   	github.com/openprint/openprint/services/notification-service	[no test files]
 === RUN   TestNewHandler
 --- PASS: TestNewHandler (0.00s)
@@ -1016,7 +1097,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
 === RUN   TestHandler_BroadcastSystemNotification
 --- PASS: TestHandler_BroadcastSystemNotification (0.00s)
 === RUN   TestHandler_GetActiveUsers
-2026/02/27 19:31:16 Client registered: client-1 (user: user-123, org: )
+2026/02/28 07:36:52 Client registered: client-1 (user: user-123, org: )
 --- PASS: TestHandler_GetActiveUsers (0.00s)
 === RUN   TestHandler_GetConnectionStats
 --- PASS: TestHandler_GetConnectionStats (0.00s)
@@ -1036,9 +1117,9 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
 === RUN   TestClient_HandleMessage/subscribe_message
 === RUN   TestClient_HandleMessage/unsubscribe_message
 === RUN   TestClient_HandleMessage/unknown_message_type
-2026/02/27 19:31:16 Unknown message type: unknown
+2026/02/28 07:36:52 Unknown message type: unknown
 === RUN   TestClient_HandleMessage/invalid_JSON
-2026/02/27 19:31:16 Failed to unmarshal message: invalid character 'i' looking for beginning of value
+2026/02/28 07:36:52 Failed to unmarshal message: invalid character 'i' looking for beginning of value
 --- PASS: TestClient_HandleMessage (0.00s)
     --- PASS: TestClient_HandleMessage/ping_message (0.00s)
     --- PASS: TestClient_HandleMessage/subscribe_message (0.00s)
@@ -1049,8 +1130,8 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
     handler_test.go:607: writePump exit test passed
 --- PASS: TestWritePump_Timeout (0.00s)
 === RUN   TestReadPump_CloseOnPongTimeout
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: )
-2026/02/27 19:31:16 Client unregistered: client-1
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: )
+2026/02/28 07:36:52 Client unregistered: client-1
 --- PASS: TestReadPump_CloseOnPongTimeout (0.00s)
 === RUN   TestHandler_URLParsing
 --- PASS: TestHandler_URLParsing (0.00s)
@@ -1059,52 +1140,52 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
 === RUN   TestNewHub
 --- PASS: TestNewHub (0.00s)
 === RUN   TestHub_RegisterClient
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
 --- PASS: TestHub_RegisterClient (0.00s)
 === RUN   TestHub_UnregisterClient
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
-2026/02/27 19:31:16 Client unregistered: client-1
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client unregistered: client-1
 --- PASS: TestHub_UnregisterClient (0.00s)
 === RUN   TestHub_Broadcast
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
-2026/02/27 19:31:16 Client registered: client-2 (user: user-2, org: org-1)
-2026/02/27 19:31:16 Client registered: client-3 (user: user-3, org: org-1)
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-2 (user: user-2, org: org-1)
+2026/02/28 07:36:52 Client registered: client-3 (user: user-3, org: org-1)
 --- PASS: TestHub_Broadcast (0.00s)
 === RUN   TestHub_SendToUser
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
-2026/02/27 19:31:16 Client registered: client-2 (user: user-1, org: org-1)
-2026/02/27 19:31:16 Client registered: client-3 (user: user-2, org: org-1)
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-2 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-3 (user: user-2, org: org-1)
 --- PASS: TestHub_SendToUser (0.00s)
 === RUN   TestHub_BroadcastToOrg
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
-2026/02/27 19:31:16 Client registered: client-2 (user: user-2, org: org-1)
-2026/02/27 19:31:16 Client registered: client-3 (user: user-3, org: org-2)
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-2 (user: user-2, org: org-1)
+2026/02/28 07:36:52 Client registered: client-3 (user: user-3, org: org-2)
 --- PASS: TestHub_BroadcastToOrg (0.00s)
 === RUN   TestHub_GetConnectionCount
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: )
-2026/02/27 19:31:16 Client registered: client-2 (user: user-2, org: )
-2026/02/27 19:31:16 Client registered: client-3 (user: user-3, org: )
-2026/02/27 19:31:16 Client registered: client-4 (user: user-4, org: )
-2026/02/27 19:31:16 Client registered: client-5 (user: user-5, org: )
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: )
+2026/02/28 07:36:52 Client registered: client-2 (user: user-2, org: )
+2026/02/28 07:36:52 Client registered: client-3 (user: user-3, org: )
+2026/02/28 07:36:52 Client registered: client-4 (user: user-4, org: )
+2026/02/28 07:36:52 Client registered: client-5 (user: user-5, org: )
 --- PASS: TestHub_GetConnectionCount (0.00s)
 === RUN   TestHub_GetConnectionsByUser
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: )
-2026/02/27 19:31:16 Client registered: client-2 (user: user-1, org: )
-2026/02/27 19:31:16 Client registered: client-3 (user: user-1, org: )
-2026/02/27 19:31:16 Client registered: client-other (user: user-2, org: )
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: )
+2026/02/28 07:36:52 Client registered: client-2 (user: user-1, org: )
+2026/02/28 07:36:52 Client registered: client-3 (user: user-1, org: )
+2026/02/28 07:36:52 Client registered: client-other (user: user-2, org: )
 --- PASS: TestHub_GetConnectionsByUser (0.00s)
 === RUN   TestHub_GetConnectionsByOrg
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
-2026/02/27 19:31:16 Client registered: client-2 (user: user-2, org: org-1)
-2026/02/27 19:31:16 Client registered: client-3 (user: user-3, org: org-1)
-2026/02/27 19:31:16 Client registered: client-4 (user: user-4, org: org-1)
-2026/02/27 19:31:16 Client registered: client-5 (user: user-5, org: org-2)
-2026/02/27 19:31:16 Client registered: client-6 (user: user-6, org: org-2)
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-2 (user: user-2, org: org-1)
+2026/02/28 07:36:52 Client registered: client-3 (user: user-3, org: org-1)
+2026/02/28 07:36:52 Client registered: client-4 (user: user-4, org: org-1)
+2026/02/28 07:36:52 Client registered: client-5 (user: user-5, org: org-2)
+2026/02/28 07:36:52 Client registered: client-6 (user: user-6, org: org-2)
 --- PASS: TestHub_GetConnectionsByOrg (0.00s)
 === RUN   TestHub_Shutdown
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: )
-2026/02/27 19:31:16 Client registered: client-2 (user: user-2, org: )
-2026/02/27 19:31:16 Client registered: client-3 (user: user-3, org: )
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: )
+2026/02/28 07:36:52 Client registered: client-2 (user: user-2, org: )
+2026/02/28 07:36:52 Client registered: client-3 (user: user-3, org: )
 --- PASS: TestHub_Shutdown (0.00s)
 === RUN   TestMessage_CreationFunctions
 === RUN   TestMessage_CreationFunctions/JobStatusUpdate
@@ -1117,7 +1198,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
     --- PASS: TestMessage_CreationFunctions/PrinterStatusUpdate (0.00s)
     --- PASS: TestMessage_CreationFunctions/NewNotification (0.00s)
 === RUN   TestHub_SendMethods
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: org-1)
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: org-1)
 === RUN   TestHub_SendMethods/SendToUser
 === RUN   TestHub_SendMethods/BroadcastToOrg
 === RUN   TestHub_SendMethods/Broadcast
@@ -1126,7 +1207,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
     --- PASS: TestHub_SendMethods/BroadcastToOrg (0.00s)
     --- PASS: TestHub_SendMethods/Broadcast (0.00s)
 === RUN   TestClient_NoOrg
-2026/02/27 19:31:16 Client registered: client-1 (user: user-1, org: )
+2026/02/28 07:36:52 Client registered: client-1 (user: user-1, org: )
 --- PASS: TestClient_NoOrg (0.00s)
 === RUN   TestHub_Run_ContextCancellation
 --- PASS: TestHub_Run_ContextCancellation (0.00s)
@@ -1135,7 +1216,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	0.010s
 === RUN   TestRemoveClient_NotFound
 --- PASS: TestRemoveClient_NotFound (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/notification-service/websocket	0.024s
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.038s
 ?   	github.com/openprint/openprint/services/registry-service	[no test files]
 ?   	github.com/openprint/openprint/services/registry-service/handler	[no test files]
 === RUN   TestNewAgentRepository
@@ -1235,7 +1316,7 @@ ok  	github.com/openprint/openprint/services/notification-service/websocket	0.02
 === RUN   TestPrinter_TimeFields
 --- PASS: TestPrinter_TimeFields (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/registry-service/repository	0.010s
+ok  	github.com/openprint/openprint/services/registry-service/repository	0.012s
 ?   	github.com/openprint/openprint/services/storage-service	[no test files]
 === RUN   TestNewHandler
 --- PASS: TestNewHandler (0.00s)
@@ -1331,7 +1412,7 @@ ok  	github.com/openprint/openprint/services/registry-service/repository	0.010s
 === RUN   TestDocumentMetadata_WithoutExpiry
 --- PASS: TestDocumentMetadata_WithoutExpiry (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/storage-service/handler	0.009s
+ok  	github.com/openprint/openprint/services/storage-service/handler	0.012s
 === RUN   TestNewEncryptedBackend
 --- PASS: TestNewEncryptedBackend (0.00s)
 === RUN   TestNewEncryptedBackend_KeyDerivation
@@ -1361,7 +1442,7 @@ ok  	github.com/openprint/openprint/services/storage-service/handler	0.009s
 === RUN   TestGenerateKey
 --- PASS: TestGenerateKey (0.00s)
 === RUN   TestDeriveKey
---- PASS: TestDeriveKey (0.20s)
+--- PASS: TestDeriveKey (0.21s)
 === RUN   TestEncryptedBackend_EmptyData
 --- PASS: TestEncryptedBackend_EmptyData (0.00s)
 === RUN   TestEncryptedBackend_LargeData
@@ -1486,4 +1567,141 @@ ok  	github.com/openprint/openprint/services/storage-service/handler	0.009s
 === RUN   TestDataBuffer_OffsetTracking
 --- PASS: TestDataBuffer_OffsetTracking (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/storage-service/storage	0.240s
+ok  	github.com/openprint/openprint/services/storage-service/storage	0.248s
+=== RUN   TestHealthChecks
+=== RUN   TestHealthChecks/auth_service_health
+    api_test.go:154: Checking health endpoint: http://localhost:18001/health
+    api_test.go:157: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:157
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:18001/health": dial tcp 127.0.0.1:18001: connect: connection refused
+        	Test:       	TestHealthChecks/auth_service_health
+        	Messages:   	Failed to make health check request
+=== RUN   TestHealthChecks/registry_service_health
+    api_test.go:154: Checking health endpoint: http://localhost:8002/health
+    api_test.go:157: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:157
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:8002/health": dial tcp 127.0.0.1:8002: connect: connection refused
+        	Test:       	TestHealthChecks/registry_service_health
+        	Messages:   	Failed to make health check request
+=== RUN   TestHealthChecks/job_service_health
+    api_test.go:154: Checking health endpoint: http://localhost:8003/health
+    api_test.go:157: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:157
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:8003/health": dial tcp 127.0.0.1:8003: connect: connection refused
+        	Test:       	TestHealthChecks/job_service_health
+        	Messages:   	Failed to make health check request
+=== RUN   TestHealthChecks/storage_service_health
+    api_test.go:154: Checking health endpoint: http://localhost:8004/health
+    api_test.go:157: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:157
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:8004/health": dial tcp 127.0.0.1:8004: connect: connection refused
+        	Test:       	TestHealthChecks/storage_service_health
+        	Messages:   	Failed to make health check request
+=== RUN   TestHealthChecks/notification_service_health
+    api_test.go:154: Checking health endpoint: http://localhost:18005/health
+    api_test.go:157: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:157
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:18005/health": dial tcp 127.0.0.1:18005: connect: connection refused
+        	Test:       	TestHealthChecks/notification_service_health
+        	Messages:   	Failed to make health check request
+--- FAIL: TestHealthChecks (0.00s)
+    --- FAIL: TestHealthChecks/auth_service_health (0.00s)
+    --- FAIL: TestHealthChecks/registry_service_health (0.00s)
+    --- FAIL: TestHealthChecks/job_service_health (0.00s)
+    --- FAIL: TestHealthChecks/storage_service_health (0.00s)
+    --- FAIL: TestHealthChecks/notification_service_health (0.00s)
+=== RUN   TestDatabaseConnection
+=== RUN   TestDatabaseConnection/connect_to_postgres
+    api_test.go:183: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:183
+        	Error:      	Received unexpected error:
+        	            	failed to connect to `user=openprint database=openprint`:
+        	            		127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
+        	            		127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
+        	Test:       	TestDatabaseConnection/connect_to_postgres
+        	Messages:   	Should connect to database
+=== RUN   TestDatabaseConnection/check_required_tables_exist
+    api_test.go:197: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:197
+        	Error:      	Received unexpected error:
+        	            	failed to connect to `user=openprint database=openprint`:
+        	            		127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
+        	            		127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
+        	Test:       	TestDatabaseConnection/check_required_tables_exist
+        	Messages:   	Should connect to database
+--- FAIL: TestDatabaseConnection (0.00s)
+    --- FAIL: TestDatabaseConnection/connect_to_postgres (0.00s)
+    --- FAIL: TestDatabaseConnection/check_required_tables_exist (0.00s)
+=== RUN   TestAuthServiceEndpoints
+=== RUN   TestAuthServiceEndpoints/register_new_user
+    api_test.go:336: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:336
+        	Error:      	Received unexpected error:
+        	            	Post "http://localhost:18001/auth/register": dial tcp 127.0.0.1:18001: connect: connection refused
+        	Test:       	TestAuthServiceEndpoints/register_new_user
+        	Messages:   	Request should succeed
+=== RUN   TestAuthServiceEndpoints/get_current_user
+    api_test.go:336: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:336
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:18001/auth/me": dial tcp 127.0.0.1:18001: connect: connection refused
+        	Test:       	TestAuthServiceEndpoints/get_current_user
+        	Messages:   	Request should succeed
+=== RUN   TestAuthServiceEndpoints/unauthorized_request
+    api_test.go:336: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:336
+        	Error:      	Received unexpected error:
+        	            	Get "http://localhost:18001/auth/me": dial tcp 127.0.0.1:18001: connect: connection refused
+        	Test:       	TestAuthServiceEndpoints/unauthorized_request
+        	Messages:   	Request should succeed
+=== RUN   TestAuthServiceEndpoints/register_duplicate_email_should_fail
+    api_test.go:336: 
+        	Error Trace:	/home/cmit/openprint/tests/integration/api_test.go:336
+        	Error:      	Received unexpected error:
+        	            	Post "http://localhost:18001/auth/register": dial tcp 127.0.0.1:18001: connect: connection refused
+        	Test:       	TestAuthServiceEndpoints/register_duplicate_email_should_fail
+        	Messages:   	Request should succeed
+--- FAIL: TestAuthServiceEndpoints (0.00s)
+    --- FAIL: TestAuthServiceEndpoints/register_new_user (0.00s)
+    --- FAIL: TestAuthServiceEndpoints/get_current_user (0.00s)
+    --- FAIL: TestAuthServiceEndpoints/unauthorized_request (0.00s)
+    --- FAIL: TestAuthServiceEndpoints/register_duplicate_email_should_fail (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference
+	panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x832c58]
+
+goroutine 41 [running]:
+testing.tRunner.func1.2({0x9200e0, 0xe511b0})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1734 +0x21c
+testing.tRunner.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1737 +0x35e
+panic({0x9200e0?, 0xe511b0?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/jackc/pgx/v5.(*Conn).IsClosed(...)
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/conn.go:420
+github.com/jackc/pgx/v5.(*Conn).Close(0x43dfc5?, {0xa92940?, 0xc000306ee0?})
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/conn.go:299 +0x18
+panic({0x9200e0?, 0xe511b0?})
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+github.com/jackc/pgx/v5.(*Conn).Exec(0x0, {0xa92940?, 0xc000306ee0?}, {0x9dddbd, 0x22}, {0xc000049750, 0x1, 0x1})
+	/home/cmit/go/pkg/mod/github.com/jackc/pgx/v5@v5.7.1/conn.go:458 +0x5a
+github.com/openprint/openprint/tests/integration.TestAuthServiceEndpoints.func5()
+	/home/cmit/openprint/tests/integration/api_test.go:363 +0x10f
+testing.(*common).Cleanup.func1()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1211 +0x106
+testing.(*common).runCleanup(0xc0001916c0, 0xc000049010?)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1445 +0xea
+testing.tRunner.func2()
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1786 +0x25
+testing.tRunner(0xc0001916c0, 0x9f5be0)
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1798 +0x11e
+created by testing.(*T).Run in goroutine 1
+	/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+FAIL	github.com/openprint/openprint/tests/integration	2.016s
+FAIL

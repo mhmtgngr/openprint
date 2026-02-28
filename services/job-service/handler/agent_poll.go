@@ -91,11 +91,16 @@ func (h *AgentPollHandler) PollJobs(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 
 	for _, job := range jobs {
+		// Skip nil jobs
+		if job == nil {
+			continue
+		}
+
 		// Create assignment record
 		assignment := &repository.JobAssignment{
-			JobID:  job.ID,
-			AgentID: req.AgentID,
-			Status: "assigned",
+			JobID:    job.ID,
+			AgentID:  req.AgentID,
+			Status:   "assigned",
 		}
 
 		if err := h.assignmentRepo.AssignJob(ctx, assignment); err != nil {
