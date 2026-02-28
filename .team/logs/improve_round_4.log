@@ -1,0 +1,35 @@
+Done! I've created the React authentication components in `web/dashboard/src/features/auth/`:
+
+**Created files:**
+
+1. **`web/dashboard/src/types/auth.ts`** - Auth-specific TypeScript types:
+   - `User`, `UserRole`, `AuthTokens`
+   - `LoginRequest`, `RegisterRequest`, `AuthResponse`
+   - `LoginFormProps`, `RegisterFormProps`, `ProtectedRouteProps`
+   - `AuthContextValue`, `AuthState`
+
+2. **`web/dashboard/src/features/auth/LoginForm.tsx`** - Login form component with:
+   - Email and password fields
+   - Submit button with loading state
+   - Error display
+   - Uses `useState` and `FormEvent` hooks
+
+3. **`web/dashboard/src/features/auth/RegisterForm.tsx`** - Register form component with:
+   - Name, email, password, and confirm password fields
+   - Password validation (matching and minimum length)
+   - Submit button with loading state
+   - Uses `useState` and `FormEvent` hooks
+
+4. **`web/dashboard/src/features/auth/ProtectedRoute.tsx`** - Protected route wrapper:
+   - Authentication check with loading spinner
+   - Role-based access control (`requiredRoles` prop)
+   - `AdminRoute` convenience component for admin/owner roles
+   - Uses `useEffect` hook for redirects
+
+5. **`web/dashboard/src/features/auth/index.ts`** - Barrel export file
+
+6. **Updated `web/dashboard/src/hooks/useAuth.ts`** - Now imports types from `types/auth.ts`
+
+**TypeScript check passed:** `npm run type-check` ✓
+
+**Commit:** `3f3cbb05` - feat: Add React authentication components with TypeScript
