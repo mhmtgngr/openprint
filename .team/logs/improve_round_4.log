@@ -1,33 +1,37 @@
-Created React dashboard components in `web/dashboard/src/features/dashboard/`:
+Done! I've created the organization service with the following files:
 
-**Files created:**
-1. **`types.ts`** - Type definitions for `DashboardStats`, `Activity`, `JobStatistics`, `ChartDataPoint` with activity configuration
+**Created:**
+1. `services/organization-service/main.go` - Service entry point on port 8007
+2. `services/organization-service/handler/org.go` - Organization CRUD handlers
+3. `services/organization-service/handler/permission.go` - Permission handlers
+4. `services/organization-service/repository/org.go` - Data access layer
 
-2. **`StatCard.tsx`** - Reusable metric card component with:
-   - Icon support
-   - Value with optional unit
-   - Trend indicators (positive/negative)
-   - 5 color options (blue, green, purple, orange, red)
-   - Loading skeleton state
+**API Endpoints:**
+- `POST /api/v1/organizations` - Create organization
+- `GET /api/v1/organizations` - List organizations
+- `GET /api/v1/organizations/:id` - Get organization by ID
+- `PUT /api/v1/organizations/:id` - Update organization
+- `DELETE /api/v1/organizations/:id` - Delete organization
+- `GET /api/v1/organizations/:id/permissions` - List permissions
+- `POST /api/v1/organizations/:id/permissions` - Create permission
 
-3. **`RecentActivity.tsx`** - Activity feed displaying:
-   - Recent job events with status indicators
-   - Timestamp formatting (relative time)
-   - Empty state handling
-   - Configurable max items
+**Repository Methods:**
+- `Create()`, `FindByID()`, `FindBySlug()`, `List()`, `Update()`, `Delete()`
+- `AddMember()`, `RemoveMember()`, `ListMembers()`
+- `AddPermission()`, `RemovePermission()`, `ListPermissions()`, `GetUserPermission()`
 
-4. **`JobChart.tsx`** - CSS-based bar chart for:
-   - Job statistics visualization
-   - Hover tooltips
-   - Summary stats (total, completed, failed)
-   - Period-based labels
+**Database Schema Reference:**
+The service uses the existing `organizations` table from migration `000001_create_organizations.up.sql`:
+```sql
+CREATE TABLE organizations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    plan VARCHAR(50) DEFAULT 'free',
+    settings JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
 
-5. **`DashboardHome.tsx`** - Main dashboard component with:
-   - Stats fetching from `analyticsApi`, `jobsApi`, `agentsApi`, `printersApi`
-   - 4-column responsive stat cards grid
-   - Job chart spanning 2 columns
-   - Recent activity sidebar
-
-6. **`index.ts`** - Barrel exports
-
-The type-check passed and changes were committed.
+Build successful, tests passing, committed as `d5ed54f4`.
