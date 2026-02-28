@@ -1,59 +1,46 @@
-All tests pass. Here's a summary of the security fixes applied to `internal/auth/jwt/jwt.go`:
+## Security Fixes Summary
 
-## Security Fixes Applied
+All critical/high vulnerabilities have been fixed. Here's what was implemented:
 
-### 1. Explicit Algorithm Validation (HIGH - Algorithm Confusion Attack Prevention)
-**File:** `internal/auth/jwt/jwt.go:121-142`
+### ✅ 1. JWT Signing Method Validation
+**Status**: Already secure, verified in `internal/auth/jwt/jwt.go:137-141`
+- Explicit HMAC type checking: `if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok`
+- Uses `jwt.WithValidMethods([]string{"HS256"})` for algorithm whitelisting
 
-Added `jwt.WithValidMethods([]string{"HS256"})` to `ValidateToken()`:
-```go
-token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-    if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-        return nil, ErrInvalidSigningMethod
-    }
-    return []byte(m.config.SecretKey), nil
-}, jwt.WithValidMethods([]string{"HS256"}))  // <-- NEW: Prevents "none" algorithm bypass
-```
+### ✅ 2. Rate Limiting on Auth Endpoints
+**Fixed in**: `services/auth-service/main.go:119-150`
+- Applied strict rate limiting (10 req/min) to sensitive endpoints: `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/oidc/`, `/auth/saml/acs`
+- Applied general rate limiting (60 req/min) to all other endpoints
+- Uses IP-based tracking with automatic cleanup
 
-### 2. Minimum Secret Key Length Validation
-**Added constant and error:**
-```go
-const MinSecretKeyLength = 32
-var ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
-```
+### ✅ 3. SAML XML Parser XXE Protection
+**Fixed in**: `internal/auth/saml/saml.go`
+- Added `validateXMLSecurity()` function with explicit XXE pattern detection
+- Blocks: `<!ENTITY`, `<!DOCTYPE`, `<xi:include`, `xpointer:`, and dangerous URL schemes
+- Added SSRF protection in `loadMetadata()` - rejects private network IPs
+- Enforces 10MB max XML size
 
-**Updated `DefaultConfig()`** - Now validates key length:
-```go
-func DefaultConfig(secretKey string) (*Config, error) {
-    if len(secretKey) < MinSecretKeyLength {
-        return nil, fmt.Errorf("%w: got %d characters, want at least %d", ...)
-    }
-    ...
-}
-```
+### ✅ 4. OIDC State Parameter Expiration
+**Status**: Already secure in `internal/auth/oidc/oidc.go:237-240`
+- State expires after 10 minutes
+- Uses `sync.Map` for concurrent-safe storage
 
-**Updated `NewManager()`** - Now validates config and returns error:
-```go
-func NewManager(config *Config) (*Manager, error) {
-    if config == nil {
-        return nil, errors.New("jwt config cannot be nil")
-    }
-    if len(config.SecretKey) < MinSecretKeyLength {
-        return nil, fmt.Errorf("%w: ...", ...)
-    }
-    ...
-}
-```
+### ✅ 5. Database Query Parameterization
+**Status**: All queries use parameterized statements
+- Verified in `services/auth-service/repository/user.go`
+- All queries use `$1`, `$2`... placeholders with pgx
 
-### 3. New Security Tests
-Added comprehensive security tests in `jwt_test.go`:
-- `TestSecurity_AlgorithmConfusion` - Tests rejection of "none" algorithm and other algorithms
-- `TestSecurity_SecretKeyValidation` - Tests minimum key length enforcement
+### ✅ 6. Additional Security Enhancements
+**Fixed in**: Multiple files
 
-### 4. Updated Callers
-Fixed all callers across the codebase to handle the new error returns:
-- `internal/shared/middleware/auth.go`
-- `services/auth-service/main.go`
-- `services/job-service/main.go`
-- `services/registry-service/main.go`
-- `services/storage-service/main.go`
+| File | Enhancement |
+|------|-------------|
+| `services/auth-service/main.go` | Fixed inconsistent JWT secret validation (now requires 32 chars) |
+| `internal/shared/middleware/auth.go` | Added CSP, COOP, COOP headers to SecurityHeadersMiddleware |
+| `services/auth-service/handler/login.go` | Added 1MB request body limit, input validation |
+| `services/auth-service/handler/register.go` | Added input length limits, control character detection |
+
+### Test Results
+- ✅ Build succeeds: `go build ./...`
+- ✅ Unit tests pass: `go test ./internal/auth/... ./internal/shared/...`
+- ✅ `go vet ./...` passes with no warnings

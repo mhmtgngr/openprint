@@ -3,6 +3,7 @@
 package saml
 
 import (
+	"bytes"
 	"context"
 	cryptoRand "crypto/rand"
 	"crypto/rsa"
@@ -14,6 +15,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -83,6 +85,23 @@ func (m *Manager) loadMetadata(ctx context.Context) error {
 		return nil
 	}
 
+	// Validate URL scheme to prevent SSRF attacks
+	parsedURL, err := url.Parse(m.config.MetadataURL)
+	if err != nil {
+		return fmt.Errorf("invalid metadata URL: %w", err)
+	}
+
+	// Only allow https and http schemes
+	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
+		return fmt.Errorf("invalid URL scheme: %s (only https and http allowed)", parsedURL.Scheme)
+	}
+
+	// Reject localhost and private network IPs in production
+	hostname := parsedURL.Hostname()
+	if isPrivateNetwork(hostname) {
+		return fmt.Errorf("metadata URL cannot point to private network: %s", hostname)
+	}
+
 	client := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, "GET", m.config.MetadataURL, nil)
 	if err != nil {
@@ -104,7 +123,50 @@ func (m *Manager) loadMetadata(ctx context.Context) error {
 		return fmt.Errorf("read metadata: %w", err)
 	}
 
+	// Validate XML for XXE
+	if err := validateXMLSecurity(m.idpMeta); err != nil {
+		return fmt.Errorf("metadata XML security validation failed: %w", err)
+	}
+
 	return nil
+}
+
+// isPrivateNetwork checks if a hostname is a private network address.
+func isPrivateNetwork(hostname string) bool {
+	// Check for localhost variants
+	privateHosts := []string{
+		"localhost", "127.0.0.1", "::1", "0.0.0.0",
+	}
+
+	for _, h := range privateHosts {
+		if hostname == h || strings.HasPrefix(hostname, "127.") {
+			return true
+		}
+	}
+
+	// Check for private IP ranges (basic check)
+	if strings.HasPrefix(hostname, "10.") ||
+		strings.HasPrefix(hostname, "192.168.") ||
+		strings.HasPrefix(hostname, "172.16.") ||
+		strings.HasPrefix(hostname, "172.17.") ||
+		strings.HasPrefix(hostname, "172.18.") ||
+		strings.HasPrefix(hostname, "172.19.") ||
+		strings.HasPrefix(hostname, "172.20.") ||
+		strings.HasPrefix(hostname, "172.21.") ||
+		strings.HasPrefix(hostname, "172.22.") ||
+		strings.HasPrefix(hostname, "172.23.") ||
+		strings.HasPrefix(hostname, "172.24.") ||
+		strings.HasPrefix(hostname, "172.25.") ||
+		strings.HasPrefix(hostname, "172.26.") ||
+		strings.HasPrefix(hostname, "172.27.") ||
+		strings.HasPrefix(hostname, "172.28.") ||
+		strings.HasPrefix(hostname, "172.29.") ||
+		strings.HasPrefix(hostname, "172.30.") ||
+		strings.HasPrefix(hostname, "172.31.") {
+		return true
+	}
+
+	return false
 }
 
 // Metadata returns the service provider metadata XML.
@@ -179,7 +241,12 @@ func (m *Manager) HandleResponse(req *http.Request) (*Assertion, error) {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 
-	// Parse the SAML response
+	// Validate against XXE attacks before parsing
+	if err := validateXMLSecurity(decodedResponse); err != nil {
+		return nil, fmt.Errorf("xml security validation failed: %w", err)
+	}
+
+	// Parse the SAML response with secure decoder
 	var samlResponse SAMLResponse
 	if err := xml.Unmarshal(decodedResponse, &samlResponse); err != nil {
 		return nil, fmt.Errorf("unmarshal response: %w", err)
@@ -324,6 +391,45 @@ func generateID() string {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	return base64.URLEncoding.EncodeToString(b)
+}
+
+// validateXMLSecurity performs security checks on XML data to prevent XXE attacks.
+// Go's encoding/xml package does not process external entities by default, but this
+// function provides defense-in-depth by explicitly checking for XXE patterns.
+func validateXMLSecurity(xmlData []byte) error {
+	// Convert to lowercase for case-insensitive matching
+	lowerXML := bytes.ToLower(xmlData)
+	xmlStr := string(lowerXML)
+
+	// Check for XXE attack patterns
+	xxePatterns := []string{
+		"<!entity",
+		"<!doctype",
+		"system ",
+		"public ",
+		"<xi:include",
+		"xpointer:",
+		"data:text/plain",
+		"file://",
+		"ftp://",
+		"http://",
+		"https://",
+		"gopher://",
+	}
+
+	for _, pattern := range xxePatterns {
+		if strings.Contains(xmlStr, pattern) {
+			return fmt.Errorf("potential XXE attack detected: forbidden pattern '%s'", pattern)
+		}
+	}
+
+	// Additional check: limit XML size to prevent DoS
+	const maxXMLSize = 10 * 1024 * 1024 // 10MB
+	if len(xmlData) > maxXMLSize {
+		return fmt.Errorf("XML data exceeds maximum size of %d bytes", maxXMLSize)
+	}
+
+	return nil
 }
 
 // SAMLResponse represents a SAML response.

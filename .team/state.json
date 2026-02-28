@@ -28,13 +28,13 @@
       "e2e": "skipped"
     },
     "qa": {
-      "status": "running",
-      "_updated": "2026-02-28T07:16:40.622396",
-      "verdict": "APPROVE"
+      "status": "done",
+      "_updated": "2026-02-28T07:30:25.659526",
+      "verdict": "NEEDS_FIXES"
     },
     "security": {
-      "status": "done",
-      "_updated": "2026-02-28T06:15:13.324751",
+      "status": "running",
+      "_updated": "2026-02-28T07:30:25.731458",
       "verdict": "APPROVE"
     },
     "deploy": {
@@ -44,5 +44,5 @@
   },
   "project": "windows print agent with printer discovery and queue which is instlled server side(server print job queued client consume print related user) and windows client side",
   "branch": "team/windows-print-agent-with-printer-discove-1772259498",
-  "current_phase": "qa"
+  "current_phase": "security"
 }

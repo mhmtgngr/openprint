@@ -475,12 +475,24 @@ func CORSMiddleware(allowedOrigins []string, allowedMethods []string, allowedHea
 func SecurityHeadersMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Prevent MIME type sniffing
 			w.Header().Set("X-Content-Type-Options", "nosniff")
+			// Prevent clickjacking
 			w.Header().Set("X-Frame-Options", "DENY")
+			// Enable XSS filter (legacy browsers)
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
-			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-			w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+			// HSTS for HTTPS enforcement
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+			// Control referrer information
+			w.Header().Set("Referrer-Policy", "no-referrer")
+			// Restrict browser features
+			w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=()")
+			// Content Security Policy
+			w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; sandbox")
+			// Cross-Origin policies
+			w.Header().Set("Cross-Origin-Embedder-Policy", "require-corp")
+			w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+			w.Header().Set("Cross-Origin-Resource-Policy", "same-site")
 
 			next.ServeHTTP(w, r)
 		})

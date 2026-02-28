@@ -164,7 +164,6 @@ func TestAgentPollHandler_PollJobs_MissingAgentID(t *testing.T) {
 
 // TestAgentPollHandler_PollJobs_InvalidLimit tests limit enforcement.
 func TestAgentPollHandler_PollJobs_InvalidLimit(t *testing.T) {
-	now := time.Now()
 	mockRepo := &MockAssignmentRepository{
 		jobs: make([]*repository.PrintJob, 200), // Create many jobs
 	}

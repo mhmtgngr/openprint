@@ -20,6 +20,7 @@ import (
 	"github.com/openprint/openprint/internal/auth/saml"
 	"github.com/openprint/openprint/internal/auth/password"
 	_ "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
 	"github.com/openprint/openprint/services/auth-service/handler"
 	"github.com/openprint/openprint/services/auth-service/repository"
@@ -114,8 +115,37 @@ func main() {
 	mux.HandleFunc("/auth/saml/metadata", h.SAMLMetadataHandler)
 	mux.HandleFunc("/auth/saml/acs", h.SAMLACSHandler)
 
+	// Apply security middleware chain
+	// 1. Rate limiting for auth endpoints (10 requests per minute for sensitive endpoints)
+	authRateLimiter := middleware.RateLimitMiddleware(10, 5*time.Minute)
+	// 2. General rate limiting (60 requests per minute)
+	generalRateLimiter := middleware.RateLimitMiddleware(60, 5*time.Minute)
+	// 3. Security headers
+	securityHeaders := middleware.SecurityHeadersMiddleware()
+	// 4. CORS (allow specific origins in production)
+	corsMiddleware := middleware.CORSMiddleware(
+		[]string{"*"}, // Configure appropriately for production
+		[]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		[]string{"Content-Type", "Authorization"},
+	)
+
+	// Apply stricter rate limiting to sensitive auth endpoints
+	protectedMux := http.NewServeMux()
+	protectedMux.Handle("/auth/register", authRateLimiter(http.HandlerFunc(h.Register)))
+	protectedMux.Handle("/auth/login", authRateLimiter(http.HandlerFunc(h.Login)))
+	protectedMux.Handle("/auth/refresh", authRateLimiter(http.HandlerFunc(h.RefreshToken)))
+	protectedMux.Handle("/auth/logout", http.HandlerFunc(h.Logout))
+	protectedMux.Handle("/auth/me", http.HandlerFunc(h.GetCurrentUser))
+	protectedMux.Handle("/auth/oidc/", authRateLimiter(http.HandlerFunc(h.OIDCHandler)))
+	protectedMux.Handle("/auth/saml/metadata", http.HandlerFunc(h.SAMLMetadataHandler))
+	protectedMux.Handle("/auth/saml/acs", authRateLimiter(http.HandlerFunc(h.SAMLACSHandler)))
+	protectedMux.Handle("/health", http.HandlerFunc(healthHandler))
+
+	// Wrap the mux with middleware
+	wrappedMux := corsMiddleware(securityHeaders(generalRateLimiter(protectedMux)))
+
 	// Apply telemetry middleware
-	wrappedMux := telemetry.HTTPMiddleware(cfg.ServiceName)(mux)
+	wrappedMux = telemetry.HTTPMiddleware(cfg.ServiceName)(wrappedMux)
 
 	server := &http.Server{
 		Addr:         cfg.ServerAddr,
@@ -158,9 +188,9 @@ func loadConfig() *Config {
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is required and must be set")
 	}
-	// Validate JWT secret is not too short (minimum 32 characters recommended)
-	if len(jwtSecret) < 16 {
-		log.Fatal("JWT_SECRET must be at least 16 characters long")
+	// Validate JWT secret meets minimum security requirements (32 characters for HS256)
+	if len(jwtSecret) < 32 {
+		log.Fatal("JWT_SECRET must be at least 32 characters long for secure HMAC-SHA256 signing")
 	}
 
 	return &Config{
