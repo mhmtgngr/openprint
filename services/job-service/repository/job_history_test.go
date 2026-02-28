@@ -552,14 +552,14 @@ func TestJobHistoryRepository_List_Pagination(t *testing.T) {
 	t.Run("first page", func(t *testing.T) {
 		list, total, err := repo.List(ctx, 10, 0)
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(15))
+		assert.GreaterOrEqual(t, total, 15)
 		assert.LessOrEqual(t, len(list), 10)
 	})
 
 	t.Run("second page", func(t *testing.T) {
 		list, total, err := repo.List(ctx, 10, 10)
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(15))
+		assert.GreaterOrEqual(t, total, 15)
 		assert.LessOrEqual(t, len(list), 10)
 	})
 }

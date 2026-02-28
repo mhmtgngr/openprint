@@ -404,14 +404,27 @@ func (r *JobAssignmentRepository) GetStaleAssignments(ctx context.Context, since
 
 // GetAssignmentStats returns statistics for assignments.
 func (r *JobAssignmentRepository) GetAssignmentStats(ctx context.Context, agentID string) (map[string]int64, error) {
-	query := `
-		SELECT status, COUNT(*) as count
-		FROM job_assignments
-		WHERE $1 = '' OR agent_id = $1
-		GROUP BY status
-	`
+	var query string
+	var args []interface{}
 
-	rows, err := r.db.Query(ctx, query, agentID)
+	if agentID == "" {
+		query = `
+			SELECT status, COUNT(*) as count
+			FROM job_assignments
+			GROUP BY status
+		`
+		args = []interface{}{}
+	} else {
+		query = `
+			SELECT status, COUNT(*) as count
+			FROM job_assignments
+			WHERE agent_id = $1
+			GROUP BY status
+		`
+		args = []interface{}{agentID}
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("get assignment stats: %w", err)
 	}
@@ -460,6 +473,9 @@ func (r *JobAssignmentRepository) GetActiveAgentsForUser(ctx context.Context, us
 // scanAssignment scans an assignment from a database row.
 func (r *JobAssignmentRepository) scanAssignment(row interface{ Scan(...interface{}) error }) (*JobAssignment, error) {
 	var assignment JobAssignment
+	// Use pointers for fields that can be NULL in the database
+	var errorMsg *string
+	var documentETag *string
 	err := row.Scan(
 		&assignment.ID,
 		&assignment.JobID,
@@ -470,13 +486,24 @@ func (r *JobAssignmentRepository) scanAssignment(row interface{ Scan(...interfac
 		&assignment.Status,
 		&assignment.RetryCount,
 		&assignment.LastHeartbeat,
-		&assignment.Error,
-		&assignment.DocumentETag,
+		&errorMsg,
+		&documentETag,
 		&assignment.CreatedAt,
 		&assignment.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+	// Convert pointers to strings, defaulting to empty string if NULL
+	if errorMsg != nil {
+		assignment.Error = *errorMsg
+	} else {
+		assignment.Error = ""
+	}
+	if documentETag != nil {
+		assignment.DocumentETag = *documentETag
+	} else {
+		assignment.DocumentETag = ""
 	}
 	return &assignment, nil
 }
@@ -484,6 +511,11 @@ func (r *JobAssignmentRepository) scanAssignment(row interface{ Scan(...interfac
 // scanJob is a helper to scan a PrintJob from a row (copied from job.go)
 func scanJob(row interface{ Scan(...interface{}) error }) (*PrintJob, error) {
 	var job PrintJob
+	// Use pointers for fields that can be NULL
+	var options *string
+	var agentID *string
+	var pages *int
+	var startedAt *time.Time
 	err := row.Scan(
 		&job.ID,
 		&job.DocumentID,
@@ -496,19 +528,34 @@ func scanJob(row interface{ Scan(...interface{}) error }) (*PrintJob, error) {
 		&job.Duplex,
 		&job.MediaType,
 		&job.Quality,
-		&job.Pages,
+		&pages,
 		&job.Status,
 		&job.Priority,
 		&job.Retries,
-		&job.Options,
-		&job.AgentID,
-		&job.StartedAt,
+		&options,
+		&agentID,
+		&startedAt,
 		&job.CompletedAt,
 		&job.CreatedAt,
 		&job.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+	// Convert pointers to values, defaulting to zero/empty if NULL
+	if pages != nil {
+		job.Pages = *pages
+	}
+	if options != nil {
+		job.Options = *options
+	}
+	if agentID != nil {
+		job.AgentID = *agentID
+	}
+	if startedAt != nil {
+		job.StartedAt = *startedAt
+	} else {
+		job.StartedAt = time.Time{} // Zero time if NULL
 	}
 	return &job, nil
 }

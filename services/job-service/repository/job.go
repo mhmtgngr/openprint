@@ -413,20 +413,30 @@ func (r *JobRepository) scanJob(row interface{ Scan(...interface{}) error }) (*P
 	// Use pointers for fields that can be NULL
 	var options *string
 	var agentID *string
+	var pages *int
+	var startedAt *time.Time
 	err := row.Scan(
 		&job.ID, &job.DocumentID, &job.PrinterID, &job.UserName, &job.UserEmail, &job.Title, &job.Copies,
-		&job.ColorMode, &job.Duplex, &job.MediaType, &job.Quality, &job.Pages, &job.Status, &job.Priority,
-		&job.Retries, &options, &agentID, &job.StartedAt, &job.CompletedAt, &job.CreatedAt, &job.UpdatedAt,
+		&job.ColorMode, &job.Duplex, &job.MediaType, &job.Quality, &pages, &job.Status, &job.Priority,
+		&job.Retries, &options, &agentID, &startedAt, &job.CompletedAt, &job.CreatedAt, &job.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
-	// Convert pointers to strings, defaulting to empty string if NULL
+	// Convert pointers to values, defaulting to zero/empty if NULL
+	if pages != nil {
+		job.Pages = *pages
+	}
 	if options != nil {
 		job.Options = *options
 	}
 	if agentID != nil {
 		job.AgentID = *agentID
+	}
+	if startedAt != nil {
+		job.StartedAt = *startedAt
+	} else {
+		job.StartedAt = time.Time{} // Zero time if NULL
 	}
 	return &job, nil
 }

@@ -264,7 +264,7 @@ func TestJobRepository_QueryMethods(t *testing.T) {
 	t.Run("list with filters", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, printerID, "", "")
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, total, 1)
 		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 
@@ -516,21 +516,21 @@ func TestJobRepository_ListWithFilters_SingleFilter(t *testing.T) {
 	t.Run("filter by printer only", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, printerID, "", "")
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, total, 1)
 		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 
 	t.Run("filter by status only", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, "", "queued", "")
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, total, 1)
 		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 
 	t.Run("filter by user only", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, "", "", userEmail)
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, total, 1)
 		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 }
@@ -994,7 +994,7 @@ func TestJobRepository_MultiFilterQueries(t *testing.T) {
 	// Test with all filters
 	jobs, total, err := repo.ListWithFilters(ctx, 10, 0, printerID, "queued", userEmail)
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, total, int64(1))
+	assert.GreaterOrEqual(t, total, 1)
 	assert.GreaterOrEqual(t, len(jobs), 1)
 	if len(jobs) > 0 {
 		assert.Equal(t, printerID, jobs[0].PrinterID)
@@ -1092,21 +1092,21 @@ func TestJobRepository_Pagination(t *testing.T) {
 	t.Run("first page", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, "", "", "")
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(15))
+		assert.GreaterOrEqual(t, total, 15)
 		assert.LessOrEqual(t, len(jobs), 10)
 	})
 
 	t.Run("second page", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 10, "", "", "")
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(15))
+		assert.GreaterOrEqual(t, total, 15)
 		assert.LessOrEqual(t, len(jobs), 10)
 	})
 
 	t.Run("offset beyond results", func(t *testing.T) {
 		jobs, total, err := repo.ListWithFilters(ctx, 10, 1000, "", "", "")
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(15))
+		assert.GreaterOrEqual(t, total, 15)
 		assert.Empty(t, jobs)
 	})
 }
