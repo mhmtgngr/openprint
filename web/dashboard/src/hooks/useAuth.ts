@@ -2,20 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi, clearTokens, getAccessToken } from '@/services/api';
 import { wsService } from '@/services/websocket';
-import type { User, UserRole } from '@/types';
+import type { User, UserRole, AuthContextValue } from '@/types/auth';
 
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-}
-
-interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-  hasRole: (roles: UserRole[]) => boolean;
 }
 
 let authState: AuthState = {
