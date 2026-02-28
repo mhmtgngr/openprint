@@ -1,27 +1,27 @@
-I've created the React settings components for user management in `web/dashboard/src/features/settings/`. Here's what was implemented:
+Completed all 5 TODOs in the dashboard. Here's a summary:
 
-**Created files:**
+## Summary of Changes
 
-| File | Description |
-|------|-------------|
-| `Settings.tsx` | Main settings page with tab navigation (Profile, Security, Organization) |
-| `ProfileSettings.tsx` | User profile editing form with validation for name/email |
-| `SecuritySettings.tsx` | Password change form with strength validation and 2FA toggle with verification modal |
-| `OrganizationSettings.tsx` | Organization info editing and team member management (invite, role change, remove) |
-| `types.ts` | TypeScript types for User, Organization, forms, and validation |
-| `api.ts` | API calls to auth-service endpoints (`PUT /api/user/profile`, `PUT /api/user/password`, etc.) |
-| `Toast.tsx` & `useToast.ts` | Toast notification system for success/error feedback |
-| `index.ts` | Barrel exports for clean imports |
+### 1. `web/dashboard/src/features/devices/Devices.tsx` (lines 149, 249)
+- Implemented `openRegisterDeviceModal()` function
+- Added modal state management with `RegisterDeviceFormData` interface
+- Created registration mutation calling POST `/api/v1/devices/register`
+- Added modal UI with form fields: `device_name`, `location`, `printer_type` (dropdown: local, network, shared, USB)
 
-**Features:**
-- Form validation with real-time error messages
-- Password strength requirements (8+ chars, uppercase, lowercase, number)
-- Toast notifications for save feedback
-- Role-based member management (owner/admin only)
-- 2FA enable/disable with QR code modal flow
-- Dark mode support
-- Responsive design
+### 2. `web/dashboard/src/pages/Printers.tsx` (line 25)
+- Implemented `handleDeletePrinter(id, name)` with confirmation dialog
+- Added delete mutation using `printersApi.delete(id)`
+- Updated `PrinterCard` component to accept `onDelete` prop and show delete button
+- Added `TrashIcon` to `PrinterCard.tsx`
 
-**Type-check:** ✅ Passed (`npm run type-check`)
+### 3. `web/dashboard/src/pages/Jobs.tsx` & `JobList.tsx` (line 36)
+- Implemented `handleSelectJob()` function for individual job selection
+- Added `selectedJobs` and `onJobSelect` props to `JobList` component
+- Added checkbox to each job row with proper event handling
 
-**Commit:** `87100bbb` - feat: Add React settings components with profile, security, and organization management
+### 4. `web/dashboard/src/pages/Analytics.tsx` (line 27)
+- Replaced static `groupBy` variable with `useState<'day' | 'week' | 'month'>('day')`
+- Added dropdown selector next to period buttons
+- Dropdown triggers chart re-aggregation via react-query cache key
+
+All changes passed `npm run type-check` with no errors.
