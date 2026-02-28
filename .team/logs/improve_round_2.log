@@ -1,22 +1,33 @@
-Done! Created 28 migration files (14 pairs of `.up.sql` and `.down.sql`):
+Done! I've created the React components for device/printer management in `web/dashboard/src/features/devices/`:
 
-| # | Migration | Description |
-|---|-----------|-------------|
-| 000001 | organizations | Multi-tenant orgs with plan, settings |
-| 000002 | users | Auth, roles, organization links |
-| 000003 | sessions | OAuth/SAML session state |
-| 000004 | agents | Print server agent registration |
-| 000005 | printers | Printers with capabilities |
-| 000006 | printer_permissions | Granular access control |
-| 000007 | print_jobs | Jobs + documents table |
-| 000008 | job_history | Status change tracking |
-| 000009 | audit_logs | Compliance audit trail |
-| 000010 | usage_stats | Analytics + environmental metrics |
-| 000011 | api_keys | Integration key management |
-| 000012 | webhooks | Event subscriptions |
-| 000013 | invitations | Team member invites |
-| 000014 | devices | Push notification devices |
+**Files Created:**
+| File | Description |
+|------|-------------|
+| `types.ts` | TypeScript interfaces for Device, Printer, Agent types |
+| `api.ts` | API layer using fetch to registry-service endpoints |
+| `Devices.tsx` | Main listing page with table/grid view, filtering, and stats |
+| `DeviceCard.tsx` | Individual device card with status indicator |
+| `DeviceRegister.tsx` | Form for registering new printers and agents |
+| `DeviceDetail.tsx` | Detailed device view with status and configuration |
+| `index.ts` | Barrel exports |
 
-Each includes proper indexes, foreign keys, constraints, and triggers for `updated_at`.
+**Features Implemented:**
+- Status indicators (online/offline/error) with visual badges
+- Last heartbeat display with formatted "time ago" strings
+- Device filtering by status and type
+- Table and grid view modes
+- Printer enable/disable toggle
+- Agent and printer registration forms with validation
+- Device detail view with activity timeline
+- Stats cards showing total/online devices
 
-Tests passed: ✓ Go tests (all cached/ok), ✓ TypeScript type check
+**API Endpoints Used:**
+- `GET /api/agents` - List agents
+- `GET /api/printers` - List printers
+- `POST /api/agents` - Register agent
+- `POST /api/printers` - Register printer
+- `PATCH /api/printers/:id/active` - Enable/disable printer
+- `DELETE /api/agents/:id` - Delete agent
+- `DELETE /api/printers/:id` - Delete printer
+
+Type-check passed with no errors.

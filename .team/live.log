@@ -327,3 +327,8 @@ Committed as `c5498ee5`.
 - Settings (`/settings`)
 
 TypeScript compilation passes (`npm run type-check` ✓)
+[0;35m[04:27:11][0m [1;37m⚙️  Backend[0m ✓ Committed
+[0;35m[04:27:16][0m [1;37m⚙️  Backend[0m Working...
+- `DELETE /api/printers/:id` - Delete printer
+
+Type-check passed with no errors.
