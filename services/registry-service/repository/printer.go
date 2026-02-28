@@ -216,7 +216,7 @@ func (r *PrinterRepository) Update(ctx context.Context, printer *Printer) error 
 
 	query := `
 		UPDATE printers
-		SET name = $2, agent_id = $3, organization_id = $4, status = $5, capabilities = $6, updated_at = $7
+		SET name = $2, agent_id = $3, organization_id = NULLIF($4, '')::uuid, status = $5, capabilities = $6, updated_at = $7
 		WHERE id = $1
 	`
 

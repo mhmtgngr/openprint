@@ -55,6 +55,7 @@ docker-compose*
 
 # Deployments
 deployments/
+!deployments/docker/nginx-dashboard.conf
 
 # Web (not needed for Go services)
 web/

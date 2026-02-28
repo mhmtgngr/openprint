@@ -73,11 +73,6 @@ MAX_PHASE_RETRIES=2
 MAX_CRASHES=5
 DOCKER_TIMEOUT=60
 
-# Timeout configuration with exponential backoff
-BASE_TIMEOUT=900
-MAX_TIMEOUT=3600
-TIMEOUT_BACKOFF=1.5
-
 # Master dev.sh — the SINGLE source of truth for self-improvement
 MASTER_DEV_SH="${MASTER_DEV_SH:-$HOME/dev.sh}"
 MASTER_DEV_DIR="${MASTER_DEV_DIR:-$HOME/.dev-master}"
@@ -175,31 +170,7 @@ if errors:
 # STATE MANAGEMENT (unified)
 # ═══════════════════════════════════════════════
 
-# Ensure only one phase is running at a time (crash recovery)
-state_ensure_single_running() {
-  local new_phase="$1"
-  python3 - "$STATE_FILE" "$new_phase" << 'PYEOF'
-import json, os, sys
-f, new_phase = sys.argv[1], sys.argv[2]
-d = json.load(open(f)) if os.path.exists(f) else {"phases": {}, "project": "", "branch": ""}
-
-# Set all other "running" phases to "failed" (crash recovery)
-for phase, data in d.get("phases", {}).items():
-    if phase != new_phase and data.get("status") == "running":
-        data["status"] = "failed"
-        data["crash_reason"] = "interrupted_by_new_phase"
-        data["crashed_at"] = d.get("phases", {}).get(phase, {}).get("_updated", "")
-
-json.dump(d, open(f, "w"), indent=2)
-PYEOF
-}
-
 state_set() {
-  # Before setting a phase to running, ensure no other phase is running
-  if [ "$2" = "status" ] && [ "$3" = "running" ]; then
-    state_ensure_single_running "$1"
-  fi
-
   python3 - "$STATE_FILE" "$1" "$2" "$3" << 'PYEOF'
 import json, os, sys
 from datetime import datetime
@@ -381,13 +352,6 @@ ai_think() {
     warn "  Z.ai failed — using Claude Code"
   fi
 
-  # Skip nested claude calls when already inside Claude Code
-  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
-    warn "  ⚠ [$role_name] Skipping nested Claude call"
-    echo '{"skipped": true, "reason": "nested_claude_session"}' > "$out_file"
-    return 1
-  fi
-
   team "$role_name" "Using Claude Code..."
   cd "$REPO_DIR"
   local prompt
@@ -466,13 +430,7 @@ PYEOF
     warn "  Z.ai search failed (HTTP $http_code) — falling back to Claude"
   fi
 
-  # Fallback: Claude Code (with nested session protection)
-  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
-    warn "  ⚠ Skipping web search (nested Claude Code session)"
-    echo '{"results": [{"title": "Skipped", "content": "Search skipped due to nested Claude Code session", "url": ""}]}' > "$out_file"
-    return 1
-  fi
-
+  # Fallback: Claude Code
   team "🔍 Research" "Using Claude Code for: $query"
   cd "$REPO_DIR"
   claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
@@ -578,19 +536,9 @@ PROMPT
 # CLAUDE CODE ENGINE (with in-process healing)
 # ═══════════════════════════════════════════════
 
-# Detect if running inside Claude Code (nested session protection)
-INSIDE_CLAUDE_CODE="${CLAUDECODE:-false}"
-
 # Safe Claude wrapper with timeout monitoring
 run_claude() {
   local max_secs="${1:-300}" out_file="${2:-/dev/null}" prompt="$3"
-
-  # Skip nested claude calls when already inside Claude Code
-  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
-    warn "  ⚠ Skipping nested Claude call (running inside Claude Code)"
-    echo "SKIPPED: Running inside Claude Code - prompt saved to $out_file" > "$out_file"
-    return 1
-  fi
 
   claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
     "$prompt" </dev/null > "$out_file" 2>&1 &
@@ -612,27 +560,10 @@ run_claude() {
   return $?
 }
 
-# Primary code execution: retry + exponential timeout backoff + commit
+# Primary code execution: retry + prompt shrink + commit
 claude_do() {
   local role_name="$1" prompt="$2" log_file="$3"
-  local timeout="${4:-$BASE_TIMEOUT}"
-
-  # Skip nested claude calls when already inside Claude Code
-  if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
-    warn "  ⚠ [$role_name] Skipping - running inside Claude Code session"
-    warn "  📝 Task saved to: $log_file"
-    echo "=== TASK SKIPPED (nested Claude Code session) ===" > "$log_file"
-    echo "" >> "$log_file"
-    echo "Role: $role_name" >> "$log_file"
-    echo "" >> "$log_file"
-    echo "Prompt:" >> "$log_file"
-    echo "$prompt" >> "$log_file"
-    echo "" >> "$log_file"
-    echo "Please run this task manually or exit Claude Code and retry." >> "$log_file"
-    record_error "$role_name" "nested_claude_skipped" "Skipped due to nested Claude Code session"
-    return 1
-  fi
-
+  local timeout="${4:-900}"
   team "$role_name" "Working..."
   cd "$REPO_DIR"
 
@@ -645,15 +576,14 @@ claude_do() {
 [TRUNCATED — original was ${prompt_len} chars. Focus on the most important parts above.]"
   fi
 
-  local attempt=0 ok=false exit_code=0 current_timeout=$timeout
-
-  while [ $attempt -lt 4 ]; do
+  local attempt=0 ok=false exit_code=0
+  while [ $attempt -lt 3 ]; do
     attempt=$((attempt + 1))
-    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/4 (timeout: ${current_timeout}s)"
+    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/3"
 
     # Write to file directly (avoids pipefail + tee false failures)
     exit_code=0
-    timeout "$current_timeout" claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
+    timeout "$timeout" claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
       "$prompt" > "$log_file" 2>&1 || exit_code=$?
 
     # Show last few lines for monitoring
@@ -662,13 +592,7 @@ claude_do() {
     if [ $exit_code -eq 0 ]; then
       ok=true; break
     elif [ $exit_code -eq 124 ]; then
-      warn "  ⏰ Timeout after ${current_timeout}s"
-      # Exponential backoff for timeout, capped at MAX_TIMEOUT
-      if [ $attempt -lt 4 ]; then
-        current_timeout=$(awk "BEGIN {printf \"%d\", $current_timeout * $TIMEOUT_BACKOFF}")
-        [ $current_timeout -gt $MAX_TIMEOUT ] && current_timeout=$MAX_TIMEOUT
-        warn "  📈 Increasing timeout to ${current_timeout}s for next attempt"
-      fi
+      warn "  ⏰ Timeout after ${timeout}s"
     elif [ $exit_code -ge 137 ]; then
       warn "  💀 Killed (exit $exit_code) — likely OOM or rate limit"
       prompt="${prompt:0:6000}
@@ -676,12 +600,6 @@ claude_do() {
 [REDUCED — Claude was killed. Simplified prompt.]"
     else
       warn "  ⚠ Claude exited $exit_code"
-      # Special handling for nested session error
-      if grep -q "cannot be launched inside another Claude Code session" "$log_file" 2>/dev/null; then
-        warn "  🔄 Nested Claude session detected - marking as skipped"
-        record_error "$role_name" "nested_claude_session" "Claude Code called from within Claude Code"
-        return 1
-      fi
     fi
     sleep $((attempt * 5))
   done
@@ -695,7 +613,7 @@ claude_do() {
     return 0
   fi
   team "$role_name" "✗ Failed after $attempt attempts"
-  record_error "$role_name" "claude_terminated" "Failed after $attempt attempts, last exit: $exit_code, final timeout: ${current_timeout}s"
+  record_error "$role_name" "claude_terminated" "Failed after $attempt attempts, last exit: $exit_code"
   return 1
 }
 
@@ -731,30 +649,13 @@ docker_build_all() {
       warn "  ✗ Build failed: $svc (${elapsed}s) — fixing..."
       failed=$((failed+1))
       record_error "deploy" "docker_build_fail" "$svc: $(tail -5 "$PHASE_LOGS/docker_build.log" 2>/dev/null)"
-
-      # Skip auto-fix when running inside Claude Code to avoid nested session errors
-      if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
-        warn "  ⚠ Skipping auto-fix (running inside Claude Code)"
-        warn "  📝 Fix task saved to: $PHASE_LOGS/docker_fix_${svc}.log"
-        echo "=== DOCKER BUILD FIX TASK ===" > "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "Service: $svc" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "Dockerfile: $df" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "Build Error:" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        tail -15 "$PHASE_LOGS/docker_build.log" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "" >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        echo "Please fix manually or run dev.sh outside Claude Code." >> "$PHASE_LOGS/docker_fix_${svc}.log"
-        ok=false
-      else
-        claude_do "🐳 DevOps" "Read CLAUDE.md. Docker build failed for $svc. Error:
+      claude_do "🐳 DevOps" "Read CLAUDE.md. Docker build failed for $svc. Error:
 
 $(tail -15 "$PHASE_LOGS/docker_build.log" 2>/dev/null)
 
 Fix the Dockerfile or source code. Rebuild should pass." \
-          "$PHASE_LOGS/docker_fix_${svc}.log" 600
-        timeout 600 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
-      fi
+        "$PHASE_LOGS/docker_fix_${svc}.log" 600
+      timeout 600 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
     fi
   done
   log "  Docker: $built/$total built, $failed failed"
@@ -1334,9 +1235,6 @@ run_waterfall() {
   local slug; slug=$(echo "$project" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-' | cut -c1-40)
   BRANCH="team/${slug}-$(date +%s)"
 
-  # Clean up any stuck states from previous crashed runs
-  cleanup_stuck_states
-
   state_save_meta "$project" "$BRANCH"
   ensure_branch
 
@@ -1913,8 +1811,44 @@ plan_improvements() {
   local project_context; project_context=$(head -c 3000 "$REPO_DIR/CLAUDE.md" 2>/dev/null || echo "No CLAUDE.md")
   local history; history=$(cat "$PHASE_HISTORY" 2>/dev/null || echo "{}")
 
+  # Get completion gaps sorted by weight impact
+  local gap_summary=""
+  if [ -f "$COMPLETION_FILE" ]; then
+    gap_summary=$(python3 - "$COMPLETION_FILE" << 'PYEOF'
+import json, sys
+comp = json.load(open(sys.argv[1]))
+weights = {'backend_files':20,'frontend_files':15,'tests':15,'endpoints':15,'migrations':10,'build':10,'tests_pass':10,'docker':5}
+gaps = []
+for dim, w in weights.items():
+    score = comp.get('dimension_scores',{}).get(dim, 0)
+    if score < 100:
+        lost = round(w * (100 - score) / 100, 1)
+        count = comp.get('counts',{}).get(dim, '?')
+        gaps.append((lost, dim, score, count, w))
+gaps.sort(reverse=True)
+lines = ["COMPLETION GAPS (sorted by impact on % score):"]
+for lost, dim, score, count, w in gaps:
+    lines.append(f"  {dim}: {score}% (weight={w}%, losing {lost} pts) — {count}")
+lines.append(f"\nTotal: {comp.get('completion_pct',0)}%")
+print('\n'.join(lines))
+PYEOF
+    )
+  fi
+
+  # Get specific gap items from completion scan
+  local gap_items=""
+  if [ -f "$COMPLETION_FILE" ]; then
+    gap_items=$(python3 -c "
+import json
+comp = json.load(open('$COMPLETION_FILE'))
+items = comp.get('gaps', [])[:15]
+for g in items:
+    print(f\"  [{g.get('priority','?'):8s}] {g.get('type','?'):12s} {g.get('item','')[:80]}\")
+" 2>/dev/null || true)
+  fi
+
   cd "$REPO_DIR"
-  local _prompt="You are a Senior Technical Project Manager. Plan $num TARGETED improvements.
+  local _prompt="You are a Senior Technical Project Manager. Plan $num TARGETED improvements to MAXIMIZE completion percentage.
 
 IMPORTANT: Each task will be executed by a SINGLE Claude Code call — NOT a full waterfall.
 Write descriptions as direct instructions for a developer, NOT as project phases.
@@ -1925,19 +1859,28 @@ $project_context
 DIAGNOSIS:
 $diagnosis
 
+$gap_summary
+
+SPECIFIC GAPS:
+$gap_items
+
 COMPLETED ROUNDS:
 $history
 
-RULES — STRICT ORDERING:
-1. CRITICAL FIRST: If build broken → fix compilation errors
-2. TESTS NEXT: If tests fail → fix failing tests
-3. THEN TYPESCRIPT errors
-4. THEN missing files from design (create them)
-5. THEN TODOS (implement stubs)
-6. THEN hardening (error handling, validation)
-7. DO NOT repeat completed rounds
-8. Each description: 50-150 words, SPECIFIC file paths and function names
-9. Each task must be completable in ONE Claude Code session
+RULES — PRIORITIZE BY COMPLETION IMPACT:
+1. If build broken → fix compilation FIRST
+2. MAXIMIZE COMPLETION %: Prioritize dimensions losing the MOST points
+   - If frontend_files=0% → create frontend pages/components (15% weight!)
+   - If endpoints=0% → implement API endpoint handlers (15% weight!)
+   - If migrations missing → create SQL migration files (10% weight)
+   - If tests failing → fix tests (10% weight)
+3. DO NOT waste rounds on things already at 100% (backend_files, docker, etc.)
+4. DO NOT repeat completed rounds
+5. Each description: 50-150 words, SPECIFIC file paths
+6. Each task must be completable in ONE Claude Code session
+7. For frontend: create actual .tsx/.ts files with real component code
+8. For endpoints: implement actual HTTP handler functions
+9. For migrations: create actual .sql files with CREATE TABLE statements
 
 RESPOND WITH ONLY JSON:
 {
@@ -1947,53 +1890,85 @@ RESPOND WITH ONLY JSON:
       \"name\": \"Short name\",
       \"priority\": \"critical|high|medium\",
       \"category\": \"fix|feature|test|security|performance|devops\",
-      \"description\": \"Direct instructions: Fix X in file Y. The error is Z. Run 'go test ./...' to verify.\",
-      \"success_criteria\": [\"go build ./... passes\"],
+      \"description\": \"Direct instructions: Create X files. Implement Y. Run Z to verify.\",
+      \"success_criteria\": [\"criteria\"],
       \"estimated_minutes\": 30
     }
   ],
   \"project_health\": {\"score\": 75, \"critical_issues\": [\"issue\"], \"strengths\": [\"strength\"]},
-  \"rationale\": \"Why these tasks in this order\"
+  \"rationale\": \"Why these tasks — which dimensions they improve\"
 }"
 
   local claude_rc=0
   run_claude 600 "$PLAN_FILE" "$_prompt" || claude_rc=$?
 
   if [ "$claude_rc" -eq 124 ] || [ ! -s "$PLAN_FILE" ]; then
-    swarn "  ⚠ Planning timed out — retrying with shorter prompt"
-    local short_prompt="Plan $num improvement phases for this project. Diagnosis: $diagnosis
-RULES: Fix build first, then tests, then features. RESPOND WITH ONLY JSON:
-{\"phases\":[{\"order\":1,\"name\":\"name\",\"priority\":\"critical\",\"category\":\"fix\",\"description\":\"task\",\"success_criteria\":[\"criteria\"],\"estimated_minutes\":90}]}"
-    run_claude 600 "$PLAN_FILE" "$short_prompt" || {
-      swarn "  ⚠ Retry also timed out — generating fallback plan from diagnosis"
-      # Auto-generate a plan from diagnosis data
-      python3 - "$ARTIFACTS/diagnosis.json" "$PLAN_FILE" "$num" << 'PYEOF'
+    swarn "  ⚠ Planning timed out — generating gap-based plan"
+    # Auto-generate plan from completion gaps (sorted by weight)
+    python3 - "$COMPLETION_FILE" "$ARTIFACTS/diagnosis.json" "$PLAN_FILE" "$num" << 'PYEOF'
 import json, sys, os
-num = int(sys.argv[3])
+
+comp = json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}
+diag = json.load(open(sys.argv[2])) if os.path.exists(sys.argv[2]) else {}
+num = int(sys.argv[4])
 phases = []
-diag = json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}
-proj = diag.get("project", {})
 order = 1
-if proj.get("build") == "no" and order <= num:
+scores = comp.get('dimension_scores', {})
+counts = comp.get('counts', {})
+gaps = comp.get('gaps', [])
+
+# Build broken? Fix first
+proj = diag.get('project', {})
+if proj.get('build') == 'no' and order <= num:
     phases.append({"order": order, "name": "Fix build errors", "priority": "critical", "category": "fix",
-        "description": "Fix all Go compilation errors. Run go build ./... and fix every error.", "success_criteria": ["go build ./... passes"], "estimated_minutes": 60})
+        "description": "Fix all Go compilation errors. Run go build ./... and fix every error.",
+        "success_criteria": ["go build ./... passes"], "estimated_minutes": 30})
     order += 1
-if proj.get("tests") == "fail" and order <= num:
-    phases.append({"order": order, "name": "Fix failing tests", "priority": "critical", "category": "fix",
-        "description": "Fix all failing Go test packages. Run go test ./... and fix every failure.", "success_criteria": ["go test ./... passes"], "estimated_minutes": 90})
+
+# Prioritize by lost points
+weight_gaps = [
+    (15, 'frontend_files', scores.get('frontend_files', 0)),
+    (15, 'endpoints', scores.get('endpoints', 0)),
+    (10, 'migrations', scores.get('migrations', 0)),
+    (10, 'tests_pass', scores.get('tests_pass', 0)),
+]
+weight_gaps.sort(key=lambda x: x[0] * (100 - x[2]), reverse=True)
+
+for weight, dim, score in weight_gaps:
+    if score >= 100 or order > num:
+        continue
+    if dim == 'frontend_files':
+        # Get specific frontend gaps
+        fe_gaps = [g for g in gaps if g.get('type') == 'frontend'][:5]
+        files = ', '.join(g.get('item','') for g in fe_gaps)
+        phases.append({"order": order, "name": "Create frontend pages", "priority": "critical", "category": "feature",
+            "description": f"Create the missing frontend React/TypeScript files. Read 02_design.json for specs. Missing: {files}. Create each file with proper components, hooks, and API integration.",
+            "success_criteria": ["Frontend files created", "npx tsc --noEmit passes"], "estimated_minutes": 45})
+    elif dim == 'endpoints':
+        phases.append({"order": order, "name": "Implement API endpoints", "priority": "critical", "category": "feature",
+            "description": "Implement missing API endpoint handlers as defined in 02_design.json. Create proper HTTP handlers with request validation, business logic calls, and JSON responses. Wire routes in the service main files.",
+            "success_criteria": ["Endpoints respond correctly", "go build passes"], "estimated_minutes": 45})
+    elif dim == 'migrations':
+        mig_gaps = [g for g in gaps if g.get('type') == 'migration'][:5]
+        files = ', '.join(g.get('item','') for g in mig_gaps)
+        phases.append({"order": order, "name": "Create SQL migrations", "priority": "critical", "category": "feature",
+            "description": f"Create missing SQL migration files. Read 02_design.json for schema. Missing: {files}. Create proper CREATE TABLE statements with indexes and constraints.",
+            "success_criteria": ["Migration files exist", "SQL is valid"], "estimated_minutes": 20})
+    elif dim == 'tests_pass':
+        failures = diag.get('test_failures', '')[:500]
+        phases.append({"order": order, "name": "Fix failing tests", "priority": "high", "category": "fix",
+            "description": f"Fix all failing Go tests. Failures: {failures}. Run go test ./... and fix every error.",
+            "success_criteria": ["go test ./... passes"], "estimated_minutes": 30})
     order += 1
-if int(proj.get("todo_count", 0)) > 10 and order <= num:
-    phases.append({"order": order, "name": "Resolve TODOs", "priority": "medium", "category": "fix",
-        "description": "Resolve TODO/FIXME items in the codebase. Implement stubs and complete partial code.", "success_criteria": ["TODO count reduced by 50%"], "estimated_minutes": 90})
-    order += 1
-while order <= num:
-    phases.append({"order": order, "name": "Improve test coverage", "priority": "medium", "category": "test",
-        "description": "Add missing unit tests for untested files. Target 80% coverage.", "success_criteria": ["New tests pass"], "estimated_minutes": 60})
-    order += 1
-json.dump({"phases": phases, "rationale": "Auto-generated from diagnosis (planning timed out)"}, open(sys.argv[2], "w"), indent=2)
+
+if not phases:
+    phases.append({"order": 1, "name": "General improvements", "priority": "medium", "category": "fix",
+        "description": "Review project gaps and implement missing functionality.",
+        "success_criteria": ["go build passes"], "estimated_minutes": 30})
+
+json.dump({"phases": phases, "rationale": "Auto-generated from completion gaps (sorted by weight impact)"}, open(sys.argv[3], "w"), indent=2)
 PYEOF
-      [ ! -s "$PLAN_FILE" ] && echo '{"phases":[],"rationale":"Planning failed"}' > "$PLAN_FILE"
-    }
+    [ ! -s "$PLAN_FILE" ] && echo '{"phases":[],"rationale":"Planning failed"}' > "$PLAN_FILE"
   fi
 
   python3 - "$PLAN_FILE" << 'PYEOF'
@@ -2061,7 +2036,8 @@ execute_planned_phases() {
     # Pick the right role and timeout based on category
     local role="⚙️  Backend" timeout=1800
     case "$phase_cat" in
-      fix|feature)    role="⚙️  Backend"; timeout=1800 ;;
+      fix)            role="⚙️  Backend"; timeout=1200 ;;
+      feature)        role="⚙️  Backend"; timeout=2400 ;;
       test)           role="🧪 Tester"; timeout=1200 ;;
       security)       role="🔒 Security"; timeout=900 ;;
       performance)    role="⚙️  Backend"; timeout=1200 ;;
@@ -2070,16 +2046,25 @@ execute_planned_phases() {
 
     local project_context; project_context=$(read_project_context | head -c 2000)
 
+    # For feature tasks, include design artifact reference
+    local design_hint=""
+    if [ "$phase_cat" = "feature" ] && [ -f "$ARTIFACTS/02_design.json" ]; then
+      design_hint="
+DESIGN SPEC: Read .team/artifacts/02_design.json for file structure, API endpoints, and database schema."
+    fi
+
     if claude_do "$role" "Read CLAUDE.md first. You are working on this project.
 
 PROJECT CONTEXT:
 $project_context
+$design_hint
 
 YOUR TASK:
 $phase_data
 
 RULES:
 - Make the changes described above
+- Read 02_design.json if you need to know what files/endpoints/tables to create
 - Run tests after changes: go test ./... or npx tsc --noEmit
 - Fix any errors your changes introduce
 - Commit when done" \
@@ -2167,9 +2152,6 @@ run_project_improvement() {
 run_full_improvement() {
   local phases="${1:-$AUTO_PHASES}" dev_steps="${2:-3}"
   AUTO_PHASES="$phases"
-
-  # Clean up any stuck states from previous crashed runs
-  cleanup_stuck_states
 
   slog "╔═══════════════════════════════════════════════════════╗"
   slog "║  🚀 FULL IMPROVEMENT: $dev_steps dev + $phases project       ║"
@@ -2448,71 +2430,83 @@ PR_DOC
 
 smart_improve() {
   local t0; t0=$(date +%s)
-
-  # Clean up any stuck states from previous crashed runs
-  cleanup_stuck_states
+  local max_cycles=5
+  local cycle=0
 
   slog "╔═══════════════════════════════════════════════════════════╗"
-  slog "║  🧠 SMART IMPROVE — Project-Focused Self-Improvement       ║"
+  slog "║  🧠 SMART IMPROVE — Completion-Driven Improvement         ║"
   slog "╠═══════════════════════════════════════════════════════════╣"
-  slog "║  1. SCAN → 2. DIAGNOSE → 3. PLAN → 4. EXECUTE → 5. PR?   ║"
+  slog "║  Target: ${PR_THRESHOLD}% | Max cycles: $max_cycles       ║"
   slog "╚═══════════════════════════════════════════════════════════╝"
 
   scan_project_completion
   local pct_before; pct_before=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE'))['completion_pct'])" 2>/dev/null || echo "0")
+  local pct_current="$pct_before"
 
-  slog "  📊 Before: ${pct_before}%"
+  slog "  📊 Starting: ${pct_before}% → target: ${PR_THRESHOLD}%"
 
-  # Plan and execute focused improvement
-  diagnose_project
-  plan_improvements 3
+  while [ "$cycle" -lt "$max_cycles" ] && [ "$pct_current" -lt "$PR_THRESHOLD" ]; do
+    cycle=$((cycle + 1))
+    slog ""
+    slog "━━━ CYCLE $cycle/$max_cycles (currently ${pct_current}%) ━━━"
 
-  # Check if plan has phases
-  local phase_count
-  phase_count=$(python3 -c "import json; print(len(json.load(open('$PLAN_FILE')).get('phases',[])))" 2>/dev/null || echo "0")
+    diagnose_project
+    plan_improvements 5
 
-  if [ "$phase_count" -gt 0 ]; then
-    execute_planned_phases
-  else
-    swarn "  ⚠ No phases planned — running direct fixes from diagnosis"
+    local phase_count
+    phase_count=$(python3 -c "import json; print(len(json.load(open('$PLAN_FILE')).get('phases',[])))" 2>/dev/null || echo "0")
 
-    cd "$REPO_DIR"
-    local diag; diag=$(cat "$ARTIFACTS/diagnosis.json" 2>/dev/null || echo "{}")
-    local build_status; build_status=$(python3 -c "import json; print(json.loads('''$diag''').get('project',{}).get('build','yes'))" 2>/dev/null || echo "yes")
-    local test_status; test_status=$(python3 -c "import json; print(json.loads('''$diag''').get('project',{}).get('tests','pass'))" 2>/dev/null || echo "pass")
-
-    if [ "$build_status" = "no" ]; then
-      slog "  🔧 Direct fix: build errors"
-      claude_do "⚙️  Backend" "Read CLAUDE.md. Fix ALL Go compilation errors. Run 'go build ./...' repeatedly until clean." "$PHASE_LOGS/smart_build_fix.log" 1200
-    fi
-
-    if [ "$test_status" = "fail" ]; then
-      slog "  🔧 Direct fix: test failures"
-      local failures; failures=$(go test ./... -count=1 -timeout 120s 2>&1 | grep -A 3 "FAIL\|Error\|panic" | head -60 || true)
-      claude_do "🧪 Tester" "Read CLAUDE.md. Fix ALL failing Go tests. Failures:
-
+    if [ "$phase_count" -gt 0 ]; then
+      execute_planned_phases
+    else
+      swarn "  ⚠ No phases planned — running direct fixes"
+      cd "$REPO_DIR"
+      local build_ok; build_ok=$(go build ./... 2>&1 && echo "yes" || echo "no")
+      if [ "$build_ok" = "no" ]; then
+        claude_do "⚙️  Backend" "Read CLAUDE.md. Fix ALL Go compilation errors. Run 'go build ./...' repeatedly until clean." "$PHASE_LOGS/smart_build_fix.log" 1200
+      fi
+      local test_out; test_out=$(go test ./... -count=1 -timeout 120s 2>&1 || true)
+      if echo "$test_out" | grep -q "FAIL"; then
+        local failures; failures=$(echo "$test_out" | grep -A 3 "FAIL\|Error\|panic" | head -60)
+        claude_do "🧪 Tester" "Read CLAUDE.md. Fix ALL failing Go tests. Failures:
 $failures
-
 Run 'go test ./...' and fix every failure until all pass." "$PHASE_LOGS/smart_test_fix.log" 1800
-      # Verify
-      run_go_tests || { fix_go_tests; run_go_tests || true; }
+      fi
+      cd "$REPO_DIR"; git add -A && git commit -m "[smart-improve] direct fixes cycle $cycle" 2>/dev/null || true
     fi
 
-    cd "$REPO_DIR"; git add -A && git commit -m "[smart-improve] direct fixes" 2>/dev/null || true
-  fi
+    # Re-scan after cycle
+    scan_project_completion
+    pct_current=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE'))['completion_pct'])" 2>/dev/null || echo "0")
+    slog "  📊 After cycle $cycle: ${pct_current}%"
 
-  # Re-scan
-  scan_project_completion
-  local pct_after; pct_after=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE'))['completion_pct'])" 2>/dev/null || echo "0")
-  local delta=$((pct_after - pct_before))
-  slog "  📊 Progress: ${pct_before}% → ${pct_after}% (+${delta}%)"
+    # No progress? Break to avoid infinite loops
+    if [ "$cycle" -gt 1 ]; then
+      local pct_prev; pct_prev=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE')).get('_prev_pct', $pct_current))" 2>/dev/null || echo "$pct_current")
+      if [ "$pct_current" -le "$pct_prev" ]; then
+        swarn "  ⚠ No progress in last cycle — stopping"
+        break
+      fi
+    fi
+    # Store for next cycle comparison
+    python3 -c "
+import json
+d = json.load(open('$COMPLETION_FILE'))
+d['_prev_pct'] = $pct_current
+json.dump(d, open('$COMPLETION_FILE', 'w'), indent=2)
+" 2>/dev/null || true
+  done
 
-  if [ "$pct_after" -ge "$PR_THRESHOLD" ]; then
-    slog "  🎉 ${pct_after}% ≥ ${PR_THRESHOLD}% → PR mode!"
+  local delta=$((pct_current - pct_before))
+  slog ""
+  slog "  📊 Final: ${pct_before}% → ${pct_current}% (+${delta}%) in $cycle cycles"
+
+  if [ "$pct_current" -ge "$PR_THRESHOLD" ]; then
+    slog "  🎉 ${pct_current}% ≥ ${PR_THRESHOLD}% → PR mode!"
     run_demo
     prepare_pr
   else
-    slog "  ⏳ ${pct_after}% < ${PR_THRESHOLD}% — run again: ./dev.sh smart-improve"
+    slog "  ⏳ ${pct_current}% < ${PR_THRESHOLD}% — run again: ./dev.sh smart-improve"
   fi
 
   local elapsed=$(( $(date +%s) - t0 ))
@@ -2522,51 +2516,6 @@ Run 'go test ./...' and fix every failure until all pass." "$PHASE_LOGS/smart_te
 # ═══════════════════════════════════════════════
 # BACKGROUND EXECUTION
 # ═══════════════════════════════════════════════
-
-# Clean up stuck "running" states from crashed processes
-cleanup_stuck_states() {
-  if [ ! -f "$STATE_FILE" ]; then return; fi
-
-  python3 - "$STATE_FILE" << 'PYEOF'
-import json, os, sys
-from datetime import datetime, timedelta
-
-f = sys.argv[1]
-if not os.path.exists(f): exit()
-
-d = json.load(open(f))
-now = datetime.now()
-stuck_found = False
-
-for phase, data in d.get("phases", {}).items():
-    if data.get("status") == "running":
-        updated_str = data.get("_updated", "")
-        if updated_str:
-            try:
-                updated = datetime.fromisoformat(updated_str)
-                # If phase has been "running" for more than 4 hours, mark as failed
-                if (now - updated) > timedelta(hours=4):
-                    data["status"] = "failed"
-                    data["crash_reason"] = "stuck_running_too_long"
-                    data["crashed_at"] = now.isoformat()
-                    stuck_found = True
-            except:
-                pass
-
-if stuck_found:
-    with open(f, "w") as fp:
-        json.dump(d, fp, indent=2)
-PYEOF
-
-  # Also clean up orphaned PID file if process isn't running
-  if [ -f "$PID_FILE" ]; then
-    local pid; pid=$(cat "$PID_FILE" 2>/dev/null)
-    if ! kill -0 "$pid" 2>/dev/null; then
-      warn "  🧹 Cleaning up orphaned PID file (process $pid not running)"
-      rm -f "$PID_FILE"
-    fi
-  fi
-}
 
 is_running() { [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; }
 
@@ -2617,7 +2566,6 @@ show_status() {
   if [ -f "$STATE_FILE" ]; then
     python3 - "$STATE_FILE" << 'PYEOF'
 import json, sys
-from datetime import datetime, timedelta
 d = json.load(open(sys.argv[1]))
 print(f"  Project: {d.get('project','')[:60]}")
 print(f"  Branch:  {d.get('branch','')}")
@@ -2628,9 +2576,6 @@ icons = {"done":"✅","running":"🔄","pending":"⬜","failed":"❌","skipped":
 roles = {"requirements":"PM","market_research":"Research","design":"Architect","backend":"Backend","frontend":"Frontend","testing":"Tester","qa":"QA","security":"Security","deploy":"DevOps"}
 
 done = 0
-stuck_found = False
-now = datetime.now()
-
 for p in phases:
     data = d.get("phases",{}).get(p,{})
     st = data.get("status","pending")
@@ -2639,26 +2584,12 @@ for p in phases:
     verdict_str = f" → {verdict}" if verdict else ""
     updated = data.get("_updated","")
     time_str = f" [{updated[11:19]}]" if updated else ""
-
-    # Detect stuck phases (running for too long)
-    extra = ""
-    if st == "running" and updated:
-        try:
-            upd_time = datetime.fromisoformat(updated)
-            if (now - upd_time) > timedelta(hours=2):
-                extra = " ⚠️ STUCK"
-                stuck_found = True
-        except: pass
-
-    print(f"  {icons.get(st,'⬜')} {roles.get(p,p):10s}{verdict_str}{time_str}{extra}")
+    print(f"  {icons.get(st,'⬜')} {roles.get(p,p):10s}{verdict_str}{time_str}")
     for k,v in sorted(data.items()):
         if k.startswith("_") or k in ("status","verdict"): continue
         print(f"     └─ {k}: {v}")
 
 print(f"\n  Progress: {done}/{len(phases)} phases ({done*100//len(phases)}%)")
-
-if stuck_found:
-    print("\n  ⚠️  Some phases appear stuck. Run './dev.sh recover' to clean up.")
 PYEOF
   fi
 
@@ -2712,7 +2643,6 @@ show_help() { cat << 'HELP'
     ./dev.sh status                     # Dashboard
     ./dev.sh stop                       # Stop everything
     ./dev.sh resume                     # Continue from last phase
-    ./dev.sh recover                    # Clean up stuck states after crash
     ./dev.sh phase backend              # Single phase (fg)
     ./dev.sh start "desc" --fg          # Foreground mode
 
@@ -2770,12 +2700,6 @@ case "$CMD" in
     command -v claude &>/dev/null || { err "Claude Code not found. Install: npm install -g @anthropic-ai/claude-code"; exit 1; }
     command -v go &>/dev/null && log "✓ go $(go version | awk '{print $3}')" || warn "⚠ go not found"
     command -v node &>/dev/null && log "✓ node $(node -v)" || warn "⚠ node not found"
-
-    # Warn about nested Claude Code sessions
-    if [ "$INSIDE_CLAUDE_CODE" = "1" ] || [ "$INSIDE_CLAUDE_CODE" = "true" ]; then
-      warn "⚠ Running inside Claude Code session - auto-fix features disabled"
-      warn "  For full functionality, run: ./dev.sh $CMD ${2:-} --fg"
-    fi
 
     # Auto-init git if needed
     if [ ! -d "$REPO_DIR/.git" ]; then
@@ -2836,7 +2760,6 @@ case "$CMD" in
   stop)            stop_all ;;
   stop-services)   docker_down; echo "✓ Stopped" ;;
   status)          show_status ;;
-  recover)         cleanup_stuck_states; echo "✓ Cleaned up stuck states"; ./dev.sh status ;;
   reset)           stop_all 2>/dev/null; rm -rf "$DEV_DIR"; echo "✓ Reset" ;;
 
   # ── Smart improve ──

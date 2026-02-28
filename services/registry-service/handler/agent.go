@@ -107,12 +107,13 @@ func (h *Handler) AgentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Extract agent ID from path
+	// Path format: /agents/{id} or /agents/{id}/heartbeat
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) < 3 {
+	if len(parts) < 2 {
 		respondError(w, apperrors.New("invalid agent path", http.StatusBadRequest))
 		return
 	}
-	agentID := parts[2]
+	agentID := parts[1]
 
 	switch r.Method {
 	case http.MethodGet:
@@ -187,7 +188,11 @@ func (h *Handler) heartbeat(w http.ResponseWriter, r *http.Request, ctx context.
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	// Return 200 OK with status confirmation
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"agent_id": agentID,
+		"status":   "online",
+	})
 }
 
 // ListAgents handles listing all agents.
@@ -268,13 +273,33 @@ func (h *Handler) checkOfflineAgents(ctx context.Context) {
 func (h *Handler) PrinterHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract printer ID from path
+	// Extract printer ID and sub-path from path
+	// Path format: /printers/{id} or /printers/{id}/status or /printers/{id}/capabilities
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) < 3 {
+	if len(parts) < 2 {
 		respondError(w, apperrors.New("invalid printer path", http.StatusBadRequest))
 		return
 	}
-	printerID := parts[2]
+	printerID := parts[1]
+
+	// Check for sub-paths (status, capabilities)
+	if len(parts) >= 3 {
+		subPath := parts[2]
+		switch subPath {
+		case "status":
+			if r.Method == http.MethodPut {
+				// SetPrinterStatus is in printer.go, but we handle it here for routing
+				h.setPrinterStatus(w, r, ctx, printerID)
+				return
+			}
+		case "capabilities":
+			if r.Method == http.MethodPut {
+				// UpdateCapabilities is in printer.go, but we handle it here for routing
+				h.updateCapabilities(w, r, ctx, printerID)
+				return
+			}
+		}
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -391,6 +416,78 @@ func (h *Handler) deletePrinter(w http.ResponseWriter, r *http.Request, ctx cont
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// setPrinterStatus handles PUT /printers/{id}/status
+func (h *Handler) setPrinterStatus(w http.ResponseWriter, r *http.Request, ctx context.Context, printerID string) {
+	var req struct {
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, apperrors.Wrap(err, "invalid request body", http.StatusBadRequest))
+		return
+	}
+
+	if req.Status != "online" && req.Status != "offline" && req.Status != "busy" && req.Status != "error" {
+		respondError(w, apperrors.New("invalid status value", http.StatusBadRequest))
+		return
+	}
+
+	printer, err := h.printerRepo.FindByID(ctx, printerID)
+	if err != nil {
+		fmt.Printf("[ERROR] Failed to find printer %s: %v\n", printerID, err)
+		respondError(w, apperrors.ErrNotFound)
+		return
+	}
+
+	if printer == nil {
+		fmt.Printf("[ERROR] Printer is nil after FindByID for ID %s\n", printerID)
+		respondError(w, apperrors.New("printer not found", http.StatusNotFound))
+		return
+	}
+
+	printer.Status = req.Status
+
+	if err := h.printerRepo.Update(ctx, printer); err != nil {
+		fmt.Printf("[ERROR] Failed to update printer %s: %v\n", printerID, err)
+		respondError(w, apperrors.Wrap(err, "failed to update printer status", http.StatusInternalServerError))
+		return
+	}
+
+	respondJSON(w, http.StatusOK, printerToResponse(printer))
+}
+
+// updateCapabilities handles PUT /printers/{id}/capabilities
+func (h *Handler) updateCapabilities(w http.ResponseWriter, r *http.Request, ctx context.Context, printerID string) {
+	var req struct {
+		Capabilities interface{} `json:"capabilities"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, apperrors.Wrap(err, "invalid request body", http.StatusBadRequest))
+		return
+	}
+
+	printer, err := h.printerRepo.FindByID(ctx, printerID)
+	if err != nil {
+		respondError(w, apperrors.ErrNotFound)
+		return
+	}
+
+	// Serialize capabilities to JSON
+	capabilitiesJSON, err := json.Marshal(req.Capabilities)
+	if err != nil {
+		respondError(w, apperrors.Wrap(err, "failed to serialize capabilities", http.StatusInternalServerError))
+		return
+	}
+
+	printer.Capabilities = string(capabilitiesJSON)
+
+	if err := h.printerRepo.Update(ctx, printer); err != nil {
+		respondError(w, apperrors.Wrap(err, "failed to update printer", http.StatusInternalServerError))
+		return
+	}
+
+	respondJSON(w, http.StatusOK, printerToResponse(printer))
 }
 
 // ListPrinters handles listing all printers.

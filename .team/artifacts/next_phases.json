@@ -2,55 +2,78 @@
   "phases": [
     {
       "order": 1,
-      "name": "Fix Registry Service 500 Error",
+      "name": "Fix Failing Integration Tests",
       "priority": "critical",
-      "category": "fix",
-      "description": "Fix the registry-service agent registration endpoint returning 500 instead of 201. Check services/registry-service/handlers.go for the RegisterAgent handler. Verify database connection in the agent creation logic and ensure required fields (agent_id, name, capabilities) are properly validated. Add error logging to identify the root cause. The test at tests/integration/api_test.go:512 expects 201. Run 'go test ./tests/integration/... -v -run TestRegistryServiceEndpoints' to verify.",
+      "category": "test",
+      "description": "Fix 3 failing tests in tests/integration/api_test.go. TestRegistryServiceEndpoints expects 200 but gets 400 for get_agent_by_id. TestEndToEndWorkflow fails at Step 2 (agent registration) with 500 error. Investigate services/registry-service/handlers/register.go and services/registry-service/handlers/get_agent.go for JSON unmarshaling errors, nil pointer dereferences, or database query failures. Add proper error logging and fix request validation. Run 'go test ./tests/integration -v' to verify all tests pass.",
       "success_criteria": [
-        "TestRegistryServiceEndpoints/register_agent passes with 201 status",
-        "go test ./tests/integration/... passes for registry tests"
-      ],
-      "estimated_minutes": 25
-    },
-    {
-      "order": 2,
-      "name": "Fix Job Service 400 Error",
-      "priority": "critical",
-      "category": "fix",
-      "description": "Fix the job-service create job endpoint returning 400 instead of 201. Check services/job-service/handlers.go for the CreateJob handler. Verify the request validation is not incorrectly rejecting valid payloads - the test at tests/integration/api_test.go:686 sends a valid job request. Ensure document_id, printer_id, and options fields are properly parsed. Check for missing Content-Type handling or JSON unmarshaling issues. Run 'go test ./tests/integration/... -v -run TestJobServiceEndpoints' to verify.",
-      "success_criteria": [
-        "TestJobServiceEndpoints/create_job passes with 201 status",
-        "go test ./tests/integration/... passes for job tests"
+        "All integration tests pass",
+        "go test ./tests/integration returns EXIT 0"
       ],
       "estimated_minutes": 20
     },
     {
-      "order": 3,
-      "name": "Fix Storage Service Metadata",
+      "order": 2,
+      "name": "Create 12 Missing SQL Migration Files",
       "priority": "critical",
-      "category": "fix",
-      "description": "Fix the storage-service document metadata endpoint failing at tests/integration/api_test.go:839. Check services/storage-service/handlers.go for the GetDocumentMetadata handler. The test likely calls GET /documents/{id}/metadata after uploading a document. Verify the document ID path parameter extraction, ensure the storage backend returns proper metadata (size, content_type, uploaded_at), and handle the case where document exists but metadata retrieval fails. Add proper 404 vs 500 error distinction. Run 'go test ./tests/integration/... -v -run TestStorageServiceEndpoints' to verify.",
+      "category": "feature",
+      "description": "Create 12 missing migration files in migrations/ directory. Create pairs of .up.sql and .down.sql files for: 000001_create_organizations, 000002_create_users, 000003_create_sessions, 000004_create_agents, 000005_create_printers, 000006_create_printer_permissions, 000007_create_print_jobs, 000008_create_job_history, 000009_create_audit_logs, 000010_create_usage_stats, 000011_create_api_keys, 000012_create_webhooks, 000013_create_invitations, 000014_create_devices. Each .up.sql should have CREATE TABLE with proper columns, indexes, and foreign keys. Each .down.sql should have DROP TABLE IF EXISTS.",
       "success_criteria": [
-        "TestStorageServiceEndpoints/get_document_metadata passes",
-        "go test ./tests/integration/... passes all storage tests"
+        "14 total .up.sql migration files exist",
+        "All migration files have valid SQL syntax"
+      ],
+      "estimated_minutes": 25
+    },
+    {
+      "order": 3,
+      "name": "Implement Auth Service API Endpoints",
+      "priority": "high",
+      "category": "feature",
+      "description": "Implement missing HTTP handlers in services/auth-service/handlers/. Create register.go, login.go, logout.go, refresh_token.go, and profile.go. Each handler should: validate request JSON, call auth-service business logic, return proper HTTP status codes (200/201/400/401/500), and return JSON responses. Add the handlers to services/auth-service/main.go router. Run 'go build ./services/auth-service' to verify compilation.",
+      "success_criteria": [
+        "auth-service compiles without errors",
+        "All auth endpoints register in main.go router"
+      ],
+      "estimated_minutes": 20
+    },
+    {
+      "order": 4,
+      "name": "Create Dashboard Auth Components",
+      "priority": "high",
+      "category": "feature",
+      "description": "Create React authentication components in web/dashboard/src/features/auth/. Create: LoginForm.tsx with email/password fields and submit button, RegisterForm.tsx with name/email/password fields, ProtectedRoute.tsx wrapper component, useAuth.ts hook for auth state management. Each component should use React hooks (useState, useEffect) and TypeScript interfaces for props. Add proper TypeScript types in web/dashboard/src/types/auth.ts. Run 'cd web/dashboard && npm run type-check' to verify.",
+      "success_criteria": [
+        "4+ new .tsx/.ts files in web/dashboard",
+        "npm run type-check passes with no errors"
+      ],
+      "estimated_minutes": 20
+    },
+    {
+      "order": 5,
+      "name": "Create Dashboard Job Management UI",
+      "priority": "high",
+      "category": "feature",
+      "description": "Create React job management components in web/dashboard/src/features/jobs/. Create: JobList.tsx displaying jobs in a table with status badges, JobDetails.tsx showing individual job info, CreateJobForm.tsx with file upload and printer selection, useJobs.ts hook for API calls. Add types in web/dashboard/src/types/jobs.ts. Include error handling, loading states, and proper TypeScript interfaces. Run 'cd web/dashboard && npm run type-check' and 'npm run build' to verify.",
+      "success_criteria": [
+        "4+ new job-related .tsx/.ts files",
+        "Dashboard builds successfully"
       ],
       "estimated_minutes": 25
     }
   ],
   "project_health": {
-    "score": 64,
+    "score": 56,
     "critical_issues": [
-      "Registry service agent registration returns HTTP 500",
-      "Job service job creation returns HTTP 400",
-      "Storage service metadata retrieval fails",
-      "8 out of 22 integration tests failing"
+      "3 failing integration tests (TestRegistryServiceEndpoints, TestEndToEndWorkflow)",
+      "Frontend completely missing (0% of 28 files)",
+      "12/14 migration files missing",
+      "API endpoints not implemented (0% of 17)"
     ],
     "strengths": [
-      "Build compiles successfully",
-      "14 integration tests already passing",
-      "Security middleware implemented",
-      "Docker deployment configured"
+      "Docker configuration complete (6 Dockerfiles, compose exists)",
+      "Project structure and CLAUDE.md documentation established",
+      "Some tests passing (14/19)"
     ]
   },
-  "rationale": "Tests are failing (Rule 2 priority). Build passes, so compilation is not the issue. Three specific integration test failures point to runtime bugs in registry, job, and storage services. Each task isolates one failing test to ensure single-call completion. Fixing in dependency order (registry \u2192 job \u2192 storage) as job creation may depend on registered agents and storage documents."
+  "rationale": "Tasks ordered to maximize completion % gain: (1) Fix tests first to unblock CI (+5 pts), (2) Create migrations for +8.6 pts, (3) Implement auth endpoints for partial endpoints credit, (4-5) Build frontend components targeting the 15% frontend_files weight which is currently at 0%. Avoids already-complete areas (docker, backend structure) and focuses on the four dimensions losing the most points: frontend (15%), endpoints (15%), migrations (10%), tests (10%)."
 }

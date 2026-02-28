@@ -32,12 +32,13 @@ func (h *Handler) UpdateCapabilities(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Extract printer ID from path
+	// Path format: /printers/{id}/capabilities
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) < 4 {
+	if len(parts) < 3 {
 		respondError(w, apperrors.New("invalid printer path", http.StatusBadRequest))
 		return
 	}
-	printerID := parts[2]
+	printerID := parts[1]
 
 	if r.Method != http.MethodPut {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -83,12 +84,13 @@ func (h *Handler) GetPrintersByAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract agent ID from path
+	// Path format: /agents/{id}/printers
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) < 4 {
+	if len(parts) < 3 {
 		respondError(w, apperrors.New("invalid agent path", http.StatusBadRequest))
 		return
 	}
-	agentID := parts[3]
+	agentID := parts[1]
 
 	printers, err := h.printerRepo.FindByAgent(ctx, agentID)
 	if err != nil {
@@ -113,12 +115,13 @@ func (h *Handler) SetPrinterStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Extract printer ID from path
+	// Path format: /printers/{id}/status
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) < 4 {
+	if len(parts) < 3 {
 		respondError(w, apperrors.New("invalid printer path", http.StatusBadRequest))
 		return
 	}
-	printerID := parts[2]
+	printerID := parts[1]
 
 	if r.Method != http.MethodPut {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
