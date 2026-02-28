@@ -22,13 +22,18 @@ export const Printers = () => {
     },
   });
 
-  // TODO: Implement printer deletion
-  // const deleteMutation = useMutation({
-  //   mutationFn: (id: string) => printersApi.delete(id),
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ['printers'] });
-  //   },
-  // });
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => printersApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+    },
+  });
+
+  const handleDeletePrinter = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete printer "${name}"?`)) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const filteredPrinters = printers?.filter((printer) => {
     const matchesSearch = printer.name.toLowerCase().includes(search.toLowerCase());
@@ -119,6 +124,7 @@ export const Printers = () => {
               key={printer.id}
               printer={printer}
               onToggle={() => toggleMutation.mutate({ id: printer.id, isActive: printer.isActive })}
+              onDelete={() => handleDeletePrinter(printer.id, printer.name)}
             />
           ))}
         </div>

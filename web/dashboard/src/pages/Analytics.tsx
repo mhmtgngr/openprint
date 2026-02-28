@@ -24,9 +24,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export const Analytics = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState<'7d' | '30d' | '90d' | '12m'>('30d');
-  // TODO: Implement groupBy selector
-  // const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
-  const groupBy: 'day' | 'week' | 'month' = 'day';
+  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
 
   const { data: usageStats, isLoading: statsLoading } = useQuery({
     queryKey: ['analytics', 'usage', period, groupBy],
@@ -117,6 +115,15 @@ export const Analytics = () => {
               {p === '12m' ? '12 Months' : p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '90 Days'}
             </button>
           ))}
+          <select
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
+            className="ml-2 px-4 py-2 rounded-lg font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors border-0 focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="day">By Day</option>
+            <option value="week">By Week</option>
+            <option value="month">By Month</option>
+          </select>
         </div>
       </div>
 

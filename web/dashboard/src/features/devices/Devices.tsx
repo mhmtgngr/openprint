@@ -11,6 +11,12 @@ import { DEVICE_STATUS_CONFIG } from './types';
 import { devicesApi, isAgent } from './api';
 import { DeviceCard } from './DeviceCard';
 
+interface RegisterDeviceFormData {
+  device_name: string;
+  location: string;
+  printer_type: string;
+}
+
 interface DevicesProps {
   onDeviceClick?: (device: DeviceAgent | DevicePrinter) => void;
 }
@@ -22,6 +28,12 @@ export const Devices = ({ onDeviceClick }: DevicesProps) => {
     status: 'all',
     type: 'all',
     search: '',
+  });
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [registerForm, setRegisterForm] = useState<RegisterDeviceFormData>({
+    device_name: '',
+    location: '',
+    printer_type: 'local',
   });
 
   // Fetch devices
@@ -53,6 +65,27 @@ export const Devices = ({ onDeviceClick }: DevicesProps) => {
     },
   });
 
+  // Register device mutation
+  const registerMutation = useMutation({
+    mutationFn: (data: RegisterDeviceFormData) =>
+      fetch(`${import.meta.env.VITE_API_URL || '/api/v1'}/devices/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('auth_tokens') ? JSON.parse(localStorage.getItem('auth_tokens')!).accessToken : ''}`,
+        },
+        body: JSON.stringify(data),
+      }).then((res) => {
+        if (!res.ok) throw new Error('Failed to register device');
+        return res.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['devices'] });
+      setIsRegisterModalOpen(false);
+      setRegisterForm({ device_name: '', location: '', printer_type: 'local' });
+    },
+  });
+
   const handleDelete = (id: string, type: 'agent' | 'printer', name: string) => {
     if (
       confirm(
@@ -65,6 +98,20 @@ export const Devices = ({ onDeviceClick }: DevicesProps) => {
 
   const handleToggle = (id: string, isActive: boolean) => {
     toggleMutation.mutate({ id, isActive });
+  };
+
+  const openRegisterDeviceModal = () => {
+    setIsRegisterModalOpen(true);
+  };
+
+  const closeRegisterDeviceModal = () => {
+    setIsRegisterModalOpen(false);
+    setRegisterForm({ device_name: '', location: '', printer_type: 'local' });
+  };
+
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    registerMutation.mutate(registerForm);
   };
 
   const handleFilterChange = (key: keyof DeviceListParams, value: string) => {
@@ -146,7 +193,7 @@ export const Devices = ({ onDeviceClick }: DevicesProps) => {
         <div className="flex items-center gap-2">
           <button
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-            onClick={() => {/* TODO: Open register modal */}}
+            onClick={openRegisterDeviceModal}
           >
             <PlusIcon className="w-5 h-5" />
             Add Device
@@ -246,7 +293,7 @@ export const Devices = ({ onDeviceClick }: DevicesProps) => {
 
       {/* Content */}
       {allDevices.length === 0 ? (
-        <EmptyState onAddDevice={() => {/* TODO: Open register modal */}} />
+        <EmptyState onAddDevice={openRegisterDeviceModal} />
       ) : viewMode === 'table' ? (
         <TableView
           devices={allDevices}
@@ -278,6 +325,84 @@ export const Devices = ({ onDeviceClick }: DevicesProps) => {
               isToggling={toggleMutation.isPending}
             />
           ))}
+        </div>
+      )}
+
+      {/* Register Device Modal */}
+      {isRegisterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Register New Device
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Add a new printer or device to your organization
+              </p>
+            </div>
+            <form onSubmit={handleRegisterSubmit} className="p-6 space-y-4">
+              <div>
+                <label htmlFor="device_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Device Name
+                </label>
+                <input
+                  type="text"
+                  id="device_name"
+                  required
+                  value={registerForm.device_name}
+                  onChange={(e) => setRegisterForm({ ...registerForm, device_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                  placeholder="e.g. Office Printer 1"
+                />
+              </div>
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  id="location"
+                  required
+                  value={registerForm.location}
+                  onChange={(e) => setRegisterForm({ ...registerForm, location: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                  placeholder="e.g. First Floor, Room 101"
+                />
+              </div>
+              <div>
+                <label htmlFor="printer_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Printer Type
+                </label>
+                <select
+                  id="printer_type"
+                  value={registerForm.printer_type}
+                  onChange={(e) => setRegisterForm({ ...registerForm, printer_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                >
+                  <option value="local">Local Printer</option>
+                  <option value="network">Network Printer</option>
+                  <option value="shared">Shared Printer</option>
+                  <option value="usb">USB Printer</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeRegisterDeviceModal}
+                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={registerMutation.isPending}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {registerMutation.isPending ? 'Registering...' : 'Register Device'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

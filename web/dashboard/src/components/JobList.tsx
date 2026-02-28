@@ -7,9 +7,11 @@ interface JobListProps {
   jobs: PrintJob[];
   isLoading?: boolean;
   onJobClick?: (job: PrintJob) => void;
+  selectedJobs?: Set<string>;
+  onJobSelect?: (jobId: string) => void;
 }
 
-export const JobList = ({ jobs, isLoading, onJobClick }: JobListProps) => {
+export const JobList = ({ jobs, isLoading, onJobClick, selectedJobs = new Set(), onJobSelect }: JobListProps) => {
   const cancelJobMutation = useCancelJob();
   const retryJobMutation = useRetryJob();
 
@@ -82,7 +84,16 @@ export const JobList = ({ jobs, isLoading, onJobClick }: JobListProps) => {
             `}
             onClick={() => onJobClick?.(job)}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {onJobSelect && (
+                <input
+                  type="checkbox"
+                  checked={selectedJobs.has(job.id)}
+                  onChange={() => onJobSelect(job.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -148,7 +159,7 @@ export const JobList = ({ jobs, isLoading, onJobClick }: JobListProps) => {
                 )}
               </div>
 
-              <div className="ml-4 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 {job.status === 'queued' && (
                   <button
                     onClick={(e) => handleCancel(e, job.id)}

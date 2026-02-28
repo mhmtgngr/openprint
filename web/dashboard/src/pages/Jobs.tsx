@@ -26,23 +26,22 @@ export const Jobs = () => {
   const jobs = data?.data || [];
 
   const handleSelectAll = () => {
-    if (selectedJobs.size === jobs.length) {
+    if (selectedJobs.size === filteredJobs.length) {
       setSelectedJobs(new Set());
     } else {
-      setSelectedJobs(new Set(jobs.map((j) => j.id)));
+      setSelectedJobs(new Set(filteredJobs.map((j) => j.id)));
     }
   };
 
-  // TODO: Implement individual job selection
-  // const handleSelectJob = (jobId: string) => {
-  //   const newSelected = new Set(selectedJobs);
-  //   if (newSelected.has(jobId)) {
-  //     newSelected.delete(jobId);
-  //   } else {
-  //     newSelected.add(jobId);
-  //   }
-  //   setSelectedJobs(newSelected);
-  // };
+  const handleSelectJob = (jobId: string) => {
+    const newSelected = new Set(selectedJobs);
+    if (newSelected.has(jobId)) {
+      newSelected.delete(jobId);
+    } else {
+      newSelected.add(jobId);
+    }
+    setSelectedJobs(newSelected);
+  };
 
   const filteredJobs = jobs.filter((job) =>
     job.documentName.toLowerCase().includes(search.toLowerCase()) ||
@@ -149,7 +148,12 @@ export const Jobs = () => {
             </span>
           </div>
         )}
-        <JobList jobs={filteredJobs} isLoading={isLoading} />
+        <JobList
+          jobs={filteredJobs}
+          isLoading={isLoading}
+          selectedJobs={selectedJobs}
+          onJobSelect={handleSelectJob}
+        />
       </div>
     </div>
   );

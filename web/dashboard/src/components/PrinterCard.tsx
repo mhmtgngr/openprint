@@ -4,10 +4,11 @@ interface PrinterCardProps {
   printer: Printer;
   onClick?: () => void;
   onToggle?: () => void;
+  onDelete?: () => void;
   isSelected?: boolean;
 }
 
-export const PrinterCard = ({ printer, onClick, onToggle, isSelected }: PrinterCardProps) => {
+export const PrinterCard = ({ printer, onClick, onToggle, onDelete, isSelected }: PrinterCardProps) => {
   const { name, type, isOnline, isActive, capabilities } = printer;
 
   return (
@@ -78,14 +79,14 @@ export const PrinterCard = ({ printer, onClick, onToggle, isSelected }: PrinterC
         </div>
 
         {onToggle && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onToggle();
               }}
               className={`
-                w-full py-2 px-4 rounded-md text-sm font-medium transition-colors
+                flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors
                 ${isActive
                   ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50'
                   : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
@@ -104,6 +105,18 @@ export const PrinterCard = ({ printer, onClick, onToggle, isSelected }: PrinterC
                 </>
               )}
             </button>
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
+                title="Delete printer"
+              >
+                <TrashIcon className="w-4 h-4" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -149,5 +162,11 @@ export const CheckCircleIcon = ({ className = '' }: { className?: string }) => (
 export const XCircleIcon = ({ className = '' }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+export const TrashIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
   </svg>
 );
