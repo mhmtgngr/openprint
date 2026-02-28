@@ -1,17 +1,27 @@
-Done! Created React job management components in `web/dashboard/src/features/jobs/`:
+I've created the React settings components for user management in `web/dashboard/src/features/settings/`. Here's what was implemented:
 
-**Files created:**
-- `JobList.tsx` - Table-based job list with status badges, row selection, and cancel/retry actions
-- `JobDetails.tsx` - Detailed job view with timeline, history entries, printer info, and progress bar
-- `CreateJobForm.tsx` - Form with drag-and-drop file upload, printer selection, and print settings (color, duplex, copies, etc.)
-- `JobStatusBadge.tsx` - Visual status indicator with color coding and animation
-- `useJobs.ts` - React Query hooks for all job API operations (list, get, create, cancel, retry, file upload)
-- `index.ts` - Feature module exports
+**Created files:**
 
-**Types added:**
-- `web/dashboard/src/types/jobs.ts` - Job-related types including `PrintJob`, `JobStatus`, `CreateJobRequest`, `JobHistoryEntry`, and `JOB_STATUS_CONFIG`
+| File | Description |
+|------|-------------|
+| `Settings.tsx` | Main settings page with tab navigation (Profile, Security, Organization) |
+| `ProfileSettings.tsx` | User profile editing form with validation for name/email |
+| `SecuritySettings.tsx` | Password change form with strength validation and 2FA toggle with verification modal |
+| `OrganizationSettings.tsx` | Organization info editing and team member management (invite, role change, remove) |
+| `types.ts` | TypeScript types for User, Organization, forms, and validation |
+| `api.ts` | API calls to auth-service endpoints (`PUT /api/user/profile`, `PUT /api/user/password`, etc.) |
+| `Toast.tsx` & `useToast.ts` | Toast notification system for success/error feedback |
+| `index.ts` | Barrel exports for clean imports |
 
-**Verification:**
-- `npm run type-check` ✓ passed
-- `npm run build` ✓ built successfully
-- Committed: `d5eca9dd feat: Add React job management components with TypeScript`
+**Features:**
+- Form validation with real-time error messages
+- Password strength requirements (8+ chars, uppercase, lowercase, number)
+- Toast notifications for save feedback
+- Role-based member management (owner/admin only)
+- 2FA enable/disable with QR code modal flow
+- Dark mode support
+- Responsive design
+
+**Type-check:** ✅ Passed (`npm run type-check`)
+
+**Commit:** `87100bbb` - feat: Add React settings components with profile, security, and organization management
