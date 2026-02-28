@@ -14,14 +14,14 @@ CREATE TABLE IF NOT EXISTS print_usage_by_day (
     total_cost DECIMAL(10, 4) DEFAULT 0,
     currency VARCHAR(3) DEFAULT 'USD',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), date)
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX idx_print_usage_by_day_unique ON print_usage_by_day(organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), "date");
 CREATE INDEX idx_print_usage_by_day_org ON print_usage_by_day(organization_id);
 CREATE INDEX idx_print_usage_by_day_user ON print_usage_by_day(user_id);
 CREATE INDEX idx_print_usage_by_day_printer ON print_usage_by_day(printer_id);
-CREATE INDEX idx_print_usage_by_day_date ON print_usage_by_day(date);
+CREATE INDEX idx_print_usage_by_day_date ON print_usage_by_day("date");
 
 CREATE TABLE IF NOT EXISTS print_usage_by_week (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -37,10 +37,10 @@ CREATE TABLE IF NOT EXISTS print_usage_by_week (
     total_cost DECIMAL(10, 4) DEFAULT 0,
     currency VARCHAR(3) DEFAULT 'USD',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), week_start)
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX idx_print_usage_by_week_unique ON print_usage_by_week(organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), week_start);
 CREATE INDEX idx_print_usage_by_week_org ON print_usage_by_week(organization_id);
 CREATE INDEX idx_print_usage_by_week_user ON print_usage_by_week(user_id);
 CREATE INDEX idx_print_usage_by_week_printer ON print_usage_by_week(printer_id);
@@ -60,14 +60,14 @@ CREATE TABLE IF NOT EXISTS print_usage_by_month (
     total_cost DECIMAL(10, 4) DEFAULT 0,
     currency VARCHAR(3) DEFAULT 'USD',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), month, year)
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX idx_print_usage_by_month_unique ON print_usage_by_month(organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), "month", year);
 CREATE INDEX idx_print_usage_by_month_org ON print_usage_by_month(organization_id);
 CREATE INDEX idx_print_usage_by_month_user ON print_usage_by_month(user_id);
 CREATE INDEX idx_print_usage_by_month_printer ON print_usage_by_month(printer_id);
-CREATE INDEX idx_print_usage_by_month_my ON print_usage_by_month(month, year);
+CREATE INDEX idx_print_usage_by_month_my ON print_usage_by_month("month", year);
 
 -- Printer Performance Metrics
 -- Tracks printer performance and health metrics
@@ -169,7 +169,7 @@ DECLARE
 BEGIN
     -- Aggregate from print_jobs into daily summary
     INSERT INTO print_usage_by_day (
-        organization_id, user_id, printer_id, date,
+        organization_id, user_id, printer_id, "date",
         total_jobs, total_pages, total_cost
     )
     SELECT
@@ -185,7 +185,7 @@ BEGIN
     LEFT JOIN print_job_costs c ON c.job_id = j.id
     WHERE DATE(j.created_at) = p_date
     GROUP BY u.organization_id, j.user_name, j.printer_id
-    ON CONFLICT (organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), date)
+    ON CONFLICT (organization_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::UUID), COALESCE(printer_id, '00000000-0000-0000-0000-000000000000'::UUID), "date")
     DO UPDATE SET
         total_jobs = EXCLUDED.total_jobs + print_usage_by_day.total_jobs,
         total_pages = EXCLUDED.total_pages + print_usage_by_day.total_pages,

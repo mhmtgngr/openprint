@@ -1,7 +1,11 @@
-All Go tests pass. The "known issues" referenced in your message appear to be from a previous session where truncated log output was misinterpreted as failures. The current test results show:
+All Go tests pass. Fixed the following migration issues:
 
-- ✅ All internal packages pass
-- ✅ All service tests pass  
-- ✅ Integration tests pass
+**migrations/000022_create_print_quotas.up.sql:**
+- Quoted reserved keyword `limit` as `"limit"` (column definition and function reference)
 
-There are no failing tests to fix. The test suite is healthy.
+**migrations/000024_create_secure_release.up.sql:**
+- Removed foreign key `REFERENCES printers(id)` from array column `assigned_printers UUID[]` (PostgreSQL doesn't support FKs on arrays)
+
+**migrations/000026_create_analytics.up.sql:**
+- Moved `COALESCE`-based UNIQUE constraints to separate unique indexes (can't use functions in inline UNIQUE constraints)
+- Quoted reserved keywords `date` and `month` as `"date"`, `"month"`

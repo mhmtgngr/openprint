@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS print_quotas (
     entity_type VARCHAR(20) NOT NULL CHECK (entity_type IN ('user', 'organization')),
     quota_type VARCHAR(50) NOT NULL, -- 'pages', 'jobs', 'color_pages', 'duplex_pages'
     period VARCHAR(20) NOT NULL CHECK (period IN ('daily', 'weekly', 'monthly', 'quarterly', 'yearly')),
-    limit INTEGER NOT NULL DEFAULT 0, -- 0 means unlimited
+    "limit" INTEGER NOT NULL DEFAULT 0, -- 0 means unlimited
     used INTEGER NOT NULL DEFAULT 0,
     reset_date TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -78,7 +78,7 @@ DECLARE
     v_current_date TIMESTAMPTZ := NOW();
 BEGIN
     -- Get quota info
-    SELECT limit, used, reset_date INTO v_limit, v_used, v_reset_date
+    SELECT "limit", used, reset_date INTO v_limit, v_used, v_reset_date
     FROM print_quotas
     WHERE entity_id = p_entity_id
       AND entity_type = p_entity_type

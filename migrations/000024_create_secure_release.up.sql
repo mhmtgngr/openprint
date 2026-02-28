@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS print_release_stations (
     location VARCHAR(255),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     supported_methods VARCHAR(100)[] NOT NULL, -- ARRAY of ['pin', 'card', 'nfc', etc.]
-    assigned_printers UUID[] REFERENCES printers(id),
+    assigned_printers UUID[],
     is_active BOOLEAN DEFAULT true,
     last_heartbeat TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
