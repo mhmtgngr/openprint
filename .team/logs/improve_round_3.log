@@ -1,19 +1,18 @@
-Done. Created React document storage components in `web/dashboard/src/features/documents/`:
+Done. Created analytics service with:
 
 **Files created:**
-- `types.ts` - Document, UploadMetadata interfaces with utility functions
-- `api.ts` - API calls to storage-service (GET/POST/DELETE `/documents`)
-- `DocumentCard.tsx` - Preview cards with file metadata
-- `DocumentUpload.tsx` - Drag-drop file upload with progress tracking
-- `DocumentViewer.tsx` - Modal viewer with PDF/image preview
-- `Documents.tsx` - Main listing page with search, pagination, stats
-- `index.ts` - Export file
+- `services/analytics-service/main.go` - HTTP server on port 8006
+- `services/analytics-service/handler/analytics.go` - HTTP handlers
+- `services/analytics-service/processor/aggregator.go` - PostgreSQL aggregation functions
 
-**Features:**
-- File name, size, upload date, checksum display
-- Encryption status indicator
-- Download button (triggers browser download via blob)
-- PDF preview via iframe, image thumbnails
-- Pagination (50 items per page)
-- Search/filter by filename
-- Stats dashboard (total docs, storage used, encrypted count)
+**Endpoints:**
+- `GET /api/v1/analytics/jobs` - Job statistics with daily trends and status breakdown
+- `GET /api/v1/analytics/printers` - Printer usage with top printers list
+- `GET /api/v1/analytics/users` - User activity metrics
+
+**Aggregator functions:**
+- `AggregateJobsByDate()` - Total/completed/failed/pending jobs, pages
+- `AggregateByPrinter()` - Printer counts, top printers by usage
+- `AggregateByUser()` - User counts, top users by job count
+
+Build tested successfully: `go build ./services/analytics-service` ✓
