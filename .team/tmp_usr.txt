@@ -1,8 +1,157 @@
 REQUIREMENTS (enriched with market research):
-
+```json
+{
+  "project_name": "Windows Print Agent with Printer Discovery",
+  "summary": "A Windows service agent that auto-discovers local/network printers, registers with OpenPrint Cloud, polls for queued print jobs assigned to the current user, and executes print operations on discovered printers. The agent includes bidirectional communication for job status updates and supports secure authentication.",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "as_a": "System Administrator",
+      "i_want": "silently install the Windows Print Agent on client machines",
+      "so_that": "users can print without manual configuration",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Agent supports silent installation via MSI with /quiet flag",
+        "Agent configuration can be pre-seeded via registry or config file",
+        "Agent auto-starts on Windows boot as a background service",
+        "Agent supports per-user or system-wide installation modes",
+        "Installation logs are written to Windows Event Log"
+      ]
+    },
+    {
+      "id": "US-002",
+      "as_a": "End User",
+      "i_want": "the agent to automatically discover all available printers on my computer",
+      "so_that": "I can print to any printer without manual setup",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "Agent discovers local printers connected via USB/LPT",
+        "Agent discovers network printers via WSD and LPD",
+        "Agent discovers shared printers on the local network",
+        "Printer discovery runs on agent start and on network changes",
+        "Discovered printers are displayed with name, driver, status, and capabilities"
+      ]
+    },
+    {
+      "id": "US-003",
+      "as_a": "End User",
+      "i_want": "the agent to poll for print jobs assigned to me and automatically print them",
+      "so_that": "I don't need to manually check for or initiate print jobs",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "Agent authenticates with OpenPrint Cloud using Windows credentials or SSO",
+        "Agent polls job-service every 5-30 seconds (configurable) for new jobs",
+        "Agent downloads print documents from storage-service",
+        "Agent sends jobs to the selected printer using Windows Print Spooler API",
+        "Agent updates job status in real-time (queued, downloading, printing, completed, failed)"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "End User",
+      "i_want": "select which printer to use for each print job",
+      "so_that": "I can control where my documents are printed",
+      "priority": "high",
+      "acceptance_criteria": [
+        "System tray icon shows current status and pending jobs",
+        "Printer selection dialog appears when a job is received",
+        "Default printer can be configured per user",
+        "Printer selection dialog shows printer status (online, offline, paper low, etc.)",
+        "User can cancel pending print jobs from system tray"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "System Administrator",
+      "i_want": "monitor agent health and print job status from the dashboard",
+      "so_that": "I can troubleshoot printing issues remotely",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Agent sends heartbeat to registry-service every 30 seconds",
+        "Agent logs print job results (success/failure) with error details",
+        "Dashboard shows online/offline status for each agent",
+        "Dashboard displays print history per agent and per user",
+        "Alerts are generated for agents that go offline or jobs that fail"
+      ]
+    },
+    {
+      "id": "US-006",
+      "as_a": "End User",
+      "i_want": "the agent to pause when I'm not logged in",
+      "so_that": "print jobs wait until I'm actually at my computer",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Agent detects user session state (locked, logged off, switched users)",
+        "Print jobs remai
 
 MARKET ANALYSIS:
-
+{
+  "competitor_summary": [
+    {
+      "name": "PaperCut MF",
+      "strengths": [
+        "Cross-platform support (Windows, macOS, Linux)",
+        "99% printer brand compatibility",
+        "Quota management and cost tracking",
+        "Detailed reporting and analytics",
+        "Mobile printing support",
+        "Secure print release",
+        "Used by 100M+ users globally"
+      ],
+      "weaknesses": [
+        "Requires on-premises infrastructure",
+        "Complex initial setup",
+        "Higher total cost of ownership"
+      ],
+      "pricing_model": "Per-user/per-printer licensing, typically $1-3/user/month"
+    },
+    {
+      "name": "Printix",
+      "strengths": [
+        "Cloud-native architecture (Azure)",
+        "Eliminates print servers entirely",
+        "Zero infrastructure maintenance",
+        "Direct IP printing",
+        "Mobile print for all platforms"
+      ],
+      "weaknesses": [
+        "Limited offline capabilities",
+        "Dependency on internet connectivity",
+        "Fewer advanced reporting features"
+      ],
+      "pricing_model": "Subscription SaaS, approximately $2-5/user/month"
+    },
+    {
+      "name": "YSoft SafeQ",
+      "strengths": [
+        "Strong security focus",
+        "Scan and digitization workflows",
+        "Embedded terminal support",
+        "Comprehensive audit trails"
+      ],
+      "weaknesses": [
+        "Higher pricing tier",
+        "Hardware-specific for some features",
+        "Steeper learning curve"
+      ],
+      "pricing_model": "Enterprise licensing, $3-8/user/month"
+    },
+    {
+      "name": "Canon UniFlow",
+      "strengths": [
+        "Deep hardware integration with Canon devices",
+        "Enterprise-grade workflows",
+        "Advanced scan routing",
+        "Strong document management"
+      ],
+      "weaknesses": [
+        "Vendor-locked to Canon ecosystem",
+        "Limited cross-brand support"
+      ],
+      "pricing_model": "Hardware-bundled or separate enterprise licensing"
+    }
+  ],
+  "
 
 PROJECT CONTEXT (from CLAUDE.md):
 # OpenPrint Cloud

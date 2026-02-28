@@ -2,7 +2,7 @@
   "results": [
     {
       "title": "Claude search",
-      "content": "",
+      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"PaperCut MF - Industry Standard Print Management\",\n      \"content\": \"PaperCut is a versatile print management solution designed for any device or platform. It helps organizations reduce waste, cut costs by 25-40%, and enhance sustainability. Key features include mobile printing, secure print release, print quotas, job tracking, cost estimation, user authentication, and detailed reporting. Used by over 100 million users globally. Supports Windows, macOS, Linux and 99% of printer brands including HP, Canon, Epson, Xerox.\",\n      \"url\": \"https://www.softwaresuggest.com/print-management-software\"\n    },\n    {\n      \"title\": \"Printix - Cloud-Native Print Management Platform\",\n      \"content\": \"Printix is a cloud-based print management solution that eliminates print servers entirely. Built on Microsoft Azure, it offers secure cloud print management with features like direct & mobile print (Windows, Mac, Chromebook, iOS, Android), secure print re",
       "url": ""
     }
   ]

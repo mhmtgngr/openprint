@@ -574,3 +574,17 @@ cb11f3494861f96894a912f3188a58e0d36f4f76692474f021f9506ea117b4dc
 Successfully tagged localhost/openprint/storage-service:dev
 Successfully tagged localhost/docker_storage-service:latest
 26d8831b89b1953fd0a34785b2ebba4670a8ff26cb421692d8822c59bf1d2e14
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 4cf9d57669e522e08b47d5bf7604131ac912a2c08d4ff12defbe78faf45c593c
+--> 4cf9d57669e5
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache db5015e85ae816b41dcfc917b897fe05eb25eba3339612ab07a2e2b206b25955
+--> db5015e85ae8
+[1/2] STEP 6/7: COPY . .

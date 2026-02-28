@@ -2,7 +2,7 @@
   "results": [
     {
       "title": "Claude search",
-      "content": "",
+      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"2026-2031 Global Enterprise Cloud Printing Market Research and Development Prospects\",\n      \"content\": \"The global enterprise cloud printing market is experiencing significant growth driven by digital transformation and remote work trends. Key technology segments include Wi-Fi, TCP-IP, and Bluetooth connectivity. Major applications span office, healthcare, retail, education, and logistics sectors. The market is segmented by cloud service models including SaaS, IaaS, and PaaS printing solutions. Leading vendors include Google, Microsoft, HP, Canon, and Epson. The report highlights trends in mobile cloud printing, virtualization-based printing, and printer-integrated cloud solutions as key growth areas through 2031.\",\n      \"url\": \"https://m.sohu.com/a/951962642_121903732/?pvid=000115_3w_a\"\n    },\n    {\n      \"title\": \"Global Cloud Printing Services Market Growth Trends 2026-2032\",\n      \"content\": \"The global cloud printing services market",
       "url": ""
     }
   ]

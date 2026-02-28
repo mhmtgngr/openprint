@@ -1,0 +1,764 @@
+{
+  "architecture_decisions": [
+    {
+      "decision": "Build Windows Agent as Go service using golang.org/x/sys/windows for Win32 API integration",
+      "rationale": "Maintains language consistency with backend microservices, leverages existing internal/shared packages for auth/telemetry, Go provides excellent cross-compilation for Windows targets"
+    },
+    {
+      "decision": "Use Windows Print Spooler API via WMI (Win32_Printer) for printer discovery and job submission",
+      "rationale": "Native Windows API provides comprehensive printer access, supports 99%+ printer compatibility as identified in market analysis of PaperCut MF"
+    },
+    {
+      "decision": "Implement bidirectional WebSocket communication via notification-service for real-time job updates",
+      "rationale": "Eliminates polling latency, matches competitor (Printix) real-time capabilities, reduces bandwidth compared to continuous polling"
+    },
+    {
+      "decision": "Use Wails (Go + WebView) for system tray UI instead of native Win32",
+      "rationale": "Faster development cycle, easier to maintain, allows React component reuse from dashboard, modern UI appearance"
+    },
+    {
+      "decision": "Store agent configuration in Windows Registry under HKLM\\Software\\OpenPrint with JSON fallback",
+      "rationale": "Standard Windows practice for services, supports group policy deployment, enables silent installation pre-seeding"
+    },
+    {
+      "decision": "Implement offline job queue with retry logic and exponential backoff",
+      "rationale": "Addresses Printix weakness of limited offline capabilities, ensures print jobs complete when connectivity restored"
+    }
+  ],
+  "backend_tasks": [
+    {
+      "order": 1,
+      "file": "internal/agent/types.go",
+      "action": "create",
+      "purpose": "Define shared types for agent communication, printer discovery, and job status",
+      "key_functions": [
+        "AgentInfo",
+        "PrinterInfo",
+        "AgentCapabilities",
+        "PrintJobStatus"
+      ]
+    },
+    {
+      "order": 2,
+      "file": "services/registry-service/handler/agent_discovery.go",
+      "action": "create",
+      "purpose": "Handle printer discovery registration from agents",
+      "key_functions": [
+        "RegisterPrinters",
+        "UpdatePrinterStatus",
+        "GetAgentPrinters",
+        "BulkPrinterUpdate"
+      ]
+    },
+    {
+      "order": 3,
+      "file": "services/registry-service/repository/agent_printer.go",
+      "action": "create",
+      "purpose": "Database operations for agent-discovered printers",
+      "key_functions": [
+        "Create",
+        "UpdateStatus",
+        "FindByAgentID",
+        "DeleteStale"
+      ]
+    },
+    {
+      "order": 4,
+      "file": "services/job-service/handler/agent_poll.go",
+      "action": "create",
+      "purpose": "Efficient job polling endpoint for agents",
+      "key_functions": [
+        "PollJobs",
+        "ClaimJob",
+        "UpdateJobProgress",
+        "CompleteJob",
+        "FailJob"
+      ]
+    },
+    {
+      "order": 5,
+      "file": "services/job-service/repository/job_assignment.go",
+      "action": "create",
+      "purpose": "Assign jobs to specific agents/users",
+      "key_functions": [
+        "AssignToUser",
+        "AssignToAgent",
+        "GetPendingForUser",
+        "MarkClaimed"
+      ]
+    },
+    {
+      "order": 6,
+      "file": "services/registry-service/handler/agent_heartbeat.go",
+      "action": "modify",
+      "purpose": "Enhanced heartbeat with session state, printer count, job queue depth",
+      "key_functions": [
+        "Heartbeat",
+        "UpdateSessionState",
+        "GetOnlineAgents",
+        "MarkOffline"
+      ]
+    },
+    {
+      "order": 7,
+      "file": "internal/shared/middleware/agent_auth.go",
+      "action": "create",
+      "purpose": "Agent-specific JWT authentication using machine certificates",
+      "key_functions": [
+        "AgentAuthMiddleware",
+        "GenerateAgentToken",
+        "ValidateAgentCertificate"
+      ]
+    },
+    {
+      "order": 8,
+      "file": "services/auth-service/handler/agent_registration.go",
+      "action": "create",
+      "purpose": "Agent enrollment and certificate issuance",
+      "key_functions": [
+        "RegisterAgent",
+        "IssueCertificate",
+        "RevokeCertificate",
+        "ListAgents"
+      ]
+    },
+    {
+      "order": 9,
+      "file": "services/notification-service/websocket/agent.go",
+      "action": "create",
+      "purpose": "WebSocket connection management for agents",
+      "key_functions": [
+        "HandleAgentConnection",
+        "PushJobToAgent",
+        "BroadcastConfiguration",
+        "HandleAgentResponse"
+      ]
+    },
+    {
+      "order": 10,
+      "file": "services/storage-service/handler/agent_download.go",
+      "action": "create",
+      "purpose": "Optimized document download for agents with resume support",
+      "key_functions": [
+        "GetDocument",
+        "DownloadChunk",
+        "ValidateChecksum",
+        "GetDownloadToken"
+      ]
+    }
+  ],
+  "frontend_tasks": [
+    {
+      "order": 1,
+      "file": "web/dashboard/src/features/agents/AgentList.tsx",
+      "action": "create",
+      "purpose": "Display all registered agents with status, last heartbeat, associated user"
+    },
+    {
+      "order": 2,
+      "file": "web/dashboard/src/features/agents/AgentDetail.tsx",
+      "action": "create",
+      "purpose": "Detailed agent view with discovered printers, job history, health metrics"
+    },
+    {
+      "order": 3,
+      "file": "web/dashboard/src/features/agents/AgentPrinters.tsx",
+      "action": "create",
+      "purpose": "Show printers discovered by each agent with capabilities and status"
+    },
+    {
+      "order": 4,
+      "file": "web/dashboard/src/features/agents/AgentHealthChart.tsx",
+      "action": "create",
+      "purpose": "Visual representation of agent uptime, job success rate, response time"
+    },
+    {
+      "order": 5,
+      "file": "web/dashboard/src/features/jobs/JobAssignment.tsx",
+      "action": "create",
+      "purpose": "Admin interface to assign print jobs to specific users/agents"
+    },
+    {
+      "order": 6,
+      "file": "web/dashboard/src/features/printers/DiscoveredPrinterList.tsx",
+      "action": "create",
+      "purpose": "View all agent-discovered printers across the organization"
+    },
+    {
+      "order": 7,
+      "file": "web/dashboard/src/api/agentApi.ts",
+      "action": "create",
+      "purpose": "API client methods for agent-related operations"
+    },
+    {
+      "order": 8,
+      "file": "web/dashboard/src/components/AgentStatusBadge.tsx",
+      "action": "create",
+      "purpose": "Reusable badge showing online/offline/errored agent status"
+    }
+  ],
+  "database_migrations": [
+    {
+      "file": "migrations/001_agents.up.sql",
+      "sql": "CREATE TABLE agents (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    machine_name VARCHAR(255) NOT NULL,\n    hostname VARCHAR(255) NOT NULL,\n    agent_version VARCHAR(50) NOT NULL,\n    os_version VARCHAR(100),\n    user_id UUID REFERENCES users(id) ON DELETE SET NULL,\n    status VARCHAR(20) DEFAULT 'online',\n    last_heartbeat TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    session_state VARCHAR(20) DEFAULT 'active',\n    certificate_thumbprint VARCHAR(64),\n    capabilities JSONB DEFAULT '{}',\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    UNIQUE(hostname, user_id)\n); CREATE INDEX idx_agents_user_id ON agents(user_id); CREATE INDEX idx_agents_status ON agents(status);"
+    },
+    {
+      "file": "migrations/002_discovered_printers.up.sql",
+      "sql": "CREATE TABLE discovered_printers (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,\n    name VARCHAR(255) NOT NULL,\n    share_name VARCHAR(255),\n    port_name VARCHAR(100),\n    driver_name VARCHAR(255),\n    device_id VARCHAR(100),\n    printer_type VARCHAR(20),\n    connection_type VARCHAR(20),\n    status VARCHAR(20) DEFAULT 'unknown',\n    capabilities JSONB DEFAULT '{}',\n    is_default BOOLEAN DEFAULT FALSE,\n    ip_address INET,\n    last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    UNIQUE(agent_id, device_id)\n); CREATE INDEX idx_discovered_printers_agent_id ON discovered_printers(agent_id); CREATE INDEX idx_discovered_printers_status ON discovered_printers(status);"
+    },
+    {
+      "file": "migrations/003_job_assignments.up.sql",
+      "sql": "ALTER TABLE print_jobs ADD COLUMN assigned_user_id UUID REFERENCES users(id) ON DELETE SET NULL; ALTER TABLE print_jobs ADD COLUMN assigned_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL; ALTER TABLE print_jobs ADD COLUMN claimed_at TIMESTAMP WITH TIME ZONE; ALTER TABLE print_jobs ADD COLUMN agent_started_at TIMESTAMP WITH TIME ZONE; ALTER TABLE print_jobs ADD COLUMN agent_completed_at TIMESTAMP WITH TIME ZONE; CREATE INDEX idx_print_jobs_assigned_user ON print_jobs(assigned_user_id, status); CREATE INDEX idx_print_jobs_assigned_agent ON print_jobs(assigned_agent_id, status);"
+    },
+    {
+      "file": "migrations/004_agent_events.up.sql",
+      "sql": "CREATE TABLE agent_events (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,\n    event_type VARCHAR(50) NOT NULL,\n    event_data JSONB,\n    severity VARCHAR(20) DEFAULT 'info',\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n); CREATE INDEX idx_agent_events_agent_id ON agent_events(agent_id, created_at DESC); CREATE INDEX idx_agent_events_type ON agent_events(event_type, created_at DESC);"
+    },
+    {
+      "file": "migrations/005_agent_certificates.up.sql",
+      "sql": "CREATE TABLE agent_certificates (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,\n    certificate PEM NOT NULL,\n    thumbprint VARCHAR(64) UNIQUE NOT NULL,\n    issued_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,\n    revoked BOOLEAN DEFAULT FALSE,\n    revoked_at TIMESTAMP WITH TIME ZONE\n); CREATE INDEX idx_agent_certificates_thumbprint ON agent_certificates(thumbprint); CREATE INDEX idx_agent_certificates_agent_id ON agent_certificates(agent_id);"
+    }
+  ],
+  "api_contracts": [
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/register",
+      "request": {
+        "machine_name": "string",
+        "hostname": "string",
+        "agent_version": "string",
+        "os_version": "string",
+        "user_id": "uuid",
+        "capabilities": {}
+      },
+      "response": {
+        "agent_id": "uuid",
+        "certificate": "string",
+        "config": {
+          "api_base_url": "string",
+          "ws_url": "string",
+          "heartbeat_interval": "int"
+        }
+      },
+      "status_codes": [
+        201,
+        400,
+        409
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/:id/heartbeat",
+      "request": {
+        "session_state": "enum(active,locked,logged_off)",
+        "printer_count": "int",
+        "queue_depth": "int",
+        "version": "string"
+      },
+      "response": {
+        "status": "ok",
+        "server_time": "timestamp",
+        "config_update": {}
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/:id/printers",
+      "request": {
+        "printers": [
+          {
+            "name": "string",
+            "share_name": "string",
+            "port": "string",
+            "driver": "string",
+            "device_id": "string",
+            "type": "enum(local,network,shared)",
+            "connection": "enum(usb,lpt,wsd,lpd,ip)",
+            "status": "enum(online,offline,error)",
+            "capabilities": {},
+            "ip": "string"
+          }
+        ]
+      },
+      "response": {
+        "registered": "int",
+        "updated": "int",
+        "failed": "int"
+      },
+      "status_codes": [
+        200,
+        400
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/:id/jobs/poll",
+      "request": {},
+      "response": {
+        "jobs": [
+          {
+            "id": "uuid",
+            "document_id": "uuid",
+            "document_url": "string",
+            "title": "string",
+            "copies": "int",
+            "options": {}
+          }
+        ],
+        "poll_after": "int"
+      },
+      "status_codes": [
+        200,
+        401
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs/:id/claim",
+      "request": {
+        "agent_id": "uuid"
+      },
+      "response": {
+        "status": "claimed",
+        "download_token": "string"
+      },
+      "status_codes": [
+        200,
+        409,
+        404
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/jobs/:id/progress",
+      "request": {
+        "status": "enum(downloading,printing,completed,failed)",
+        "progress": "int(0-100)",
+        "message": "string",
+        "pages_printed": "int"
+      },
+      "response": {
+        "status": "updated"
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/agents",
+      "request": {
+        "status": "enum(online,offline,all)",
+        "user_id": "uuid",
+        "page": "int",
+        "limit": "int"
+      },
+      "response": {
+        "agents": [],
+        "total": "int",
+        "page": "int"
+      },
+      "status_codes": [
+        200,
+        401
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/agents/:id/printers",
+      "request": {},
+      "response": {
+        "printers": []
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/agents/:id/events",
+      "request": {
+        "limit": "int",
+        "severity": "enum(info,warning,error)"
+      },
+      "response": {
+        "events": []
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/:id/jobs/available",
+      "request": {},
+      "response": {
+        "jobs": [],
+        "available_agents": []
+      },
+      "status_codes": [
+        200
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs/:id/assign",
+      "request": {
+        "user_id": "uuid",
+        "agent_id": "uuid"
+      },
+      "response": {
+        "job_id": "uuid",
+        "status": "assigned"
+      },
+      "status_codes": [
+        200,
+        404,
+        409
+      ]
+    }
+  ],
+  "windows_agent_tasks": [
+    {
+      "order": 1,
+      "file": "cmd/agent/main.go",
+      "action": "create",
+      "purpose": "Windows service entry point with service registration",
+      "key_functions": [
+        "main",
+        "runService",
+        "installService",
+        "uninstallService"
+      ]
+    },
+    {
+      "order": 2,
+      "file": "internal/agent/service/service.go",
+      "action": "create",
+      "purpose": "Windows service implementation",
+      "key_functions": [
+        "Start",
+        "Stop",
+        "Run",
+        "handleSessionChange"
+      ]
+    },
+    {
+      "order": 3,
+      "file": "internal/agent/discovery/printer.go",
+      "action": "create",
+      "purpose": "Printer discovery using WMI Win32_Printer",
+      "key_functions": [
+        "DiscoverLocalPrinters",
+        "DiscoverNetworkPrinters",
+        "DiscoverWSDPrinters",
+        "GetPrinterCapabilities",
+        "MonitorPrinterChanges"
+      ]
+    },
+    {
+      "order": 4,
+      "file": "internal/agent/discovery/wmi_client.go",
+      "action": "create",
+      "purpose": "WMI client for Windows management queries",
+      "key_functions": [
+        "QueryPrinters",
+        "QueryPrinterStatus",
+        "SubscribeToPrinterEvents"
+      ]
+    },
+    {
+      "order": 5,
+      "file": "internal/agent/print/spooler.go",
+      "action": "create",
+      "purpose": "Windows Print Spooler API integration",
+      "key_functions": [
+        "SubmitJob",
+        "GetJobStatus",
+        "CancelJob",
+        "EnumeratePrinters"
+      ]
+    },
+    {
+      "order": 6,
+      "file": "internal/agent/client/api.go",
+      "action": "create",
+      "purpose": "HTTP client for backend communication",
+      "key_functions": [
+        "Register",
+        "SendHeartbeat",
+        "ReportPrinters",
+        "PollJobs",
+        "UpdateJobStatus"
+      ]
+    },
+    {
+      "order": 7,
+      "file": "internal/agent/client/websocket.go",
+      "action": "create",
+      "purpose": "WebSocket client for real-time job push",
+      "key_functions": [
+        "Connect",
+        "SubscribeToJobs",
+        "HandleJobPush",
+        "Reconnect"
+      ]
+    },
+    {
+      "order": 8,
+      "file": "internal/agent/job/processor.go",
+      "action": "create",
+      "purpose": "Job processing workflow",
+      "key_functions": [
+        "ProcessJob",
+        "DownloadDocument",
+        "SelectPrinter",
+        "PrintDocument",
+        "UpdateStatus"
+      ]
+    },
+    {
+      "order": 9,
+      "file": "internal/agent/config/config.go",
+      "action": "create",
+      "purpose": "Configuration management from registry and file",
+      "key_functions": [
+        "Load",
+        "Save",
+        "GetDefaults",
+        "ApplyAdminOverrides"
+      ]
+    },
+    {
+      "order": 10,
+      "file": "internal/agent/ui/tray.go",
+      "action": "create",
+      "purpose": "System tray icon and menu",
+      "key_functions": [
+        "ShowTrayIcon",
+        "UpdateStatus",
+        "ShowNotification",
+        "ShowPrinterSelector"
+      ]
+    },
+    {
+      "order": 11,
+      "file": "internal/agent/ui/printer_dialog.go",
+      "action": "create",
+      "purpose": "Printer selection dialog",
+      "key_functions": [
+        "ShowDialog",
+        "GetSelectedPrinter",
+        "SetDefaultPrinter"
+      ]
+    },
+    {
+      "order": 12,
+      "file": "internal/agent/session/monitor.go",
+      "action": "create",
+      "purpose": "User session state monitoring",
+      "key_functions": [
+        "StartWatching",
+        "GetSessionState",
+        "OnSessionLock",
+        "OnSessionUnlock"
+      ]
+    },
+    {
+      "order": 13,
+      "file": "internal/agent/heartbeat/sender.go",
+      "action": "create",
+      "purpose": "Periodic heartbeat transmission",
+      "key_functions": [
+        "Start",
+        "Stop",
+        "SendNow",
+        "updateMetrics"
+      ]
+    },
+    {
+      "order": 14,
+      "file": "internal/agent/download/downloader.go",
+      "action": "create",
+      "purpose": "Document download with resume support",
+      "key_functions": [
+        "Download",
+        "Resume",
+        "VerifyChecksum",
+        "SaveToTemp"
+      ]
+    },
+    {
+      "order": 15,
+      "file": "internal/agent/auth/auth.go",
+      "action": "create",
+      "purpose": "Agent authentication with certificate",
+      "key_functions": [
+        "LoadCertificate",
+        "GenerateToken",
+        "RenewCertificate"
+      ]
+    }
+  ],
+  "installer_tasks": [
+    {
+      "order": 1,
+      "file": "installers/windows/OpenPrintAgent.wxs",
+      "action": "create",
+      "purpose": "WiX installer project for MSI generation"
+    },
+    {
+      "order": 2,
+      "file": "installers/windows/build.ps1",
+      "action": "create",
+      "purpose": "PowerShell build script for MSI creation"
+    }
+  ],
+  "test_plan": {
+    "unit_tests": [
+      {
+        "file": "internal/agent/discovery/printer_test.go",
+        "cases": [
+          "DiscoverLocalPrinters returns all USB printers",
+          "DiscoverNetworkPrinters finds WSD devices",
+          "GetPrinterCapabilities extracts duplex and color support",
+          "Printer change detection triggers callbacks"
+        ]
+      },
+      {
+        "file": "internal/agent/job/processor_test.go",
+        "cases": [
+          "ProcessJob downloads and prints successfully",
+          "Failed download updates job status to failed",
+          "Printer cancellation stops job and updates status",
+          "Concurrent job processing respects queue order"
+        ]
+      },
+      {
+        "file": "services/registry-service/handler/agent_discovery_test.go",
+        "cases": [
+          "RegisterPrinters creates new printer records",
+          "UpdatePrinterStatus changes printer state",
+          "BulkPrinterUpdate handles partial failures",
+          "Stale printer cleanup removes old entries"
+        ]
+      },
+      {
+        "file": "services/job-service/handler/agent_poll_test.go",
+        "cases": [
+          "PollJobs returns only unclaimed jobs for user",
+          "ClaimJob marks job as claimed and prevents double claim",
+          "UpdateJobProgress updates status in database",
+          "CompleteJob sets final status and timestamps"
+        ]
+      },
+      {
+        "file": "internal/agent/session/monitor_test.go",
+        "cases": [
+          "Session lock detection pauses job processing",
+          "Session unlock resumes job processing",
+          "User switch triggers re-authentication"
+        ]
+      }
+    ],
+    "integration_tests": [
+      {
+        "name": "Agent Registration Flow",
+        "steps": [
+          "Install agent service",
+          "Start agent",
+          "Verify agent registration POST to registry-service",
+          "Verify certificate issuance",
+          "Verify initial heartbeat"
+        ]
+      },
+      {
+        "name": "Printer Discovery Integration",
+        "steps": [
+          "Start agent with test printers installed",
+          "Wait for discovery cycle",
+          "Verify printers registered via API",
+          "Check database for printer records"
+        ]
+      },
+      {
+        "name": "End-to-End Print Job",
+        "steps": [
+          "Create print job assigned to test user",
+          "Agent polls for jobs",
+          "Agent claims job",
+          "Agent downloads document",
+          "Agent prints to test printer",
+          "Agent updates job to completed"
+        ]
+      }
+    ],
+    "e2e_tests": [
+      {
+        "name": "Agent Offline Queue",
+        "steps": [
+          "Create multiple print jobs",
+          "Stop agent service",
+          "Verify jobs remain queued",
+          "Start agent service",
+          "Verify all jobs print in order"
+        ]
+      },
+      {
+        "name": "Session Lock Behavior",
+        "steps": [
+          "Start agent with active user",
+          "Create print job",
+          "Lock Windows session",
+          "Verify job does not print",
+          "Unlock session",
+          "Verify job prints immediately"
+        ]
+      },
+      {
+        "name": "Printer Failure Handling",
+        "steps": [
+          "Configure offline printer",
+          "Create print job",
+          "Agent attempts print",
+          "Verify failure status updated",
+          "Verify error logged",
+          "Verify admin notification sent"
+        ]
+      }
+    ]
+  },
+  "security_notes": [
+    "Agent certificates must use X.509 with RSA 2048 or ECDSA P-256",
+    "All agent-to-service communication requires mutual TLS or signed JWT",
+    "Print documents must be encrypted in transit (HTTPS) and at rest on agent temp directory",
+    "Agent configuration in registry should be ACL-restricted to SYSTEM and Administrators",
+    "Windows service should run as NETWORK SERVICE or dedicated low-privilege account",
+    "Document download tokens must be short-lived (<5 minutes) and single-use",
+    "Agent must validate printer driver signatures before submitting jobs",
+    "Sensitive data (credentials, certificates) stored in Windows Credential Manager",
+    "Implement code signing for all agent executables and installers",
+    "Agent telemetry must not capture document contents or user data"
+  ],
+  "docker_changes": [
+    "Add agent compilation stage to Dockerfile.build",
+    "Add Windows-specific build environment with MinGW or cross-compiler"
+  ],
+  "market_driven_features": [
+    "Direct IP printing support to match Printix serverless architecture",
+    "Offline queue with retry to address Printix connectivity dependency weakness",
+    "Per-user printer selection for personalization",
+    "Real-time WebSocket job delivery for instant printing",
+    "Comprehensive printer capability detection (color, duplex, paper sizes) matching PaperCut MF",
+    "Agent health dashboard with visual analytics matching YSoft SafeQ reporting",
+    "Silent installation with Group Policy support for enterprise deployment",
+    "Session-aware printing for security (matches secure print release patterns)"
+  ]
+}

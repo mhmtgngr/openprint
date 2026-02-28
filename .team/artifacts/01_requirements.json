@@ -1,0 +1,550 @@
+```json
+{
+  "project_name": "Windows Print Agent with Printer Discovery",
+  "summary": "A Windows service agent that auto-discovers local/network printers, registers with OpenPrint Cloud, polls for queued print jobs assigned to the current user, and executes print operations on discovered printers. The agent includes bidirectional communication for job status updates and supports secure authentication.",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "as_a": "System Administrator",
+      "i_want": "silently install the Windows Print Agent on client machines",
+      "so_that": "users can print without manual configuration",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Agent supports silent installation via MSI with /quiet flag",
+        "Agent configuration can be pre-seeded via registry or config file",
+        "Agent auto-starts on Windows boot as a background service",
+        "Agent supports per-user or system-wide installation modes",
+        "Installation logs are written to Windows Event Log"
+      ]
+    },
+    {
+      "id": "US-002",
+      "as_a": "End User",
+      "i_want": "the agent to automatically discover all available printers on my computer",
+      "so_that": "I can print to any printer without manual setup",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "Agent discovers local printers connected via USB/LPT",
+        "Agent discovers network printers via WSD and LPD",
+        "Agent discovers shared printers on the local network",
+        "Printer discovery runs on agent start and on network changes",
+        "Discovered printers are displayed with name, driver, status, and capabilities"
+      ]
+    },
+    {
+      "id": "US-003",
+      "as_a": "End User",
+      "i_want": "the agent to poll for print jobs assigned to me and automatically print them",
+      "so_that": "I don't need to manually check for or initiate print jobs",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "Agent authenticates with OpenPrint Cloud using Windows credentials or SSO",
+        "Agent polls job-service every 5-30 seconds (configurable) for new jobs",
+        "Agent downloads print documents from storage-service",
+        "Agent sends jobs to the selected printer using Windows Print Spooler API",
+        "Agent updates job status in real-time (queued, downloading, printing, completed, failed)"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "End User",
+      "i_want": "select which printer to use for each print job",
+      "so_that": "I can control where my documents are printed",
+      "priority": "high",
+      "acceptance_criteria": [
+        "System tray icon shows current status and pending jobs",
+        "Printer selection dialog appears when a job is received",
+        "Default printer can be configured per user",
+        "Printer selection dialog shows printer status (online, offline, paper low, etc.)",
+        "User can cancel pending print jobs from system tray"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "System Administrator",
+      "i_want": "monitor agent health and print job status from the dashboard",
+      "so_that": "I can troubleshoot printing issues remotely",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Agent sends heartbeat to registry-service every 30 seconds",
+        "Agent logs print job results (success/failure) with error details",
+        "Dashboard shows online/offline status for each agent",
+        "Dashboard displays print history per agent and per user",
+        "Alerts are generated for agents that go offline or jobs that fail"
+      ]
+    },
+    {
+      "id": "US-006",
+      "as_a": "End User",
+      "i_want": "the agent to pause when I'm not logged in",
+      "so_that": "print jobs wait until I'm actually at my computer",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Agent detects user session state (locked, logged off, switched users)",
+        "Print jobs remain queued on server when user is not active",
+        "Agent resumes polling when user logs in or unlocks session",
+        "Configurable option to allow printing even when session is locked"
+      ]
+    },
+    {
+      "id": "US-007",
+      "as_a": "Security Administrator",
+      "i_want": "the agent to use secure communication with the cloud services",
+      "so_that": "print documents and credentials are protected",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "All API communication uses HTTPS with certificate validation",
+        "Agent stores tokens securely in Windows Credential Manager",
+        "Documents are downloaded over encrypted TLS connections",
+        "Agent supports mutual TLS (mTLS) if required by server",
+        "Sensitive configuration is encrypted at rest"
+      ]
+    },
+    {
+      "id": "US-008",
+      "as_a": "End User",
+      "i_want": "be notified when a print job completes or fails",
+      "so_that": "I know if my document printed successfully",
+      "priority": "low",
+      "acceptance_criteria": [
+        "Windows toast notification appears on job completion",
+        "Notification shows job name, printer, and status",
+        "Clicking notification opens job details in dashboard (optional)",
+        "Failed jobs show error message with retry option",
+        "Notifications can be disabled in settings"
+      ]
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-001",
+      "title": "Agent Registration",
+      "description": "The Windows agent must register with registry-service on first start providing machine name, OS version, agent version, and authenticated user identity. Registration returns a unique agent ID used for all subsequent communication.",
+      "service": "registry-service"
+    },
+    {
+      "id": "FR-002",
+      "title": "Printer Discovery and Sync",
+      "description": "Agent must enumerate all printers using Windows Print Spooler API (GetPrinter, EnumPrinters), extract capabilities, and sync the list to registry-service. Sync occurs on startup, on network change events, and when printers are added/removed via WMI events.",
+      "service": "registry-service"
+    },
+    {
+      "id": "FR-003",
+      "title": "Print Job Polling",
+      "description": "Agent must poll job-service for jobs assigned to the authenticated user and/or registered agent. Polling interval is configurable between 5-300 seconds. Jobs are filtered by status='pending' and agent_id/user_id matching.",
+      "service": "job-service"
+    },
+    {
+      "id": "FR-004",
+      "title": "Document Download",
+      "description": "When a job is retrieved, agent downloads the document from storage-service using the document_id. Supports resumable downloads for large files and verifies checksum after download.",
+      "service": "storage-service"
+    },
+    {
+      "id": "FR-005",
+      "title": "Local Print Execution",
+      "description": "Agent submits downloaded documents to Windows Print Spooler API. Supports PDF, XPS, and raw PCL/PostScript formats. Detects printer capabilities and converts format if needed. Returns detailed error information if print fails.",
+      "service": "N/A (Windows local)"
+    },
+    {
+      "id": "FR-006",
+      "title": "Job Status Updates",
+      "description": "Agent updates job status throughout lifecycle: downloaded->printing->completed/failed. Updates are sent to job-service via PATCH/POST endpoints. Failed jobs include error code and message from Windows spooler.",
+      "service": "job-service"
+    },
+    {
+      "id": "FR-007",
+      "title": "Heartbeat and Health",
+      "description": "Agent sends heartbeat to registry-service every 30 seconds including agent status, current user, and printer states. Heartbeat includes last print job timestamp and any active error conditions.",
+      "service": "registry-service"
+    },
+    {
+      "id": "FR-008",
+      "title": "User Session Detection",
+      "description": "Agent monitors Windows session events (WTS_SESSION_LOCK, WTS_SESSION_UNLOCK, WM_WTSSESSION_CHANGE) to determine active user state. Pauses job polling when no active user session unless configured otherwise.",
+      "service": "N/A (Windows local)"
+    },
+    {
+      "id": "FR-009",
+      "title": "Configuration Management",
+      "description": "Agent reads configuration from registry HKLM\\Software\\OpenPrint\\Agent and/or config file. Settings include server URL, poll interval, default printer, auto-print on lock screen, and log level. Changes to configuration take effect within 60 seconds.",
+      "service": "N/A (Windows local)"
+    },
+    {
+      "id": "FR-010",
+      "title": "Authentication and Token Refresh",
+      "description": "Agent authenticates using Windows Integrated Auth, username/password, or OIDC/SAML via auth-service. Access tokens are stored in Windows Credential Manager and refreshed before expiry. Refresh failures trigger re-authentication prompt.",
+      "service": "auth-service"
+    },
+    {
+      "id": "FR-011",
+      "title": "Notification Integration",
+      "description": "Agent displays Windows toast notifications using ToastNotificationManager. Notifications for job completion, failure, and agent errors. Action buttons allow retry, cancel, or open dashboard.",
+      "service": "notification-service"
+    },
+    {
+      "id": "FR-012",
+      "title": "Logging and Diagnostics",
+      "description": "Agent writes structured logs to %ProgramData%\\OpenPrint\\Agent\\logs. Log levels configurable. Includes diagnostic mode for detailed troubleshooting. Logs include timestamps, job IDs, printer names, and error codes.",
+      "service": "N/A (Windows local)"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-001",
+      "category": "performance",
+      "requirement": "Print job polling and retrieval must complete within 2 seconds under normal network conditions",
+      "metric": "95th percentile latency < 2000ms"
+    },
+    {
+      "id": "NFR-002",
+      "category": "performance",
+      "requirement": "Document download throughput must support typical office documents efficiently",
+      "metric": "> 5 MB/s for files up to 50 MB"
+    },
+    {
+      "id": "NFR-003",
+      "category": "performance",
+      "requirement": "Agent memory footprint must remain minimal when idle",
+      "metric": "< 50 MB private working set when idle"
+    },
+    {
+      "id": "NFR-004",
+      "category": "security",
+      "requirement": "All cloud communication must be encrypted",
+      "metric": "TLS 1.2 or higher, no plaintext HTTP"
+    },
+    {
+      "id": "NFR-005",
+      "category": "security",
+      "requirement": "Stored credentials must be protected",
+      "metric": "Windows Credential Manager DPAPI encryption"
+    },
+    {
+      "id": "NFR-006",
+      "category": "security",
+      "requirement": "Downloaded documents must not persist indefinitely on disk",
+      "metric": "Auto-delete within 1 hour of successful print, configurable"
+    },
+    {
+      "id": "NFR-007",
+      "category": "reliability",
+      "requirement": "Agent must handle network interruptions gracefully",
+      "metric": "Auto-retry with exponential backoff, max 10 minute retry interval"
+    },
+    {
+      "id": "NFR-008",
+      "category": "reliability",
+      "requirement": "Agent service must recover from crashes",
+      "metric": "Windows Service recovery: restart on failure, 1-minute delay"
+    },
+    {
+      "id": "NFR-009",
+      "category": "compatibility",
+      "requirement": "Agent must support current Windows versions",
+      "metric": "Windows 10 21H2+, Windows 11, Server 2019+, Server 2022+"
+    },
+    {
+      "id": "NFR-010",
+      "category": "usability",
+      "requirement": "Installation must be simple for administrators",
+      "metric": "Single MSI installer, < 50 MB, supports Group Policy deployment"
+    },
+    {
+      "id": "NFR-011",
+      "category": "scalability",
+      "requirement": "Agent must handle multiple concurrent jobs",
+      "metric": "Up to 10 concurrent downloads, 1 print at a time per printer"
+    },
+    {
+      "id": "NFR-012",
+      "category": "maintainability",
+      "requirement": "Agent must support automatic updates",
+      "metric": "Auto-update from server, silent install, rollback on failure"
+    }
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/register",
+      "description": "Register new agent instance with registry",
+      "roles": ["agent"]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/agents/:agent_id/heartbeat",
+      "description": "Update agent heartbeat and status",
+      "roles": ["agent"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/:agent_id/jobs",
+      "description": "Poll for pending jobs assigned to agent",
+      "roles": ["agent"]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/jobs/:job_id/status",
+      "description": "Update job status (downloading, printing, completed, failed)",
+      "roles": ["agent"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id",
+      "description": "Download print document from storage",
+      "roles": ["agent"]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/:agent_id/printers",
+      "description": "Sync discovered printers to registry",
+      "roles": ["agent"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/:agent_id/config",
+      "description": "Fetch agent configuration from server",
+      "roles": ["agent"]
+    },
+    {
+      "method": "POST",
+      "api_v1_agent_log_entries",
+      "path": "/api/v1/agents/:agent_id/logs",
+      "description": "Submit log entries to server for remote diagnostics",
+      "roles": ["agent"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/:agent_id/version",
+      "description": "Check for agent updates",
+      "roles": ["agent"]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/token",
+      "description": "Authenticate and obtain JWT token",
+      "roles": ["public"]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "description": "Refresh expired JWT token",
+      "roles": ["agent"]
+    }
+  ],
+  "database_changes": [
+    {
+      "table": "agents",
+      "action": "create",
+      "columns": [
+        "id UUID PRIMARY KEY",
+        "machine_name VARCHAR(255) NOT NULL",
+        "os_version VARCHAR(100)",
+        "agent_version VARCHAR(50)",
+        "last_heartbeat TIMESTAMP WITH TIME ZONE",
+        "status VARCHAR(50) DEFAULT 'online'",
+        "ip_address INET",
+        "user_id UUID REFERENCES users(id)",
+        "created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+        "updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "agent_printers",
+      "action": "create",
+      "columns": [
+        "id UUID PRIMARY KEY",
+        "agent_id UUID REFERENCES agents(id) ON DELETE CASCADE",
+        "printer_name VARCHAR(255) NOT NULL",
+        "printer_driver VARCHAR(255)",
+        "printer_port VARCHAR(100)",
+        "is_default BOOLEAN DEFAULT false",
+        "is_online BOOLEAN DEFAULT true",
+        "capabilities JSONB",
+        "discovered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+        "last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+        "UNIQUE(agent_id, printer_name)"
+      ]
+    },
+    {
+      "table": "jobs",
+      "action": "alter",
+      "columns": [
+        "agent_id UUID REFERENCES agents(id)",
+        "printer_id UUID REFERENCES agent_printers(id)",
+        "status VARCHAR(50) ADD DEFAULT 'pending'",
+        "downloaded_at TIMESTAMP WITH TIME ZONE",
+        "started_printing_at TIMESTAMP WITH TIME ZONE",
+        "completed_at TIMESTAMP WITH TIME ZONE",
+        "error_code VARCHAR(50)",
+        "error_message TEXT",
+        "retry_count INT DEFAULT 0"
+      ]
+    },
+    {
+      "table": "agent_config",
+      "action": "create",
+      "columns": [
+        "agent_id UUID PRIMARY KEY REFERENCES agents(id) ON DELETE CASCADE",
+        "poll_interval INT DEFAULT 30",
+        "default_printer VARCHAR(255)",
+        "auto_print_locked BOOLEAN DEFAULT false",
+        "notifications_enabled BOOLEAN DEFAULT true",
+        "log_level VARCHAR(20) DEFAULT 'info'",
+        "updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "agent_metrics",
+      "action": "create",
+      "columns": [
+        "id UUID PRIMARY KEY",
+        "agent_id UUID REFERENCES agents(id) ON DELETE CASCADE",
+        "metric_name VARCHAR(100) NOT NULL",
+        "metric_value NUMERIC NOT NULL",
+        "recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()"
+      ]
+    }
+  ],
+  "affected_services": [
+    "registry-service",
+    "job-service",
+    "storage-service",
+    "auth-service",
+    "notification-service"
+  ],
+  "risks": [
+    {
+      "risk": "Windows API permissions may prevent printer discovery or print submission in locked-down environments",
+      "mitigation": "Document required permissions, provide Group Policy templates, include permission check in installer with clear error messages"
+    },
+    {
+      "risk": "Network printers may not be accessible during auto-discovery due to firewall rules or VLAN segmentation",
+      "mitigation": "Make printer discovery configurable (disabled, local only, subnet scan), add manual printer entry option"
+    },
+    {
+      "risk": "Print job may fail silently if printer is offline or out of paper, causing user frustration",
+      "mitigation": "Query printer status before printing, show clear error messages with actionable guidance, implement retry with delay"
+    },
+    {
+      "risk": "Agent may overwhelm job-service with excessive polling if many agents are deployed",
+      "mitigation": "Use configurable poll intervals, implement exponential backoff on errors, consider WebSocket push for future"
+    },
+    {
+      "risk": "Large documents may timeout during download on slow networks",
+      "mitigation": "Implement resumable downloads with chunking, show progress to user, allow background download queue"
+    },
+    {
+      "risk": "Conflicting print jobs if user moves between multiple workstations with agent installed",
+      "mitigation": "User selection of active agent in dashboard, automatic release when agent goes offline, configurable priority"
+    },
+    {
+      "risk": "Antivirus software may flag agent as suspicious due to network activity and file operations",
+      "mitigation": "Code signing certificate, vendor application for whitelisting, clear documentation of network behavior"
+    },
+    {
+      "risk": "Windows updates or service packs may break Windows Print Spooler API compatibility",
+      "mitigation": "Automated testing on Windows Insider builds, version detection with graceful degradation, quick update pipeline"
+    }
+  ],
+  "implementation_phases": [
+    {
+      "phase": 1,
+      "name": "Foundation",
+      "tasks": [
+        "Create agents and agent_printers database tables and migrations",
+        "Implement agent registration and heartbeat API endpoints in registry-service",
+        "Set up agent authentication flow in auth-service",
+        "Create Windows service project structure with Go",
+        "Implement basic Windows API bindings for printer enumeration",
+        "Build MSI installer with silent install support"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Print Job Pipeline",
+      "tasks": [
+        "Add agent-specific job filtering to job-service",
+        "Implement job status update API with new statuses",
+        "Create document download endpoint with token authentication",
+        "Build print job polling logic in Windows agent",
+        "Implement document download and temporary storage",
+        "Integrate with Windows Print Spooler API for job submission"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "User Experience",
+      "tasks": [
+        "Implement Windows system tray icon and context menu",
+        "Build printer selection dialog UI",
+        "Add Windows toast notifications for job events",
+        "Create agent settings UI (config editor)",
+        "Implement user session detection and pause/resume logic",
+        "Add job cancellation from system tray"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Reliability and Operations",
+      "tasks": [
+        "Implement retry logic with exponential backoff",
+        "Add comprehensive logging and diagnostic mode",
+        "Build agent metrics collection and reporting",
+        "Create Windows Event Log integration",
+        "Implement graceful shutdown and restart recovery",
+        "Add configuration hot-reload support"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Security and Hardening",
+      "tasks": [
+        "Implement Windows Credential Manager integration for token storage",
+        "Add code signing to all binaries and installer",
+        "Implement mTLS support option",
+        "Add document encryption at rest for temp files",
+        "Security audit and penetration testing",
+        "Create security documentation for administrators"
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Dashboard Integration",
+      "tasks": [
+        "Add agent management views to React dashboard",
+        "Show printer discovery status and capabilities",
+        "Display job history with agent details",
+        "Create agent health monitoring and alerts",
+        "Add remote configuration push from dashboard",
+        "Build agent diagnostic log viewer in dashboard"
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Auto-Update",
+      "tasks": [
+        "Implement version check API endpoint",
+        "Build update package hosting in storage-service",
+        "Create auto-update logic in agent",
+        "Add update rollback capability",
+        "Test upgrade scenarios (multiple versions)",
+        "Document update deployment process for admins"
+      ]
+    },
+    {
+      "phase": 8,
+      "name": "Testing and Documentation",
+      "tasks": [
+        "Unit tests for all agent components",
+        "Integration tests with mock services",
+        "Manual testing on Windows 10, 11, Server 2019/2022",
+        "Performance testing (100+ concurrent agents)",
+        "Write administrator deployment guide",
+        "Create troubleshooting documentation",
+        "Record end-user tutorial video"
+      ]
+    }
+  ]
+}
+```
