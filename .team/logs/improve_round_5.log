@@ -1,0 +1,17 @@
+Done! Created React job management components in `web/dashboard/src/features/jobs/`:
+
+**Files created:**
+- `JobList.tsx` - Table-based job list with status badges, row selection, and cancel/retry actions
+- `JobDetails.tsx` - Detailed job view with timeline, history entries, printer info, and progress bar
+- `CreateJobForm.tsx` - Form with drag-and-drop file upload, printer selection, and print settings (color, duplex, copies, etc.)
+- `JobStatusBadge.tsx` - Visual status indicator with color coding and animation
+- `useJobs.ts` - React Query hooks for all job API operations (list, get, create, cancel, retry, file upload)
+- `index.ts` - Feature module exports
+
+**Types added:**
+- `web/dashboard/src/types/jobs.ts` - Job-related types including `PrintJob`, `JobStatus`, `CreateJobRequest`, `JobHistoryEntry`, and `JOB_STATUS_CONFIG`
+
+**Verification:**
+- `npm run type-check` ✓ passed
+- `npm run build` ✓ built successfully
+- Committed: `d5eca9dd feat: Add React job management components with TypeScript`
