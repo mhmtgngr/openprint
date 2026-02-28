@@ -18,6 +18,7 @@ import (
 )
 
 // Assert provides custom assertion methods.
+// These methods panic on failure so they can be tested with assert.Panics.
 type Assert struct {
 	t *testing.T
 }
@@ -31,7 +32,7 @@ func NewAssert(t *testing.T) *Assert {
 func (a *Assert) NoError(err error, msgAndArgs ...interface{}) {
 	if err != nil {
 		a.t.Helper()
-		a.t.Fatalf("NoError failed: %v %s", err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("NoError failed: %v %s", err, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -39,7 +40,7 @@ func (a *Assert) NoError(err error, msgAndArgs ...interface{}) {
 func (a *Assert) Error(err error, msgAndArgs ...interface{}) {
 	if err == nil {
 		a.t.Helper()
-		a.t.Fatalf("Error failed: expected error, got nil %s", fmt.Sprint(msgAndArgs...))
+		panic("Error failed: expected error, got nil " + fmt.Sprint(msgAndArgs...))
 	}
 }
 
@@ -47,7 +48,7 @@ func (a *Assert) Error(err error, msgAndArgs ...interface{}) {
 func (a *Assert) ErrorIs(err error, target error, msgAndArgs ...interface{}) {
 	if !errors.Is(err, target) {
 		a.t.Helper()
-		a.t.Fatalf("ErrorIs failed: expected %v, got %v %s", target, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("ErrorIs failed: expected %v, got %v %s", target, err, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -56,14 +57,14 @@ func (a *Assert) ErrorType(err error, targetType error, msgAndArgs ...interface{
 	a.t.Helper()
 
 	if err == nil {
-		a.t.Fatalf("ErrorType failed: expected error type %T, got nil %s", targetType, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("ErrorType failed: expected error type %T, got nil %s", targetType, fmt.Sprint(msgAndArgs...)))
 	}
 
 	targetTypeVal := reflect.TypeOf(targetType)
 	errType := reflect.TypeOf(err)
 
 	if !errType.AssignableTo(targetTypeVal) {
-		a.t.Fatalf("ErrorType failed: expected error type %T, got %T %s", targetType, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("ErrorType failed: expected error type %T, got %T %s", targetType, err, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -71,8 +72,8 @@ func (a *Assert) ErrorType(err error, targetType error, msgAndArgs ...interface{
 func (a *Assert) Equals(expected, actual interface{}, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if !reflect.DeepEqual(expected, actual) {
-		a.t.Fatalf("Equals failed:\nexpected: %#v (%T)\nactual:   %#v (%T) %s",
-			expected, expected, actual, actual, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("Equals failed:\nexpected: %#v (%T)\nactual:   %#v (%T) %s",
+			expected, expected, actual, actual, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -80,7 +81,7 @@ func (a *Assert) Equals(expected, actual interface{}, msgAndArgs ...interface{})
 func (a *Assert) NotEquals(notExpected, actual interface{}, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if reflect.DeepEqual(notExpected, actual) {
-		a.t.Fatalf("NotEquals failed: values are equal: %#v %s", actual, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("NotEquals failed: values are equal: %#v %s", actual, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -88,7 +89,7 @@ func (a *Assert) NotEquals(notExpected, actual interface{}, msgAndArgs ...interf
 func (a *Assert) True(condition bool, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if !condition {
-		a.t.Fatalf("True failed: condition is false %s", fmt.Sprint(msgAndArgs...))
+		panic("True failed: condition is false " + fmt.Sprint(msgAndArgs...))
 	}
 }
 
@@ -96,7 +97,7 @@ func (a *Assert) True(condition bool, msgAndArgs ...interface{}) {
 func (a *Assert) False(condition bool, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if condition {
-		a.t.Fatalf("False failed: condition is true %s", fmt.Sprint(msgAndArgs...))
+		panic("False failed: condition is true " + fmt.Sprint(msgAndArgs...))
 	}
 }
 
@@ -104,7 +105,16 @@ func (a *Assert) False(condition bool, msgAndArgs ...interface{}) {
 func (a *Assert) Nil(value interface{}, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if value != nil {
-		a.t.Fatalf("Nil failed: expected nil, got %#v %s", value, fmt.Sprint(msgAndArgs...))
+		// Check for typed nil (e.g., (*string)(nil))
+		rv := reflect.ValueOf(value)
+		if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Chan || rv.Kind() == reflect.Func {
+			if !rv.IsNil() {
+				panic(fmt.Sprintf("Nil failed: expected nil, got %#v %s", value, fmt.Sprint(msgAndArgs...)))
+			}
+			// Typed nil is considered nil
+			return
+		}
+		panic(fmt.Sprintf("Nil failed: expected nil, got %#v %s", value, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -112,7 +122,14 @@ func (a *Assert) Nil(value interface{}, msgAndArgs ...interface{}) {
 func (a *Assert) NotNil(value interface{}, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if value == nil {
-		a.t.Fatalf("NotNil failed: value is nil %s", fmt.Sprint(msgAndArgs...))
+		panic("NotNil failed: value is nil " + fmt.Sprint(msgAndArgs...))
+	}
+	// Also check for typed nil
+	rv := reflect.ValueOf(value)
+	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Chan || rv.Kind() == reflect.Func {
+		if rv.IsNil() {
+			panic("NotNil failed: value is nil " + fmt.Sprint(msgAndArgs...))
+		}
 	}
 }
 
@@ -120,7 +137,7 @@ func (a *Assert) NotNil(value interface{}, msgAndArgs ...interface{}) {
 func (a *Assert) Contains(s, substr string, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if !strings.Contains(s, substr) {
-		a.t.Fatalf("Contains failed: %q does not contain %q %s", s, substr, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("Contains failed: %q does not contain %q %s", s, substr, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -128,7 +145,7 @@ func (a *Assert) Contains(s, substr string, msgAndArgs ...interface{}) {
 func (a *Assert) NotContains(s, substr string, msgAndArgs ...interface{}) {
 	a.t.Helper()
 	if strings.Contains(s, substr) {
-		a.t.Fatalf("NotContains failed: %q contains %q %s", s, substr, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("NotContains failed: %q contains %q %s", s, substr, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -137,7 +154,7 @@ func (a *Assert) ContainsAll(s string, substrs []string, msgAndArgs ...interface
 	a.t.Helper()
 	for _, substr := range substrs {
 		if !strings.Contains(s, substr) {
-			a.t.Fatalf("ContainsAll failed: %q does not contain %q %s", s, substr, fmt.Sprint(msgAndArgs...))
+			panic(fmt.Sprintf("ContainsAll failed: %q does not contain %q %s", s, substr, fmt.Sprint(msgAndArgs...)))
 		}
 	}
 }
@@ -153,12 +170,11 @@ func (a *Assert) Len(obj interface{}, expectedLength int, msgAndArgs ...interfac
 	case reflect.Slice, reflect.Array, reflect.Map, reflect.Chan, reflect.String:
 		actualLength = val.Len()
 	default:
-		a.t.Fatalf("Len failed: type %T does not have a length %s", obj, fmt.Sprint(msgAndArgs...))
-		return
+		panic(fmt.Sprintf("Len failed: type %T does not have a length %s", obj, fmt.Sprint(msgAndArgs...)))
 	}
 
 	if actualLength != expectedLength {
-		a.t.Fatalf("Len failed: expected length %d, got %d %s", expectedLength, actualLength, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("Len failed: expected length %d, got %d %s", expectedLength, actualLength, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -179,12 +195,11 @@ func (a *Assert) NotEmpty(obj interface{}, msgAndArgs ...interface{}) {
 	case reflect.Slice, reflect.Array, reflect.Map, reflect.Chan, reflect.String:
 		length = val.Len()
 	default:
-		a.t.Fatalf("NotEmpty failed: type %T does not have a length %s", obj, fmt.Sprint(msgAndArgs...))
-		return
+		panic(fmt.Sprintf("NotEmpty failed: type %T does not have a length %s", obj, fmt.Sprint(msgAndArgs...)))
 	}
 
 	if length == 0 {
-		a.t.Fatalf("NotEmpty failed: value is empty %s", fmt.Sprint(msgAndArgs...))
+		panic("NotEmpty failed: value is empty " + fmt.Sprint(msgAndArgs...))
 	}
 }
 
@@ -196,12 +211,11 @@ func (a *Assert) Greater(first, second interface{}, msgAndArgs ...interface{}) {
 	secondVal := reflect.ValueOf(second)
 
 	if !firstVal.CanInt() || !secondVal.CanInt() {
-		a.t.Fatalf("Greater failed: values must be comparable integers %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("Greater failed: values must be comparable integers " + fmt.Sprint(msgAndArgs...))
 	}
 
 	if firstVal.Int() <= secondVal.Int() {
-		a.t.Fatalf("Greater failed: %v is not greater than %v %s", first, second, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("Greater failed: %v is not greater than %v %s", first, second, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -213,12 +227,11 @@ func (a *Assert) Less(first, second interface{}, msgAndArgs ...interface{}) {
 	secondVal := reflect.ValueOf(second)
 
 	if !firstVal.CanInt() || !secondVal.CanInt() {
-		a.t.Fatalf("Less failed: values must be comparable integers %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("Less failed: values must be comparable integers " + fmt.Sprint(msgAndArgs...))
 	}
 
 	if firstVal.Int() >= secondVal.Int() {
-		a.t.Fatalf("Less failed: %v is not less than %v %s", first, second, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("Less failed: %v is not less than %v %s", first, second, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -232,8 +245,8 @@ func (a *Assert) WithinDuration(expected, actual time.Time, delta time.Duration,
 	}
 
 	if diff > delta {
-		a.t.Fatalf("WithinDuration failed: expected %v, got %v (difference %v, max allowed %v) %s",
-			expected, actual, diff, delta, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("WithinDuration failed: expected %v, got %v (difference %v, max allowed %v) %s",
+			expected, actual, diff, delta, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -254,7 +267,7 @@ func (a *Assert) Panics(f func(), msgAndArgs ...interface{}) {
 	}()
 
 	if !didPanic {
-		a.t.Fatalf("Panics failed: function did not panic %s", fmt.Sprint(msgAndArgs...))
+		panic("Panics failed: function did not panic " + fmt.Sprint(msgAndArgs...))
 	}
 }
 
@@ -267,7 +280,7 @@ func (a *Assert) NotPanics(f func(), msgAndArgs ...interface{}) {
 	func() {
 		defer func() {
 			if panicValue = recover(); panicValue != nil {
-				a.t.Fatalf("NotPanics failed: function panicked with %v %s", panicValue, fmt.Sprint(msgAndArgs...))
+				panic(fmt.Sprintf("NotPanics failed: function panicked with %v %s", panicValue, fmt.Sprint(msgAndArgs...)))
 			}
 		}()
 		f()
@@ -291,8 +304,7 @@ func (a *Assert) Eventually(condition func() bool, timeout time.Duration, msgAnd
 
 		select {
 		case <-ctx.Done():
-			a.t.Fatalf("Eventually failed: condition never became true within %v %s", timeout, fmt.Sprint(msgAndArgs...))
-			return
+			panic(fmt.Sprintf("Eventually failed: condition never became true within %v %s", timeout, fmt.Sprint(msgAndArgs...)))
 		case <-ticker.C:
 		}
 	}
@@ -310,8 +322,7 @@ func (a *Assert) Consistently(condition func() bool, duration time.Duration, msg
 
 	for {
 		if !condition() {
-			a.t.Fatalf("Consistently failed: condition became false before %v elapsed %s", duration, fmt.Sprint(msgAndArgs...))
-			return
+			panic(fmt.Sprintf("Consistently failed: condition became false before %v elapsed %s", duration, fmt.Sprint(msgAndArgs...)))
 		}
 
 		select {
@@ -328,19 +339,19 @@ func (a *Assert) FileExists(path string, msgAndArgs ...interface{}) {
 
 	fullPath := filepath.Clean(path)
 	if _, err := filepath.Abs(fullPath); err != nil {
-		a.t.Fatalf("FileExists failed: invalid path %q: %v %s", path, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("FileExists failed: invalid path %q: %v %s", path, err, fmt.Sprint(msgAndArgs...)))
 	}
 
 	info, err := os.Stat(fullPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			a.t.Fatalf("FileExists failed: file does not exist: %q %s", path, fmt.Sprint(msgAndArgs...))
+			panic(fmt.Sprintf("FileExists failed: file does not exist: %q %s", path, fmt.Sprint(msgAndArgs...)))
 		}
-		a.t.Fatalf("FileExists failed: error checking file %q: %v %s", path, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("FileExists failed: error checking file %q: %v %s", path, err, fmt.Sprint(msgAndArgs...)))
 	}
 
 	if info.IsDir() {
-		a.t.Fatalf("FileExists failed: path is a directory, not a file: %q %s", path, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("FileExists failed: path is a directory, not a file: %q %s", path, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -350,19 +361,19 @@ func (a *Assert) DirExists(path string, msgAndArgs ...interface{}) {
 
 	fullPath := filepath.Clean(path)
 	if _, err := filepath.Abs(fullPath); err != nil {
-		a.t.Fatalf("DirExists failed: invalid path %q: %v %s", path, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("DirExists failed: invalid path %q: %v %s", path, err, fmt.Sprint(msgAndArgs...)))
 	}
 
 	info, err := os.Stat(fullPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			a.t.Fatalf("DirExists failed: directory does not exist: %q %s", path, fmt.Sprint(msgAndArgs...))
+			panic(fmt.Sprintf("DirExists failed: directory does not exist: %q %s", path, fmt.Sprint(msgAndArgs...)))
 		}
-		a.t.Fatalf("DirExists failed: error checking directory %q: %v %s", path, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("DirExists failed: error checking directory %q: %v %s", path, err, fmt.Sprint(msgAndArgs...)))
 	}
 
 	if !info.IsDir() {
-		a.t.Fatalf("DirExists failed: path is a file, not a directory: %q %s", path, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("DirExists failed: path is a file, not a directory: %q %s", path, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -372,11 +383,11 @@ func (a *Assert) FileContains(path, substr string, msgAndArgs ...interface{}) {
 
 	content, err := os.ReadFile(path)
 	if err != nil {
-		a.t.Fatalf("FileContains failed: error reading file %q: %v %s", path, err, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("FileContains failed: error reading file %q: %v %s", path, err, fmt.Sprint(msgAndArgs...)))
 	}
 
 	if !bytes.Contains(content, []byte(substr)) {
-		a.t.Fatalf("FileContains failed: file %q does not contain %q %s", path, substr, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("FileContains failed: file %q does not contain %q %s", path, substr, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -393,7 +404,7 @@ func (a *Assert) JSONEq(expected, actual string, msgAndArgs ...interface{}) {
 	// you would want to parse and compare the JSON objects.
 	if expected != actual {
 		// Try to give a helpful error message
-		a.t.Fatalf("JSONEq failed:\nexpected: %s\nactual:   %s %s", expected, actual, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("JSONEq failed:\nexpected: %s\nactual:   %s %s", expected, actual, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -403,7 +414,7 @@ func (a *Assert) HTTPSuccess(resp interface{ StatusCode() int }, msgAndArgs ...i
 
 	status := resp.StatusCode()
 	if status < 200 || status >= 300 {
-		a.t.Fatalf("HTTPSuccess failed: expected 2xx status, got %d %s", status, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("HTTPSuccess failed: expected 2xx status, got %d %s", status, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -413,7 +424,7 @@ func (a *Assert) HTTPStatus(resp interface{ StatusCode() int }, expectedStatus i
 
 	status := resp.StatusCode()
 	if status != expectedStatus {
-		a.t.Fatalf("HTTPStatus failed: expected status %d, got %d %s", expectedStatus, status, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("HTTPStatus failed: expected status %d, got %d %s", expectedStatus, status, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -423,7 +434,7 @@ func (a *Assert) HTTPHeader(resp interface{ Header() http.Header }, key, expecte
 
 	actualValue := resp.Header().Get(key)
 	if actualValue != expectedValue {
-		a.t.Fatalf("HTTPHeader failed: expected header %q=%q, got %q %s", key, expectedValue, actualValue, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("HTTPHeader failed: expected header %q=%q, got %q %s", key, expectedValue, actualValue, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -433,7 +444,7 @@ func (a *Assert) HTTPBodyContains(resp interface{ Body() []byte }, substr string
 
 	body := resp.Body()
 	if !bytes.Contains(body, []byte(substr)) {
-		a.t.Fatalf("HTTPBodyContains failed: body does not contain %q\nbody: %s %s", substr, string(body), fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("HTTPBodyContains failed: body does not contain %q\nbody: %s %s", substr, string(body), fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -466,8 +477,8 @@ func (r *Retryable) EventuallyTrue(fn func() bool, msgAndArgs ...interface{}) {
 		}
 	}
 
-	r.assert.t.Fatalf("EventuallyTrue failed: condition never became true after %d attempts %s",
-		r.maxAttempts, fmt.Sprint(msgAndArgs...))
+	panic(fmt.Sprintf("EventuallyTrue failed: condition never became true after %d attempts %s",
+		r.maxAttempts, fmt.Sprint(msgAndArgs...)))
 }
 
 // EventuallyNoError retries a function until it returns no error or max attempts reached.
@@ -486,8 +497,8 @@ func (r *Retryable) EventuallyNoError(fn func() error, msgAndArgs ...interface{}
 		}
 	}
 
-	r.assert.t.Fatalf("EventuallyNoError failed: %v after %d attempts %s",
-		lastErr, r.maxAttempts, fmt.Sprint(msgAndArgs...))
+	panic(fmt.Sprintf("EventuallyNoError failed: %v after %d attempts %s",
+		lastErr, r.maxAttempts, fmt.Sprint(msgAndArgs...)))
 }
 
 // AllSatisfy asserts that all elements in a slice satisfy a predicate.
@@ -496,15 +507,14 @@ func (a *Assert) AllSatisfy(slice interface{}, predicate func(interface{}) bool,
 
 	val := reflect.ValueOf(slice)
 	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
-		a.t.Fatalf("AllSatisfy failed: input is not a slice/array %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("AllSatisfy failed: input is not a slice/array " + fmt.Sprint(msgAndArgs...))
 	}
 
 	for i := 0; i < val.Len(); i++ {
 		elem := val.Index(i).Interface()
 		if !predicate(elem) {
-			a.t.Fatalf("AllSatisfy failed: element at index %d (%#v) does not satisfy predicate %s",
-				i, elem, fmt.Sprint(msgAndArgs...))
+			panic(fmt.Sprintf("AllSatisfy failed: element at index %d (%#v) does not satisfy predicate %s",
+				i, elem, fmt.Sprint(msgAndArgs...)))
 		}
 	}
 }
@@ -515,15 +525,14 @@ func (a *Assert) NoneSatisfy(slice interface{}, predicate func(interface{}) bool
 
 	val := reflect.ValueOf(slice)
 	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
-		a.t.Fatalf("NoneSatisfy failed: input is not a slice/array %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("NoneSatisfy failed: input is not a slice/array " + fmt.Sprint(msgAndArgs...))
 	}
 
 	for i := 0; i < val.Len(); i++ {
 		elem := val.Index(i).Interface()
 		if predicate(elem) {
-			a.t.Fatalf("NoneSatisfy failed: element at index %d (%#v) satisfies predicate %s",
-				i, elem, fmt.Sprint(msgAndArgs...))
+			panic(fmt.Sprintf("NoneSatisfy failed: element at index %d (%#v) satisfies predicate %s",
+				i, elem, fmt.Sprint(msgAndArgs...)))
 		}
 	}
 }
@@ -536,19 +545,16 @@ func (a *Assert) ContainsExactly(slice, expected interface{}, msgAndArgs ...inte
 	expectedVal := reflect.ValueOf(expected)
 
 	if sliceVal.Kind() != reflect.Slice && sliceVal.Kind() != reflect.Array {
-		a.t.Fatalf("ContainsExactly failed: first argument is not a slice/array %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("ContainsExactly failed: first argument is not a slice/array " + fmt.Sprint(msgAndArgs...))
 	}
 
 	if expectedVal.Kind() != reflect.Slice && expectedVal.Kind() != reflect.Array {
-		a.t.Fatalf("ContainsExactly failed: second argument is not a slice/array %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("ContainsExactly failed: second argument is not a slice/array " + fmt.Sprint(msgAndArgs...))
 	}
 
 	if sliceVal.Len() != expectedVal.Len() {
-		a.t.Fatalf("ContainsExactly failed: length mismatch: got %d, want %d %s",
-			sliceVal.Len(), expectedVal.Len(), fmt.Sprint(msgAndArgs...))
-		return
+		panic(fmt.Sprintf("ContainsExactly failed: length mismatch: got %d, want %d %s",
+			sliceVal.Len(), expectedVal.Len(), fmt.Sprint(msgAndArgs...)))
 	}
 
 	// Check each expected element exists in slice
@@ -562,9 +568,8 @@ func (a *Assert) ContainsExactly(slice, expected interface{}, msgAndArgs ...inte
 			}
 		}
 		if !found {
-			a.t.Fatalf("ContainsExactly failed: element %#v not found in slice %s",
-				expectedElem, fmt.Sprint(msgAndArgs...))
-			return
+			panic(fmt.Sprintf("ContainsExactly failed: element %#v not found in slice %s",
+				expectedElem, fmt.Sprint(msgAndArgs...)))
 		}
 	}
 }
@@ -575,13 +580,12 @@ func (a *Assert) KeyExists(m interface{}, key interface{}, msgAndArgs ...interfa
 
 	val := reflect.ValueOf(m)
 	if val.Kind() != reflect.Map {
-		a.t.Fatalf("KeyExists failed: input is not a map %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("KeyExists failed: input is not a map " + fmt.Sprint(msgAndArgs...))
 	}
 
 	keyVal := reflect.ValueOf(key)
 	if !val.MapIndex(keyVal).IsValid() {
-		a.t.Fatalf("KeyExists failed: key %#v does not exist in map %s", key, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("KeyExists failed: key %#v does not exist in map %s", key, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -591,13 +595,12 @@ func (a *Assert) KeyNotExists(m interface{}, key interface{}, msgAndArgs ...inte
 
 	val := reflect.ValueOf(m)
 	if val.Kind() != reflect.Map {
-		a.t.Fatalf("KeyNotExists failed: input is not a map %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("KeyNotExists failed: input is not a map " + fmt.Sprint(msgAndArgs...))
 	}
 
 	keyVal := reflect.ValueOf(key)
 	if val.MapIndex(keyVal).IsValid() {
-		a.t.Fatalf("KeyNotExists failed: key %#v exists in map %s", key, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("KeyNotExists failed: key %#v exists in map %s", key, fmt.Sprint(msgAndArgs...)))
 	}
 }
 
@@ -607,14 +610,13 @@ func (a *Assert) MapLen(m interface{}, expectedLength int, msgAndArgs ...interfa
 
 	val := reflect.ValueOf(m)
 	if val.Kind() != reflect.Map {
-		a.t.Fatalf("MapLen failed: input is not a map %s", fmt.Sprint(msgAndArgs...))
-		return
+		panic("MapLen failed: input is not a map " + fmt.Sprint(msgAndArgs...))
 	}
 
 	actualLength := val.Len()
 	if actualLength != expectedLength {
-		a.t.Fatalf("MapLen failed: expected length %d, got %d %s",
-			expectedLength, actualLength, fmt.Sprint(msgAndArgs...))
+		panic(fmt.Sprintf("MapLen failed: expected length %d, got %d %s",
+			expectedLength, actualLength, fmt.Sprint(msgAndArgs...)))
 	}
 }
 

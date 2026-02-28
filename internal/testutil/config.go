@@ -94,6 +94,10 @@ func (tc *TestConfig) SetEnv(key, value string) {
 	if _, exists := tc.envBackup[key]; !exists {
 		if originalValue, exists := os.LookupEnv(key); exists {
 			tc.envBackup[key] = originalValue
+		} else {
+			// Mark that the variable didn't exist with a special empty string
+			// We'll use this to know we should unset it on cleanup
+			tc.envBackup[key] = ""
 		}
 	}
 
@@ -129,21 +133,30 @@ func (tc *TestConfig) UnsetEnv(key string) {
 // The directory is removed on cleanup.
 func (tc *TestConfig) TempDir() (string, error) {
 	tc.mu.Lock()
-	defer tc.mu.Unlock()
 
 	if tc.tempDir != "" {
+		tc.mu.Unlock()
 		return tc.tempDir, nil
 	}
 
 	tempDir, err := os.MkdirTemp("", "test-*")
 	if err != nil {
+		tc.mu.Unlock()
 		return "", fmt.Errorf("create temp dir: %w", err)
 	}
 
 	tc.tempDir = tempDir
-	tc.AddCleanup(func() {
+
+	// Release lock before calling AddCleanup
+	tc.mu.Unlock()
+
+	// Add cleanup function directly without going through AddCleanup
+	// to avoid potential deadlock
+	tc.mu.Lock()
+	tc.cleanupFuncs = append(tc.cleanupFuncs, func() {
 		os.RemoveAll(tempDir)
 	})
+	tc.mu.Unlock()
 
 	return tempDir, nil
 }
@@ -199,9 +212,14 @@ func (tc *TestConfig) Cleanup() {
 
 	// Restore environment variables
 	for key, value := range tc.envBackup {
-		if err := os.Setenv(key, value); err != nil {
-			// Log but don't panic during cleanup
-			fmt.Printf("Warning: failed to restore env var %s: %v\n", key, err)
+		if value == "" {
+			// Original value was empty, remove the variable
+			os.Unsetenv(key)
+		} else {
+			if err := os.Setenv(key, value); err != nil {
+				// Log but don't panic during cleanup
+				fmt.Printf("Warning: failed to restore env var %s: %v\n", key, err)
+			}
 		}
 	}
 	tc.envBackup = make(map[string]string)
@@ -257,7 +275,14 @@ func (cb *ConfigBuilder) WithRedisConfig(host, port, password string) *ConfigBui
 	cb.config.Set("redis.host", host)
 	cb.config.Set("redis.port", port)
 	cb.config.Set("redis.password", password)
-	cb.config.SetEnv("REDIS_URL", fmt.Sprintf("redis://:%s@%s:%s", password, host, port))
+
+	var redisURL string
+	if password != "" {
+		redisURL = fmt.Sprintf("redis://:%s@%s:%s/0", password, host, port)
+	} else {
+		redisURL = fmt.Sprintf("redis://%s:%s/0", host, port)
+	}
+	cb.config.SetEnv("REDIS_URL", redisURL)
 	return cb
 }
 

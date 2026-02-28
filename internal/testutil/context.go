@@ -238,9 +238,10 @@ func (ct *ContextTracker) Track(name string, ctx context.Context) context.Contex
 // GetTracked returns a tracked context by name.
 func (ct *ContextTracker) GetTracked(name string) context.Context {
 	ct.mu.Lock()
-	defer ct.mu.Unlock()
+	_, exists := ct.contexts[name]
+	ct.mu.Unlock()
 
-	if _, exists := ct.contexts[name]; !exists {
+	if !exists {
 		return nil
 	}
 

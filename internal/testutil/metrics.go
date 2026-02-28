@@ -190,11 +190,16 @@ type HistogramStats struct {
 }
 
 // percentile calculates a percentile from a sorted slice.
+// Uses the nearest rank method.
 func percentile(sorted []float64, p int) float64 {
 	if len(sorted) == 0 {
 		return 0
 	}
-	index := (p * len(sorted)) / 100
+	if len(sorted) == 1 {
+		return sorted[0]
+	}
+	// Calculate index using nearest rank method: (p * (n-1)) / 100
+	index := (p * (len(sorted) - 1)) / 100
 	if index >= len(sorted) {
 		index = len(sorted) - 1
 	}
@@ -232,8 +237,14 @@ func (mc *MetricsCollector) Summary() map[string]interface{} {
 	summary["failed_tests"] = mc.failedTests
 	summary["skipped_tests"] = mc.skippedTests
 
-	// Duration
-	summary["duration_ms"] = mc.Duration().Milliseconds()
+	// Duration - calculate without calling Duration() to avoid deadlock
+	var duration time.Duration
+	if !mc.endTime.IsZero() {
+		duration = mc.endTime.Sub(mc.startTime)
+	} else {
+		duration = time.Since(mc.startTime)
+	}
+	summary["duration_ms"] = duration.Milliseconds()
 
 	// Counters
 	counters := make(map[string]int64)
@@ -326,6 +337,7 @@ func (mc *MetricsCollector) Reset() {
 	mc.timers = make(map[string]time.Time)
 	mc.counters = make(map[string]int64)
 	mc.histograms = make(map[string][]float64)
+	mc.labels = make(map[string]string)
 }
 
 // TestMetrics wraps testing.T to collect metrics automatically.
