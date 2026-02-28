@@ -398,7 +398,9 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 		name           string
 		method         string
 		url            string
+		urlFunc        func() string
 		body           interface{}
+		bodyFunc       func() interface{}
 		validateFunc   func(*testing.T, *http.Response)
 		expectedStatus int
 		skipOnFail     bool
@@ -441,7 +443,7 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 		{
 			name:           "get agent by id",
 			method:         "GET",
-			url:            registryServiceURL + "/agents/" + client.AgentID,
+			urlFunc:        func() string { return registryServiceURL + "/agents/" + client.AgentID },
 			body:           nil,
 			expectedStatus: http.StatusOK,
 			skipOnFail:     true,
@@ -450,11 +452,13 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 			name:       "register printer",
 			method:     "POST",
 			url:        registryServiceURL + "/printers/register",
-			body: map[string]interface{}{
-				"agent_id": client.AgentID,
-				"name":     fmt.Sprintf("test-printer-%d", time.Now().UnixNano()),
-				"model":    "HP LaserJet Pro",
-				"location": "Office 1",
+			bodyFunc: func() interface{} {
+				return map[string]interface{}{
+					"agent_id": client.AgentID,
+					"name":     fmt.Sprintf("test-printer-%d", time.Now().UnixNano()),
+					"model":    "HP LaserJet Pro",
+					"location": "Office 1",
+				}
 			},
 			expectedStatus: http.StatusCreated,
 			skipOnFail:     true,
@@ -483,7 +487,7 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 		{
 			name:           "send agent heartbeat",
 			method:         "POST",
-			url:            registryServiceURL + "/agents/" + client.AgentID + "/heartbeat",
+			urlFunc:        func() string { return registryServiceURL + "/agents/" + client.AgentID + "/heartbeat" },
 			body:           map[string]interface{}{"status": "online"},
 			expectedStatus: http.StatusOK,
 			skipOnFail:     true,
@@ -491,7 +495,7 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 		{
 			name:           "update printer status",
 			method:         "PUT",
-			url:            registryServiceURL + "/printers/" + client.PrinterID + "/status",
+			urlFunc:        func() string { return registryServiceURL + "/printers/" + client.PrinterID + "/status" },
 			body:           map[string]interface{}{"status": "online"},
 			expectedStatus: http.StatusOK,
 			skipOnFail:     true,
@@ -505,7 +509,17 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 				t.Skip("Skipping due to previous test failure")
 			}
 
-			resp, err := client.makeRequest(tt.method, tt.url, tt.body, nil)
+			url := tt.url
+			if tt.urlFunc != nil {
+				url = tt.urlFunc()
+			}
+
+			body := tt.body
+			if tt.bodyFunc != nil {
+				body = tt.bodyFunc()
+			}
+
+			resp, err := client.makeRequest(tt.method, url, body, nil)
 			require.NoError(t, err, "Request should succeed")
 			defer resp.Body.Close()
 
@@ -530,10 +544,10 @@ func TestRegistryServiceEndpoints(t *testing.T) {
 		defer conn.Close(ctx)
 
 		if cleanupPrinterID != "" {
-			conn.Exec(ctx, "DELETE FROM printers WHERE printer_id = $1", cleanupPrinterID)
+			conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", cleanupPrinterID)
 		}
 		if cleanupAgentID != "" {
-			conn.Exec(ctx, "DELETE FROM agents WHERE agent_id = $1", cleanupAgentID)
+			conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", cleanupAgentID)
 		}
 		conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
 	})
@@ -909,7 +923,7 @@ func TestStorageServiceEndpoints(t *testing.T) {
 		defer conn.Close(ctx)
 
 		if cleanupDocumentID != "" {
-			conn.Exec(ctx, "DELETE FROM documents WHERE document_id = $1", cleanupDocumentID)
+			conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupDocumentID)
 		}
 		conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
 	})
@@ -1056,7 +1070,7 @@ func TestEndToEndWorkflow(t *testing.T) {
 		defer conn.Close(ctx)
 
 		var jobCount int
-		conn.QueryRow(ctx, "SELECT COUNT(*) FROM print_jobs WHERE job_id = $1", client.JobID).Scan(&jobCount)
+		conn.QueryRow(ctx, "SELECT COUNT(*) FROM print_jobs WHERE id = $1", client.JobID).Scan(&jobCount)
 		assert.Equal(t, 1, jobCount, "Job should exist in database")
 
 		// Step 9: Get job details
@@ -1091,16 +1105,16 @@ func TestEndToEndWorkflow(t *testing.T) {
 			defer conn.Close(ctx)
 
 			if cleanupIDs.jobID != "" {
-				conn.Exec(ctx, "DELETE FROM print_jobs WHERE job_id = $1", cleanupIDs.jobID)
+				conn.Exec(ctx, "DELETE FROM print_jobs WHERE id = $1", cleanupIDs.jobID)
 			}
 			if cleanupIDs.documentID != "" {
-				conn.Exec(ctx, "DELETE FROM documents WHERE document_id = $1", cleanupIDs.documentID)
+				conn.Exec(ctx, "DELETE FROM documents WHERE id = $1", cleanupIDs.documentID)
 			}
 			if cleanupIDs.printerID != "" {
-				conn.Exec(ctx, "DELETE FROM printers WHERE printer_id = $1", cleanupIDs.printerID)
+				conn.Exec(ctx, "DELETE FROM printers WHERE id = $1", cleanupIDs.printerID)
 			}
 			if cleanupIDs.agentID != "" {
-				conn.Exec(ctx, "DELETE FROM agents WHERE agent_id = $1", cleanupIDs.agentID)
+				conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", cleanupIDs.agentID)
 			}
 			if cleanupIDs.userID != "" {
 				conn.Exec(ctx, "DELETE FROM users WHERE id = $1", cleanupIDs.userID)
@@ -1161,7 +1175,7 @@ func TestDockerContainerCommunication(t *testing.T) {
 			conn, _ := pgx.Connect(ctx, databaseURL)
 			defer conn.Close(ctx)
 			if agentID != "" {
-				conn.Exec(ctx, "DELETE FROM agents WHERE agent_id = $1", agentID)
+				conn.Exec(ctx, "DELETE FROM agents WHERE id = $1", agentID)
 			}
 			conn.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail)
 		}
