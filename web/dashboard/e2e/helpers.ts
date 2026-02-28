@@ -1,14 +1,21 @@
 /**
  * Test helpers and utilities for E2E tests
  */
+import type { Page, Route } from '@playwright/test';
 
-export const testCredentials = {
+export interface Credentials {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export const testCredentials: Credentials = {
   email: 'test@example.com',
   password: 'TestPassword123!',
   name: 'Test User',
 };
 
-export const adminCredentials = {
+export const adminCredentials: Credentials = {
   email: 'admin@example.com',
   password: 'AdminPassword123!',
   name: 'Admin User',
@@ -17,7 +24,7 @@ export const adminCredentials = {
 /**
  * Login helper - authenticates a user and navigates to dashboard
  */
-export async function login(page, credentials = testCredentials) {
+export async function login(page: Page, credentials: Credentials = testCredentials) {
   await page.goto('/login');
 
   // Fill in login form
@@ -34,7 +41,7 @@ export async function login(page, credentials = testCredentials) {
 /**
  * Logout helper
  */
-export async function logout(page) {
+export async function logout(page: Page) {
   await page.click('button:has-text("Logout")');
   await page.waitForURL('**/login');
 }
@@ -42,7 +49,7 @@ export async function logout(page) {
 /**
  * Mock API response helper
  */
-export function mockApiResponse(route, data, status = 200) {
+export function mockApiResponse(route: Route, data: unknown, status = 200) {
   return route.fulfill({
     status,
     contentType: 'application/json',

@@ -1,67 +1,224 @@
 import { test, expect } from '@playwright/test';
+import { testCredentials, mockApiResponse, mockUsers } from '../helpers';
 
-test.describe('Authentication', () => {
+test.describe('Authentication - Login', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-  });
-
-  test('should redirect to login when not authenticated', async ({ page }) => {
-    await expect(page).toHaveURL(/.*\/login/);
+    await page.goto('/login');
   });
 
   test('should display login form', async ({ page }) => {
-    await expect(page.getByText('OpenPrint Cloud')).toBeVisible();
-    await expect(page.getByText('Sign in to your account')).toBeVisible();
-    await expect(page.getByLabel('Email Address')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
+    await expect(page.locator('h1')).toContainText('OpenPrint Cloud');
+    await expect(page.locator('h2')).toContainText('Sign in to your account');
+
+    // Check form inputs exist
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  test('should toggle between login and register', async ({ page }) => {
-    await expect(page.getByText("Don't have an account? Sign up")).toBeVisible();
+  test('should toggle between login and register forms', async ({ page }) => {
+    // Initially shows login form
+    await expect(page.locator('h2')).toContainText('Sign in to your account');
 
-    await page.getByRole('button', { name: "Don't have an account? Sign up" }).click();
+    // Click toggle button
+    await page.click('text=Don\'t have an account? Sign up');
 
-    await expect(page.getByText('Create a new account')).toBeVisible();
-    await expect(page.getByLabel('Full Name')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible();
+    // Should show register form
+    await expect(page.locator('h2')).toContainText('Create a new account');
+    await expect(page.locator('input#name')).toBeVisible();
 
-    await page.getByRole('button', { name: "Already have an account? Sign in" }).click();
+    // Click toggle back
+    await page.click('text=Already have an account? Sign in');
 
-    await expect(page.getByText('Sign in to your account')).toBeVisible();
+    // Should show login form again
+    await expect(page.locator('h2')).toContainText('Sign in to your account');
   });
 
-  test('should validate email format', async ({ page }) => {
-    const emailInput = page.getByLabel('Email Address');
-    await emailInput.fill('invalid-email');
-    await emailInput.blur();
+  test('should show validation errors for empty fields', async ({ page }) => {
+    // Try to submit with empty fields
+    await page.click('button[type="submit"]');
 
-    // Browser validation
-    const isValid = await emailInput.evaluate((el) => (el as HTMLInputElement).checkValidity());
-    expect(isValid).toBe(false);
+    // Browser validation should prevent submission
+    await expect(page.locator('input[type="email"]')).toBeFocused();
   });
 
-  test('should validate password length', async ({ page }) => {
-    // Switch to register to see password validation
-    await page.getByRole('button', { name: "Don't have an account? Sign up" }).click();
+  test('should show error for invalid email format', async ({ page }) => {
+    await page.fill('input[type="email"]', 'not-an-email');
+    await page.fill('input[type="password"]', 'password123');
 
-    const passwordInput = page.getByLabel('Password');
-    await passwordInput.fill('short');
-    await passwordInput.blur();
-
-    const isValid = await passwordInput.evaluate((el) => (el as HTMLInputElement).checkValidity());
-    expect(isValid).toBe(false);
+    // Check for HTML5 validation
+    const emailInput = page.locator('input[type="email"]');
+    await expect(await emailInput.evaluate((el) => (el as HTMLInputElement).checkValidity())).toBeFalsy();
   });
 
-  test('should show loading state on form submission', async ({ page }) => {
-    await page.getByLabel('Email Address').fill('test@example.com');
-    await page.getByLabel('Password').fill('password123');
+  test('should enforce minimum password length', async ({ page }) => {
+    await page.fill('input[type="email"]', 'test@example.com');
+    await page.fill('input[type="password"]', 'short');
 
-    // Mock network request - in real tests, you'd use MSW or similar
-    const submitButton = page.getByRole('button', { name: 'Sign In' });
-    await submitButton.click();
+    // Check for HTML5 validation
+    const passwordInput = page.locator('input[type="password"]');
+    await expect(await passwordInput.evaluate((el) => (el as HTMLInputElement).checkValidity())).toBeFalsy();
+  });
 
-    // Button should show loading state (will fail on network error, but that's expected)
-    await expect(submitButton).toBeVisible();
+  test('should show error message on failed login', async ({ page }) => {
+    // Mock failed login response
+    await page.route('**/api/v1/auth/login', async (route) => {
+      await mockApiResponse(route, {
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password',
+      }, 401);
+    });
+
+    await page.fill('input[type="email"]', 'wrong@example.com');
+    await page.fill('input[type="password"]', 'wrongpassword');
+    await page.click('button[type="submit"]');
+
+    // Should show error message
+    await expect(page.locator('text=Invalid email or password')).toBeVisible();
+  });
+
+  test('should successfully login and redirect to dashboard', async ({ page }) => {
+    // Mock successful login
+    await page.route('**/api/v1/auth/login', async (route) => {
+      await mockApiResponse(route, {
+        userId: '1',
+        access_token: 'mock-access-token',
+        refresh_token: 'mock-refresh-token',
+        org: { id: 'org-1', name: 'Test Org' },
+      });
+    });
+
+    // Mock get current user
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[0]);
+    });
+
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
+    await page.click('button[type="submit"]');
+
+    // Should redirect to dashboard
+    await page.waitForURL('**/dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome back');
+  });
+
+  test('should successfully register and redirect to dashboard', async ({ page }) => {
+    // Switch to register form
+    await page.click('text=Don\'t have an account? Sign up');
+
+    // Mock successful registration
+    await page.route('**/api/v1/auth/register', async (route) => {
+      await mockApiResponse(route, {
+        userId: '1',
+        access_token: 'mock-access-token',
+        refresh_token: 'mock-refresh-token',
+      });
+    });
+
+    // Mock get current user
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[0]);
+    });
+
+    await page.fill('input#name', 'New User');
+    await page.fill('input[type="email"]', 'newuser@example.com');
+    await page.fill('input[type="password"]', 'SecurePassword123!');
+    await page.click('button[type="submit"]');
+
+    // Should redirect to dashboard
+    await page.waitForURL('**/dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome back');
+  });
+
+  test('should store auth tokens after successful login', async ({ page }) => {
+    // Mock successful login
+    await page.route('**/api/v1/auth/login', async (route) => {
+      await mockApiResponse(route, {
+        userId: '1',
+        access_token: 'mock-access-token',
+        refresh_token: 'mock-refresh-token',
+      });
+    });
+
+    // Mock get current user
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[0]);
+    });
+
+    await page.fill('input[type="email"]', testCredentials.email);
+    await page.fill('input[type="password"]', testCredentials.password);
+    await page.click('button[type="submit"]');
+
+    await page.waitForURL('**/dashboard');
+
+    // Check localStorage for auth tokens
+    const tokens = await page.evaluate(() => {
+      const stored = localStorage.getItem('auth_tokens');
+      return stored ? JSON.parse(stored) : null;
+    });
+
+    expect(tokens).not.toBeNull();
+    expect(tokens?.accessToken).toBe('mock-access-token');
+    expect(tokens?.refreshToken).toBe('mock-refresh-token');
+  });
+
+  test('should have accessible form controls', async ({ page }) => {
+    // Check for proper labels
+    await expect(page.locator('label[for="email"]')).toBeVisible();
+    await expect(page.locator('label[for="password"]')).toBeVisible();
+
+    // Check form inputs have required attributes
+    const emailInput = page.locator('input[type="email"]');
+    await expect(emailInput).toHaveAttribute('required', '');
+
+    const passwordInput = page.locator('input[type="password"]');
+    await expect(passwordInput).toHaveAttribute('required', '');
+  });
+});
+
+test.describe('Authentication - Protected Routes', () => {
+  test('should redirect to login when accessing protected routes unauthenticated', async ({ page }) => {
+    const protectedRoutes = ['/dashboard', '/printers', '/jobs', '/documents', '/settings'];
+
+    for (const route of protectedRoutes) {
+      await page.goto(route);
+      await page.waitForURL('**/login');
+    }
+  });
+
+  test('should redirect to login when accessing admin routes without admin role', async ({ page }) => {
+    // Mock as regular user
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[0]); // Regular user
+    });
+
+    const adminRoutes = ['/analytics', '/organization', '/quotas', '/policies', '/audit-logs'];
+
+    for (const route of adminRoutes) {
+      await page.goto(route);
+      // Should redirect to dashboard (not login since we have auth)
+      await page.waitForURL('**/dashboard');
+    }
+  });
+
+  test('should allow access to admin routes with admin role', async ({ page }) => {
+    // Mock as admin user
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[1]); // Admin user
+    });
+
+    // Mock analytics data
+    await page.route('**/api/v1/analytics/**', async (route) => {
+      await mockApiResponse(route, {
+        pagesPrinted: 1000,
+        co2Grams: 200,
+        treesSaved: 0.1,
+      });
+    });
+
+    await page.goto('/analytics');
+    await page.waitForURL('**/analytics');
+
+    await expect(page.locator('h1')).toContainText('Analytics');
   });
 });

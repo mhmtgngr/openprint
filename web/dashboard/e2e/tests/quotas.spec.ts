@@ -126,6 +126,10 @@ test.describe('Quotas API Interactions', () => {
     await page.goto('/quotas');
 
     // Should show error state or empty state
-    await expect(page.locator('text=Loading') | page.locator('text=No quotas')).toBeVisible();
+    const loadingLocator = page.locator('text=Loading');
+    const noQuotasLocator = page.locator('text=No quotas');
+    const isVisible = await loadingLocator.isVisible().catch(() => false) ||
+                      await noQuotasLocator.isVisible().catch(() => false);
+    expect(isVisible).toBeTruthy();
   });
 });
