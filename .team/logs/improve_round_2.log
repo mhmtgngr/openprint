@@ -1,33 +1,48 @@
-Done! I've created the React components for device/printer management in `web/dashboard/src/features/devices/`:
+I have successfully created the API gateway service for OpenPrint. Here's a summary of what was implemented:
 
-**Files Created:**
-| File | Description |
-|------|-------------|
-| `types.ts` | TypeScript interfaces for Device, Printer, Agent types |
-| `api.ts` | API layer using fetch to registry-service endpoints |
-| `Devices.tsx` | Main listing page with table/grid view, filtering, and stats |
-| `DeviceCard.tsx` | Individual device card with status indicator |
-| `DeviceRegister.tsx` | Form for registering new printers and agents |
-| `DeviceDetail.tsx` | Detailed device view with status and configuration |
-| `index.ts` | Barrel exports |
+## Created Files
 
-**Features Implemented:**
-- Status indicators (online/offline/error) with visual badges
-- Last heartbeat display with formatted "time ago" strings
-- Device filtering by status and type
-- Table and grid view modes
-- Printer enable/disable toggle
-- Agent and printer registration forms with validation
-- Device detail view with activity timeline
-- Stats cards showing total/online devices
+### 1. `services/gateway/main.go`
+- API gateway routing to all microservices (ports 8001-8005)
+- HTTP reverse proxy using `httputil.ReverseProxy`
+- Listens on port **8000**
+- Routes to:
+  - `auth-service` (8001) - `/auth/*`, `/api/v1/auth/*`
+  - `registry-service` (8002) - `/registry/*`, `/api/v1/agents/*`, `/api/v1/admin/*`
+  - `job-service` (8003) - `/jobs/*`
+  - `storage-service` (8004) - `/storage/*`
+  - `notification-service` (8005) - `/notifications/*`
+- CORS and security headers middleware
+- Health check endpoint at `/health`
 
-**API Endpoints Used:**
-- `GET /api/agents` - List agents
-- `GET /api/printers` - List printers
-- `POST /api/agents` - Register agent
-- `POST /api/printers` - Register printer
-- `PATCH /api/printers/:id/active` - Enable/disable printer
-- `DELETE /api/agents/:id` - Delete agent
-- `DELETE /api/printers/:id` - Delete printer
+### 2. `services/gateway/middleware/auth.go`
+- JWT validation middleware extracting tokens from `Authorization` header
+- Context keys for `user_id`, `email`, `org_id`, `role`
+- `OptionalAuthMiddleware` for optional authentication
+- `APIKeyMiddleware` for service-to-service communication
+- `RequireRole` for role-based access control
+- Helper functions for extracting user info from context
 
-Type-check passed with no errors.
+### 3. `services/gateway/middleware/rate_limit.go`
+- IP-based rate limiting using `golang.org/x/time/rate`
+- Default: **100 requests per minute**
+- Configurable cleanup interval (default 5 minutes)
+- `PerUserRateLimitMiddleware` for user-based limiting
+- `BurstRateLimitMiddleware` for handling traffic spikes
+- Proper IP extraction from `X-Forwarded-For` and `X-Real-IP` headers
+
+### 4. `services/gateway/middleware/audit.go`
+- Comprehensive audit logging with timestamp, method, path, user_id
+- `AuditLogEntry` structure with all relevant request info
+- `AsyncAuditLogger` for non-blocking audit writes
+- `SecurityAuditMiddleware` for security-relevant events (401/403)
+- `SlowQueryAuditMiddleware` for logging slow requests
+- Response status code and duration tracking
+
+## Build Verification
+
+```bash
+go build ./services/gateway/...  # ✅ Success
+```
+
+The gateway binary was created at `services/gateway/gateway` (~9.8MB).
