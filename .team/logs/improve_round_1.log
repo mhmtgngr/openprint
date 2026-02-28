@@ -1,14 +1,20 @@
-Done. The fix:
+Done! Created the React dashboard app shell with the following files:
 
-**Problem**: The integration tests were using incorrect SQL column names. The database schema uses `id` as the primary key column for all tables, but the tests were querying with `job_id`, `printer_id`, `agent_id`, and `document_id`.
+**Created:**
+- `web/dashboard/src/layouts/DashboardLayout.tsx` - Layout with sidebar navigation, header, and user menu
+- `web/dashboard/src/layouts/PublicLayout.tsx` - Layout for unauthenticated pages
+- `web/dashboard/src/router/index.tsx` - Navigation configuration
+- `web/dashboard/src/pages/Documents.tsx` - Documents page component
 
-**Changes made**:
-1. `print_jobs WHERE job_id = $1` → `print_jobs WHERE id = $1`
-2. `printers WHERE printer_id = $1` → `printers WHERE id = $1`
-3. `agents WHERE agent_id = $1` → `agents WHERE id = $1`
-4. `documents WHERE document_id = $1` → `documents WHERE id = $1`
+**Updated:**
+- `web/dashboard/src/App.tsx` - Reorganized with `ProtectedRoute` and `AdminRoute` wrappers
+- `web/dashboard/src/components/icons/index.tsx` - Added `FolderIcon`
 
-All 3 failing tests now pass:
-- `TestRegistryServiceEndpoints` ✓
-- `TestEndToEndWorkflow` ✓
-- All integration tests ✓
+**Navigation items:**
+- Dashboard (`/dashboard`)
+- Jobs (`/jobs`)
+- Devices (`/printers`)
+- Documents (`/documents`)
+- Settings (`/settings`)
+
+TypeScript compilation passes (`npm run type-check` ✓)

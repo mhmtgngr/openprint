@@ -5,15 +5,15 @@
     "tsx_files": 0,
     "todo_count": 0,
     "build": "yes",
-    "tests": "fail",
-    "test_count": 19,
-    "test_passed": 14,
+    "tests": "pass",
+    "test_count": 15,
+    "test_passed": 15,
     "dockerfiles": 6,
     "compose": "yes",
     "frontend": "no"
   },
   "compile_errors": "",
-  "test_failures": "--- FAIL: TestRegistryServiceEndpoints (0.09s)\n    --- FAIL: TestRegistryServiceEndpoints/get_agent_by_id (0.00s)\n        api_test.go:512: \n            \tError Trace:\t/home/cmit/openprint/tests/integration/api_test.go:512\n            \tError:      \tNot equal: \n            \t            \texpected: 200\n            \t            \tactual  : 400\n--\n--- FAIL: TestEndToEndWorkflow (0.07s)\n    --- FAIL: TestEndToEndWorkflow/complete_print_job_workflow (0.07s)\n        api_test.go:936: Step 1: Register user\n        api_test.go:954: Step 2: Register agent\n--\n            \tError Trace:\t/home/cmit/openprint/tests/integration/api_test.go:1015\n            \tError:      \tNot equal: \n            \t            \texpected: 200\n            \t            \tactual  : 500\n--\nFAIL\nFAIL\tgithub.com/openprint/openprint/tests/integration\t2.764s",
+  "test_failures": "",
   "ts_errors": "",
   "todos": ""
 }

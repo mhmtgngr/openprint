@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-02-28T03:41:31.517256",
-  "completion_pct": 56,
+  "timestamp": "2026-02-28T04:22:42.585108",
+  "completion_pct": 70,
   "pr_ready": true,
   "dimension_scores": {
     "backend_files": 100,
     "frontend_files": 0,
     "tests": 100,
     "endpoints": 0,
-    "migrations": 14,
+    "migrations": 100,
     "build": 100,
-    "tests_pass": 50,
+    "tests_pass": 100,
     "docker": 100
   },
   "counts": {
@@ -17,116 +17,12 @@
     "frontend_files": "0/28",
     "tests": "34/12",
     "endpoints": "0/17",
-    "migrations": "2/14",
+    "migrations": "30/14",
     "todos": 0,
     "build": true,
-    "tests_pass": false
+    "tests_pass": true
   },
   "gaps": [
-    {
-      "type": "tests",
-      "priority": "critical",
-      "item": "3 failing packages",
-      "description": "Fix 3 failing test packages"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000001_create_organizations.up.sql",
-      "description": "Create migration: migrations/000001_create_organizations.up.sql",
-      "sql": "CREATE TABLE organizations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  slug VARCHAR(100) UNIQUE NOT NULL,\n  plan VARCHAR(50) DEFAULT 'free' CHECK (plan IN ('free"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000002_create_users.up.sql",
-      "description": "Create migration: migrations/000002_create_users.up.sql",
-      "sql": "CREATE TABLE users (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  email VARCHAR(255) UNIQUE NOT NULL,\n  password_hash VARCHAR(255),\n  name VARCHAR(255),\n  role VARCHAR(50) DEFAULT 'user' CHECK ("
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000003_create_sessions.up.sql",
-      "description": "Create migration: migrations/000003_create_sessions.up.sql",
-      "sql": "CREATE TABLE sessions (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  refresh_token_hash VARCHAR(255) NOT NULL,\n  user_agent TEXT,\n"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000004_create_agents.up.sql",
-      "description": "Create migration: migrations/000004_create_agents.up.sql",
-      "sql": "CREATE TABLE agents (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  status VARCHAR(50) DEFAULT"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000005_create_printers.up.sql",
-      "description": "Create migration: migrations/000005_create_printers.up.sql",
-      "sql": "CREATE TABLE printers (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,\n  org_id UUID NOT NULL REFERENC"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000006_create_printer_permissions.up.sql",
-      "description": "Create migration: migrations/000006_create_printer_permissions.up.sql",
-      "sql": "CREATE TABLE printer_permissions (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  printer_id UUID NOT NULL REFERENCES printers(id) ON DELETE CASCADE,\n  user_id UUID NOT NULL REFERENCES users(id) O"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000007_create_print_jobs.up.sql",
-      "description": "Create migration: migrations/000007_create_print_jobs.up.sql",
-      "sql": "CREATE TABLE print_jobs (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  printer_id UUID REFERENCES printers(id) ON DELETE SET NULL,"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000008_create_job_history.up.sql",
-      "description": "Create migration: migrations/000008_create_job_history.up.sql",
-      "sql": "CREATE TABLE job_history (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  job_id UUID NOT NULL REFERENCES print_jobs(id) ON DELETE CASCADE,\n  status VARCHAR(50) NOT NULL,\n  message TEXT,\n  metadat"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000009_create_audit_logs.up.sql",
-      "description": "Create migration: migrations/000009_create_audit_logs.up.sql",
-      "sql": "CREATE TABLE audit_logs (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID REFERENCES users(id) ON DELETE SET NULL,\n  org_id UUID REFERENCES organizations(id) ON DELETE SET NULL,\n  acti"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000010_create_usage_stats.up.sql",
-      "description": "Create migration: migrations/000010_create_usage_stats.up.sql",
-      "sql": "CREATE TABLE usage_stats (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  user_id UUID REFERENCES users(id) ON DELETE SET NUL"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000011_create_api_keys.up.sql",
-      "description": "Create migration: migrations/000011_create_api_keys.up.sql",
-      "sql": "CREATE TABLE api_keys (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE C"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000012_create_webhooks.up.sql",
-      "description": "Create migration: migrations/000012_create_webhooks.up.sql",
-      "sql": "CREATE TABLE webhooks (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  name VARCHAR(255) NOT NULL,\n  url VARCHAR(2048) NOT NU"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000013_create_invitations.up.sql",
-      "description": "Create migration: migrations/000013_create_invitations.up.sql",
-      "sql": "CREATE TABLE invitations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n  email VARCHAR(255) NOT NULL,\n  role VARCHAR(50) DEF"
-    },
-    {
-      "type": "migration",
-      "priority": "critical",
-      "item": "migrations/000014_create_devices.up.sql",
-      "description": "Create migration: migrations/000014_create_devices.up.sql",
-      "sql": "CREATE TABLE devices (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  device_type VARCHAR(50) NOT NULL CHECK (device_type IN ('ios',"
-    },
     {
       "type": "backend",
       "priority": "high",
@@ -537,5 +433,6 @@
       "item": "mobile/src/components/DocumentPicker.tsx",
       "description": "Document picker component (cloud storage, device)"
     }
-  ]
+  ],
+  "_prev_pct": 70
 }

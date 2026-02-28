@@ -2,78 +2,81 @@
   "phases": [
     {
       "order": 1,
-      "name": "Fix Failing Integration Tests",
+      "name": "Create Dashboard App Shell & Layout",
       "priority": "critical",
-      "category": "test",
-      "description": "Fix 3 failing tests in tests/integration/api_test.go. TestRegistryServiceEndpoints expects 200 but gets 400 for get_agent_by_id. TestEndToEndWorkflow fails at Step 2 (agent registration) with 500 error. Investigate services/registry-service/handlers/register.go and services/registry-service/handlers/get_agent.go for JSON unmarshaling errors, nil pointer dereferences, or database query failures. Add proper error logging and fix request validation. Run 'go test ./tests/integration -v' to verify all tests pass.",
+      "category": "feature",
+      "description": "Create the React dashboard app shell in web/dashboard/src/. Create: App.tsx as root component with React Router setup, main.tsx entry point, index.css for global styles, layouts/DashboardLayout.tsx with sidebar navigation and header, layouts/PublicLayout.tsx for unauthenticated pages, router/index.tsx defining all route configurations. Implement proper TypeScript types and use React Router v6. Include navigation items for Dashboard, Jobs, Devices, Documents, Settings. Run npm run type-check to verify.",
       "success_criteria": [
-        "All integration tests pass",
-        "go test ./tests/integration returns EXIT 0"
+        "App.tsx exists with routing",
+        "DashboardLayout.tsx with navigation",
+        "TypeScript compiles without errors"
       ],
-      "estimated_minutes": 20
+      "estimated_minutes": 30
     },
     {
       "order": 2,
-      "name": "Create 12 Missing SQL Migration Files",
-      "priority": "critical",
+      "name": "Create Device Management UI Components",
+      "priority": "high",
       "category": "feature",
-      "description": "Create 12 missing migration files in migrations/ directory. Create pairs of .up.sql and .down.sql files for: 000001_create_organizations, 000002_create_users, 000003_create_sessions, 000004_create_agents, 000005_create_printers, 000006_create_printer_permissions, 000007_create_print_jobs, 000008_create_job_history, 000009_create_audit_logs, 000010_create_usage_stats, 000011_create_api_keys, 000012_create_webhooks, 000013_create_invitations, 000014_create_devices. Each .up.sql should have CREATE TABLE with proper columns, indexes, and foreign keys. Each .down.sql should have DROP TABLE IF EXISTS.",
+      "description": "Create React components for device/printer management in web/dashboard/src/features/devices/. Create: Devices.tsx main listing page with table view, DeviceCard.tsx for individual device display, DeviceRegister.tsx form for adding new printers, DeviceDetail.tsx for printer details and status. Add TypeScript interfaces for Device, Printer, Agent types in types.ts. Implement API calls using fetch to registry-service endpoints (GET /api/agents, POST /api/agents). Include status indicators (online/offline) and last heartbeat display. Run npm run type-check to verify.",
       "success_criteria": [
-        "14 total .up.sql migration files exist",
-        "All migration files have valid SQL syntax"
+        "Devices.tsx lists printers from API",
+        "DeviceCard.tsx shows device status",
+        "TypeScript compiles"
       ],
-      "estimated_minutes": 25
+      "estimated_minutes": 30
     },
     {
       "order": 3,
-      "name": "Implement Auth Service API Endpoints",
+      "name": "Create Document Management UI Components",
       "priority": "high",
       "category": "feature",
-      "description": "Implement missing HTTP handlers in services/auth-service/handlers/. Create register.go, login.go, logout.go, refresh_token.go, and profile.go. Each handler should: validate request JSON, call auth-service business logic, return proper HTTP status codes (200/201/400/401/500), and return JSON responses. Add the handlers to services/auth-service/main.go router. Run 'go build ./services/auth-service' to verify compilation.",
+      "description": "Create React components for document storage in web/dashboard/src/features/documents/. Create: Documents.tsx main listing page, DocumentCard.tsx for document preview cards, DocumentUpload.tsx with drag-drop file upload, DocumentViewer.tsx for viewing document details. Add types.ts with Document, UploadMetadata interfaces. Implement API calls to storage-service (GET /api/documents, POST /api/documents, GET /api/documents/{id}). Display file name, size, upload date, encryption status. Add download button functionality. Run npm run type-check to verify.",
       "success_criteria": [
-        "auth-service compiles without errors",
-        "All auth endpoints register in main.go router"
+        "Documents.tsx lists documents",
+        "DocumentUpload.tsx handles file uploads",
+        "TypeScript compiles"
       ],
-      "estimated_minutes": 20
+      "estimated_minutes": 30
     },
     {
       "order": 4,
-      "name": "Create Dashboard Auth Components",
+      "name": "Create Dashboard UI & Analytics Components",
       "priority": "high",
       "category": "feature",
-      "description": "Create React authentication components in web/dashboard/src/features/auth/. Create: LoginForm.tsx with email/password fields and submit button, RegisterForm.tsx with name/email/password fields, ProtectedRoute.tsx wrapper component, useAuth.ts hook for auth state management. Each component should use React hooks (useState, useEffect) and TypeScript interfaces for props. Add proper TypeScript types in web/dashboard/src/types/auth.ts. Run 'cd web/dashboard && npm run type-check' to verify.",
+      "description": "Create React components for dashboard home and analytics in web/dashboard/src/features/dashboard/. Create: DashboardHome.tsx with stats cards (total jobs, active devices, storage used), StatCard.tsx reusable metric display component, RecentActivity.tsx showing recent job events, JobChart.tsx using a simple chart library or CSS for job statistics visualization. Add types.ts with DashboardStats, Activity types. Fetch data from analytics-service and job-service APIs. Implement responsive grid layout for stat cards. Run npm run type-check to verify.",
       "success_criteria": [
-        "4+ new .tsx/.ts files in web/dashboard",
-        "npm run type-check passes with no errors"
+        "DashboardHome.tsx displays stats",
+        "StatCard.tsx reusable component",
+        "RecentActivity.tsx shows events"
       ],
-      "estimated_minutes": 20
+      "estimated_minutes": 30
     },
     {
       "order": 5,
-      "name": "Create Dashboard Job Management UI",
-      "priority": "high",
+      "name": "Create Settings & User Profile Components",
+      "priority": "medium",
       "category": "feature",
-      "description": "Create React job management components in web/dashboard/src/features/jobs/. Create: JobList.tsx displaying jobs in a table with status badges, JobDetails.tsx showing individual job info, CreateJobForm.tsx with file upload and printer selection, useJobs.ts hook for API calls. Add types in web/dashboard/src/types/jobs.ts. Include error handling, loading states, and proper TypeScript interfaces. Run 'cd web/dashboard && npm run type-check' and 'npm run build' to verify.",
+      "description": "Create React components for settings and user management in web/dashboard/src/features/settings/. Create: Settings.tsx main settings page with tabs, ProfileSettings.tsx for user profile editing form, SecuritySettings.tsx for password change and 2FA toggle, OrganizationSettings.tsx for org info and member management. Add types.ts with User, Organization, Settings types. Implement API calls to auth-service (PUT /api/user/profile, PUT /api/user/password). Form validation with proper error handling. Save functionality with toast notifications. Run npm run type-check to verify.",
       "success_criteria": [
-        "4+ new job-related .tsx/.ts files",
-        "Dashboard builds successfully"
+        "Settings.tsx with tabbed interface",
+        "ProfileSettings.tsx saves to API",
+        "Form validation works"
       ],
-      "estimated_minutes": 25
+      "estimated_minutes": 30
     }
   ],
   "project_health": {
-    "score": 56,
+    "score": 70,
     "critical_issues": [
-      "3 failing integration tests (TestRegistryServiceEndpoints, TestEndToEndWorkflow)",
-      "Frontend completely missing (0% of 28 files)",
-      "12/14 migration files missing",
-      "API endpoints not implemented (0% of 17)"
+      "Frontend completely missing (0/28 files) - 15% weight lost",
+      "Multiple backend services incomplete (gateway, analytics, notification, organization) - 15% endpoint weight lost"
     ],
     "strengths": [
-      "Docker configuration complete (6 Dockerfiles, compose exists)",
-      "Project structure and CLAUDE.md documentation established",
-      "Some tests passing (14/19)"
+      "Core services (auth, registry, job, storage) have working endpoints",
+      "Tests passing (15/15)",
+      "Docker configuration complete"
     ]
   },
-  "rationale": "Tasks ordered to maximize completion % gain: (1) Fix tests first to unblock CI (+5 pts), (2) Create migrations for +8.6 pts, (3) Implement auth endpoints for partial endpoints credit, (4-5) Build frontend components targeting the 15% frontend_files weight which is currently at 0%. Avoids already-complete areas (docker, backend structure) and focuses on the four dimensions losing the most points: frontend (15%), endpoints (15%), migrations (10%), tests (10%)."
+  "rationale": "These 5 tasks focus on frontend_files dimension (15% weight) which is at 0%. Creating ~15-20 React/TypeScript files will significantly boost completion score. All tasks are completable in single Claude Code sessions and directly address the highest-impact gap. Backend endpoint gaps will be addressed after frontend foundation is established."
 }
