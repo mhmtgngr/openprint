@@ -22,8 +22,10 @@
     },
     "testing": {
       "status": "running",
-      "_updated": "2026-02-28T17:38:26.911767",
-      "write_tests": "done"
+      "_updated": "2026-02-28T17:41:33.170189",
+      "write_tests": "done",
+      "unit_tests": "failed",
+      "e2e": "skipped"
     }
   },
   "project": "Create comprehensive test infrastructure for all repository tests. Create internal/testutil package with database helpers, Redis helpers using testcontainers, and mock S3 storage for storage-service tests. Add Makefile targets: 'make test-db' starts PostgreSQL and Redis, 'make test-all' runs all tests with dependencies, 'make test-integration' runs only integration tests. Add scripts/test-env.sh for quick test environment bootstrap. Document test setup in CONTRIBUTING.md. This ensures any developer can run full test suite without manual infrastructure setup.",
