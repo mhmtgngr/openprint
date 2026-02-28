@@ -1,15 +1,19 @@
-Done. I've split the auth-service handlers into separate files:
+Done. Created React document storage components in `web/dashboard/src/features/documents/`:
 
-**Created files:**
-- `services/auth-service/handler/register.go` - Register handler (POST /auth/register)
-- `services/auth-service/handler/login.go` - Login handler (POST /auth/login)
-- `services/auth-service/handler/logout.go` - Logout handler (POST /auth/logout)
-- `services/auth-service/handler/refresh_token.go` - Refresh token handler (POST /auth/refresh)
-- `services/auth-service/handler/profile.go` - Get current user handler (GET /auth/me)
+**Files created:**
+- `types.ts` - Document, UploadMetadata interfaces with utility functions
+- `api.ts` - API calls to storage-service (GET/POST/DELETE `/documents`)
+- `DocumentCard.tsx` - Preview cards with file metadata
+- `DocumentUpload.tsx` - Drag-drop file upload with progress tracking
+- `DocumentViewer.tsx` - Modal viewer with PDF/image preview
+- `Documents.tsx` - Main listing page with search, pagination, stats
+- `index.ts` - Export file
 
-**Modified file:**
-- `services/auth-service/handler/http.go` - Now contains only shared types, OIDC/SAML handlers, and helper functions
-
-Each handler validates request JSON, calls auth-service business logic, returns proper HTTP status codes (200/201/400/401/500), and returns JSON responses. The build succeeded and all tests passed.
-
-Committed as `c5498ee5`.
+**Features:**
+- File name, size, upload date, checksum display
+- Encryption status indicator
+- Download button (triggers browser download via blob)
+- PDF preview via iframe, image thumbnails
+- Pagination (50 items per page)
+- Search/filter by filename
+- Stats dashboard (total docs, storage used, encrypted count)
