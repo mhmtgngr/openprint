@@ -3,6 +3,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -11,6 +13,70 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// testDB holds the test database connection and cleanup function.
+type testDB struct {
+	pool *pgxpool.Pool
+	cleanup func()
+}
+
+// setupEnrollmentTokenTestDBFull creates a test database connection with environment-aware DSN.
+// It checks for DATABASE_URL env var, then defaults to localhost:15432 (Docker external port).
+func setupEnrollmentTokenTestDBFull(t *testing.T) *testDB {
+	t.Helper()
+
+	ctx := context.Background()
+	var dbURL string
+
+	// Check for DATABASE_URL environment variable first
+	if envURL := os.Getenv("DATABASE_URL"); envURL != "" {
+		dbURL = envURL
+	} else {
+		// Default to Docker external port for PostgreSQL
+		dbURL = "postgres://openprint:openprint@localhost:15432/openprint?sslmode=disable"
+	}
+
+	// Try to connect to the database
+	config, err := pgxpool.ParseConfig(dbURL)
+	if err != nil {
+		t.Skipf("unable to parse database URL: %v", err)
+		return nil
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		t.Skipf("database not available for testing: %v", err)
+		return nil
+	}
+
+	// Verify connection is alive
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		t.Skipf("database ping failed: %v", err)
+		return nil
+	}
+
+	// Clean up test data from previous runs to avoid duplicate key errors
+	_, _ = pool.Exec(ctx, "DELETE FROM enrollment_tokens WHERE token LIKE 'test-%' OR token LIKE 'find-%' OR token LIKE 'valid-%' OR token LIKE 'expired-%' OR token LIKE 'revoke-%' OR token LIKE 'max-%' OR token LIKE 'org-%' OR token LIKE 'increment-%' OR token LIKE 'list-%' OR token LIKE 'other-%'")
+
+	// Cleanup function to close the pool
+	cleanup := func() {
+		pool.Close()
+	}
+
+	return &testDB{
+		pool:    pool,
+		cleanup: cleanup,
+	}
+}
+
+// teardownEnrollmentTokenTestDB closes the test database connection.
+func teardownEnrollmentTokenTestDB(t *testing.T, db *testDB) {
+	t.Helper()
+	if db != nil && db.cleanup != nil {
+		db.cleanup()
+	}
+}
+
 // TestEnrollmentTokenRepository_Create tests creating a new enrollment token.
 func TestEnrollmentTokenRepository_Create(t *testing.T) {
 	if testing.Short() {
@@ -18,8 +84,11 @@ func TestEnrollmentTokenRepository_Create(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := setupEnrollmentTokenTestDB(t)
-	repo := NewEnrollmentTokenRepository(db)
+	db := setupEnrollmentTokenTestDBFull(t)
+	defer teardownEnrollmentTokenTestDB(t, db)
+	require.NotNil(t, db.pool, "database pool should not be nil")
+
+	repo := NewEnrollmentTokenRepository(db.pool)
 
 	token := &EnrollmentToken{
 		Token:         "test-token-" + time.Now().Format("20060102150405"),
@@ -43,8 +112,11 @@ func TestEnrollmentTokenRepository_FindByToken(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := setupEnrollmentTokenTestDB(t)
-	repo := NewEnrollmentTokenRepository(db)
+	db := setupEnrollmentTokenTestDBFull(t)
+	defer teardownEnrollmentTokenTestDB(t, db)
+	require.NotNil(t, db.pool, "database pool should not be nil")
+
+	repo := NewEnrollmentTokenRepository(db.pool)
 
 	// Create a token first
 	token := &EnrollmentToken{
@@ -72,8 +144,11 @@ func TestEnrollmentTokenRepository_Validate(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := setupEnrollmentTokenTestDB(t)
-	repo := NewEnrollmentTokenRepository(db)
+	db := setupEnrollmentTokenTestDBFull(t)
+	defer teardownEnrollmentTokenTestDB(t, db)
+	require.NotNil(t, db.pool, "database pool should not be nil")
+
+	repo := NewEnrollmentTokenRepository(db.pool)
 
 	t.Run("valid token", func(t *testing.T) {
 		token := &EnrollmentToken{
@@ -182,8 +257,11 @@ func TestEnrollmentTokenRepository_IncrementUseCount(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := setupEnrollmentTokenTestDB(t)
-	repo := NewEnrollmentTokenRepository(db)
+	db := setupEnrollmentTokenTestDBFull(t)
+	defer teardownEnrollmentTokenTestDB(t, db)
+	require.NotNil(t, db.pool, "database pool should not be nil")
+
+	repo := NewEnrollmentTokenRepository(db.pool)
 
 	token := &EnrollmentToken{
 		Token:         "increment-test-token",
@@ -215,8 +293,11 @@ func TestEnrollmentTokenRepository_Revoke(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := setupEnrollmentTokenTestDB(t)
-	repo := NewEnrollmentTokenRepository(db)
+	db := setupEnrollmentTokenTestDBFull(t)
+	defer teardownEnrollmentTokenTestDB(t, db)
+	require.NotNil(t, db.pool, "database pool should not be nil")
+
+	repo := NewEnrollmentTokenRepository(db.pool)
 
 	token := &EnrollmentToken{
 		Token:         "revoke-token",
@@ -246,13 +327,16 @@ func TestEnrollmentTokenRepository_List(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := setupEnrollmentTokenTestDB(t)
-	repo := NewEnrollmentTokenRepository(db)
+	db := setupEnrollmentTokenTestDBFull(t)
+	defer teardownEnrollmentTokenTestDB(t, db)
+	require.NotNil(t, db.pool, "database pool should not be nil")
+
+	repo := NewEnrollmentTokenRepository(db.pool)
 
 	// Create tokens for two orgs
 	for i := 0; i < 3; i++ {
 		token := &EnrollmentToken{
-			Token:         "list-test-token-" + string(rune('a'+i)),
+			Token:         fmt.Sprintf("list-test-token-%c", 'a'+i),
 			OrganizationID: "org-123",
 			Name:          "List Test Token",
 			CreatedBy:     "admin@example.com",
@@ -280,13 +364,12 @@ func TestEnrollmentTokenRepository_List(t *testing.T) {
 }
 
 // setupEnrollmentTokenTestDB creates a test database connection.
+// Deprecated: Use setupEnrollmentTokenTestDBFull instead.
 func setupEnrollmentTokenTestDB(t *testing.T) *pgxpool.Pool {
-	// In a real setup, this would create a test database
-	// For now, we'll use a mock or skip if no DB is available
-	dbURL := "postgres://openprint:openprint@localhost:5432/openprint?sslmode=disable"
-	db, err := pgxpool.New(context.Background(), dbURL)
-	if err != nil {
-		t.Skip("database not available for testing")
+	t.Helper()
+	db := setupEnrollmentTokenTestDBFull(t)
+	if db == nil {
+		return nil
 	}
-	return db
+	return db.pool
 }
