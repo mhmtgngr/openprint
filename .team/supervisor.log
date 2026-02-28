@@ -192,3 +192,73 @@
 [0;32m[SUP 05:05:05][0m 📬 Preparing pull request...
 [0;32m[SUP 05:05:05][0m   📄 PR → /home/cmit/openprint/.team/pr/PR_DESCRIPTION.md
 [0;32m[SUP 05:05:05][0m   ⏱ Smart improve done in 0m 13s
+[0;32m[SUP 11:50:45][0m 🎬 DEMO: Running live demonstrations...
+[0;32m[SUP 11:50:45][0m   ❌ :15432
+[0;32m[SUP 11:50:45][0m   ❌ :16379
+[0;32m[SUP 11:50:45][0m   ✅ :18001
+[0;32m[SUP 11:50:45][0m   ✅ :18005
+[0;32m[SUP 11:50:45][0m   ✅ :8002
+[0;32m[SUP 11:50:45][0m   ✅ :8003
+[0;32m[SUP 11:50:45][0m   ✅ :8004
+[0;32m[SUP 11:50:50][0m   🎬 Demo report → /home/cmit/openprint/.team/demo/demo_report.md
+[0;32m[SUP 11:52:10][0m ╔═══════════════════════════════════════════════════════╗
+[0;32m[SUP 11:52:10][0m ║  🚀 FULL IMPROVEMENT: 2 dev + 5 project       ║
+[0;32m[SUP 11:52:10][0m ╠═══════════════════════════════════════════════════════╣
+[0;32m[SUP 11:52:10][0m ║  TRACK A: 🔧 dev.sh (2 steps)                      ║
+[0;32m[SUP 11:52:10][0m ║  TRACK B: 📦 Project (5 phases)                       ║
+[0;32m[SUP 11:52:10][0m ╚═══════════════════════════════════════════════════════╝
+[0;32m[SUP 11:52:10][0m 
+[0;32m[SUP 11:52:10][0m ╔═══════════════════════════════════════════════╗
+[0;32m[SUP 11:52:10][0m ║  🔧 DEV.SH IMPROVEMENT PIPELINE (2 steps)      ║
+[0;32m[SUP 11:52:10][0m ╚═══════════════════════════════════════════════╝
+[0;32m[SUP 11:52:10][0m 🔬 A1: ANALYZING master dev.sh (/home/cmit/dev.sh)...
+[0;32m[SUP 11:52:10][0m 📊 DEV.SH ANALYSIS:
+[0;32m[SUP 11:52:10][0m   Lines: 2622 | Functions: 67
+[0;32m[SUP 11:52:10][0m   Pipes: 32 raw, 139 safe | Timeouts: 10
+[0;32m[SUP 11:52:10][0m   Crashes: Terminated=0 Retries=10 Stuck=0
+[0;32m[SUP 11:52:10][0m   Errors: By phase: testing:3, backend:1, deploy:1, ⚙️  Backend:1, 🎨 Frontend:1
+By type:  go_test_fail:3, claude_terminated:2, compile_fail:1, docker_build_fail:1
+Total: 7 errors
+[0;32m[SUP 11:52:10][0m   🏆 Process Score: 90/100
+[0;32m[SUP 11:52:10][0m 🧠 A2: PLANNING 2 dev.sh improvements...
+[0;32m[SUP 11:52:40][0m 📋 Dev.sh improvement plan:
+[0;32m[SUP 11:52:40][0m 🚀 A3: EXECUTING dev.sh improvements...
+[0;32m[SUP 11:52:40][0m ┌───────────────────────────────────────┐
+[0;32m[SUP 11:52:40][0m │  Step 1/2: Universal health check configuration
+[0;32m[SUP 11:52:40][0m │  Target: detect_service_ports (lines ~650-680), phase_deploy (lines ~1170-1180, ~2190-2210)
+[0;32m[SUP 11:52:40][0m └───────────────────────────────────────┘
+[0;32m[SUP 11:54:35][0m   ✓ Step 1 applied: Universal health check configuration
+[0;32m[SUP 11:54:38][0m ┌───────────────────────────────────────┐
+[0;32m[SUP 11:54:38][0m │  Step 2/2: Safe pipe wrappers for grep/find/awk
+[0;32m[SUP 11:54:38][0m │  Target: Global utility functions (after line ~100)
+[0;32m[SUP 11:54:38][0m └───────────────────────────────────────┘
+[0;32m[SUP 11:57:28][0m   ✓ Step 2 applied: Safe pipe wrappers for grep/find/awk
+[0;32m[SUP 11:57:30][0m   Dev.sh improvements: 2 applied, 0 failed out of 2
+[0;32m[SUP 11:57:30][0m ✅ A4: VERIFYING dev.sh...
+[0;32m[SUP 11:57:30][0m   ✓ Syntax: PASS
+[0;32m[SUP 11:57:30][0m   Functions: 80
+[0;32m[SUP 11:57:30][0m   Pipe safety: 149 safe, 21 raw pipes
+[0;32m[SUP 11:57:30][0m   Lines: 2727
+[0;32m[SUP 11:57:30][0m   🏆 Dev.sh Score: 100/100
+[0;32m[SUP 11:57:30][0m 📋 Syncing master dev.sh to all projects...
+[0;32m[SUP 11:57:30][0m   ✓ /home/cmit/openidx
+[0;32m[SUP 11:57:30][0m   ✓ /home/cmit/openpam
+[0;32m[SUP 11:57:30][0m   ✓ /home/cmit/openprint
+[0;32m[SUP 11:57:30][0m   Synced to 3 projects
+[0;32m[SUP 11:57:30][0m   Dev.sh pipeline done in 5m 20s
+[0;32m[SUP 11:57:30][0m ╔═══════════════════════════════════════════════╗
+[0;32m[SUP 11:57:30][0m ║  📦 PROJECT IMPROVEMENT (5 phases)             ║
+[0;32m[SUP 11:57:30][0m ╚═══════════════════════════════════════════════╝
+[0;32m[SUP 11:57:30][0m 🔍 DIAGNOSING project...
+[0;32m[SUP 11:57:37][0m 📊 DIAGNOSIS:
+[0;32m[SUP 11:57:37][0m   Code:    69 .go + 88 .ts/tsx + 23 tests
+[0;32m[SUP 11:57:37][0m   Build:   yes | Tests: fail (13/33)
+[0;32m[SUP 11:57:37][0m   TODOs:   5 | Docker: 6 files
+[0;32m[SUP 11:57:37][0m   ⚠ Test failures found
+[0;32m[SUP 11:57:37][0m 🧠 PLANNING 5 improvement phases...
+[0;32m[SUP 11:58:27][0m 📋 Planned phases:
+[0;32m[SUP 11:58:27][0m 🚀 EXECUTING planned phases...
+[0;32m[SUP 11:58:27][0m ╔═══════════════════════════════════════╗
+[0;32m[SUP 11:58:27][0m ║  ROUND 1/5: Fix Database Tests
+[0;32m[SUP 11:58:27][0m ║  Category: test
+[0;32m[SUP 11:58:27][0m ╚═══════════════════════════════════════╝

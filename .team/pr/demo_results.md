@@ -1,4 +1,4 @@
-# 🎬 Demo Report — 2026-02-28 05:04
+# 🎬 Demo Report — 2026-02-28 11:50
 
 ## Service Health
 ```
@@ -12,24 +12,24 @@
 ```
 ## Test Results
 ```
-?   	github.com/openprint/openprint/internal/middleware	[no test files]
-ok  	github.com/openprint/openprint/internal/shared/errors	0.010s
-?   	github.com/openprint/openprint/internal/shared/middleware	[no test files]
-ok  	github.com/openprint/openprint/internal/shared/telemetry	0.032s
-?   	github.com/openprint/openprint/services/auth-service	[no test files]
-?   	github.com/openprint/openprint/services/auth-service/handler	[no test files]
-ok  	github.com/openprint/openprint/services/auth-service/repository	0.008s
-?   	github.com/openprint/openprint/services/job-service	[no test files]
-ok  	github.com/openprint/openprint/services/job-service/handler	0.015s
-ok  	github.com/openprint/openprint/services/job-service/processor	0.009s
-ok  	github.com/openprint/openprint/services/job-service/repository	0.012s
+--- FAIL: TestJobAssignmentRepository_UpdateHeartbeat (0.00s)
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_IncrementRetry (0.00s)
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_SetError (0.00s)
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+--- FAIL: TestJobAssignmentRepository_GetStaleAssignments (0.00s)
+    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused
+FAIL
+FAIL	github.com/openprint/openprint/services/job-service/repository	0.016s
 ?   	github.com/openprint/openprint/services/notification-service	[no test files]
-ok  	github.com/openprint/openprint/services/notification-service/websocket	0.025s
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.023s
 ?   	github.com/openprint/openprint/services/registry-service	[no test files]
 ?   	github.com/openprint/openprint/services/registry-service/handler	[no test files]
 ok  	github.com/openprint/openprint/services/registry-service/repository	0.012s
 ?   	github.com/openprint/openprint/services/storage-service	[no test files]
-ok  	github.com/openprint/openprint/services/storage-service/handler	0.010s
-ok  	github.com/openprint/openprint/services/storage-service/storage	0.240s
-ok  	github.com/openprint/openprint/tests/integration	2.905s
+ok  	github.com/openprint/openprint/services/storage-service/handler	0.017s
+ok  	github.com/openprint/openprint/services/storage-service/storage	0.233s
+ok  	github.com/openprint/openprint/tests/integration	2.844s
+FAIL
 ```

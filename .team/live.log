@@ -669,3 +669,30 @@ This converts empty strings to NULL before casting to UUID, which PostgreSQL acc
 [0;32m[07:54:59][0m   ✓ :8003
 [0;32m[07:54:59][0m   ✓ :8004
 [0;32m[07:54:59][0m   Health: 5/7
+[0;32m[07:54:59][0m   ✓ Merged → main
+[0;32m[07:54:59][0m   🟢 Services running. Stop: ./dev.sh stop-services
+[0;32m[07:54:59][0m ✅ Deploy done
+[0;32m[07:54:59][0m 
+[0;32m[07:54:59][0m ╔═══════════════════════════════════════════════╗
+[0;32m[07:54:59][0m ║   🎉 PROJECT COMPLETE                         ║
+[0;32m[07:54:59][0m ╚═══════════════════════════════════════════════╝
+[0;32m[07:54:59][0m   Time:      1h 36m
+[0;32m[07:54:59][0m   Loops:     0
+[0;32m[07:54:59][0m   Branch:    team/windows-print-agent-with-printer-discove-1772259498 → main
+[0;32m[07:54:59][0m   Artifacts: /home/cmit/openprint/.team/artifacts/
+[0;32m[07:54:59][0m   Next:      ./dev.sh start "next feature"
+[0;31m[11:32:25][0m ⚠️  RUNNING INSIDE CLAUDE CODE SESSION
+[0;31m[11:32:25][0m    dev.sh spawns 'claude' commands which will fail.
+[0;31m[11:32:25][0m    Run this script from a regular terminal:
+[0;31m[11:32:25][0m    $ ./dev.sh status
+[0;31m[11:32:25][0m 
+[0;31m[11:32:25][0m    To bypass this check (NOT RECOMMENDED), run:
+[0;31m[11:32:25][0m    $ unset CLAUDECODE && ./dev.sh status
+[0;32m[11:52:10][0m ✓ go go1.24.0
+[0;32m[11:52:10][0m ✓ node v18.19.1
+[0;32m[11:52:10][0m ✓ go go1.24.0
+[0;32m[11:52:10][0m ✓ node v18.19.1
+[0;35m[11:58:27][0m [1;37m🧪 Tester[0m Working...
+- `TestEnrollmentTokenRepository_IncrementUseCount`
+- `TestEnrollmentTokenRepository_Revoke`
+- `TestEnrollmentTokenRepository_List`

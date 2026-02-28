@@ -95,7 +95,19 @@
       "category": "project",
       "result": "done",
       "timestamp": "2026-02-28T04:52:18.639457"
+    },
+    {
+      "description": "Dev: Universal health check configuration \u2014 Replace hardcoded '/health' endpoint checks with configurable HEALTH_CHECK_PATH and HEALTH_CHECK_TIMEOUT variables. Add skip-health-check flag for projects without health endpoints. Default: HEALTH_CHECK_PATH='/health', HEALTH_CHECK_TIMEOUT=5. Transform 4 hardcoded curl -sf --max-time N \"http://localhost:${port}/health\" calls to use ${HEALTH_CHECK_PATH} and ${HEALTH_CHECK_TIMEOUT}.",
+      "category": "team",
+      "result": "done",
+      "timestamp": "2026-02-28T11:54:35.891228"
+    },
+    {
+      "description": "Dev: Safe pipe wrappers for grep/find/awk \u2014 Add safe_pipe() helper function that appends '|| true' to any command and captures exit code. Create wrappers: safe_grep(), safe_find(), safe_awk() that auto-handle pipefail. Then transform the 32 unsafe raw pipes (identified in analysis) to use these wrappers. Pattern: change 'grep -n \"pattern\" file | head -10' to 'safe_grep -n \"pattern\" file | head -10 || true'. Add comment '# safe_pipe: no fail on empty results' for clarity.",
+      "category": "team",
+      "result": "done",
+      "timestamp": "2026-02-28T11:57:28.139098"
     }
   ],
-  "current_round": 16
+  "current_round": 18
 }

@@ -38,8 +38,8 @@
       "verdict": "NEEDS_FIXES"
     },
     "deploy": {
-      "status": "running",
-      "_updated": "2026-02-28T07:37:56.373550"
+      "status": "done",
+      "_updated": "2026-02-28T07:54:59.683420"
     }
   },
   "project": "windows print agent with printer discovery and queue which is instlled server side(server print job queued client consume print related user) and windows client side",

@@ -1,20 +1,28 @@
-Done! Created the React dashboard app shell with the following files:
+Done! Fixed all failing `enrollment_token_test.go` tests. Here's what was done:
 
-**Created:**
-- `web/dashboard/src/layouts/DashboardLayout.tsx` - Layout with sidebar navigation, header, and user menu
-- `web/dashboard/src/layouts/PublicLayout.tsx` - Layout for unauthenticated pages
-- `web/dashboard/src/router/index.tsx` - Navigation configuration
-- `web/dashboard/src/pages/Documents.tsx` - Documents page component
+**Changes made to `services/auth-service/repository/enrollment_token_test.go`:**
 
-**Updated:**
-- `web/dashboard/src/App.tsx` - Reorganized with `ProtectedRoute` and `AdminRoute` wrappers
-- `web/dashboard/src/components/icons/index.tsx` - Added `FolderIcon`
+1. **Added `testDB` struct** - Wraps the connection pool with a cleanup function
 
-**Navigation items:**
-- Dashboard (`/dashboard`)
-- Jobs (`/jobs`)
-- Devices (`/printers`)
-- Documents (`/documents`)
-- Settings (`/settings`)
+2. **Added `setupEnrollmentTokenTestDBFull()`** - Environment-aware database setup:
+   - Checks `DATABASE_URL` env var first
+   - Defaults to `localhost:15432` (Docker external port)
+   - Verifies connection with `Ping()`
+   - Cleans up test data from previous runs to avoid duplicate key errors
 
-TypeScript compilation passes (`npm run type-check` ✓)
+3. **Added `teardownEnrollmentTokenTestDB()`** - Properly closes the connection pool
+
+4. **Updated all test functions** - Use the new setup/teardown helpers with `defer`
+
+**Test Results:**
+```
+ok  github.com/openprint/openprint/services/auth-service/repository 0.119s
+```
+
+All 5 test functions pass (with subtests):
+- `TestEnrollmentTokenRepository_Create`
+- `TestEnrollmentTokenRepository_FindByToken`
+- `TestEnrollmentTokenRepository_Validate` (with 6 subtests)
+- `TestEnrollmentTokenRepository_IncrementUseCount`
+- `TestEnrollmentTokenRepository_Revoke`
+- `TestEnrollmentTokenRepository_List`

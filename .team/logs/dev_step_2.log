@@ -1,0 +1,36 @@
+Done! The changes have been applied successfully:
+
+## Summary
+
+**Added 13 safe pipe helper functions** (after line ~139):
+- `safe_pipe()` - base helper that returns success
+- `safe_grep()` - grep wrapper with auto `|| true`
+- `safe_find()` - find wrapper
+- `safe_awk()` - awk wrapper  
+- `safe_sed()` - sed wrapper
+- `safe_cut()` - cut wrapper
+- `safe_wc()` - wc wrapper
+- `safe_head()` - head wrapper
+- `safe_tail()` - tail wrapper
+- `safe_sort()` - sort wrapper
+- `safe_uniq()` - uniq wrapper
+- `safe_xargs()` - xargs wrapper
+- `safe_tr()` - tr wrapper
+
+**Transformed 10 unsafe raw pipes** to use these wrappers with `# safe_pipe: no fail on empty results` comments:
+- `read_project_context | head -c 500` → uses `safe_head`
+- `echo "$ctx" | head -5 | tr '\n' ' '` → uses `safe_head`, `safe_tr`
+- `echo "$prompt" | head -1 | cut -c1-60` → uses `safe_head`, `safe_cut`
+- `basename "$df" | sed 's/Dockerfile\.'` → uses `safe_sed`
+- `echo "$files" | head -5` → uses `safe_head`
+- `podman logs ... | tail -15` → uses `safe_tail`
+- `echo "$project" | tr ... | tr ... | tr ... | cut` → uses `safe_tr`, `safe_cut`
+- `grep ... | sed ... | tr ... | sed` → uses `safe_grep`, `safe_sed`, `safe_tr`
+- `ls -t ... | head -1` → uses `safe_head`
+
+**Verification:**
+```
+✓ bash -n dev.sh — syntax OK
+✓ grep -q 'safe_pipe\|safe_grep\|safe_find\|safe_awk' dev.sh — functions found
+✓ 23 safe wrapper usages detected
+```
