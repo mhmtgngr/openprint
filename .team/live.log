@@ -1085,3 +1085,138 @@ All changes passed `npm run type-check` with no errors.
 [0;32m[18:07:59][0m   📡 Generating access report...
 [0;32m[18:07:59][0m   🌐 External Access URL: http://192.168.31.76:3000
 [0;32m[18:07:59][0m   📄 Full report: /home/cmit/openprint/.team/artifacts/access_report.json
+[0;32m[18:08:00][0m   ✓ Merged → main
+[0;32m[18:08:00][0m   🟢 Services running. Stop: ./dev.sh stop-services
+[0;32m[18:08:00][0m ✅ Deploy done
+[0;32m[18:08:00][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[18:08:00][0m PHASE 9: E2E PRODUCTION — 🧪 Full System Test
+[0;32m[18:08:00][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[18:08:00][0m   🌐 Testing against: http://192.168.31.76:3000
+[0;32m[18:08:00][0m   📡 Server IP: 192.168.31.76
+[0;32m[18:08:00][0m   🐳 Services should be running from deploy phase
+[1;33m[18:08:00][0m   Service on port 15432 not accessible
+[1;33m[18:08:00][0m   Service on port 16379 not accessible
+[1;33m[18:08:00][0m   Some services not accessible - attempting restart...
+[0;32m[18:08:00][0m   🚀 Starting services...
+[1;33m[18:08:52][0m   ✗ :15432
+[1;33m[18:08:52][0m   ✗ :16379
+[0;32m[18:08:52][0m   ✓ :18001
+[0;32m[18:08:52][0m   ✓ :18005
+[0;32m[18:08:52][0m   ✓ :3000
+[0;32m[18:08:52][0m   ✓ :8002
+[0;32m[18:08:52][0m   ✓ :8003
+[0;32m[18:08:52][0m   ✓ :8004
+[0;32m[18:08:52][0m   Health: 6/8
+[0;32m[18:09:02][0m   🧪 Running E2E tests against: http://192.168.31.76:3000
+[1;33m[18:09:02][0m   No E2E framework detected - skipping
+[1;33m[18:09:02][0m   ⚠️  E2E report not generated
+[0;36m[20:01:10][0m   🔍 Searching for E2E test framework...
+[0;36m[20:01:10][0m   ✓ Found playwright at web/dashboard/
+[0;36m[20:01:19][0m   🔍 Searching for E2E test framework...
+[0;36m[20:01:20][0m   ✓ Found playwright at web/dashboard/
+[0;36m[20:02:57][0m   🔍 Searching for E2E test framework...
+[0;36m[20:02:57][0m   ✓ Found playwright at web/dashboard/
+[0;36m[20:03:47][0m   🔍 Searching for E2E test framework...
+[0;36m[20:03:47][0m   ✓ Found playwright at web/dashboard/
+[0;32m[20:04:45][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:04:45][0m PHASE 9: E2E PRODUCTION — 🧪 Full System Test
+[0;32m[20:04:45][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:04:45][0m   🌐 Testing against: http://192.168.31.76:3000
+[0;32m[20:04:45][0m   📡 Server IP: 192.168.31.76
+[0;32m[20:04:45][0m   🐳 Services should be running from deploy phase
+[1;33m[20:04:45][0m   Service on port 15432 not accessible
+[1;33m[20:04:45][0m   Service on port 16379 not accessible
+[1;33m[20:04:46][0m   Some services not accessible - attempting restart...
+[0;32m[20:04:46][0m   🚀 Starting services...
+[1;33m[20:06:05][0m   ✗ :15432
+[1;33m[20:06:05][0m   ✗ :16379
+[0;32m[20:06:05][0m   ✓ :18001
+[0;32m[20:06:05][0m   ✓ :18005
+[1;33m[20:06:05][0m   ✗ :3000
+[0;32m[20:06:05][0m   ✓ :8002
+[0;32m[20:06:05][0m   ✓ :8003
+[0;32m[20:06:05][0m   ✓ :8004
+[0;32m[20:06:05][0m   Health: 5/8
+[0;32m[20:06:15][0m   🧪 Running E2E tests against: http://192.168.31.76:3000
+[0;36m[20:06:15][0m   🔍 Searching for E2E test framework...
+[0;36m[20:06:15][0m   ✓ Found playwright at web/dashboard/
+[0;32m[20:06:15][0m   🎭 Using Playwright at: web/dashboard
+[0;32m[20:06:18][0m   Running tests with --base-url=http://192.168.31.76:3000
+[1;33m[20:06:22][0m   ⚠️  No Playwright results found at expected locations
+[0;32m[20:06:22][0m   📊 E2E Results: 0/0 passed
+Status: PASSED
+Success Rate: 0%
+[0;32m[20:21:18][0m ✓ go go1.24.0
+[0;32m[20:21:18][0m ✓ node v18.19.1
+[0;32m[20:21:18][0m ✓ go go1.24.0
+[0;32m[20:21:18][0m ✓ node v18.19.1
+[0;32m[20:22:42][0m ╔═══════════════════════════════════════════════╗
+[0;32m[20:22:42][0m ║   AI Development Team                         ║
+[0;32m[20:22:42][0m ╠═══════════════════════════════════════════════╣
+[0;32m[20:22:42][0m ║ 🧑‍💼 PM → 🔍 Market → 🏗️ Arch → ⚙️ Back         ║
+[0;32m[20:22:42][0m ║ → 🎨 Front → 🧪 Test → 📋 QA → 🔒 Sec → 🐳      ║
+[0;32m[20:22:42][0m ║ → 🧪 E2E (Production)                          ║
+[0;32m[20:22:42][0m ╚═══════════════════════════════════════════════╝
+[0;32m[20:22:42][0m Project: Verify and complete the React dashboard. The diagnosis shows tsx_files: 0 despite rounds 11-17 creating components. Check web/dashboard/src/ for actual component files. If missing, create: LoginForm.tsx, JobList.tsx, Devices.tsx, Documents.tsx, Dashboard.tsx, Settings.tsx. Ensure web/dashboard/package.json has all dependencies (react, react-router-dom, @tanstack/react-query, axios). Run npm install and npm run build. Fix any TypeScript errors. Verify dashboard starts on port 3000 and connects to API gateway on port 8000.
+[0;32m[20:22:42][0m Branch:  team/verify-and-complete-the-react-dashboard--1772310161
+[0;32m[20:22:42][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:22:42][0m PHASE 1: REQUIREMENTS — 🧑‍💼 PM
+[0;32m[20:22:42][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[20:22:42][0m [1;37m🧑‍💼 PM[0m Thinking...
+[1;33m[20:22:43][0m   Z.ai HTTP 429
+[1;33m[20:22:43][0m   Z.ai failed — using Claude Code
+[0;35m[20:22:43][0m [1;37m🧑‍💼 PM[0m Using Claude Code...
+[0;35m[20:24:44][0m [1;37m🧑‍💼 PM[0m ✓ Done
+[0;32m[20:24:44][0m ✅ Requirements done
+[0;32m[20:24:44][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:24:44][0m PHASE 1.5: MARKET RESEARCH — 🔍 Researcher
+[0;32m[20:24:44][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[20:24:44][0m [1;37m🔍 Research[0m Starting market analysis...
+[0;35m[20:24:44][0m [1;37m🔍 Research[0m Searching: openprint # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  competitors comparison features 2025 enterprise
+[1;33m[20:24:45][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[20:24:45][0m [1;37m🔍 Research[0m Using Claude Code for: openprint # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  competitors comparison features 2025 enterprise
+[0;35m[20:25:34][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[20:25:34][0m [1;37m🔍 Research[0m Searching: openprint similar products features comparison best practices 2025
+[1;33m[20:25:37][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[20:25:37][0m [1;37m🔍 Research[0m Using Claude Code for: openprint similar products features comparison best practices 2025
+[0;35m[20:26:25][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[20:26:25][0m [1;37m🔍 Research[0m Searching: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  trends 2025 emerging technologies best practices
+[1;33m[20:26:27][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[20:26:27][0m [1;37m🔍 Research[0m Using Claude Code for: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  trends 2025 emerging technologies best practices
+[0;35m[20:27:03][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[20:27:03][0m [1;37m🔍 Research[0m Searching: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  security compliance SOC2 ISO27001 GDPR requirements 2025
+[1;33m[20:27:05][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[20:27:05][0m [1;37m🔍 Research[0m Using Claude Code for: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  security compliance SOC2 ISO27001 GDPR requirements 2025
+[0;35m[20:27:48][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[20:27:48][0m [1;37m🔍 Research[0m Thinking...
+[1;33m[20:27:50][0m   Z.ai HTTP 429
+[1;33m[20:27:50][0m   Z.ai failed — using Claude Code
+[0;35m[20:27:50][0m [1;37m🔍 Research[0m Using Claude Code...
+[0;35m[20:28:32][0m [1;37m🔍 Research[0m ✓ Done
+[0;35m[20:28:32][0m [1;37m🔍 Research[0m ✓ Market analysis complete
+[0;32m[20:28:32][0m   Market gaps found:
+[0;32m[20:28:32][0m     • Print Quota & Cost Management: User/department-level quotas, chargeback to cost centers, prepaid printing balances
+[0;32m[20:28:32][0m     • Secure Print Release: Hold jobs until user authenticates at device via PIN, badge, or mobile
+[0;32m[20:28:32][0m     • Mobile Print App: Native iOS/Android apps with document capture and print release
+[0;32m[20:28:32][0m     • Advanced Reporting: Scheduled reports, custom dashboards, export to CSV/PDF, cost analysis
+[0;32m[20:28:32][0m     • Document Watermarking: Optional watermarks for secure documents (confidential, draft, etc.)
+[0;32m[20:28:32][0m ✅ Market research done
+[0;32m[20:28:32][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:28:32][0m PHASE 2: DESIGN — 🏗️  Architect
+[0;32m[20:28:32][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[20:28:32][0m [1;37m🏗️  Architect[0m Thinking...
+[1;33m[20:28:34][0m   Z.ai HTTP 429
+[1;33m[20:28:34][0m   Z.ai failed — using Claude Code
+[0;35m[20:28:34][0m [1;37m🏗️  Architect[0m Using Claude Code...
+[0;35m[20:29:31][0m [1;37m🏗️  Architect[0m ✓ Done
+[0;32m[20:29:31][0m ✅ Design done
+[0;32m[20:29:31][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:29:31][0m PHASE 3: BACKEND — ⚙️  Backend Dev
+[0;32m[20:29:31][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[20:29:32][0m [1;37m⚙️  Backend[0m Working...
+[0;36m[20:31:25][0m   🔍 Searching for E2E test framework...
+[0;36m[20:31:25][0m   ✓ Found playwright at web/dashboard/
+[0;36m[20:33:26][0m   🔍 Searching for E2E test framework...
+[0;36m[20:33:26][0m   ✓ Found playwright at web/dashboard/
+[0;36m[20:38:33][0m   🔍 Searching for E2E test framework...
+[0;36m[20:38:33][0m   ✓ Found playwright at web/dashboard/

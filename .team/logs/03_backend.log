@@ -1,46 +1,89 @@
-I have successfully implemented the comprehensive test infrastructure for the OpenPrint Cloud project. Here's a summary of what was created:
+All backend files from the design specification have been implemented. Here's a summary of what was created:
 
-## Test Utilities Package (`internal/testutil/`)
+## Job Service Handlers
 
-| File | Purpose |
-|------|---------|
-| `db.go` (existing) | PostgreSQL testcontainer setup |
-| `migrate.go` (existing) | Database migration helpers |
-| `fixtures.go` (existing) | Test data fixtures |
-| **`redis.go`** | Redis testcontainer setup with pub/sub, cluster, and module support |
-| **`s3.go`** | MinIO/S3 testcontainer setup with bucket/object operations |
-| **`jwt.go`** | JWT token generation helpers with fluent builder API |
-| **`http.go`** | HTTP test server wrapper with request recording |
-| **`context.go`** | Test context management with timeouts/cancellation |
-| **`config.go`** | Test configuration with isolated environment variables |
-| **`assertions.go`** | Custom assertion helpers for cleaner test code |
-| **`metrics.go`** | Test metrics collection and reporting |
+1. **`services/job-service/handlers/quota.go`** - Print quota management endpoints
+   - Check quota availability
+   - List/set/delete quotas
+   - Quota history and summary
+   - Repository: `quota_repository.go`
 
-## Scripts & Build Files
+2. **`services/job-service/handlers/cost.go`** - Cost calculation endpoints
+   - Cost configuration management
+   - Calculate job costs
+   - Cost reports by period/user/printer
+   - Budget allocation tracking
+   - Repository: `cost_repository.go`
 
-| File | Purpose |
-|------|---------|
-| **`scripts/test-env.sh`** | Bootstrap script for Docker/dependency checks |
-| **`Makefile`** | Comprehensive test targets (unit, integration, coverage, race, benchmarks) |
-| **`.github/workflows/test.yml`** | CI/CD pipeline with parallel test jobs |
+3. **`services/job-service/handlers/secure_release.go`** - Secure print release endpoints
+   - Hold jobs for secure release
+   - Release with PIN/card/NFC
+   - Release station management
+   - Repository: `secure_release_repository.go`
 
-## Database Migrations (Market-Driven Features)
+4. **`services/job-service/handlers/reports.go`** - Advanced reporting endpoints
+   - Usage summaries
+   - Top users/printers
+   - Department reports
+   - Environmental impact reports
+   - Trend data and exports
+   - Repository: `reports_repository.go`
 
-| Migration | Features |
-|-----------|----------|
-| `000022_create_print_quotas` | Print quotas, cost tracking, usage limits |
-| `000023_create_print_policies` | Print policy engine with rules and evaluations |
-| `000024_create_secure_release` | Secure print release with PIN/card/NFC |
-| `000025_create_mfa` | MFA support (TOTP, SMS, smart cards, hardware tokens) |
-| `000026_create_analytics` | Daily/weekly/monthly usage aggregation and reporting |
+## Storage Service Handlers
 
-## Makefile Targets
+5. **`services/storage-service/handlers/watermark.go`** - Document watermarking endpoints
+   - Watermark template management
+   - Apply watermarks to documents
+   - Batch operations
+   - Repository: `watermark_repository.go`
 
-```bash
-make test              # Run all tests
-make test-unit         # Unit tests only
-make test-integration  # Integration tests (requires Docker)
-make test-cover        # Generate coverage report
-make test-bench        # Run benchmarks
-make test-env          # Check test environment
-```
+## Auth Service Handlers
+
+6. **`services/auth-service/handlers/sessions.go`** - httpOnly cookie support
+   - Login with cookies
+   - Token refresh via cookies
+   - Session management
+   - Revoke sessions
+
+## Middleware
+
+7. **`internal/middleware/cookie_auth.go`** - Cookie authentication middleware
+   - Authenticate from httpOnly cookies
+   - Fallback to Authorization header
+   - CORS with credentials support
+
+## Registry Service Handlers
+
+8. **`services/registry-service/handlers/mobile.go`** - Mobile app support endpoints
+   - Device registration
+   - Printer pairing via codes
+   - Nearby printers discovery
+   - Push notifications
+
+## API Gateway
+
+9. **`services/api-gateway/main.go`** - API Gateway service
+   - Unified API entry point
+   - Reverse proxy to all services
+   - Request routing
+
+10. **`services/api-gateway/handlers/developer.go`** - Developer portal endpoints
+    - API key management
+    - Usage statistics
+    - Webhook management
+    - API documentation
+
+11. **`services/api-gateway/middleware/rate_limit.go`** - Rate limiting middleware
+12. **`services/api-gateway/middleware/audit.go`** - Audit logging middleware
+
+## Database Migrations
+
+13. **`migrations/000027_create_watermark_templates.up.sql`** - Watermark templates and related tables
+    - Watermark templates
+    - Budget allocations
+    - Scheduled reports
+    - Mobile devices
+    - Push notifications
+    - API keys and usage logs
+    - Webhooks and audit logs
+14. **`migrations/000027_create_watermark_templates.down.sql`** - Rollback migration

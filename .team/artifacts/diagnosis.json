@@ -1,19 +1,19 @@
 {
   "project": {
-    "go_files": 18,
-    "test_files": 23,
+    "go_files": 40,
+    "test_files": 36,
     "tsx_files": 0,
-    "todo_count": 0,
+    "todo_count": 2,
     "build": "yes",
-    "tests": "fail",
-    "test_count": 26,
-    "test_passed": 14,
+    "tests": "pass",
+    "test_count": 16,
+    "test_passed": 16,
     "dockerfiles": 6,
     "compose": "yes",
     "frontend": "no"
   },
   "compile_errors": "",
-  "test_failures": "--- FAIL: TestJobAssignmentRepository_AssignJob (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_UpdateStatus (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_UpdateStatus_SQLInjection (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_FindByAgent (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_FindByJobAndAgent (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_UpdateHeartbeat (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_IncrementRetry (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_SetError (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n--- FAIL: TestJobAssignmentRepository_GetStaleAssignments (0.00s)\n    job_assignment_test.go:359: failed to create test print job: failed to connect to `user=openprint database=openprint`: 127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\nFAIL\nFAIL\tgithub.com/openprint/openprint/services/job-service/repository\t0.018s",
+  "test_failures": "",
   "ts_errors": "",
-  "todos": ""
+  "todos": "/home/cmit/openprint/internal/testutil/migrate.go:19://   XXX_description.up.sql - for applying the migration\n/home/cmit/openprint/internal/testutil/migrate.go:20://   XXX_description.down.sql - for rolling back the migration (not used in tests)"
 }

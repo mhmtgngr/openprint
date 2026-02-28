@@ -2,92 +2,44 @@
   "phases": [
     {
       "order": 1,
-      "name": "Fix Database Connection Tests",
-      "priority": "critical",
-      "category": "test",
-      "description": "Fix 9 failing tests in services/job-service/repository/job_assignment_test.go. All tests fail with 'dial tcp 127.0.0.1:5432: connect: connection refused'. The test suite requires PostgreSQL to be running but it's not available during test execution. Options: 1) Add testcontainers/go for automated PostgreSQL container lifecycle in tests, 2) Add docker-compose.test.yml for test infrastructure, 3) Mock the database layer for unit tests. Implement testcontainers approach as it provides real database testing. Create internal/testutil/db.go with testcontainers setup. Update job_assignment_test.go to use the test database helper. Ensure tests cleanup properly after each test run.",
+      "name": "Complete Frontend Build",
+      "priority": "high",
+      "category": "feature",
+      "description": "Verify and complete the React dashboard. The diagnosis shows tsx_files: 0 despite rounds 11-17 creating components. Check web/dashboard/src/ for actual component files. If missing, create: LoginForm.tsx, JobList.tsx, Devices.tsx, Documents.tsx, Dashboard.tsx, Settings.tsx. Ensure web/dashboard/package.json has all dependencies (react, react-router-dom, @tanstack/react-query, axios). Run npm install and npm run build. Fix any TypeScript errors. Verify dashboard starts on port 3000 and connects to API gateway on port 8000.",
       "success_criteria": [
-        "go test ./services/job-service/repository/... passes all 9 tests",
-        "testcontainers setup works on any developer machine",
-        "tests are isolated and don't interfere with each other"
+        "web/dashboard/src/features/ contains .tsx files",
+        "npm run build completes without errors",
+        "npm run type-check passes",
+        "Dashboard serves at http://localhost:3000"
       ],
       "estimated_minutes": 60
     },
     {
       "order": 2,
-      "name": "Add Test Environment Setup",
+      "name": "End-to-End Testing & Production Readiness",
       "priority": "high",
       "category": "test",
-      "description": "Create comprehensive test infrastructure for all repository tests. Create internal/testutil package with database helpers, Redis helpers using testcontainers, and mock S3 storage for storage-service tests. Add Makefile targets: 'make test-db' starts PostgreSQL and Redis, 'make test-all' runs all tests with dependencies, 'make test-integration' runs only integration tests. Add scripts/test-env.sh for quick test environment bootstrap. Document test setup in CONTRIBUTING.md. This ensures any developer can run full test suite without manual infrastructure setup.",
+      "description": "Add comprehensive E2E test coverage. Create tests/e2e/ directory with Playwright or Cypress tests covering: user registration/login flow, device registration, print job submission (upload document \u2192 select printer \u2192 job created), job status tracking, and WebSocket notifications. Add docker-compose.e2e.yml for isolated test environment. Create E2E test script that: 1) Starts all services, 2) Runs health checks, 3) Executes E2E scenarios, 4) Generates coverage report. Add makefile target 'make test-e2e'. Ensure all 7 services (auth, registry, job, storage, notification, gateway, analytics) pass.",
       "success_criteria": [
-        "make test-all runs all tests without manual setup",
-        "Redis-dependent tests also pass with testcontainers",
-        "CONTRIBUTING.md documents test environment setup"
-      ],
-      "estimated_minutes": 45
-    },
-    {
-      "order": 3,
-      "name": "Implement CI/CD Pipeline",
-      "priority": "high",
-      "category": "devops",
-      "description": "Create GitHub Actions workflow in .github/workflows/ci.yml for continuous integration. Pipeline should: 1) Run go test ./... with testcontainers for database services, 2) Run cd web/dashboard && npm run type-check && npm test, 3) Build all services with go build ./..., 4) Run docker-compose build to verify Dockerfiles, 5) Run security scanning with golangci-lint and npm audit. Add status badges to README.md. Create .github/workflows/release.yml for automated releases on tags. This ensures code quality checks run automatically on every pull request.",
-      "success_criteria": [
-        "CI workflow runs successfully on push to main/PR branches",
-        "All checks (tests, type-check, lint, build) pass in CI",
-        "Status badges displayed in README.md"
-      ],
-      "estimated_minutes": 60
-    },
-    {
-      "order": 4,
-      "name": "Add Service Inter-Communication Tests",
-      "priority": "medium",
-      "category": "test",
-      "description": "Create tests/integration/service_communication_test.go to test inter-service communication. Test auth-service issuing JWT tokens that other services accept. Test job-service calling registry-service for agent discovery. Test notification-service WebSocket connections receiving job status updates. Use testcontainers to spin up all services together. Verify that: 1) Auth tokens propagate correctly between services, 2) Service mesh routing works via gateway, 3) Pub/sub via Redis for async events functions properly. These tests catch integration issues before production.",
-      "success_criteria": [
-        "Inter-service communication tests pass",
-        "JWT auth between services verified",
-        "WebSocket events propagate correctly"
-      ],
-      "estimated_minutes": 75
-    },
-    {
-      "order": 5,
-      "name": "Add Observability Dashboard",
-      "priority": "medium",
-      "category": "feature",
-      "description": "Implement observability features for production monitoring. Add Prometheus metrics endpoint /metrics to all services using prometheus/client_golang. Track: request count, latency, error rate by endpoint. Add structured logging with zap, with trace ID correlation. Create Grafana dashboard configurations in deployments/grafana/dashboards/ for: service health, request metrics, database connection pool, Redis queue depth. Update docker-compose.yml to include Prometheus and Grafana containers. Document metrics in docs/observability.md. This enables production monitoring and debugging.",
-      "success_criteria": [
-        "Each service exposes /metrics endpoint",
-        "Prometheus scrapes all service metrics",
-        "Grafana dashboards display key metrics"
+        "E2E tests cover all user workflows",
+        "All services pass health checks in sequence",
+        "test-e2e make target executes successfully",
+        "Coverage report generated"
       ],
       "estimated_minutes": 90
     },
     {
-      "order": 6,
-      "name": "Implement Rate Limiting",
-      "priority": "medium",
+      "order": 3,
+      "name": "Security Hardening & Production Deployment",
+      "priority": "critical",
       "category": "security",
-      "description": "Add rate limiting middleware to protect against abuse. Create internal/shared/middleware/ratelimit.go using Redis-backed token bucket algorithm. Apply limits: 100 req/min for authenticated users, 10 req/min for unauthenticated. Add special handling for expensive endpoints (document upload, bulk job creation). Configure limits via environment variables: RATE_LIMIT_ENABLED, RATE_LIMIT_AUTHENTICATED, RATE_LIMIT_ANONYMOUS. Add X-RateLimit-* headers to responses. Update tests to verify rate limiting works. This prevents DoS and resource exhaustion.",
+      "description": "Implement production security measures. Add: 1) Rate limiting middleware (5 req/sec for auth, 100 req/sec for others) using internal/middleware/ratelimit.go with Redis backend, 2) Request validation using internal/middleware/validation.go with schemas for all POST/PUT endpoints, 3) Secure headers middleware (CSP, X-Frame-Options, HSTS) in internal/middleware/security.go, 4) Environment-based config (dev/staging/prod) in services/*/config/, 5) Secrets management via environment variables only (no hardcoded secrets), 6) Docker security scan in CI (trivy or snyk). Update docker-compose.prod.yml with: non-root containers, read-only root filesystem where possible, resource limits, health checks with retries.",
       "success_criteria": [
-        "Rate limiting active on all public endpoints",
-        "X-RateLimit headers present in responses",
-        "Tests verify limits are enforced"
-      ],
-      "estimated_minutes": 60
-    },
-    {
-      "order": 7,
-      "name": "Add Kubernetes Deployment Manifests",
-      "priority": "low",
-      "category": "devops",
-      "description": "Create Kubernetes deployment manifests for production deployment. Create deployments/k8s/ directory with: namespace.yaml, configmap.yaml for environment config, secret.yaml for sensitive data, PostgreSQL StatefulSet with persistent volume, Redis deployment, each service's Deployment and Service, gateway Ingress with TLS, HorizontalPodAutoscaler for each service. Add Helm chart in deployments/helm/ for easier installation. Document deployment process in docs/deployment.md. This enables cloud-native deployment on any Kubernetes cluster.",
-      "success_criteria": [
-        "kubectl apply -f deployments/k8s/ deploys all resources",
-        "Services are accessible via Ingress",
-        "Helm chart installs successfully"
+        "Rate limiting prevents >5 auth requests/sec",
+        "All POST endpoints validate input schemas",
+        "Security headers present on all responses",
+        "docker-compose.prod.yml includes resource limits",
+        "No secrets in codebase"
       ],
       "estimated_minutes": 120
     }
@@ -95,17 +47,18 @@
   "project_health": {
     "score": 72,
     "critical_issues": [
-      "9/9 job-service repository tests fail due to PostgreSQL unavailable",
-      "No CI/CD pipeline for automated testing",
-      "No test infrastructure automation for database/Redis dependencies"
+      "Frontend TSX files count is 0 - dashboard may not exist",
+      "No E2E test coverage for critical workflows",
+      "Rate limiting not implemented",
+      "Production deployment config incomplete"
     ],
     "strengths": [
-      "All microservices compile successfully",
-      "Complete frontend UI components with no TODOs",
-      "Comprehensive service architecture (auth, registry, job, storage, notification, gateway, analytics, org)",
-      "Docker deployment configuration exists",
-      "Integration test framework in place"
+      "All 7 microservices compile successfully",
+      "Unit tests pass (16/16)",
+      "Testcontainers integration for database tests",
+      "Docker Compose configuration exists",
+      "Security middleware foundation in place"
     ]
   },
-  "rationale": "Phase 1 addresses the immediate blocker: 9 failing tests due to missing PostgreSQL. Using testcontainers ensures tests work anywhere. Phase 2 extends this to all services for consistent test infrastructure. Phase 3 adds CI/CD to prevent future regressions\u2014critical for team productivity. Phase 4 validates inter-service communication which is a common failure point in microservices. Phase 5 adds observability needed for production operations. Phase 6 adds security hardening with rate limiting. Phase 7 enables production-scale Kubernetes deployment. This ordering follows the rules: fix tests first, then add automation (CI), then validate integration, then production hardening and deployment."
+  "rationale": "Phase 1 addresses the critical frontend gap\u2014diagnosis shows 0 TSX files despite prior rounds creating components. Without a functional UI, the system is incomplete for users. Phase 2 validates the entire system works end-to-end before production. Phase 3 hardens security and deployment, essential for a cloud print platform handling sensitive documents. This order prioritizes: 1) Completeness, 2) Correctness, 3) Security."
 }

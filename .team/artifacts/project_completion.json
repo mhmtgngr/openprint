@@ -1,443 +1,275 @@
 {
-  "timestamp": "2026-02-28T05:04:59.602388",
-  "completion_pct": 100,
+  "timestamp": "2026-02-28T20:21:43.216812",
+  "completion_pct": 68,
   "pr_ready": true,
   "dimension_scores": {
-    "backend_files": 100,
-    "frontend_files": 100,
+    "backend_files": 92,
+    "frontend_files": 0,
     "tests": 100,
-    "endpoints": 100,
+    "endpoints": 0,
     "migrations": 100,
     "build": 100,
     "tests_pass": 100,
     "docker": 100
   },
   "counts": {
-    "backend_files": "350/59",
-    "frontend_files": "69/28",
-    "tests": "36/12",
-    "endpoints": "1180/17",
-    "migrations": "30/14",
-    "todos": 50,
+    "backend_files": "23/25",
+    "frontend_files": "0/7",
+    "tests": "49/29",
+    "endpoints": "0/10",
+    "migrations": "54/10",
+    "todos": 20,
     "build": true,
     "tests_pass": true
   },
   "gaps": [
     {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000001_create_users_table.up.sql",
+      "description": "Create migration: migrations/000001_create_users_table.up.sql",
+      "sql": "CREATE TABLE users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    email VARCHAR(255) UNIQUE NOT NULL,\n    password_hash VARCHAR(255),\n    full_name VARCHAR(255),\n    role VARCHAR(50) DEFAULT"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000002_create_printers_table.up.sql",
+      "description": "Create migration: migrations/000002_create_printers_table.up.sql",
+      "sql": "CREATE TABLE printers (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    agent_id VARCHAR(255) UNIQUE NOT NULL,\n    ip_address INET,\n    status VARCHAR(50) DEFAUL"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000003_create_jobs_table.up.sql",
+      "description": "Create migration: migrations/000003_create_jobs_table.up.sql",
+      "sql": "CREATE TABLE print_jobs (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    document_id UUID NOT NULL REFERENCES documents(id),\n "
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000004_create_documents_table.up.sql",
+      "description": "Create migration: migrations/000004_create_documents_table.up.sql",
+      "sql": "CREATE TABLE documents (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    filename VARCHAR(255) NOT NULL,\n    storage_key VARCHAR(255) UNIQUE NOT NULL,\n    content_type VARCHAR(100),\n    size_by"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000005_create_quotas_table.up.sql",
+      "description": "Create migration: migrations/000005_create_quotas_table.up.sql",
+      "sql": "CREATE TABLE quotas (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    period_type VARCHAR(50) DEFAULT 'monthly',\n    pag"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000006_create_policies_table.up.sql",
+      "description": "Create migration: migrations/000006_create_policies_table.up.sql",
+      "sql": "CREATE TABLE policies (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    description TEXT,\n    rules JSONB NOT NULL,\n    priority INTEGER DEFAULT 0,\n    enabled B"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000007_create_policy_assignments_table.up.sql",
+      "description": "Create migration: migrations/000007_create_policy_assignments_table.up.sql",
+      "sql": "CREATE TABLE policy_assignments (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    policy_id UUID NOT NULL REFERENCES policies(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id) ON DEL"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000008_create_sessions_table.up.sql",
+      "description": "Create migration: migrations/000008_create_sessions_table.up.sql",
+      "sql": "CREATE TABLE sessions (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    token_hash VARCHAR(255) UNIQUE NOT NULL,\n    expires_at"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000009_create_release_history_table.up.sql",
+      "description": "Create migration: migrations/000009_create_release_history_table.up.sql",
+      "sql": "CREATE TABLE release_history (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    job_id UUID NOT NULL REFERENCES print_jobs(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id),\n    relea"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/000010_create_analytics_events_table.up.sql",
+      "description": "Create migration: migrations/000010_create_analytics_events_table.up.sql",
+      "sql": "CREATE TABLE analytics_events (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    event_type VARCHAR(100) NOT NULL,\n    user_id UUID REFERENCES users(id),\n    printer_id UUID REFERENCES printers("
+    },
+    {
       "type": "backend",
       "priority": "high",
-      "item": "services/notification-service/pusher/pusher.go",
-      "description": "Push notification integration (mobile)",
+      "item": "internal/testutil/go.mod",
+      "description": "Separate module for test utilities to avoid circular dependencies",
+      "key_functions": []
+    },
+    {
+      "type": "backend",
+      "priority": "high",
+      "item": "internal/testutil/postgres.go",
+      "description": "PostgreSQL testcontainer setup with test database creation",
       "key_functions": [
-        "SendPushNotification",
-        "RegisterDevice",
-        "UnregisterDevice"
+        "SetupPostgreSQL",
+        "TeardownPostgreSQL",
+        "CreateTestDatabase",
+        "GetTestDSN",
+        "TruncateTables"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/organization-service/main.go",
-      "description": "Organization and user management service",
+      "item": "services/auth-service/internal/handler/jwt_test.go",
+      "description": "Update auth service JWT tests to use testutil",
       "key_functions": [
-        "main",
-        "startServer"
+        "TestGenerateToken",
+        "TestValidateToken",
+        "TestExpiredToken"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/organization-service/handler/org.go",
-      "description": "Organization management handlers",
+      "item": "services/job-service/internal/processor/queue_test.go",
+      "description": "Update job service tests to use testutil Redis",
       "key_functions": [
-        "CreateOrg",
-        "GetOrg",
-        "UpdateOrg",
-        "DeleteOrg",
-        "InviteUser",
-        "RemoveUser",
-        "ListUsers"
+        "TestJobEnqueue",
+        "TestJobDequeue",
+        "TestJobPriority"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/organization-service/handler/permission.go",
-      "description": "Printer permission management",
+      "item": "services/storage-service/internal/storage/s3_test.go",
+      "description": "Update storage service tests to use testutil S3",
       "key_functions": [
-        "GrantPrinterAccess",
-        "RevokePrinterAccess",
-        "ListPrinterPermissions",
-        "SetUserQuota"
+        "TestUploadDocument",
+        "TestDownloadDocument",
+        "TestDeleteDocument"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/organization-service/repository/org.go",
-      "description": "Organization repository",
+      "item": "services/registry-service/internal/registry/printer_test.go",
+      "description": "Update registry service tests to use testutil PostgreSQL",
       "key_functions": [
-        "Create",
-        "GetByID",
-        "Update",
-        "Delete",
-        "ListByUser"
+        "TestRegisterPrinter",
+        "TestHeartbeat",
+        "TestGetPrinter"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/analytics-service/main.go",
-      "description": "Usage analytics and reporting service",
+      "item": "services/notification-service/internal/hub/websocket_test.go",
+      "description": "Update notification service tests to use testutil",
       "key_functions": [
-        "main",
-        "startServer"
+        "TestWebSocketConnection",
+        "TestBroadcast",
+        "TestSubscribe"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/analytics-service/handler/analytics.go",
-      "description": "Analytics and reporting handlers",
+      "item": "services/auth-service/internal/handler/mfa_test.go",
+      "description": "Test MFA/Smart card authentication (market-driven feature)",
       "key_functions": [
-        "GetUsageStats",
-        "GetJobHistory",
-        "GetEnvironmentReport",
-        "GetCostAllocation"
+        "TestGenerateMFAToken",
+        "TestValidateMFAToken",
+        "TestSmartCardAuth"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/analytics-service/processor/aggregator.go",
-      "description": "Background aggregation of usage stats",
+      "item": "services/job-service/internal/quota/manager_test.go",
+      "description": "Test print quota and cost management (market-driven feature)",
       "key_functions": [
-        "AggregateDailyStats",
-        "AggregateUserStats",
-        "AggregatePrinterStats"
+        "TestCheckQuota",
+        "TestDeductQuota",
+        "TestQuotaExceeded"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/gateway/main.go",
-      "description": "API Gateway with authentication middleware",
+      "item": "services/job-service/internal/policy/engine_test.go",
+      "description": "Test print policy engine (market-driven feature)",
       "key_functions": [
-        "main",
-        "startServer",
-        "ProxyRequest"
+        "TestEvaluatePolicy",
+        "TestColorPrintingPolicy",
+        "TestDuplexPolicy"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/gateway/middleware/auth.go",
-      "description": "JWT authentication middleware",
+      "item": "services/job-service/internal/release/secure_test.go",
+      "description": "Test secure print release service (market-driven feature)",
       "key_functions": [
-        "Authenticate",
-        "Authorize",
-        "ExtractToken"
+        "TestReleaseWithPIN",
+        "TestReleaseWithCard",
+        "TestReleaseHistory"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/gateway/middleware/rate_limit.go",
-      "description": "Rate limiting middleware (security)",
+      "item": "services/analytics-service/internal/reporting/aggregator_test.go",
+      "description": "Test analytics and reporting (market-driven feature)",
       "key_functions": [
-        "RateLimitMiddleware",
-        "GetQuota",
-        "CheckQuota"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "services/gateway/middleware/audit.go",
-      "description": "Audit logging middleware",
-      "key_functions": [
-        "LogRequest",
-        "LogResponse",
-        "LogAuthEvent"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/main.go",
-      "description": "Windows print agent main entry point",
-      "key_functions": [
-        "main",
-        "StartAgent",
-        "ConnectToCloud",
-        "RunHeartbeat"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/discovery/discovery.go",
-      "description": "Printer discovery (mDNS, USB, network)",
-      "key_functions": [
-        "DiscoverNetworkPrinters",
-        "DiscoverUSBPrinters",
-        "DiscoverWindowsPrinters",
-        "TestPrinter"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/discovery/mdns.go",
-      "description": "mDNS/Bonjour printer discovery",
-      "key_functions": [
-        "BrowseServices",
-        "ResolvePrinter",
-        "GetPrinterCapabilities"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/printer/printer.go",
-      "description": "Windows printer integration",
-      "key_functions": [
-        "ListPrinters",
-        "GetPrinterDriver",
-        "PrintPDF",
-        "GetJobStatus",
-        "CancelJob"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/queue/queue.go",
-      "description": "Local print queue management",
-      "key_functions": [
-        "EnqueueJob",
-        "ProcessQueue",
-        "RetryFailedJob",
-        "ClearQueue"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/client/client.go",
-      "description": "Cloud service client for agent",
-      "key_functions": [
-        "Register",
-        "Heartbeat",
-        "FetchJobs",
-        "ReportStatus",
-        "DownloadJob"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "agents/printer-agent/websocket/agent_ws.go",
-      "description": "WebSocket client for real-time communication",
-      "key_functions": [
-        "Connect",
-        "SubscribeToJobs",
-        "SendStatus",
-        "HandleCommands"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/windows-client/driver/installer/installer.go",
-      "description": "Windows printer driver installer",
-      "key_functions": [
-        "InstallDriver",
-        "UninstallDriver",
-        "UpdateDriver",
-        "IsInstalled"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/windows-client/driver/port/port.go",
-      "description": "Virtual printer port monitor",
-      "key_functions": [
-        "CreatePort",
-        "DeletePort",
-        "WriteToPort",
-        "ReadFromPort"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/windows-client/converter/pdf.go",
-      "description": "Print job to PDF conversion",
-      "key_functions": [
-        "ConvertToPDF",
-        "CompressPDF",
-        "GetPageCount",
-        "ValidatePDF"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/windows-client/uploader/uploader.go",
-      "description": "Encrypted print job upload to cloud",
-      "key_functions": [
-        "EncryptJob",
-        "UploadJob",
-        "GetUploadProgress",
-        "RetryUpload"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/windows-client/ui/dialog.go",
-      "description": "Printer selection dialog",
-      "key_functions": [
-        "ShowDialog",
-        "LoadPrinters",
-        "SelectPrinter",
-        "ShowProgress"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/mac-client/main.go",
-      "description": "macOS print agent (market-driven feature)",
-      "key_functions": [
-        "main",
-        "StartAgent",
-        "DiscoverPrinters",
-        "PrintPDF"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "clients/linux-client/main.go",
-      "description": "Linux print agent (CUPS integration) (market-driven feature)",
-      "key_functions": [
-        "main",
-        "StartAgent",
-        "DiscoverCUPSPrinters",
-        "SubmitToCUPS"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "api/openapi.yaml",
-      "description": "OpenAPI 3.1 specification for all REST APIs",
-      "key_functions": [
-        "API documentation",
-        "SDK generation"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "proto/auth.proto",
-      "description": "gRPC service definitions for auth",
-      "key_functions": [
-        "AuthService",
-        "ValidateToken",
-        "GetUser"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "proto/registry.proto",
-      "description": "gRPC service definitions for printer registry",
-      "key_functions": [
-        "RegistryService",
-        "RegisterPrinter",
-        "GetPrinter"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "proto/jobs.proto",
-      "description": "gRPC service definitions for job queue",
-      "key_functions": [
-        "JobService",
-        "CreateJob",
-        "UpdateJobStatus"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "scripts/migrate/migrate.go",
-      "description": "Database migration tool",
-      "key_functions": [
-        "Up",
-        "Down",
-        "Create",
-        "Status"
+        "TestGenerateReport",
+        "TestAggregateUsage",
+        "TestCostAnalysis"
       ]
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/app.json",
-      "description": "Expo app configuration"
+      "item": "web/dashboard/src/test/utils/testServer.ts",
+      "description": "MSW-based mock server for frontend testing"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/app.tsx",
-      "description": "React Native entry point"
+      "item": "web/dashboard/src/test/utils/fixtures.ts",
+      "description": "Shared test fixtures for frontend components"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/src/screens/Home.tsx",
-      "description": "Mobile home screen"
+      "item": "web/dashboard/src/test/utils/render.tsx",
+      "description": "Custom render function with providers for React Testing Library"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/src/screens/Print.tsx",
-      "description": "Document selection and print screen"
+      "item": "web/dashboard/src/features/auth/tests/mfa.test.tsx",
+      "description": "MFA component tests (market-driven feature)"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/src/screens/Printers.tsx",
-      "description": "Printer selection screen"
+      "item": "web/dashboard/src/features/jobs/tests/quota.test.tsx",
+      "description": "Print quota UI tests (market-driven feature)"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/src/screens/Jobs.tsx",
-      "description": "Job history screen"
+      "item": "web/dashboard/src/features/analytics/tests/reports.test.tsx",
+      "description": "Analytics dashboard tests (market-driven feature)"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "mobile/src/services/api.ts",
-      "description": "Mobile API client"
-    },
-    {
-      "type": "frontend",
-      "priority": "high",
-      "item": "mobile/src/components/DocumentPicker.tsx",
-      "description": "Document picker component (cloud storage, device)"
+      "item": "web/dashboard/src/features/release/tests/secureRelease.test.tsx",
+      "description": "Secure print release UI tests (market-driven feature)"
     },
     {
       "type": "todos",
       "priority": "medium",
-      "item": "50 TODOs",
-      "description": "Resolve 50 TODO/FIXME items"
+      "item": "20 TODOs",
+      "description": "Resolve 20 TODO/FIXME items"
     }
   ]
 }

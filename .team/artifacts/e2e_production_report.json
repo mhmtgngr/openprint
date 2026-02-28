@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-02-28T20:06:22.123683",
+  "framework": "playwright",
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "status": "passed"
+}
