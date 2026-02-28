@@ -606,3 +606,43 @@ All unit tests pass successfully.
 - `services/job-service/repository` - 8 tests fail with "connection refused" to 127.0.0.1:5432
 
 These are integration tests that require a running PostgreSQL database. They're not code bugs.
+[0;35m[07:37:51][0m [1;37m🧪 Tester[0m ✓ Committed
+[0;35m[07:37:51][0m [1;37m🧪 Tester[0m Running Go tests...
+[0;32m[07:37:56][0m ✅ Security: NEEDS_FIXES
+[0;32m[07:37:56][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[07:37:56][0m PHASE 8: DEPLOY — 🐳 DevOps
+[0;32m[07:37:56][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[07:37:56][0m   🐳 Building (1/6): auth-service
+[0;32m[07:38:35][0m   ✓ Built: auth-service (39s)
+[0;32m[07:38:35][0m   🐳 Building (2/6): dashboard
+[0;32m[07:39:07][0m   ✓ Built: dashboard (32s)
+[0;32m[07:39:07][0m   🐳 Building (3/6): job-service
+[0;32m[07:39:39][0m   ✓ Built: job-service (32s)
+[0;32m[07:39:39][0m   🐳 Building (4/6): notification-service
+[0;32m[07:40:06][0m   ✓ Built: notification-service (27s)
+[0;32m[07:40:06][0m   🐳 Building (5/6): registry-service
+[0;32m[07:40:33][0m   ✓ Built: registry-service (27s)
+[0;32m[07:40:33][0m   🐳 Building (6/6): storage-service
+[0;32m[07:41:13][0m   ✓ Built: storage-service (40s)
+[0;32m[07:41:13][0m   Docker: 6/6 built, 0 failed
+[0;32m[07:41:13][0m   🚀 Starting services...
+[1;33m[07:42:27][0m   ✗ :15432
+[1;33m[07:42:27][0m   ✗ :16379
+[0;32m[07:42:27][0m   ✓ :18001
+[0;32m[07:42:27][0m   ✓ :18005
+[0;32m[07:42:27][0m   ✓ :8002
+[0;32m[07:42:27][0m   ✓ :8003
+[0;32m[07:42:27][0m   ✓ :8004
+[0;32m[07:42:27][0m   Health: 5/7
+[0;35m[07:42:27][0m [1;37m🐳 DevOps[0m Smoke testing...
+[1;33m[07:42:27][0m   ✗ :15432
+[1;33m[07:42:27][0m   ✗ :16379
+[0;32m[07:42:27][0m   ✓ :18001
+[0;32m[07:42:27][0m   ✓ :18005
+[0;32m[07:42:27][0m   ✓ :8002
+[0;32m[07:42:27][0m   ✓ :8003
+[0;32m[07:42:27][0m   ✓ :8004
+[0;35m[07:42:29][0m [1;37m🐳 DevOps[0m Working...
+This converts empty strings to NULL before casting to UUID, which PostgreSQL accepts.
+
+**File changed:** `/home/cmit/openprint/services/job-service/repository/job.go`

@@ -261,7 +261,7 @@ func (r *JobRepository) Update(ctx context.Context, job *PrintJob) error {
 		SET document_id = $2, printer_id = $3, user_name = $4, user_email = $5, title = $6,
 		    copies = $7, color_mode = $8, duplex = $9, media_type = $10, quality = $11,
 		    pages = $12, status = $13, priority = $14, retries = $15, options = $16,
-		    agent_id = $17, started_at = $18, completed_at = $19, updated_at = $20
+		    agent_id = NULLIF($17, '')::uuid, started_at = $18, completed_at = $19, updated_at = $20
 		WHERE id = $1
 	`
 
