@@ -2,94 +2,110 @@
   "phases": [
     {
       "order": 1,
-      "name": "Fix Database Tests",
+      "name": "Fix Database Connection Tests",
       "priority": "critical",
       "category": "test",
-      "description": "Fix ALL 4 failing enrollment_token_test.go tests in services/auth-service/repository/enrollment_token_test.go. Tests fail with PostgreSQL connection refused (127.0.0.1:5432). SOLUTION: Add test database setup using testcontainers or environment-aware DSN. Add setupTestDB() and teardownTestDB() helper functions. Set DATABASE_URL env var to use localhost:15432 (Docker external port) or use sqlmock for unit tests. Run: go test -v ./services/auth-service/repository/ to verify all 4 tests pass.",
+      "description": "Fix 9 failing tests in services/job-service/repository/job_assignment_test.go. All tests fail with 'dial tcp 127.0.0.1:5432: connect: connection refused'. The test suite requires PostgreSQL to be running but it's not available during test execution. Options: 1) Add testcontainers/go for automated PostgreSQL container lifecycle in tests, 2) Add docker-compose.test.yml for test infrastructure, 3) Mock the database layer for unit tests. Implement testcontainers approach as it provides real database testing. Create internal/testutil/db.go with testcontainers setup. Update job_assignment_test.go to use the test database helper. Ensure tests cleanup properly after each test run.",
       "success_criteria": [
-        "All enrollment_token_test.go tests pass",
-        "No connection refused errors",
-        "Test can run without manual DB setup"
+        "go test ./services/job-service/repository/... passes all 9 tests",
+        "testcontainers setup works on any developer machine",
+        "tests are isolated and don't interfere with each other"
       ],
-      "estimated_minutes": 25
+      "estimated_minutes": 60
     },
     {
       "order": 2,
-      "name": "Implement API Gateway",
+      "name": "Add Test Environment Setup",
       "priority": "high",
-      "category": "feature",
-      "description": "Create services/gateway/main.go as API gateway routing to all microservices (ports 8001-8005). Implement HTTP reverse proxy using gorilla/mux or httputil.ReverseProxy. Create services/gateway/middleware/auth.go with JWT validation middleware extracting tokens from Authorization header. Create services/gateway/middleware/rate_limit.go using golang.org/x/time/rate with IP-based limiting (100 req/min default). Create services/gateway/middleware/audit.go logging all requests with timestamp, method, path, user_id. Expose port 8000. Run: go build ./services/gateway && verify with curl http://localhost:8000/health.",
+      "category": "test",
+      "description": "Create comprehensive test infrastructure for all repository tests. Create internal/testutil package with database helpers, Redis helpers using testcontainers, and mock S3 storage for storage-service tests. Add Makefile targets: 'make test-db' starts PostgreSQL and Redis, 'make test-all' runs all tests with dependencies, 'make test-integration' runs only integration tests. Add scripts/test-env.sh for quick test environment bootstrap. Document test setup in CONTRIBUTING.md. This ensures any developer can run full test suite without manual infrastructure setup.",
       "success_criteria": [
-        "gateway/main.go compiles and runs",
-        "Routes to auth-service on /api/v1/auth/*",
-        "All 3 middleware files compile",
-        "Health check returns 200"
+        "make test-all runs all tests without manual setup",
+        "Redis-dependent tests also pass with testcontainers",
+        "CONTRIBUTING.md documents test environment setup"
       ],
-      "estimated_minutes": 40
+      "estimated_minutes": 45
     },
     {
       "order": 3,
-      "name": "Implement Analytics Service",
+      "name": "Implement CI/CD Pipeline",
       "priority": "high",
-      "category": "feature",
-      "description": "Create services/analytics-service/main.go with HTTP server on port 8006. Create services/analytics-service/handler/analytics.go with endpoints: GET /api/v1/analytics/jobs (job statistics), GET /api/v1/analytics/printers (printer usage), GET /api/v1/analytics/users (user activity). Create services/analytics-service/processor/aggregator.go with AggregateJobsByDate(), AggregateByPrinter(), AggregateByUser() functions querying PostgreSQL. Add database connection pool. Return JSON with counts, trends, breakdowns. Run: go build ./services/analytics-service && test GET /api/v1/analytics/jobs returns JSON.",
+      "category": "devops",
+      "description": "Create GitHub Actions workflow in .github/workflows/ci.yml for continuous integration. Pipeline should: 1) Run go test ./... with testcontainers for database services, 2) Run cd web/dashboard && npm run type-check && npm test, 3) Build all services with go build ./..., 4) Run docker-compose build to verify Dockerfiles, 5) Run security scanning with golangci-lint and npm audit. Add status badges to README.md. Create .github/workflows/release.yml for automated releases on tags. This ensures code quality checks run automatically on every pull request.",
       "success_criteria": [
-        "analytics-service compiles",
-        "3 analytics endpoints respond",
-        "aggregator.go has 3 Aggregate functions",
-        "Returns valid JSON statistics"
+        "CI workflow runs successfully on push to main/PR branches",
+        "All checks (tests, type-check, lint, build) pass in CI",
+        "Status badges displayed in README.md"
       ],
-      "estimated_minutes": 35
+      "estimated_minutes": 60
     },
     {
       "order": 4,
-      "name": "Implement Organization Service",
-      "priority": "high",
-      "category": "feature",
-      "description": "Create services/organization-service/main.go on port 8007. Create services/organization-service/handler/org.go with POST /api/v1/organizations (create org), GET /api/v1/organizations/:id, PUT /api/v1/organizations/:id, DELETE /api/v1/organizations/:id. Create services/organization-service/handler/permission.go with GET /api/v1/organizations/:id/permissions, POST /api/v1/organizations/:id/permissions. Create services/organization-service/repository/org.go with OrganizationRepository struct and Create(), FindByID(), Update(), Delete(), AddMember(), RemoveMember() methods. Add organizations table schema reference. Run: go build ./services/organization-service.",
+      "name": "Add Service Inter-Communication Tests",
+      "priority": "medium",
+      "category": "test",
+      "description": "Create tests/integration/service_communication_test.go to test inter-service communication. Test auth-service issuing JWT tokens that other services accept. Test job-service calling registry-service for agent discovery. Test notification-service WebSocket connections receiving job status updates. Use testcontainers to spin up all services together. Verify that: 1) Auth tokens propagate correctly between services, 2) Service mesh routing works via gateway, 3) Pub/sub via Redis for async events functions properly. These tests catch integration issues before production.",
       "success_criteria": [
-        "organization-service compiles",
-        "5 CRUD endpoints in handler/org.go",
-        "2 permission endpoints in handler/permission.go",
-        "Repository has 7 methods implemented"
+        "Inter-service communication tests pass",
+        "JWT auth between services verified",
+        "WebSocket events propagate correctly"
       ],
-      "estimated_minutes": 40
+      "estimated_minutes": 75
     },
     {
       "order": 5,
-      "name": "Complete Frontend TODOs",
+      "name": "Add Observability Dashboard",
       "priority": "medium",
       "category": "feature",
-      "description": "Complete 5 remaining TODO comments in web/dashboard. 1) web/dashboard/src/features/devices/Devices.tsx:149 and :249: Implement openRegisterDeviceModal() function with dialog containing device_name, location, printer_type fields, calling POST /api/v1/devices/register. 2) web/dashboard/src/pages/Printers.tsx:25: Implement handleDeletePrinter(id) with confirmation dialog calling DELETE /api/v1/printers/:id. 3) web/dashboard/src/pages/Jobs.tsx:36: Implement job selection with checkboxes in JobList and bulk actions. 4) web/dashboard/src/pages/Analytics.tsx:27: Implement groupBy dropdown (day|week|month|printer|user) updating chart aggregation. Run: cd web/dashboard && npm run type-check to verify.",
+      "description": "Implement observability features for production monitoring. Add Prometheus metrics endpoint /metrics to all services using prometheus/client_golang. Track: request count, latency, error rate by endpoint. Add structured logging with zap, with trace ID correlation. Create Grafana dashboard configurations in deployments/grafana/dashboards/ for: service health, request metrics, database connection pool, Redis queue depth. Update docker-compose.yml to include Prometheus and Grafana containers. Document metrics in docs/observability.md. This enables production monitoring and debugging.",
       "success_criteria": [
-        "Devices.tsx register modal opens and submits",
-        "Printers.tsx delete works",
-        "Jobs.tsx has row selection",
-        "Analytics.tsx groupBy selector functional",
-        "No TODO comments remain",
-        "type-check passes"
+        "Each service exposes /metrics endpoint",
+        "Prometheus scrapes all service metrics",
+        "Grafana dashboards display key metrics"
       ],
-      "estimated_minutes": 30
+      "estimated_minutes": 90
+    },
+    {
+      "order": 6,
+      "name": "Implement Rate Limiting",
+      "priority": "medium",
+      "category": "security",
+      "description": "Add rate limiting middleware to protect against abuse. Create internal/shared/middleware/ratelimit.go using Redis-backed token bucket algorithm. Apply limits: 100 req/min for authenticated users, 10 req/min for unauthenticated. Add special handling for expensive endpoints (document upload, bulk job creation). Configure limits via environment variables: RATE_LIMIT_ENABLED, RATE_LIMIT_AUTHENTICATED, RATE_LIMIT_ANONYMOUS. Add X-RateLimit-* headers to responses. Update tests to verify rate limiting works. This prevents DoS and resource exhaustion.",
+      "success_criteria": [
+        "Rate limiting active on all public endpoints",
+        "X-RateLimit headers present in responses",
+        "Tests verify limits are enforced"
+      ],
+      "estimated_minutes": 60
+    },
+    {
+      "order": 7,
+      "name": "Add Kubernetes Deployment Manifests",
+      "priority": "low",
+      "category": "devops",
+      "description": "Create Kubernetes deployment manifests for production deployment. Create deployments/k8s/ directory with: namespace.yaml, configmap.yaml for environment config, secret.yaml for sensitive data, PostgreSQL StatefulSet with persistent volume, Redis deployment, each service's Deployment and Service, gateway Ingress with TLS, HorizontalPodAutoscaler for each service. Add Helm chart in deployments/helm/ for easier installation. Document deployment process in docs/deployment.md. This enables cloud-native deployment on any Kubernetes cluster.",
+      "success_criteria": [
+        "kubectl apply -f deployments/k8s/ deploys all resources",
+        "Services are accessible via Ingress",
+        "Helm chart installs successfully"
+      ],
+      "estimated_minutes": 120
     }
   ],
   "project_health": {
-    "score": 58,
+    "score": 72,
     "critical_issues": [
-      "4 database connection test failures blocking test score",
-      "No API gateway - services isolated on separate ports",
-      "Analytics service completely missing (0% implemented)",
-      "Organization service completely missing (0% implemented)",
-      "Frontend has 5 incomplete features marked TODO",
-      "Notification service pusher.go incomplete",
-      "Printer agent (discovery) not implemented"
+      "9/9 job-service repository tests fail due to PostgreSQL unavailable",
+      "No CI/CD pipeline for automated testing",
+      "No test infrastructure automation for database/Redis dependencies"
     ],
     "strengths": [
-      "Core services (auth, registry, job, storage) functional",
-      "Docker infrastructure complete with 6 Dockerfiles",
-      "Dashboard UI structure exists with 88 TSX files",
-      "Integration tests framework in place",
-      "Security middleware added"
+      "All microservices compile successfully",
+      "Complete frontend UI components with no TODOs",
+      "Comprehensive service architecture (auth, registry, job, storage, notification, gateway, analytics, org)",
+      "Docker deployment configuration exists",
+      "Integration test framework in place"
     ]
   },
-  "rationale": "Task 1 fixes test failures (10% weight) by resolving PostgreSQL connection issues - highest ROI. Task 2 implements API Gateway improving backend completeness (15% weight) and connecting all services. Task 3 implements entire Analytics service (high-value backend gap). Task 4 implements Organization service (another high-value backend gap). Task 5 completes frontend TODOs improving frontend score (15% weight). Combined, these improve test_passing, endpoints, backend_files, and frontend_files dimensions - the four lowest-weighted areas currently at 0-60%."
+  "rationale": "Phase 1 addresses the immediate blocker: 9 failing tests due to missing PostgreSQL. Using testcontainers ensures tests work anywhere. Phase 2 extends this to all services for consistent test infrastructure. Phase 3 adds CI/CD to prevent future regressions\u2014critical for team productivity. Phase 4 validates inter-service communication which is a common failure point in microservices. Phase 5 adds observability needed for production operations. Phase 6 adds security hardening with rate limiting. Phase 7 enables production-scale Kubernetes deployment. This ordering follows the rules: fix tests first, then add automation (CI), then validate integration, then production hardening and deployment."
 }

@@ -3,34 +3,114 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"log"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/openprint/openprint/internal/testutil"
 )
+
+var (
+	testDB *testutil.TestDB
+	ctx    = context.Background()
+)
+
+func TestMain(m *testing.M) {
+	var err error
+	testDB, err = testutil.SetupPostgresContainer(ctx)
+	if err != nil {
+		log.Fatalf("Failed to setup test database: %v", err)
+	}
+	defer testutil.Cleanup(testDB)
+
+	os.Exit(m.Run())
+}
+
+// setupAssignmentTestDB creates a test database connection for assignment tests.
+// It now uses the shared testDB from TestMain.
+func setupAssignmentTestDB(t *testing.T) *pgxpool.Pool {
+	return testDB.Pool
+}
+
+// createTestPrintJob creates a test print job for testing.
+// It now uses the testutil fixtures for complete setup.
+func createTestPrintJob(t *testing.T, db *pgxpool.Pool) *PrintJob {
+	ctx := context.Background()
+
+	// Create a complete test setup
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, db)
+	require.NoError(t, err, "Failed to create test setup")
+
+	// Create an additional printer for the job
+	orgID, _, _, printerID, _, _, err := testutil.CreateFullTestSetup(ctx, db)
+	require.NoError(t, err, "Failed to create printer setup")
+
+	// Get a user email
+	var userEmail string
+	err = db.QueryRow(ctx, "SELECT email FROM users WHERE organization_id = $1 LIMIT 1", orgID).Scan(&userEmail)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		ID:          generateTestID(),
+		DocumentID:  documentID,
+		PrinterID:   printerID,
+		UserName:    "Test User",
+		UserEmail:   userEmail,
+		Title:       "Test Job",
+		Copies:      1,
+		ColorMode:   "color",
+		Duplex:      true,
+		MediaType:   "a4",
+		Quality:     "normal",
+		Status:      "queued",
+		Priority:    5,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	query := `
+		INSERT INTO print_jobs (id, document_id, printer_id, user_name, user_email, title,
+			copies, color_mode, duplex, media_type, quality, status, priority, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+	`
+
+	_, err = db.Exec(ctx, query,
+		job.ID, job.DocumentID, job.PrinterID, job.UserName, job.UserEmail, job.Title,
+		job.Copies, job.ColorMode, job.Duplex, job.MediaType, job.Quality, job.Status,
+		job.Priority, job.CreatedAt, job.UpdatedAt)
+
+	require.NoError(t, err, "Failed to create test print job")
+
+	return job
+}
 
 // TestJobAssignmentRepository_AssignJob tests assigning a job to an agent.
 func TestJobAssignmentRepository_AssignJob(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	// Create a test print job first
 	job := createTestPrintJob(t, db)
 
+	// Create a test agent
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:  job.ID,
-		AgentID: "test-agent-123",
+		AgentID: agentID,
 		Status: "assigned",
 	}
 
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 	assert.NotEmpty(t, assignment.ID)
 	assert.NotEmpty(t, assignment.AssignedAt)
@@ -39,22 +119,24 @@ func TestJobAssignmentRepository_AssignJob(t *testing.T) {
 
 // TestJobAssignmentRepository_UpdateStatus tests updating assignment status.
 func TestJobAssignmentRepository_UpdateStatus(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	// Create an assignment
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:   job.ID,
-		AgentID: "test-agent-123",
+		AgentID: agentID,
 		Status:  "assigned",
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Update to in_progress
@@ -80,22 +162,24 @@ func TestJobAssignmentRepository_UpdateStatus(t *testing.T) {
 // TestJobAssignmentRepository_UpdateStatus_SQLInjection tests that UpdateStatus
 // is protected against SQL injection (regression test for the fix).
 func TestJobAssignmentRepository_UpdateStatus_SQLInjection(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	// Create an assignment
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:   job.ID,
-		AgentID: "test-agent-123",
+		AgentID: agentID,
 		Status:  "assigned",
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Try various SQL injection attempts
@@ -130,16 +214,16 @@ func TestJobAssignmentRepository_UpdateStatus_SQLInjection(t *testing.T) {
 
 // TestJobAssignmentRepository_FindByAgent tests finding assignments by agent.
 func TestJobAssignmentRepository_FindByAgent(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	// Create multiple assignments for the same agent
-	agentID := "test-agent-find"
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	for i := 0; i < 3; i++ {
 		job := createTestPrintJob(t, db)
 		assignment := &JobAssignment{
@@ -163,48 +247,52 @@ func TestJobAssignmentRepository_FindByAgent(t *testing.T) {
 
 // TestJobAssignmentRepository_FindByJobAndAgent tests finding assignment by job and agent.
 func TestJobAssignmentRepository_FindByJobAndAgent(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:   job.ID,
-		AgentID: "test-agent-specific",
+		AgentID: agentID,
 		Status:  "assigned",
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Find the assignment
-	found, err := repo.FindByJobAndAgent(ctx, job.ID, "test-agent-specific")
+	found, err := repo.FindByJobAndAgent(ctx, job.ID, agentID)
 	require.NoError(t, err)
 	assert.Equal(t, assignment.ID, found.ID)
 	assert.Equal(t, job.ID, found.JobID)
-	assert.Equal(t, "test-agent-specific", found.AgentID)
+	assert.Equal(t, agentID, found.AgentID)
 }
 
 // TestJobAssignmentRepository_UpdateHeartbeat tests updating heartbeat timestamp.
 func TestJobAssignmentRepository_UpdateHeartbeat(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:   job.ID,
-		AgentID: "test-agent-heartbeat",
+		AgentID: agentID,
 		Status:  "in_progress",
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Update heartbeat
@@ -220,22 +308,24 @@ func TestJobAssignmentRepository_UpdateHeartbeat(t *testing.T) {
 
 // TestJobAssignmentRepository_IncrementRetry tests incrementing retry count.
 func TestJobAssignmentRepository_IncrementRetry(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:      job.ID,
-		AgentID:    "test-agent-retry",
+		AgentID:    agentID,
 		Status:     "assigned",
 		RetryCount: 0,
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Increment retry count
@@ -250,21 +340,23 @@ func TestJobAssignmentRepository_IncrementRetry(t *testing.T) {
 
 // TestJobAssignmentRepository_SetError tests setting error message.
 func TestJobAssignmentRepository_SetError(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:   job.ID,
-		AgentID: "test-agent-error",
+		AgentID: agentID,
 		Status:  "in_progress",
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Set error
@@ -281,23 +373,25 @@ func TestJobAssignmentRepository_SetError(t *testing.T) {
 
 // TestJobAssignmentRepository_GetStaleAssignments tests finding stale assignments.
 func TestJobAssignmentRepository_GetStaleAssignments(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
 	db := setupAssignmentTestDB(t)
 	repo := NewJobAssignmentRepository(db)
 
 	// Create an old assignment
 	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
 	assignment := &JobAssignment{
 		JobID:         job.ID,
-		AgentID:       "test-agent-stale",
+		AgentID:       agentID,
 		Status:        "in_progress",
 		LastHeartbeat: time.Now().Add(-1 * time.Hour),
 	}
-	err := repo.AssignJob(ctx, assignment)
+	err = repo.AssignJob(ctx, assignment)
 	require.NoError(t, err)
 
 	// Manually update the heartbeat to be old
@@ -312,56 +406,433 @@ func TestJobAssignmentRepository_GetStaleAssignments(t *testing.T) {
 	assert.GreaterOrEqual(t, len(stale), 1)
 }
 
-// setupAssignmentTestDB creates a test database connection for assignment tests.
-func setupAssignmentTestDB(t *testing.T) *pgxpool.Pool {
-	dbURL := "postgres://openprint:openprint@localhost:5432/openprint?sslmode=disable"
-	db, err := pgxpool.New(context.Background(), dbURL)
-	if err != nil {
-		t.Skip("database not available for testing")
-	}
-	return db
-}
-
-// createTestPrintJob creates a test print job for testing.
-func createTestPrintJob(t *testing.T, db *pgxpool.Pool) *PrintJob {
-	ctx := context.Background()
-
-	job := &PrintJob{
-		ID:          generateTestID(),
-		DocumentID:  generateTestID(),
-		PrinterID:   "test-printer",
-		UserName:    "Test User",
-		UserEmail:   "test@example.com",
-		Title:       "Test Job",
-		Copies:      1,
-		ColorMode:   "color",
-		Duplex:      true,
-		MediaType:   "a4",
-		Quality:     "normal",
-		Status:      "queued",
-		Priority:    5,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-
-	query := `
-		INSERT INTO print_jobs (id, document_id, printer_id, user_name, user_email, title,
-			copies, color_mode, duplex, media_type, quality, status, priority, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-	`
-
-	_, err := db.Exec(ctx, query,
-		job.ID, job.DocumentID, job.PrinterID, job.UserName, job.UserEmail, job.Title,
-		job.Copies, job.ColorMode, job.Duplex, job.MediaType, job.Quality, job.Status,
-		job.Priority, job.CreatedAt, job.UpdatedAt)
-
-	if err != nil {
-		t.Fatalf("failed to create test print job: %v", err)
-	}
-
-	return job
-}
-
 func generateTestID() string {
 	return "test-" + time.Now().Format("20060102150405.000000000")
+}
+
+// Additional tests for edge cases and error conditions
+
+func TestJobAssignmentRepository_AssignJob_Conflict(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Create first assignment
+	assignment1 := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment1)
+	require.NoError(t, err)
+
+	// Try to create duplicate assignment (should fail due to unique constraint)
+	assignment2 := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment2)
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_FindByID_NotFound(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Try to find non-existent assignment
+	_, err := repo.FindByID(ctx, "non-existent-id")
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_Delete(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Create assignment
+	assignment := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment)
+	require.NoError(t, err)
+
+	// Delete assignment
+	err = repo.Delete(ctx, assignment.ID)
+	require.NoError(t, err)
+
+	// Verify deletion
+	_, err = repo.FindByID(ctx, assignment.ID)
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_DeleteByJob(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Create multiple assignments for the same job
+	agentID2, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	assignment1 := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment1)
+	require.NoError(t, err)
+
+	// Cancel first assignment to allow second
+	err = repo.UpdateStatus(ctx, assignment1.ID, "cancelled")
+	require.NoError(t, err)
+
+	assignment2 := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID2,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment2)
+	require.NoError(t, err)
+
+	// Delete all assignments for the job
+	err = repo.DeleteByJob(ctx, job.ID)
+	require.NoError(t, err)
+
+	// Verify deletion
+	assignments, err := repo.FindByJobID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Empty(t, assignments)
+}
+
+func TestJobAssignmentRepository_AssignmentStatuses(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Test all valid status transitions
+	validStatuses := []string{"assigned", "in_progress", "completed", "failed", "cancelled"}
+
+	for _, status := range validStatuses {
+		t.Run("Status_"+status, func(t *testing.T) {
+			// Create test data for each status
+			job := createTestPrintJob(t, db)
+
+			orgID, err := testutil.CreateTestOrganization(ctx, db)
+			require.NoError(t, err)
+
+			agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+			require.NoError(t, err)
+
+			assignment := &JobAssignment{
+				JobID:   job.ID,
+				AgentID: agentID,
+				Status:  "assigned",
+			}
+			err = repo.AssignJob(ctx, assignment)
+			require.NoError(t, err)
+
+			// Update to the target status
+			err = repo.UpdateStatus(ctx, assignment.ID, status)
+			require.NoError(t, err)
+
+			// Verify the status
+			updated, err := repo.FindByID(ctx, assignment.ID)
+			require.NoError(t, err)
+			assert.Equal(t, status, updated.Status)
+		})
+	}
+}
+
+func TestJobAssignmentRepository_GetAssignmentStats(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Create assignments with different statuses
+	for _, status := range []string{"assigned", "in_progress", "completed"} {
+		job := createTestPrintJob(t, db)
+		assignment := &JobAssignment{
+			JobID:   job.ID,
+			AgentID: agentID,
+			Status:  status,
+		}
+		err = repo.AssignJob(ctx, assignment)
+		require.NoError(t, err)
+	}
+
+	// Get stats for the agent
+	stats, err := repo.GetAssignmentStats(ctx, agentID)
+	require.NoError(t, err)
+	assert.NotEmpty(t, stats)
+	assert.Equal(t, int64(1), stats["assigned"])
+	assert.Equal(t, int64(1), stats["in_progress"])
+	assert.Equal(t, int64(1), stats["completed"])
+}
+
+func TestJobAssignmentRepository_FindByJobID(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Create multiple assignments for the same job
+	agentID2, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	assignment1 := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment1)
+	require.NoError(t, err)
+
+	// Cancel first assignment
+	err = repo.UpdateStatus(ctx, assignment1.ID, "cancelled")
+	require.NoError(t, err)
+
+	assignment2 := &JobAssignment{
+		JobID:   job.ID,
+		AgentID: agentID2,
+		Status:  "assigned",
+	}
+	err = repo.AssignJob(ctx, assignment2)
+	require.NoError(t, err)
+
+	// Find all assignments for the job
+	assignments, err := repo.FindByJobID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, len(assignments), 2)
+}
+
+func TestJobAssignmentRepository_UpdateStatus_NotFound(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Try to update non-existent assignment
+	err := repo.UpdateStatus(ctx, "non-existent-id", "in_progress")
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_UpdateHeartbeat_NotFound(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Try to update heartbeat for non-existent assignment
+	err := repo.UpdateHeartbeat(ctx, "non-existent-id", time.Now())
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_IncrementRetry_NotFound(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Try to increment retry for non-existent assignment
+	err := repo.IncrementRetry(ctx, "non-existent-id")
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_SetError_NotFound(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Try to set error for non-existent assignment
+	err := repo.SetError(ctx, "non-existent-id", "Test error")
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_Delete_NotFound(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Try to delete non-existent assignment
+	err := repo.Delete(ctx, "non-existent-id")
+	assert.Error(t, err)
+}
+
+func TestJobAssignmentRepository_UpdateNilTimestamp(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	assignment := &JobAssignment{
+		JobID:      job.ID,
+		AgentID:    agentID,
+		Status:     "assigned",
+		StartedAt:  nil,
+		CompletedAt: nil,
+	}
+	err = repo.AssignJob(ctx, assignment)
+	require.NoError(t, err)
+
+	// Verify nil timestamps
+	fetched, err := repo.FindByID(ctx, assignment.ID)
+	require.NoError(t, err)
+	assert.Nil(t, fetched.StartedAt)
+	assert.Nil(t, fetched.CompletedAt)
+
+	// Update to in_progress should set StartedAt
+	err = repo.UpdateStatus(ctx, assignment.ID, "in_progress")
+	require.NoError(t, err)
+
+	fetched, err = repo.FindByID(ctx, assignment.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, fetched.StartedAt)
+	assert.Nil(t, fetched.CompletedAt)
+}
+
+func TestJobAssignmentRepository_ScanAssignmentWithNulls(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Insert assignment with NULL fields directly
+	query := `
+		INSERT INTO job_assignments (id, job_id, agent_id, status, assigned_at, created_at, updated_at, last_heartbeat)
+		VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW(), NOW())
+	`
+	testID := "test-scan-null-" + time.Now().Format("20060102150405")
+	_, err = db.Exec(ctx, query, testID, job.ID, agentID, "assigned")
+	require.NoError(t, err)
+
+	// Scan the assignment
+	assignment, err := repo.FindByID(ctx, testID)
+	require.NoError(t, err)
+	assert.NotNil(t, assignment)
+	assert.Equal(t, testID, assignment.ID)
+	assert.Nil(t, assignment.StartedAt)
+	assert.Nil(t, assignment.CompletedAt)
+	assert.Equal(t, "", assignment.Error)
+	assert.Equal(t, "", assignment.DocumentETag)
+}
+
+// TestJobAssignmentRepository_DocumentETag tests the document ETag field for resume support.
+func TestJobAssignmentRepository_DocumentETag(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Create assignment with ETag
+	assignment := &JobAssignment{
+		JobID:       job.ID,
+		AgentID:     agentID,
+		Status:      "assigned",
+		DocumentETag: "abc123etag",
+	}
+	err = repo.AssignJob(ctx, assignment)
+	require.NoError(t, err)
+
+	// Update the ETag directly
+	_, err = db.Exec(ctx, "UPDATE job_assignments SET document_etag = $1 WHERE id = $2",
+		"updated-etag-456", assignment.ID)
+	require.NoError(t, err)
+
+	// Verify the ETag was updated
+	fetched, err := repo.FindByID(ctx, assignment.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "updated-etag-456", fetched.DocumentETag)
+}
+
+// TestJobAssignmentRepository_TransactionIsolation tests that transactions work correctly.
+func TestJobAssignmentRepository_TransactionIsolation(t *testing.T) {
+	db := setupAssignmentTestDB(t)
+	repo := NewJobAssignmentRepository(db)
+
+	// Create test data
+	job := createTestPrintJob(t, db)
+
+	orgID, err := testutil.CreateTestOrganization(ctx, db)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, db, orgID)
+	require.NoError(t, err)
+
+	// Start a transaction but don't commit
+	tx, err := db.Begin(ctx)
+	require.NoError(t, err)
+	defer tx.Rollback(ctx)
+
+	// Insert assignment within transaction
+	testID := "test-tx-" + time.Now().Format("20060102150405")
+	_, err = tx.Exec(ctx, `
+		INSERT INTO job_assignments (id, job_id, agent_id, status, assigned_at, created_at, updated_at, last_heartbeat)
+		VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW(), NOW())
+	`, testID, job.ID, agentID, "assigned")
+	require.NoError(t, err)
+
+	// Assignment should not be visible outside transaction
+	_, err = repo.FindByID(ctx, testID)
+	assert.Error(t, err)
+	assert.Equal(t, sql.ErrNoRows, err)
+
+	// Commit transaction
+	err = tx.Commit(ctx)
+	require.NoError(t, err)
+
+	// Now assignment should be visible
+	_, err = repo.FindByID(ctx, testID)
+	assert.NoError(t, err)
 }

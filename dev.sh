@@ -2566,9 +2566,28 @@ show_help() { cat << 'HELP'
 HELP
 }
 
-# Strip -- prefix so both "status" and "--status" work
-CMD="${1:-}"
-CMD="${CMD#--}"
+# ── Parse global flags (must come before command extraction) ──
+FOREGROUND=false
+SKIP_HEALTH_CHECK=false
+
+# Extract command from args, skipping global flags
+for arg in "$@"; do
+  case "$arg" in
+    --fg) FOREGROUND=true ;;
+    --skip-health-check) SKIP_HEALTH_CHECK=true ;;
+    --*)
+      # Strip -- prefix for command detection
+      CMD="${arg#--}"
+      break
+      ;;
+    *)
+      CMD="$arg"
+      break
+      ;;
+  esac
+done
+
+CMD="${CMD:-}"
 
 # ── Preflight checks (only for commands that need tools) ──
 case "$CMD" in
@@ -2584,13 +2603,6 @@ case "$CMD" in
     fi
     ;;
 esac
-
-# ── Handle background dispatch for long-running commands ──
-FOREGROUND=false
-# Check if --fg is anywhere in args
-for arg in "$@"; do [ "$arg" = "--fg" ] && FOREGROUND=true; done
-# Check if --skip-health-check is anywhere in args
-for arg in "$@"; do [ "$arg" = "--skip-health-check" ] && SKIP_HEALTH_CHECK=true; done
 
 case "$CMD" in
   start)

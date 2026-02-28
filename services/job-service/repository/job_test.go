@@ -5,6 +5,10 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/openprint/openprint/internal/testutil"
 )
 
 func TestNewJobRepository(t *testing.T) {
@@ -23,8 +27,8 @@ func TestPrintJob_Struct(t *testing.T) {
 		ID:          "job-123",
 		DocumentID:  "doc-123",
 		PrinterID:   "printer-123",
-		UserName:   "testuser",
-		UserEmail:  "test@example.com",
+		UserName:    "testuser",
+		UserEmail:   "test@example.com",
 		Title:       "Test Document",
 		Copies:      2,
 		ColorMode:   "color",
@@ -98,21 +102,39 @@ func TestPrintJob_PriorityRange(t *testing.T) {
 		job10 := &PrintJob{Priority: 10}
 
 		if job1.Priority >= job10.Priority {
-			t.Error("Priority 1 should be less than priority 10")
+			t.Error("Priority 1 should be less than Priority 10")
 		}
 	})
 }
 
+// Database-backed tests using testcontainers
+
 func TestJobRepository_CRUD(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobRepository(nil)
+	repo := NewJobRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
 	job := &PrintJob{
-		ID:         "job-123",
-		DocumentID: "doc-123",
-		PrinterID:  "printer-123",
-		UserEmail:  "test@example.com",
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
 		Title:      "Test Document",
 		Status:     "queued",
 		Priority:   5,
@@ -120,114 +142,212 @@ func TestJobRepository_CRUD(t *testing.T) {
 
 	t.Run("create job", func(t *testing.T) {
 		err := repo.Create(ctx, job)
-		if err == nil {
-			t.Log("Create() succeeded (unexpected without DB)")
-		}
+		require.NoError(t, err)
+		assert.NotEmpty(t, job.ID)
 	})
 
 	t.Run("find by ID", func(t *testing.T) {
-		_, err := repo.FindByID(ctx, "job-123")
-		if err == nil {
-			t.Log("FindByID() succeeded (unexpected without DB)")
-		}
+		found, err := repo.FindByID(ctx, job.ID)
+		require.NoError(t, err)
+		assert.Equal(t, job.ID, found.ID)
+		assert.Equal(t, job.Title, found.Title)
+		assert.Equal(t, job.UserEmail, found.UserEmail)
 	})
 
 	t.Run("update job", func(t *testing.T) {
+		job.Title = "Updated Title"
+		job.Copies = 2
 		err := repo.Update(ctx, job)
-		if err == nil {
-			t.Log("Update() succeeded (unexpected without DB)")
-		}
+		require.NoError(t, err)
+
+		found, err := repo.FindByID(ctx, job.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "Updated Title", found.Title)
+		assert.Equal(t, 2, found.Copies)
 	})
 
 	t.Run("update status", func(t *testing.T) {
-		err := repo.UpdateStatus(ctx, "job-123", "processing")
-		if err == nil {
-			t.Log("UpdateStatus() succeeded (unexpected without DB)")
-		}
+		err := repo.UpdateStatus(ctx, job.ID, "processing")
+		require.NoError(t, err)
+
+		found, err := repo.FindByID(ctx, job.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "processing", found.Status)
 	})
 
 	t.Run("assign agent", func(t *testing.T) {
-		err := repo.AssignAgent(ctx, "job-123", "agent-123")
-		if err == nil {
-			t.Log("AssignAgent() succeeded (unexpected without DB)")
-		}
+		err := repo.AssignAgent(ctx, job.ID, agentID)
+		require.NoError(t, err)
+
+		found, err := repo.FindByID(ctx, job.ID)
+		require.NoError(t, err)
+		assert.Equal(t, agentID, found.AgentID)
 	})
 
 	t.Run("delete job", func(t *testing.T) {
-		err := repo.Delete(ctx, "job-123")
-		if err == nil {
-			t.Log("Delete() succeeded (unexpected without DB)")
-		}
+		err := repo.Delete(ctx, job.ID)
+		require.NoError(t, err)
+
+		_, err = repo.FindByID(ctx, job.ID)
+		assert.Error(t, err)
 	})
 }
 
 func TestJobRepository_QueryMethods(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobRepository(nil)
+	repo := NewJobRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	// Create multiple jobs with different statuses
+	statuses := []string{"queued", "processing", "completed"}
+	var jobIDs []string
+
+	for _, status := range statuses {
+		_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+		require.NoError(t, err)
+
+		job := &PrintJob{
+			DocumentID: documentID,
+			PrinterID:  printerID,
+			UserEmail:  userEmail,
+			Title:      "Test Job " + status,
+			Status:     status,
+			Priority:   5,
+		}
+		err = repo.Create(ctx, job)
+		require.NoError(t, err)
+		jobIDs = append(jobIDs, job.ID)
+	}
+
 	t.Run("find by status", func(t *testing.T) {
-		_, err := repo.FindByStatus(ctx, "queued", 10)
-		if err == nil {
-			t.Log("FindByStatus() succeeded (unexpected without DB)")
+		jobs, err := repo.FindByStatus(ctx, "queued", 10)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, len(jobs), 1)
+		if len(jobs) > 0 {
+			assert.Equal(t, "queued", jobs[0].Status)
 		}
 	})
 
 	t.Run("find by printer", func(t *testing.T) {
-		_, err := repo.FindByPrinter(ctx, "printer-123", 10, 0)
-		if err == nil {
-			t.Log("FindByPrinter() succeeded (unexpected without DB)")
+		jobs, err := repo.FindByPrinter(ctx, printerID, 10, 0)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, len(jobs), 1)
+		if len(jobs) > 0 {
+			assert.Equal(t, printerID, jobs[0].PrinterID)
 		}
 	})
 
 	t.Run("find by user", func(t *testing.T) {
-		_, err := repo.FindByUser(ctx, "test@example.com", 10, 0)
-		if err == nil {
-			t.Log("FindByUser() succeeded (unexpected without DB)")
+		jobs, err := repo.FindByUser(ctx, userEmail, 10, 0)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, len(jobs), 1)
+		if len(jobs) > 0 {
+			assert.Equal(t, userEmail, jobs[0].UserEmail)
 		}
 	})
 
 	t.Run("list with filters", func(t *testing.T) {
-		_, _, err := repo.ListWithFilters(ctx, 10, 0, "printer-123", "queued", "test@example.com")
-		if err == nil {
-			t.Log("ListWithFilters() succeeded (unexpected without DB)")
-		}
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, printerID, "", "")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 
 	t.Run("count by status", func(t *testing.T) {
-		_, err := repo.CountByStatus(ctx, "queued")
-		if err == nil {
-			t.Log("CountByStatus() succeeded (unexpected without DB)")
-		}
+		count, err := repo.CountByStatus(ctx, "queued")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, count, int64(1))
 	})
 }
 
 func TestJobRepository_AdvancedOperations(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobRepository(nil)
+	repo := NewJobRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	// Create a pending job
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Pending Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
 	t.Run("get next pending job", func(t *testing.T) {
-		job, err := repo.GetNextPendingJob(ctx, "printer-123")
-		if err == nil {
-			t.Log("GetNextPendingJob() succeeded (unexpected without DB)")
-		}
-		if job != nil {
-			t.Logf("GetNextPendingJob() returned job: %v", job.ID)
+		pending, err := repo.GetNextPendingJob(ctx, printerID)
+		require.NoError(t, err)
+		if pending != nil {
+			assert.Equal(t, "queued", pending.Status)
 		}
 	})
 
 	t.Run("update job progress", func(t *testing.T) {
-		err := repo.UpdateJobProgress(ctx, "job-123", 5)
-		if err == nil {
-			t.Log("UpdateJobProgress() succeeded (unexpected without DB)")
+		err := repo.UpdateJobProgress(ctx, job.ID, 5)
+		require.NoError(t, err)
+
+		updated, err := repo.FindByID(ctx, job.ID)
+		require.NoError(t, err)
+		assert.Equal(t, 5, updated.Pages)
+	})
+
+	t.Run("create failed job for retry", func(t *testing.T) {
+		_, _, _, _, documentID2, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+		require.NoError(t, err)
+
+		failedJob := &PrintJob{
+			DocumentID: documentID2,
+			PrinterID:  printerID,
+			UserEmail:  userEmail,
+			Title:      "Failed Job",
+			Status:     "failed",
+			Priority:   5,
+			Retries:    1,
 		}
+		err = repo.Create(ctx, failedJob)
+		require.NoError(t, err)
 	})
 
 	t.Run("get jobs needing retry", func(t *testing.T) {
 		jobs, err := repo.GetJobsNeedingRetry(ctx, 3, 10)
-		if err == nil {
-			t.Logf("GetJobsNeedingRetry() returned %d jobs (unexpected without DB)", len(jobs))
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, len(jobs), 1)
+		if len(jobs) > 0 {
+			assert.Equal(t, "failed", jobs[0].Status)
 		}
 	})
 }
@@ -237,10 +357,10 @@ func TestPrintJob_TimeFields(t *testing.T) {
 	completedAt := now
 
 	job := &PrintJob{
-		StartedAt:   now,
-		CompletedAt: &completedAt,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		StartedAt:    now,
+		CompletedAt:  &completedAt,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 
 	if job.StartedAt.IsZero() {
@@ -351,56 +471,115 @@ func TestPrintJob_PrinterAssociation(t *testing.T) {
 }
 
 func TestJobRepository_ListWithFilters_EmptyFilters(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobRepository(nil)
+	repo := NewJobRepository(testDB.Pool)
 	ctx := context.Background()
 
 	// All filters empty should return all jobs
 	_, _, err := repo.ListWithFilters(ctx, 10, 0, "", "", "")
-	if err == nil {
-		t.Log("ListWithFilters() with empty filters succeeded (unexpected without DB)")
-	}
+	require.NoError(t, err)
 }
 
 func TestJobRepository_ListWithFilters_SingleFilter(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobRepository(nil)
+	repo := NewJobRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Test Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
 	t.Run("filter by printer only", func(t *testing.T) {
-		_, _, err := repo.ListWithFilters(ctx, 10, 0, "printer-123", "", "")
-		if err == nil {
-			t.Log("ListWithFilters() by printer succeeded (unexpected without DB)")
-		}
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, printerID, "", "")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 
 	t.Run("filter by status only", func(t *testing.T) {
-		_, _, err := repo.ListWithFilters(ctx, 10, 0, "", "processing", "")
-		if err == nil {
-			t.Log("ListWithFilters() by status succeeded (unexpected without DB)")
-		}
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, "", "queued", "")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 
 	t.Run("filter by user only", func(t *testing.T) {
-		_, _, err := repo.ListWithFilters(ctx, 10, 0, "", "", "user@example.com")
-		if err == nil {
-			t.Log("ListWithFilters() by user succeeded (unexpected without DB)")
-		}
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, "", "", userEmail)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(1))
+		assert.GreaterOrEqual(t, len(jobs), 1)
 	})
 }
 
 func TestJobRepository_DuplicateHandling(t *testing.T) {
-	// Test that the repository can handle duplicate scenarios
-	// These would typically use database constraints
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
 
-	t.Run("unique job ID", func(t *testing.T) {
-		job1 := &PrintJob{ID: "job-123"}
-		job2 := &PrintJob{ID: "job-123"}
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
 
-		if job1.ID == job2.ID {
-			t.Log("Duplicate job IDs would be handled by database constraints")
-		}
-	})
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		ID:         generateTestID(),
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Test Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Try to create a job with the same ID - should fail
+	duplicate := &PrintJob{
+		ID:         job.ID,
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Duplicate Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, duplicate)
+	assert.Error(t, err)
 }
 
 func TestPrintJob_MediaTypes(t *testing.T) {
@@ -423,4 +602,507 @@ func TestPrintJob_QualityLevels(t *testing.T) {
 			t.Errorf("Quality not set correctly to %s", quality)
 		}
 	}
+}
+
+// Additional edge case tests
+
+func TestJobRepository_FindByID_NotFound(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	_, err := repo.FindByID(ctx, "non-existent-id")
+	assert.Error(t, err)
+}
+
+func TestJobRepository_Update_NotFound(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	job := &PrintJob{
+		ID:        "non-existent-id",
+		DocumentID: "doc-123",
+		PrinterID:  "printer-123",
+		UserEmail: "test@example.com",
+		Status:    "queued",
+	}
+
+	err := repo.Update(ctx, job)
+	assert.Error(t, err)
+}
+
+func TestJobRepository_UpdateStatus_NotFound(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	err := repo.UpdateStatus(ctx, "non-existent-id", "processing")
+	assert.Error(t, err)
+}
+
+func TestJobRepository_AssignAgent_NotFound(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	err := repo.AssignAgent(ctx, "non-existent-id", "agent-123")
+	assert.Error(t, err)
+}
+
+func TestJobRepository_Delete_NotFound(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	err := repo.Delete(ctx, "non-existent-id")
+	assert.Error(t, err)
+}
+
+func TestJobRepository_UpdateJobProgress_NotFound(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	err := repo.UpdateJobProgress(ctx, "non-existent-id", 5)
+	assert.Error(t, err)
+}
+
+func TestJobRepository_PriorityOrdering(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	// Create jobs with different priorities
+	for priority := 1; priority <= 10; priority++ {
+		_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+		require.NoError(t, err)
+
+		job := &PrintJob{
+			DocumentID: documentID,
+			PrinterID:  printerID,
+			UserEmail:  userEmail,
+			Title:      "Job with priority",
+			Status:     "queued",
+			Priority:   priority,
+		}
+		err = repo.Create(ctx, job)
+		require.NoError(t, err)
+	}
+
+	// Jobs should be ordered by priority (desc)
+	jobs, err := repo.FindByStatus(ctx, "queued", 20)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, len(jobs), 10)
+
+	// Check that higher priority jobs come first
+	for i := 0; i < len(jobs)-1; i++ {
+		assert.GreaterOrEqual(t, jobs[i].Priority, jobs[i+1].Priority)
+	}
+}
+
+func TestJobRepository_StatusTransitions(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Status Test Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Test status transitions
+	transitions := []string{"processing", "pending_agent", "processing", "completed"}
+	for _, newStatus := range transitions {
+		err := repo.UpdateStatus(ctx, job.ID, newStatus)
+		require.NoError(t, err)
+
+		updated, err := repo.FindByID(ctx, job.ID)
+		require.NoError(t, err)
+		assert.Equal(t, newStatus, updated.Status)
+	}
+}
+
+func TestJobRepository_AgentAssignment(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Agent Test Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Initially no agent assigned
+	found, err := repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Empty(t, found.AgentID)
+
+	// Assign agent
+	err = repo.AssignAgent(ctx, job.ID, agentID)
+	require.NoError(t, err)
+
+	// Verify assignment
+	found, err = repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Equal(t, agentID, found.AgentID)
+	assert.Equal(t, "processing", found.Status)
+}
+
+func TestJobRepository_OptionsJSON(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	options := `{"two_sided": true, "staple": true, "color": true}`
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Options Test Job",
+		Options:    options,
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Verify options were stored
+	found, err := repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Equal(t, options, found.Options)
+}
+
+func TestJobRepository_CompletionTimestamps(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Completion Test Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Initially no completion timestamp
+	found, err := repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Nil(t, found.CompletedAt)
+
+	// Update to completed
+	err = repo.UpdateStatus(ctx, job.ID, "completed")
+	require.NoError(t, err)
+
+	// Completion timestamp should still be nil (not auto-set by repository)
+	found, err = repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	// The repository doesn't auto-set completed_at, so we need to update manually
+	now := time.Now()
+	found.CompletedAt = &now
+	err = repo.Update(ctx, found)
+	require.NoError(t, err)
+
+	// Verify completion timestamp
+	found, err = repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, found.CompletedAt)
+}
+
+func TestJobRepository_RetryTracking(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Retry Test Job",
+		Status:     "queued",
+		Priority:   5,
+		Retries:    0,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Increment retries
+	job.Retries = 1
+	job.Status = "failed"
+	err = repo.Update(ctx, job)
+	require.NoError(t, err)
+
+	// Verify retries
+	found, err := repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 1, found.Retries)
+	assert.Equal(t, "failed", found.Status)
+
+	// Job should appear in GetJobsNeedingRetry
+	retryJobs, err := repo.GetJobsNeedingRetry(ctx, 3, 10)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, len(retryJobs), 1)
+}
+
+func TestJobRepository_MultiFilterQueries(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "Multi-filter Test Job",
+		Status:     "queued",
+		Priority:   5,
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Test with all filters
+	jobs, total, err := repo.ListWithFilters(ctx, 10, 0, printerID, "queued", userEmail)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, total, int64(1))
+	assert.GreaterOrEqual(t, len(jobs), 1)
+	if len(jobs) > 0 {
+		assert.Equal(t, printerID, jobs[0].PrinterID)
+		assert.Equal(t, "queued", jobs[0].Status)
+		assert.Equal(t, userEmail, jobs[0].UserEmail)
+	}
+}
+
+func TestJobRepository_NullAgentHandling(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	// Create job with no agent
+	job := &PrintJob{
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserEmail:  userEmail,
+		Title:      "No Agent Job",
+		Status:     "queued",
+		Priority:   5,
+		AgentID:    "",
+	}
+	err = repo.Create(ctx, job)
+	require.NoError(t, err)
+
+	// Verify agent is null/empty
+	found, err := repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Empty(t, found.AgentID)
+
+	// Assign agent
+	err = repo.AssignAgent(ctx, job.ID, agentID)
+	require.NoError(t, err)
+
+	// Verify agent is now set
+	found, err = repo.FindByID(ctx, job.ID)
+	require.NoError(t, err)
+	assert.Equal(t, agentID, found.AgentID)
+}
+
+func TestJobRepository_Pagination(t *testing.T) {
+	repo := NewJobRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	agentID, err := testutil.CreateTestAgent(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
+
+	printerID, err := testutil.CreateTestPrinter(ctx, testDB.Pool, agentID)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	// Create multiple jobs
+	for i := 0; i < 15; i++ {
+		_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+		require.NoError(t, err)
+
+		job := &PrintJob{
+			DocumentID: documentID,
+			PrinterID:  printerID,
+			UserEmail:  userEmail,
+			Title:      "Pagination Test Job",
+			Status:     "queued",
+			Priority:   5,
+		}
+		err = repo.Create(ctx, job)
+		require.NoError(t, err)
+	}
+
+	t.Run("first page", func(t *testing.T) {
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 0, "", "", "")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(15))
+		assert.LessOrEqual(t, len(jobs), 10)
+	})
+
+	t.Run("second page", func(t *testing.T) {
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 10, "", "", "")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(15))
+		assert.LessOrEqual(t, len(jobs), 10)
+	})
+
+	t.Run("offset beyond results", func(t *testing.T) {
+		jobs, total, err := repo.ListWithFilters(ctx, 10, 1000, "", "", "")
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(15))
+		assert.Empty(t, jobs)
+	})
 }

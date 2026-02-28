@@ -2,47 +2,22 @@
   "phases": {
     "requirements": {
       "status": "done",
-      "_updated": "2026-02-28T06:20:27.064774"
+      "_updated": "2026-02-28T14:34:54.068430"
     },
     "market_research": {
       "status": "done",
-      "_updated": "2026-02-28T06:24:35.403016"
+      "_updated": "2026-02-28T14:39:02.828543"
     },
     "design": {
       "status": "done",
-      "_updated": "2026-02-28T06:25:49.776987"
+      "_updated": "2026-02-28T14:39:54.396234"
     },
     "backend": {
-      "status": "done",
-      "_updated": "2026-02-28T06:53:02.243395"
-    },
-    "frontend": {
-      "status": "done",
-      "_updated": "2026-02-28T07:16:40.124435"
-    },
-    "testing": {
-      "status": "done",
-      "_updated": "2026-02-28T07:16:40.554763",
-      "write_tests": "done",
-      "unit_tests": "passed",
-      "e2e": "skipped"
-    },
-    "qa": {
-      "status": "done",
-      "_updated": "2026-02-28T07:30:25.659526",
-      "verdict": "NEEDS_FIXES"
-    },
-    "security": {
-      "status": "done",
-      "_updated": "2026-02-28T07:37:56.298684",
-      "verdict": "NEEDS_FIXES"
-    },
-    "deploy": {
-      "status": "done",
-      "_updated": "2026-02-28T07:54:59.683420"
+      "status": "running",
+      "_updated": "2026-02-28T14:39:54.436841"
     }
   },
-  "project": "windows print agent with printer discovery and queue which is instlled server side(server print job queued client consume print related user) and windows client side",
-  "branch": "team/windows-print-agent-with-printer-discove-1772259498",
-  "current_phase": "deploy"
+  "project": "Fix 9 failing tests in services/job-service/repository/job_assignment_test.go. All tests fail with 'dial tcp 127.0.0.1:5432: connect: connection refused'. The test suite requires PostgreSQL to be running but it's not available during test execution. Options: 1) Add testcontainers/go for automated PostgreSQL container lifecycle in tests, 2) Add docker-compose.test.yml for test infrastructure, 3) Mock the database layer for unit tests. Implement testcontainers approach as it provides real database testing. Create internal/testutil/db.go with testcontainers setup. Update job_assignment_test.go to use the test database helper. Ensure tests cleanup properly after each test run.",
+  "branch": "team/fix-9-failing-tests-in-servicesjob-servi-1772289252",
+  "current_phase": "backend"
 }

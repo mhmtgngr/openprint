@@ -5,6 +5,10 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/openprint/openprint/internal/testutil"
 )
 
 func TestNewJobHistoryRepository(t *testing.T) {
@@ -43,15 +47,33 @@ func TestJobHistory_Struct(t *testing.T) {
 	}
 }
 
-func TestJobHistoryRepository_CRUD(t *testing.T) {
-	t.Skip("Requires database connection")
+// Database-backed tests using testcontainers
 
-	repo := NewJobHistoryRepository(nil)
+func TestJobHistoryRepository_CRUD(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Create a test job first
+	_, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	_, _, _, printerID, _, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	jobID, err := testutil.CreateTestPrintJob(ctx, testDB.Pool, documentID, printerID, userEmail)
+	require.NoError(t, err)
+
 	history := &JobHistory{
-		ID:        "hist-123",
-		JobID:     "job-123",
+		ID:        generateHistoryID(),
+		JobID:     jobID,
 		Status:    "queued",
 		Message:   "Job created",
 		CreatedAt: time.Now(),
@@ -59,120 +81,200 @@ func TestJobHistoryRepository_CRUD(t *testing.T) {
 
 	t.Run("create history", func(t *testing.T) {
 		err := repo.Create(ctx, history)
-		if err == nil {
-			t.Log("Create() succeeded (unexpected without DB)")
-		}
+		require.NoError(t, err)
+		assert.NotEmpty(t, history.ID)
 	})
 
 	t.Run("find by ID", func(t *testing.T) {
-		_, err := repo.FindByID(ctx, "hist-123")
-		if err == nil {
-			t.Log("FindByID() succeeded (unexpected without DB)")
-		}
+		found, err := repo.FindByID(ctx, history.ID)
+		require.NoError(t, err)
+		assert.Equal(t, history.ID, found.ID)
+		assert.Equal(t, history.JobID, found.JobID)
+		assert.Equal(t, history.Status, found.Status)
+		assert.Equal(t, history.Message, found.Message)
 	})
 
 	t.Run("find by job ID", func(t *testing.T) {
-		_, err := repo.FindByJobID(ctx, "job-123")
-		if err == nil {
-			t.Log("FindByJobID() succeeded (unexpected without DB)")
+		entries, err := repo.FindByJobID(ctx, jobID)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, len(entries), 1)
+		if len(entries) > 0 {
+			assert.Equal(t, history.ID, entries[0].ID)
 		}
 	})
 
 	t.Run("find by status", func(t *testing.T) {
-		_, err := repo.FindByStatus(ctx, "queued", 10, 0)
-		if err == nil {
-			t.Log("FindByStatus() succeeded (unexpected without DB)")
-		}
+		entries, err := repo.FindByStatus(ctx, "queued", 10, 0)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, len(entries), 1)
 	})
 
 	t.Run("delete by job ID", func(t *testing.T) {
-		err := repo.DeleteByJobID(ctx, "job-123")
-		if err == nil {
-			t.Log("DeleteByJobID() succeeded (unexpected without DB)")
-		}
+		err := repo.DeleteByJobID(ctx, jobID)
+		require.NoError(t, err)
+
+		// Verify deletion
+		_, err = repo.FindByID(ctx, history.ID)
+		assert.Error(t, err)
 	})
 }
 
 func TestJobHistoryRepository_QueryMethods(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobHistoryRepository(nil)
+	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Setup test data
+	_, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	_, _, _, _, documentID, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	_, _, _, printerID, _, _, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	// Get a user email
+	var userEmail string
+	err = testDB.Pool.QueryRow(ctx, "SELECT email FROM users LIMIT 1").Scan(&userEmail)
+	require.NoError(t, err)
+
+	jobID, err := testutil.CreateTestPrintJob(ctx, testDB.Pool, documentID, printerID, userEmail)
+	require.NoError(t, err)
+
+	// Create multiple history entries
+	entries := []*JobHistory{
+		{ID: generateHistoryID(), JobID: jobID, Status: "queued", Message: "Job queued"},
+		{ID: generateHistoryID(), JobID: jobID, Status: "processing", Message: "Job started"},
+		{ID: generateHistoryID(), JobID: jobID, Status: "completed", Message: "Job finished"},
+	}
+	for _, e := range entries {
+		e.CreatedAt = time.Now()
+		err := repo.Create(ctx, e)
+		require.NoError(t, err)
+	}
+
 	t.Run("get latest by job ID", func(t *testing.T) {
-		history, err := repo.GetLatestByJobID(ctx, "job-123")
-		if err == nil && history != nil {
-			t.Log("GetLatestByJobID() returned history (unexpected without DB)")
-		}
+		history, err := repo.GetLatestByJobID(ctx, jobID)
+		require.NoError(t, err)
+		assert.NotNil(t, history)
+		assert.Equal(t, jobID, history.JobID)
 	})
 
 	t.Run("count by job ID", func(t *testing.T) {
-		count, err := repo.CountByJobID(ctx, "job-123")
-		if err == nil {
-			t.Logf("CountByJobID() returned %d (unexpected without DB)", count)
-		}
+		count, err := repo.CountByJobID(ctx, jobID)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, count, 3)
 	})
 
 	t.Run("list with pagination", func(t *testing.T) {
-		_, total, err := repo.List(ctx, 10, 0)
-		if err == nil {
-			t.Logf("List() returned total=%d (unexpected without DB)", total)
-		}
+		list, total, err := repo.List(ctx, 10, 0)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(3))
+		assert.GreaterOrEqual(t, len(list), 3)
 	})
 }
 
 func TestJobHistoryRepository_BatchOperations(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobHistoryRepository(nil)
+	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
 	entries := []*JobHistory{
-		{
-			ID:        "hist-1",
-			JobID:     "job-123",
-			Status:    "queued",
-			Message:   "Job queued",
-			CreatedAt: time.Now(),
-		},
-		{
-			ID:        "hist-2",
-			JobID:     "job-123",
-			Status:    "processing",
-			Message:   "Job started processing",
-			CreatedAt: time.Now(),
-		},
-		{
-			ID:        "hist-3",
-			JobID:     "job-123",
-			Status:    "completed",
-			Message:   "Job completed successfully",
-			CreatedAt: time.Now(),
-		},
+		{ID: generateHistoryID(), JobID: jobID, Status: "queued", Message: "Job queued", CreatedAt: time.Now()},
+		{ID: generateHistoryID(), JobID: jobID, Status: "processing", Message: "Job started", CreatedAt: time.Now()},
+		{ID: generateHistoryID(), JobID: jobID, Status: "completed", Message: "Job finished", CreatedAt: time.Now()},
 	}
 
-	err := repo.CreateBatch(ctx, entries)
-	if err == nil {
-		t.Log("CreateBatch() succeeded (unexpected without DB)")
-	}
+	err = repo.CreateBatch(ctx, entries)
+	require.NoError(t, err)
+
+	// Verify all entries were created
+	count, err := repo.CountByJobID(ctx, jobID)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, count, 3)
 }
 
 func TestJobHistoryRepository_DeleteOld(t *testing.T) {
-	t.Skip("Requires database connection")
-	repo := NewJobHistoryRepository(nil)
+	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
-	t.Run("delete entries older than duration", func(t *testing.T) {
-		deleted, err := repo.DeleteOld(ctx, 30*24*time.Hour)
-		if err == nil {
-			t.Logf("DeleteOld() deleted %d entries (unexpected without DB)", deleted)
-		}
-	})
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
 
-	t.Run("delete entries older than 1 hour", func(t *testing.T) {
-		deleted, err := repo.DeleteOld(ctx, 1*time.Hour)
-		if err == nil {
-			t.Logf("DeleteOld() deleted %d entries (unexpected without DB)", deleted)
-		}
-	})
+	// Create old history entry (manually set created_at to past)
+	oldEntry := &JobHistory{
+		ID:        generateHistoryID(),
+		JobID:     jobID,
+		Status:    "queued",
+		Message:   "Old entry",
+		CreatedAt: time.Now().Add(-48 * time.Hour),
+	}
+	err = repo.Create(ctx, oldEntry)
+	require.NoError(t, err)
+
+	// Create recent entry
+	recentEntry := &JobHistory{
+		ID:        generateHistoryID(),
+		JobID:     jobID,
+		Status:    "processing",
+		Message:   "Recent entry",
+		CreatedAt: time.Now(),
+	}
+	err = repo.Create(ctx, recentEntry)
+	require.NoError(t, err)
+
+	// Delete entries older than 24 hours
+	deleted, err := repo.DeleteOld(ctx, 24*time.Hour)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, deleted, int64(1))
+
+	// Verify old entry is gone
+	_, err = repo.FindByID(ctx, oldEntry.ID)
+	assert.Error(t, err)
+
+	// Verify recent entry still exists
+	found, err := repo.FindByID(ctx, recentEntry.ID)
+	require.NoError(t, err)
+	assert.Equal(t, recentEntry.ID, found.ID)
+}
+
+func TestJobHistoryRepository_FindByID_NotFound(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	_, err := repo.FindByID(ctx, "non-existent-id")
+	assert.Error(t, err)
+}
+
+func TestJobHistoryRepository_GetLatestByJobID_NotFound(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	history, err := repo.GetLatestByJobID(ctx, "non-existent-job-id")
+	assert.NoError(t, err)
+	assert.Nil(t, history)
+}
+
+func TestJobHistoryRepository_CountByJobID_Zero(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	count, err := repo.CountByJobID(ctx, "non-existent-job-id")
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func TestJobHistoryRepository_EmptyBatch(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Empty batch should not error
+	err := repo.CreateBatch(ctx, []*JobHistory{})
+	assert.NoError(t, err)
 }
 
 func TestJobHistory_StatusTransitions(t *testing.T) {
@@ -193,15 +295,13 @@ func TestJobHistory_StatusTransitions(t *testing.T) {
 	for _, tt := range validTransitions {
 		t.Run(tt.from+" to "+tt.to, func(t *testing.T) {
 			history := &JobHistory{
-				JobID:    "job-123",
-				Status:   tt.to,
-				Message:  tt.message,
+				JobID:     generateHistoryID(),
+				Status:    tt.to,
+				Message:   tt.message,
 				CreatedAt: time.Now(),
 			}
 
-			if history.Status != tt.to {
-				t.Errorf("Expected status %s, got %s", tt.to, history.Status)
-			}
+			assert.Equal(t, tt.to, history.Status)
 		})
 	}
 }
@@ -221,15 +321,13 @@ func TestJobHistory_Messages(t *testing.T) {
 	for _, tt := range testMessages {
 		t.Run(tt.name, func(t *testing.T) {
 			history := &JobHistory{
-				JobID:    "job-123",
-				Status:   "processing",
-				Message:  tt.message,
+				JobID:     generateHistoryID(),
+				Status:    "processing",
+				Message:   tt.message,
 				CreatedAt: time.Now(),
 			}
 
-			if history.Message != tt.message {
-				t.Errorf("Expected message %s, got %s", tt.message, history.Message)
-			}
+			assert.Equal(t, tt.message, history.Message)
 		})
 	}
 }
@@ -241,22 +339,22 @@ func TestJobHistory_TimeFields(t *testing.T) {
 
 	histories := []*JobHistory{
 		{
-			ID:        "hist-1",
-			JobID:     "job-123",
+			ID:        generateHistoryID(),
+			JobID:     generateHistoryID(),
 			Status:    "queued",
 			Message:   "Initial status",
 			CreatedAt: past,
 		},
 		{
-			ID:        "hist-2",
-			JobID:     "job-123",
+			ID:        generateHistoryID(),
+			JobID:     generateHistoryID(),
 			Status:    "processing",
 			Message:   "Started processing",
 			CreatedAt: now,
 		},
 		{
-			ID:        "hist-3",
-			JobID:     "job-123",
+			ID:        generateHistoryID(),
+			JobID:     generateHistoryID(),
 			Status:    "completed",
 			Message:   "Completed",
 			CreatedAt: future,
@@ -270,21 +368,15 @@ func TestJobHistory_TimeFields(t *testing.T) {
 	}
 }
 
-func TestJobHistory_EmptyBatch(t *testing.T) {
-	repo := NewJobHistoryRepository(nil)
+func TestJobHistory_JobLifecycle(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
-	// Empty batch should not error
-	err := repo.CreateBatch(ctx, []*JobHistory{})
-	if err != nil {
-		t.Errorf("CreateBatch() with empty entries should not error, got %v", err)
-	}
-}
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
 
-func TestJobHistory_JobLifecycle(t *testing.T) {
 	// Simulate a complete job lifecycle through history entries
-	jobID := "job-lifecycle-123"
-
 	lifecycle := []struct {
 		status  string
 		message string
@@ -296,62 +388,93 @@ func TestJobHistory_JobLifecycle(t *testing.T) {
 		{"completed", "Job finished successfully"},
 	}
 
-	var histories []*JobHistory
-	for i, step := range lifecycle {
-		histories = append(histories, &JobHistory{
-			ID:        "hist-" + string(rune('1'+i)),
+	var historyIDs []string
+	for _, step := range lifecycle {
+		history := &JobHistory{
+			ID:        generateHistoryID(),
 			JobID:     jobID,
 			Status:    step.status,
 			Message:   step.message,
-			CreatedAt: time.Now().Add(time.Duration(i) * time.Minute),
-		})
+			CreatedAt: time.Now(),
+		}
+		err := repo.Create(ctx, history)
+		require.NoError(t, err)
+		historyIDs = append(historyIDs, history.ID)
 	}
 
-	for i, h := range histories {
-		if h.JobID != jobID {
-			t.Errorf("History %d: expected JobID %s, got %s", i, jobID, h.JobID)
-		}
-	}
+	// Verify all entries were created
+	count, err := repo.CountByJobID(ctx, jobID)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, count, len(lifecycle))
+
+	// Verify we can retrieve all history entries
+	entries, err := repo.FindByJobID(ctx, jobID)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, len(entries), len(lifecycle))
 }
 
 func TestJobHistory_MultipleJobs(t *testing.T) {
-	// Test history for multiple jobs
-	jobs := []string{"job-1", "job-2", "job-3"}
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
 
-	for _, jobID := range jobs {
+	// Create multiple jobs with history
+	var jobIDs []string
+	for i := 0; i < 3; i++ {
+		_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+		require.NoError(t, err)
+		jobIDs = append(jobIDs, jobID)
+
 		history := &JobHistory{
-			ID:        "hist-" + jobID,
+			ID:        generateHistoryID(),
 			JobID:     jobID,
 			Status:    "queued",
 			Message:   "Job created",
 			CreatedAt: time.Now(),
 		}
+		err = repo.Create(ctx, history)
+		require.NoError(t, err)
+	}
 
-		if history.JobID != jobID {
-			t.Errorf("Expected JobID %s, got %s", jobID, history.JobID)
-		}
+	// Verify each job has history
+	for _, jobID := range jobIDs {
+		count, err := repo.CountByJobID(ctx, jobID)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, count, 1)
 	}
 }
 
 func TestJobHistory_LongMessages(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
 	// Test handling of long messages
 	longMessage := "This is a very long error message that contains detailed information about what went wrong during the printing process, including error codes, stack traces, and diagnostic information that might be useful for debugging purposes."
 
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
 	history := &JobHistory{
-		ID:        "hist-123",
-		JobID:     "job-123",
+		ID:        generateHistoryID(),
+		JobID:     jobID,
 		Status:    "failed",
 		Message:   longMessage,
 		CreatedAt: time.Now(),
 	}
 
-	if len(history.Message) != len(longMessage) {
-		t.Error("Long message was truncated")
-	}
+	err = repo.Create(ctx, history)
+	require.NoError(t, err)
+
+	// Retrieve and verify
+	found, err := repo.FindByID(ctx, history.ID)
+	require.NoError(t, err)
+	assert.Equal(t, len(longMessage), len(found.Message))
 }
 
 func TestJobHistory_SpecialCharacters(t *testing.T) {
-	// Test handling of special characters in messages
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
 	messages := []string{
 		"Job completed with \"quotes\"",
 		"Error: printer's paper tray is empty",
@@ -359,17 +482,136 @@ func TestJobHistory_SpecialCharacters(t *testing.T) {
 		"Price: $10.50 per page",
 	}
 
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
 	for _, msg := range messages {
 		history := &JobHistory{
-			ID:        "hist-123",
-			JobID:     "job-123",
+			ID:        generateHistoryID(),
+			JobID:     jobID,
 			Status:    "processing",
 			Message:   msg,
 			CreatedAt: time.Now(),
 		}
 
-		if history.Message != msg {
-			t.Errorf("Message with special characters was modified: %s", history.Message)
-		}
+		err := repo.Create(ctx, history)
+		require.NoError(t, err)
+
+		// Retrieve and verify
+		found, err := repo.FindByID(ctx, history.ID)
+		require.NoError(t, err)
+		assert.Equal(t, msg, found.Message)
 	}
+}
+
+func TestJobHistoryRepository_FindByStatus_Pagination(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	// Create multiple entries with same status
+	status := "queued"
+	for i := 0; i < 5; i++ {
+		history := &JobHistory{
+			ID:        generateHistoryID(),
+			JobID:     jobID,
+			Status:    status,
+			Message:   "Test entry",
+			CreatedAt: time.Now(),
+		}
+		err := repo.Create(ctx, history)
+		require.NoError(t, err)
+	}
+
+	// Test pagination
+	t.Run("first page", func(t *testing.T) {
+		entries, err := repo.FindByStatus(ctx, status, 2, 0)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(entries), 2)
+	})
+
+	t.Run("second page", func(t *testing.T) {
+		entries, err := repo.FindByStatus(ctx, status, 2, 2)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(entries), 2)
+	})
+}
+
+func TestJobHistoryRepository_List_Pagination(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Create a bunch of history entries
+	for i := 0; i < 15; i++ {
+		_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+		require.NoError(t, err)
+
+		history := &JobHistory{
+			ID:        generateHistoryID(),
+			JobID:     jobID,
+			Status:    "queued",
+			Message:   "Test entry",
+			CreatedAt: time.Now(),
+		}
+		err = repo.Create(ctx, history)
+		require.NoError(t, err)
+	}
+
+	t.Run("first page", func(t *testing.T) {
+		list, total, err := repo.List(ctx, 10, 0)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(15))
+		assert.LessOrEqual(t, len(list), 10)
+	})
+
+	t.Run("second page", func(t *testing.T) {
+		list, total, err := repo.List(ctx, 10, 10)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(15))
+		assert.LessOrEqual(t, len(list), 10)
+	})
+}
+
+func TestJobHistoryRepository_Update_Status(t *testing.T) {
+	repo := NewJobHistoryRepository(testDB.Pool)
+	ctx := context.Background()
+
+	// Setup test data
+	_, _, _, _, _, jobID, err := testutil.CreateFullTestSetup(ctx, testDB.Pool)
+	require.NoError(t, err)
+
+	history := &JobHistory{
+		ID:        generateHistoryID(),
+		JobID:     jobID,
+		Status:    "queued",
+		Message:   "Initial status",
+		CreatedAt: time.Now(),
+	}
+	err = repo.Create(ctx, history)
+	require.NoError(t, err)
+
+	// History entries are immutable - we create new entries for status changes
+	newHistory := &JobHistory{
+		ID:        generateHistoryID(),
+		JobID:     jobID,
+		Status:    "processing",
+		Message:   "Status changed to processing",
+		CreatedAt: time.Now(),
+	}
+	err = repo.Create(ctx, newHistory)
+	require.NoError(t, err)
+
+	// Verify we have two history entries
+	count, err := repo.CountByJobID(ctx, jobID)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, count, 2)
+}
+
+// Helper function to generate unique history IDs
+func generateHistoryID() string {
+	return "hist-" + time.Now().Format("20060102150405.000000000")
 }
