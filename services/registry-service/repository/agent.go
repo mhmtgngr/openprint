@@ -205,7 +205,7 @@ func (r *AgentRepository) Update(ctx context.Context, agent *Agent) error {
 	query := `
 		UPDATE agents
 		SET name = $2, version = $3, os = $4, architecture = $5, hostname = $6,
-		    organization_id = $7, status = $8, updated_at = $9
+		    organization_id = NULLIF($7, '')::uuid, status = $8, updated_at = $9
 		WHERE id = $1
 	`
 

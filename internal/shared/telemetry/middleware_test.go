@@ -168,6 +168,43 @@ func TestResponseWriter_WriteHeader(t *testing.T) {
 	})
 }
 
+func TestResponseWriter_Hijack(t *testing.T) {
+	t.Run("responseWriter implements http.Hijacker", func(t *testing.T) {
+		// Verify that responseWriter implements http.Hijacker interface
+		rw := &responseWriter{ResponseWriter: httptest.NewRecorder()}
+
+		// This verifies the type assertion compiles
+		var _ http.Hijacker = rw
+
+		// Call Hijack - httptest.ResponseRecorder doesn't implement Hijacker
+		// so we expect http.ErrNotSupported
+		conn, rw2, err := rw.Hijack()
+		if err != http.ErrNotSupported {
+			t.Errorf("Hijack() error = %v, want %v", err, http.ErrNotSupported)
+		}
+		if conn != nil {
+			t.Error("Hijack() conn should be nil when not supported")
+		}
+		if rw2 != nil {
+			t.Error("Hijack() rw2 should be nil when not supported")
+		}
+	})
+
+	t.Run("Hijack method exists and is callable", func(t *testing.T) {
+		// Test that the Hijack method can be called without panic
+		rw := &responseWriter{ResponseWriter: httptest.NewRecorder()}
+
+		// This should not panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Hijack() panicked: %v", r)
+			}
+		}()
+
+		_, _, _ = rw.Hijack()
+	})
+}
+
 func TestLooksLikeID(t *testing.T) {
 	tests := []struct {
 		name string

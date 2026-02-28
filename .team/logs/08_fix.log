@@ -1,15 +1,27 @@
-All services are running and healthy. The fix is complete.
+All tests pass. Here's a summary of the fixes I made:
 
-**Summary of the fix:**
+## Summary of Fixes
 
-The issue was in `services/job-service/repository/job.go` line 264. The `Update` function was passing `agent_id = $17` directly to PostgreSQL, but when `AgentID` is an empty string, PostgreSQL couldn't convert `""` to UUID type.
-
-The fix was to use the same pattern already used in the `Create` function:
-
-```sql
-agent_id = NULLIF($17, '')::uuid
+### 1. PostgreSQL UUID Error (`services/registry-service/repository/agent.go`)
+**Problem**: The `Update` method was passing an empty string directly to a UUID column, causing:
+```
+ERROR: invalid input syntax for type uuid: ""
 ```
 
-This converts empty strings to NULL before casting to UUID, which PostgreSQL accepts.
+**Fix**: Added `NULLIF($7, '')::uuid` to convert empty strings to NULL, matching what was already done in the `Create` method.
 
-**File changed:** `/home/cmit/openprint/services/job-service/repository/job.go`
+### 2. WebSocket Hijacker Error (`internal/shared/telemetry/middleware.go`)
+**Problem**: The telemetry middleware's custom `responseWriter` wrapper didn't implement the `http.Hijacker` interface, causing:
+```
+Failed to upgrade to WebSocket: websocket: response does not implement http.Hijacker
+```
+
+**Fix**: 
+- Added `bufio` and `net` imports
+- Implemented the `Hijack()` method on `responseWriter` that delegates to the underlying `ResponseWriter` if it supports the interface
+- Returns `http.ErrNotSupported` if the underlying writer doesn't implement `http.Hijacker`
+
+### Files Changed
+1. `/home/cmit/openprint/services/registry-service/repository/agent.go` - Fixed NULLIF in Update query
+2. `/home/cmit/openprint/internal/shared/telemetry/middleware.go` - Added Hijacker support
+3. `/home/cmit/openprint/internal/shared/telemetry/middleware_test.go` - Added test coverage for Hijacker
