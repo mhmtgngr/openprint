@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-02-28T18:07:59.748307",
+  "project": "openprint",
+  "server": {
+    "hostname": "cmit",
+    "external_ip": "192.168.31.76",
+    "localhost": "127.0.0.1"
+  },
+  "services": {
+    "dashboard": {
+      "url": "http://192.168.31.76:3000",
+      "local_url": "http://localhost:3000",
+      "port": 3000,
+      "accessible": true
+    },
+    "api_ports": [
+      15432,
+      16379,
+      18001,
+      18005,
+      8002,
+      8003,
+      8004
+    ],
+    "all_accessible_ports": [
+      15432,
+      16379,
+      18001,
+      18005,
+      3000,
+      8002,
+      8003,
+      8004
+    ]
+  },
+  "client_connection": {
+    "base_url": "http://192.168.31.76:3000",
+    "api_base": "http://192.168.31.76",
+    "note": "Ensure firewall allows inbound connections to the ports listed above"
+  }
+}
