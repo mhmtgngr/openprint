@@ -11,5 +11,10 @@ export const navConfig: NavItem[] = [
   { path: '/jobs', label: 'Jobs', icon: 'DocumentIcon', roles: ['user', 'admin', 'owner'] },
   { path: '/printers', label: 'Devices', icon: 'PrinterIcon', roles: ['user', 'admin', 'owner'] },
   { path: '/documents', label: 'Documents', icon: 'FolderIcon', roles: ['user', 'admin', 'owner'] },
+  { path: '/print-release', label: 'Print Release', icon: 'LockClosedIcon', roles: ['user', 'admin', 'owner'] },
   { path: '/settings', label: 'Settings', icon: 'CogIcon', roles: ['user', 'admin', 'owner'] },
+  { path: '/quotas', label: 'Quotas', icon: 'ChartBarIcon', roles: ['admin', 'owner'] },
+  { path: '/policies', label: 'Policies', icon: 'ShieldCheckIcon', roles: ['admin', 'owner'] },
+  { path: '/audit-logs', label: 'Audit Logs', icon: 'ClipboardDocumentListIcon', roles: ['admin', 'owner'] },
+  { path: '/email-to-print', label: 'Email-to-Print', icon: 'EnvelopeIcon', roles: ['admin', 'owner'] },
 ];

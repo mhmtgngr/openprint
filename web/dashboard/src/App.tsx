@@ -14,6 +14,11 @@ import { Agents } from './pages/Agents';
 import { AgentDetailPage } from './pages/AgentDetail';
 import { DiscoveredPrintersPage } from './pages/DiscoveredPrinters';
 import { JobAssignmentsPage } from './pages/JobAssignments';
+import { Quotas } from './pages/Quotas';
+import { Policies } from './pages/Policies';
+import { AuditLogs } from './pages/AuditLogs';
+import { EmailToPrint } from './pages/EmailToPrint';
+import { PrintReleasePage } from './pages/PrintRelease';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useRequireAuth();
@@ -154,6 +159,46 @@ function App() {
           <AdminRoute>
             <JobAssignmentsPage />
           </AdminRoute>
+        }
+      />
+      <Route
+        path="/quotas"
+        element={
+          <AdminRoute>
+            <Quotas />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/policies"
+        element={
+          <AdminRoute>
+            <Policies />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/audit-logs"
+        element={
+          <AdminRoute>
+            <AuditLogs />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/email-to-print"
+        element={
+          <AdminRoute>
+            <EmailToPrint />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/print-release"
+        element={
+          <ProtectedRoute>
+            <PrintReleasePage />
+          </ProtectedRoute>
         }
       />
 

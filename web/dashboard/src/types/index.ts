@@ -305,3 +305,157 @@ export interface CreateWebhookRequest {
   url: string;
   events: string[];
 }
+
+// Cost Tracking & Quota Management
+export interface UserQuota {
+  userId: string;
+  orgId: string;
+  monthlyPageLimit: number;
+  monthlyColorPageLimit?: number;
+  currentMonthPages: number;
+  currentMonthColorPages: number;
+  currentMonthCost: number;
+  quotaResetDate: string;
+  overageActions: OverageAction[];
+}
+
+export type OverageAction = 'block' | 'charge' | 'warn' | 'allow';
+
+export interface QuotaPeriod {
+  startDate: string;
+  endDate: string;
+  totalPages: number;
+  totalCost: number;
+  breakdowndByUser: UserCostBreakdown[];
+}
+
+export interface UserCostBreakdown {
+  userId: string;
+  userName: string;
+  pages: number;
+  colorPages: number;
+  cost: number;
+}
+
+export interface UpdateQuotaRequest {
+  userId?: string;
+  monthlyPageLimit?: number;
+  monthlyColorPageLimit?: number;
+  overageActions?: OverageAction[];
+}
+
+// Print Policy Engine
+export interface PrintPolicy {
+  id: string;
+  orgId: string;
+  name: string;
+  description?: string;
+  isEnabled: boolean;
+  priority: number;
+  conditions: PolicyConditions;
+  actions: PolicyActions;
+  appliesTo: PolicyScope;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PolicyConditions {
+  maxPagesPerJob?: number;
+  maxPagesPerMonth?: number;
+  allowedFileTypes?: string[];
+  blockedFileTypes?: string[];
+  requireApproval?: boolean;
+  timeRestrictions?: TimeRestriction;
+  userRestrictions?: string[]; // user IDs
+  printerRestrictions?: string[]; // printer IDs
+}
+
+export interface TimeRestriction {
+  allowedDays?: number[]; // 0-6 (Sunday-Saturday)
+  allowedHours?: { start: string; end: string }[]; // "09:00" - "17:00"
+}
+
+export interface PolicyActions {
+  forceDuplex?: boolean;
+  forceColor?: boolean | 'grayscale';
+  forceBlackAndWhite?: boolean;
+  maxCopies?: number;
+  defaultPaperSize?: string;
+  requirePinRelease?: boolean;
+  requireApproval?: boolean;
+  defaultQuality?: 'draft' | 'normal' | 'high';
+}
+
+export type PolicyScope = 'all' | 'users' | 'groups' | 'printers';
+
+export interface CreatePolicyRequest {
+  name: string;
+  description?: string;
+  conditions: PolicyConditions;
+  actions: PolicyActions;
+  appliesTo: PolicyScope;
+  targetIds?: string[]; // user/group/printer IDs based on scope
+}
+
+// Secure Print Release
+export interface PrintRelease {
+  id: string;
+  jobId: string;
+  userId: string;
+  printerId: string;
+  releaseCode: string; // hashed
+  status: 'pending' | 'released' | 'expired' | 'cancelled';
+  createdAt: string;
+  expiresAt: string;
+  releasedAt?: string;
+}
+
+export interface ReleaseJobRequest {
+  jobId: string;
+  pin: string;
+  printerId: string;
+}
+
+export interface CreateSecureJobRequest extends CreateJobRequest {
+  requirePin: boolean;
+  pin?: string;
+  expiresAt?: string;
+}
+
+// Email-to-Print
+export interface EmailToPrintConfig {
+  id: string;
+  orgId: string;
+  isEnabled: boolean;
+  emailPrefix: string; // e.g., "print@" for print@org.openprint.cloud
+  defaultPrinterId?: string;
+  allowedSenders?: string[]; // email addresses or domains
+  autoRelease?: boolean;
+  requireApproval?: boolean;
+  maxAttachments?: number;
+  allowedFileTypes?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailPrintJob {
+  id: string;
+  configId: string;
+  fromEmail: string;
+  subject: string;
+  attachmentCount: number;
+  status: 'received' | 'processing' | 'completed' | 'failed';
+  createdAt: string;
+  processedAt?: string;
+  errorMessage?: string;
+}
+
+export interface UpdateEmailConfigRequest {
+  isEnabled?: boolean;
+  defaultPrinterId?: string;
+  allowedSenders?: string[];
+  autoRelease?: boolean;
+  requireApproval?: boolean;
+  maxAttachments?: number;
+  allowedFileTypes?: string[];
+}

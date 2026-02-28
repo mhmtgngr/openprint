@@ -24,6 +24,17 @@ import type {
   CreateWebhookRequest,
   APIError,
   JobHistoryEntry,
+  UserQuota,
+  QuotaPeriod,
+  UpdateQuotaRequest,
+  PrintPolicy,
+  CreatePolicyRequest,
+  PrintRelease,
+  ReleaseJobRequest,
+  CreateSecureJobRequest,
+  EmailToPrintConfig,
+  EmailPrintJob,
+  UpdateEmailConfigRequest,
 } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -497,3 +508,168 @@ export const userApi = {
 
 export { setTokens, clearTokens, getAccessToken };
 export type { APIErrorClass as APIError };
+
+// Quotas API
+export const quotasApi = {
+  async getUserQuota(userId?: string): Promise<UserQuota> {
+    const url = userId
+      ? `${API_BASE_URL}/quotas/users/${userId}`
+      : `${API_BASE_URL}/quotas/me`;
+    const response = await fetchWithAuth(url);
+    return handleResponse<UserQuota>(response);
+  },
+
+  async getOrgQuotas(): Promise<UserQuota[]> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/quotas/organization`);
+    return handleResponse<UserQuota[]>(response);
+  },
+
+  async updateQuota(data: UpdateQuotaRequest): Promise<UserQuota> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/quotas`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<UserQuota>(response);
+  },
+
+  async getPeriods(params?: { limit?: number; offset?: number }): Promise<PaginatedResponse<QuotaPeriod>> {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.offset) searchParams.set('offset', params.offset.toString());
+
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/quotas/periods?${searchParams.toString()}`
+    );
+    return handleResponse<PaginatedResponse<QuotaPeriod>>(response);
+  },
+};
+
+// Policies API
+export const policiesApi = {
+  async list(): Promise<PrintPolicy[]> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies`);
+    return handleResponse<PrintPolicy[]>(response);
+  },
+
+  async get(id: string): Promise<PrintPolicy> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies/${id}`);
+    return handleResponse<PrintPolicy>(response);
+  },
+
+  async create(data: CreatePolicyRequest): Promise<PrintPolicy> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PrintPolicy>(response);
+  },
+
+  async update(id: string, data: Partial<CreatePolicyRequest>): Promise<PrintPolicy> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PrintPolicy>(response);
+  },
+
+  async delete(id: string): Promise<void> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies/${id}`, {
+      method: 'DELETE',
+    });
+    return handleResponse<void>(response);
+  },
+
+  async toggle(id: string, isEnabled: boolean): Promise<PrintPolicy> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies/${id}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isEnabled }),
+    });
+    return handleResponse<PrintPolicy>(response);
+  },
+
+  async reorder(policyIds: string[]): Promise<void> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/policies/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ policyIds }),
+    });
+    return handleResponse<void>(response);
+  },
+};
+
+// Print Release API
+export const printReleaseApi = {
+  async createSecureJob(data: CreateSecureJobRequest): Promise<PrintJob> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/jobs/secure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PrintJob>(response);
+  },
+
+  async getPendingReleases(): Promise<PrintRelease[]> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/releases/pending`);
+    return handleResponse<PrintRelease[]>(response);
+  },
+
+  async releaseJob(data: ReleaseJobRequest): Promise<PrintJob> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/releases/release`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PrintJob>(response);
+  },
+
+  async cancelRelease(jobId: string): Promise<void> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/releases/${jobId}`, {
+      method: 'DELETE',
+    });
+    return handleResponse<void>(response);
+  },
+};
+
+// Email-to-Print API
+export const emailToPrintApi = {
+  async getConfig(): Promise<EmailToPrintConfig> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/email-to-print/config`);
+    return handleResponse<EmailToPrintConfig>(response);
+  },
+
+  async updateConfig(data: UpdateEmailConfigRequest): Promise<EmailToPrintConfig> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/email-to-print/config`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<EmailToPrintConfig>(response);
+  },
+
+  async getJobs(params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<PaginatedResponse<EmailPrintJob>> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.offset) searchParams.set('offset', params.offset.toString());
+
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/email-to-print/jobs?${searchParams.toString()}`
+    );
+    return handleResponse<PaginatedResponse<EmailPrintJob>>(response);
+  },
+
+  async testEmail(): Promise<{ success: boolean; email: string }> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/email-to-print/test`, {
+      method: 'POST',
+    });
+    return handleResponse<{ success: boolean; email: string }>(response);
+  },
+};
