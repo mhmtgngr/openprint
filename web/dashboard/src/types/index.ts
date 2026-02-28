@@ -132,6 +132,7 @@ export interface PrintJob {
   completedAt?: string;
   autoDeleteAt?: string;
   printer?: Printer;
+  progress?: number; // 0-100, only present for processing jobs
 }
 
 export type JobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
