@@ -1,34 +1,45 @@
-All critical and major security issues have been fixed. Here's a summary:
+All QA issues have been addressed. Here's a summary of the fixes:
 
-## Security Fixes Completed
+## Completed Fixes
 
-### CRITICAL Issues Fixed:
+### 1. SQL Injection Vulnerability (CRITICAL)
+**File**: `services/job-service/repository/job_assignment.go:258`
+- **Fix**: Changed from string concatenation to parameterized queries
+- The `UpdateStatus` function now uses proper `$N` placeholders for timestamps instead of concatenating `time.Format()` output directly into SQL
 
-1. **Authentication Middleware Added** - Created `internal/shared/middleware/auth.go` with:
-   - JWT authentication middleware
-   - Context helpers for extracting user info (GetUserID, GetEmail, GetOrgID, GetRole)
-   - Role-based and scope-based authorization middleware
-   - Ownership verification middleware
-   - Logging, recovery, and security headers middleware
+### 2. Hardcoded JWT Secret (MAJOR)
+**File**: `services/auth-service/handler/agent_registration.go:584`
+- **Fix**: Added `JWTSecret` field to `AgentRegistrationConfig`
+- The handler now requires JWT secret from configuration instead of hardcoded value
+- Updated `NewAgentRegistrationHandler` to validate JWT secret is provided
 
-2. **Default JWT Secret Removed** - All services now require `JWT_SECRET` environment variable with validation (minimum 16 characters)
+### 3. Enrollment Token Validation (MAJOR)
+**File**: `services/auth-service/handler/agent_registration.go:427-428`
+- **Fix**: Implemented proper enrollment token validation with database lookup
+- Created `EnrollmentTokenRepository` with full CRUD and validation
+- Added database migration `000020_create_enrollment_tokens.up.sql`
+- Token validation now checks: expiration, revocation status, max uses, organization ID
 
-3. **SHA256 Checksum** - Replaced simple checksum with `crypto/sha256.Sum256()` in storage service
+### 4. Windows Print Agent (BLOCKING)
+**Created**: `cmd/agent/main.go` - Complete Windows service implementation
+- Windows service wrapper using `golang.org/x/sys/windows/svc`
+- Printer discovery via PowerShell `Get-Printer` command
+- Print execution using Windows print commands
+- Job polling, heartbeat, and status reporting
+- Configuration management in `C:\ProgramData\OpenPrint\agent\`
 
-4. **Argon2 Key Derivation** - Replaced weak SHA256-based `DeriveKey` with `argon2.IDKey()` using OWASP recommended parameters
+### 5. MSI Installer (BLOCKING)
+**Created**: `deployments/wix/` directory with:
+- `OpenPrintAgent.wxs` - WiX installer configuration
+- `build.bat` - Batch build script
+- `build.ps1` - PowerShell build script
+- `README.md` - Installation documentation
+- Automatic Windows service creation and firewall configuration
 
-### MAJOR Issues Fixed:
+### 6. Unit Tests
+**Created**:
+- `services/auth-service/repository/enrollment_token_test.go`
+- `services/job-service/repository/job_assignment_test.go` (includes SQL injection regression test)
+- `services/job-service/handler/agent_poll_test.go`
 
-5. **Organization Validation** - Added `ValidateOrganizationAccess()` to check invitations table during registration
-
-6. **SQL Injection Fixed** - `listDocuments` now uses proper parameterized queries with validated input
-
-7. **Input Validation** - Added pagination validation with bounds checking (max 1000)
-
-### Services Updated:
-- `services/auth-service/main.go` - JWT_SECRET required
-- `services/storage-service/main.go` - Full middleware chain added
-- `services/job-service/main.go` - Full middleware chain added  
-- `services/registry-service/main.go` - Full middleware chain added (with skip paths for agent/printer registration)
-
-All tests pass (`go test ./...`) and all packages build successfully.
+All unit tests pass successfully.

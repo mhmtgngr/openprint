@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <Product Id="*"
+           Name="OpenPrint Cloud Print Agent"
+           Language="1033"
+           Version="1.0.0.0"
+           Manufacturer="OpenPrint"
+           UpgradeCode="GUID-PLACEHOLDER-UPGRADE-CODE">
+
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of OpenPrint Agent is already installed." />
+    <Media Id="1" Cabinet="OpenPrintAgent.cab" EmbedCab="yes" />
+
+    <!-- Installation Directory Structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="OpenPrint">
+          <Directory Id="AGENTDIR" Name="Agent" />
+        </Directory>
+      </Directory>
+
+      <!-- ProgramData for configuration -->
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="CONFIGDIR" Name="OpenPrint">
+          <Directory Id="AGENTCONFIGDIR" Name="Agent" />
+        </Directory>
+      </Directory>
+
+      <!-- Start Menu -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="OpenPrint" />
+      </Directory>
+    </Directory>
+
+    <!-- Components -->
+    <DirectoryRef Id="AGENTDIR">
+      <Component Id="AgentExecutable" Guid="GUID-PLACEHOLDER-AGENT-EXE">
+        <File Id="AgentExe" Source="agent.exe" KeyPath="yes" />
+        <ServiceInstall Id="AgentService"
+                        Type="ownProcess"
+                        Vital="yes"
+                        Name="OpenPrintAgent"
+                        DisplayName="OpenPrint Cloud Print Agent"
+                        Description="Manages cloud print jobs on this Windows machine"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Interactive="no">
+          <svc:ServiceConfig xmlns:svc="http://schemas.microsoft.com/wix/UtilExtension"
+                            OnInstall="yes"
+                            OnReinstall="yes"
+                            OnUninstall="yes"
+                            FirstFailureActionType="restart"
+                            SecondFailureActionType="restart"
+                            ThirdFailureActionType="restart"
+                            ResetPeriodInDays="1"
+                            RestartServiceDelayInSeconds="30" />
+        </ServiceInstall>
+        <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="OpenPrintAgent" Wait="yes" />
+      </Component>
+
+      <!-- Configuration File -->
+      <Component Id="AgentConfig" Guid="GUID-PLACEHOLDER-CONFIG">
+        <File Id="ConfigFile" Source="config.json" KeyPath="no" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Configuration Directory Component -->
+    <DirectoryRef Id="AGENTCONFIGDIR">
+      <Component Id="ConfigDirectory" Guid="GUID-PLACEHOLDER-CONFIG-DIR">
+        <CreateFolder />
+        <RemoveFolder Id="RemoveConfigDirectory" On="uninstall" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Start Menu Shortcut -->
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="GUID-PLACEHOLDER-SHORTCUT">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="OpenPrint Agent"
+                  Description="OpenPrint Cloud Print Agent"
+                  Target="[AGENTDIR]agent.exe"
+                  WorkingDirectory="AGENTDIR" />
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\OpenPrint\Agent"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Feature Definitions -->
+    <Feature Id="Complete" Title="OpenPrint Agent" Level="1">
+      <ComponentRef Id="AgentExecutable" />
+      <ComponentRef Id="AgentConfig" />
+      <ComponentRef Id="ConfigDirectory" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+
+    <!-- UI Configuration -->
+    <UI>
+      <UIRef Id="WixUI_InstallDir" />
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
+               Event="DoAction"
+               Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch OpenPrint Agent Configuration" />
+
+    <!-- Launch Application after Install -->
+    <Property Id="WixShellExecTarget" Value="[AGENTDIR]agent.exe" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+    <!-- Firewall Exception -->
+    <Component Id="FirewallException" Guid="GUID-PLACEHOLDER-FIREWALL">
+      <CreateFolder />
+      <util:FirewallException Id="AgentFirewallException"
+                             Name="OpenPrint Agent"
+                             Program="[AGENTDIR]agent.exe"
+                             Scope="any"
+                             Profile="domain,private,public"
+                             Enable="yes" />
+    </Component>
+
+  </Product>
+</Wix>

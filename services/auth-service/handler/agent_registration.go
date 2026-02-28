@@ -42,6 +42,13 @@ type AgentCertificateRepository interface {
 	IsRevoked(ctx context.Context, thumbprint string) (bool, error)
 }
 
+// EnrollmentTokenRepository defines the interface for enrollment token operations.
+type EnrollmentTokenRepository interface {
+	Validate(ctx context.Context, token, organizationID string) (bool, error)
+	IncrementUseCount(ctx context.Context, tokenID string) error
+	FindByToken(ctx context.Context, token string) (interface{}, error)
+}
+
 // AgentCertificateRecord represents an agent certificate in the database.
 type AgentCertificateRecord struct {
 	CertificateID     string
@@ -60,33 +67,43 @@ type AgentCertificateRecord struct {
 
 // AgentRegistrationConfig holds agent registration dependencies.
 type AgentRegistrationConfig struct {
-	AgentRepo       AgentRepository
-	CertRepo        AgentCertificateRepository
-	CAPrivateKey    *rsa.PrivateKey
-	CACertificate   *x509.Certificate
-	TokenValidity   time.Duration
-	CertValidity    time.Duration
+	AgentRepo           AgentRepository
+	CertRepo            AgentCertificateRepository
+	EnrollmentTokenRepo EnrollmentTokenRepository // For enrollment token validation
+	CAPrivateKey        *rsa.PrivateKey
+	CACertificate       *x509.Certificate
+	TokenValidity       time.Duration
+	CertValidity        time.Duration
+	JWTSecret           string // JWT secret for token validation (loaded from config)
 }
 
 // AgentRegistrationHandler handles agent registration and certificate issuance.
 type AgentRegistrationHandler struct {
-	agentRepo     AgentRepository
-	certRepo      AgentCertificateRepository
-	caPrivateKey  *rsa.PrivateKey
-	caCertificate *x509.Certificate
-	tokenValidity time.Duration
-	certValidity  time.Duration
+	agentRepo           AgentRepository
+	certRepo            AgentCertificateRepository
+	enrollmentTokenRepo EnrollmentTokenRepository
+	caPrivateKey         *rsa.PrivateKey
+	caCertificate        *x509.Certificate
+	tokenValidity        time.Duration
+	certValidity         time.Duration
+	jwtSecret            string // JWT secret from configuration
 }
 
 // NewAgentRegistrationHandler creates a new agent registration handler.
 func NewAgentRegistrationHandler(cfg AgentRegistrationConfig) *AgentRegistrationHandler {
+	// Validate JWT secret is provided
+	if cfg.JWTSecret == "" {
+		panic("JWTSecret is required in AgentRegistrationConfig")
+	}
 	return &AgentRegistrationHandler{
-		agentRepo:     cfg.AgentRepo,
-		certRepo:      cfg.CertRepo,
-		caPrivateKey:  cfg.CAPrivateKey,
-		caCertificate: cfg.CACertificate,
-		tokenValidity: cfg.TokenValidity,
-		certValidity:  cfg.CertValidity,
+		agentRepo:           cfg.AgentRepo,
+		certRepo:            cfg.CertRepo,
+		enrollmentTokenRepo: cfg.EnrollmentTokenRepo,
+		caPrivateKey:        cfg.CAPrivateKey,
+		caCertificate:       cfg.CACertificate,
+		tokenValidity:       cfg.TokenValidity,
+		certValidity:        cfg.CertValidity,
+		jwtSecret:           cfg.JWTSecret,
 	}
 }
 
@@ -423,9 +440,19 @@ func (h *AgentRegistrationHandler) GetCertificates(w http.ResponseWriter, r *htt
 // Helper methods
 
 func (h *AgentRegistrationHandler) validateEnrollmentToken(ctx context.Context, token, orgID string) (bool, error) {
-	// In production, this would validate against a database of issued tokens
-	// For now, return true for any non-empty token
-	return token != "", nil
+	// If no enrollment token repository is configured, deny all tokens
+	// (secure by default)
+	if h.enrollmentTokenRepo == nil {
+		return false, nil
+	}
+
+	// Validate token against database
+	valid, err := h.enrollmentTokenRepo.Validate(ctx, token, orgID)
+	if err != nil {
+		return false, fmt.Errorf("validate enrollment token: %w", err)
+	}
+
+	return valid, nil
 }
 
 func (h *AgentRegistrationHandler) issueCertificateFromCSR(ctx context.Context, agentID string, csrData []byte, hostname string) ([]byte, [][]byte, error) {
@@ -580,8 +607,8 @@ func (h *AgentRegistrationHandler) getServerPublicKey() []byte {
 }
 
 func (h *AgentRegistrationHandler) getSecret() string {
-	// In production, this would come from configuration
-	return "default-secret-change-in-production"
+	// Return the configured JWT secret
+	return h.jwtSecret
 }
 
 func calculateThumbprint(cert *x509.Certificate) string {

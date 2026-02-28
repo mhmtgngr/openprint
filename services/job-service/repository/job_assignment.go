@@ -247,22 +247,36 @@ func (r *JobAssignmentRepository) FindPendingJobs(ctx context.Context, criteria 
 func (r *JobAssignmentRepository) UpdateStatus(ctx context.Context, assignmentID, status string) error {
 	now := time.Now()
 
-	query := `
-		UPDATE job_assignments
-		SET status = $2, updated_at = $3
-	`
-
+	// Use parameterized queries to prevent SQL injection
 	// Set timestamps based on status
+	var query string
+	var args []interface{}
+
 	switch status {
 	case "in_progress":
-		query += ", started_at = " + now.Format(time.RFC3339) + "::timestamptz"
+		query = `
+			UPDATE job_assignments
+			SET status = $2, updated_at = $3, started_at = $3
+			WHERE id = $1
+		`
+		args = []interface{}{assignmentID, status, now}
 	case "completed", "failed", "cancelled":
-		query += ", completed_at = " + now.Format(time.RFC3339) + "::timestamptz"
+		query = `
+			UPDATE job_assignments
+			SET status = $2, updated_at = $3, completed_at = $3
+			WHERE id = $1
+		`
+		args = []interface{}{assignmentID, status, now}
+	default:
+		query = `
+			UPDATE job_assignments
+			SET status = $2, updated_at = $3
+			WHERE id = $1
+		`
+		args = []interface{}{assignmentID, status, now}
 	}
 
-	query += " WHERE id = $1"
-
-	cmdTag, err := r.db.Exec(ctx, query, assignmentID, now)
+	cmdTag, err := r.db.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("update assignment status: %w", err)
 	}
