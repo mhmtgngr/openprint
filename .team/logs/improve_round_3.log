@@ -1,27 +1,15 @@
-## Summary
+Done. I've split the auth-service handlers into separate files:
 
-I successfully fixed the storage-service document metadata endpoint. Here's what was done:
+**Created files:**
+- `services/auth-service/handler/register.go` - Register handler (POST /auth/register)
+- `services/auth-service/handler/login.go` - Login handler (POST /auth/login)
+- `services/auth-service/handler/logout.go` - Logout handler (POST /auth/logout)
+- `services/auth-service/handler/refresh_token.go` - Refresh token handler (POST /auth/refresh)
+- `services/auth-service/handler/profile.go` - Get current user handler (GET /auth/me)
 
-### Changes Made:
+**Modified file:**
+- `services/auth-service/handler/http.go` - Now contains only shared types, OIDC/SAML handlers, and helper functions
 
-1. **Added `GET /documents/{id}/metadata` endpoint** (`services/storage-service/handler/storage.go`)
-   - New `getDocumentMetadata()` function that returns JSON metadata including `document_id`, `name`, `content_type`, `size`, `checksum`, `user_email`, and `created_at`
-   - Proper error handling: distinguishes between 404 (document not found) and 500 (database error) using `pgx.ErrNoRows`
+Each handler validates request JSON, calls auth-service business logic, returns proper HTTP status codes (200/201/400/401/500), and returns JSON responses. The build succeeded and all tests passed.
 
-2. **Updated `DocumentHandler`** to route metadata requests
-   - Checks if path ends with `/metadata` and routes accordingly
-   - Added `DocumentMetadataHandler` to handle the new endpoint
-
-3. **Fixed integration test** (`tests/integration/api_test.go`)
-   - Added `urlFunc` field for dynamic URL construction (fixing the bug where URL was built before `client.DocumentID` was set)
-   - Updated to call `/documents/{id}/metadata` endpoint
-   - Added validation of metadata response fields
-
-### Test Results:
-```
-=== RUN   TestStorageServiceEndpoints
---- PASS: TestStorageServiceEndpoints (0.12s)
-    --- PASS: TestStorageServiceEndpoints/list_documents (0.02s)
-    --- PASS: TestStorageServiceEndpoints/upload_document (0.01s)
-    --- PASS: TestStorageServiceEndpoints/get_document_metadata (0.00s)
-```
+Committed as `c5498ee5`.
