@@ -10,6 +10,10 @@ import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { Organization } from './pages/Organization';
 import { Documents } from './pages/Documents';
+import { Agents } from './pages/Agents';
+import { AgentDetailPage } from './pages/AgentDetail';
+import { DiscoveredPrintersPage } from './pages/DiscoveredPrinters';
+import { JobAssignmentsPage } from './pages/JobAssignments';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useRequireAuth();
@@ -117,6 +121,38 @@ function App() {
         element={
           <AdminRoute>
             <Organization />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/agents"
+        element={
+          <ProtectedRoute>
+            <Agents />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/agents/:id"
+        element={
+          <ProtectedRoute>
+            <AgentDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/discovered-printers"
+        element={
+          <ProtectedRoute>
+            <DiscoveredPrintersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/job-assignments"
+        element={
+          <AdminRoute>
+            <JobAssignmentsPage />
           </AdminRoute>
         }
       />

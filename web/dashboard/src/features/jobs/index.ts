@@ -8,6 +8,7 @@ export { JobList } from './JobList';
 export { JobDetails } from './JobDetails';
 export { CreateJobForm } from './CreateJobForm';
 export { JobStatusBadge } from './JobStatusBadge';
+export { JobAssignment } from './JobAssignment';
 
 // Hooks
 export {
