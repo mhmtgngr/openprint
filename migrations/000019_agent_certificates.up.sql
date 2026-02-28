@@ -26,8 +26,10 @@ CREATE INDEX IF NOT EXISTS idx_agent_certificates_is_revoked ON agent_certificat
 CREATE INDEX IF NOT EXISTS idx_agent_certificates_validity ON agent_certificates(not_valid_after);
 
 -- Create index for finding active (non-revoked, valid) certificates
+-- Note: Time-based predicate removed because NOW() is STABLE, not IMMUTABLE
+-- Applications should filter by not_valid_after in queries
 CREATE INDEX IF NOT EXISTS idx_agent_certificates_active ON agent_certificates(agent_id)
-    WHERE is_revoked = false AND not_valid_after > NOW();
+    WHERE is_revoked = false;
 
 -- Create trigger for updated_at
 CREATE TRIGGER update_agent_certificates_updated_at BEFORE UPDATE ON agent_certificates
@@ -118,7 +120,7 @@ $$ LANGUAGE plpgsql;
 -- Certificate revocation log table (for audit trail)
 CREATE TABLE IF NOT EXISTS certificate_revocation_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    certificate_id UUID NOT NULL REFERENCES agent_certificates(id) ON DELETE CASCADE,
+    certificate_id UUID NOT NULL REFERENCES agent_certificates(certificate_id) ON DELETE CASCADE,
     agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
     revoked_by VARCHAR(255),
     revocation_reason TEXT NOT NULL,

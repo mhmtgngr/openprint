@@ -5,6 +5,7 @@
 CREATE OR REPLACE FUNCTION truncate_all_tables() RETURNS void AS $$
 DECLARE
     stmt TEXT;
+    tbl_name TEXT;
     tables TEXT[] := ARRAY[
         'job_assignments',
         'job_history',
@@ -31,10 +32,10 @@ BEGIN
     SET session_replication_role = 'replica';
 
     -- Truncate each table with CASCADE
-    FOREACH table IN ARRAY tables
+    FOREACH tbl_name IN ARRAY tables
     LOOP
         BEGIN
-            EXECUTE format('TRUNCATE TABLE %I CASCADE', table);
+            EXECUTE format('TRUNCATE TABLE %I CASCADE', tbl_name);
         EXCEPTION WHEN undefined_table THEN
             -- Table doesn't exist, skip it
             CONTINUE;

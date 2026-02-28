@@ -72,7 +72,6 @@ func TestJobHistoryRepository_CRUD(t *testing.T) {
 	require.NoError(t, err)
 
 	history := &JobHistory{
-		ID:        generateHistoryID(),
 		JobID:     jobID,
 		Status:    "queued",
 		Message:   "Job created",
@@ -143,9 +142,9 @@ func TestJobHistoryRepository_QueryMethods(t *testing.T) {
 
 	// Create multiple history entries
 	entries := []*JobHistory{
-		{ID: generateHistoryID(), JobID: jobID, Status: "queued", Message: "Job queued"},
-		{ID: generateHistoryID(), JobID: jobID, Status: "processing", Message: "Job started"},
-		{ID: generateHistoryID(), JobID: jobID, Status: "completed", Message: "Job finished"},
+		{JobID: jobID, Status: "queued", Message: "Job queued"},
+		{JobID: jobID, Status: "processing", Message: "Job started"},
+		{JobID: jobID, Status: "completed", Message: "Job finished"},
 	}
 	for _, e := range entries {
 		e.CreatedAt = time.Now()
@@ -169,7 +168,7 @@ func TestJobHistoryRepository_QueryMethods(t *testing.T) {
 	t.Run("list with pagination", func(t *testing.T) {
 		list, total, err := repo.List(ctx, 10, 0)
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, total, int64(3))
+		assert.GreaterOrEqual(t, total, 3)
 		assert.GreaterOrEqual(t, len(list), 3)
 	})
 }
@@ -183,9 +182,9 @@ func TestJobHistoryRepository_BatchOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	entries := []*JobHistory{
-		{ID: generateHistoryID(), JobID: jobID, Status: "queued", Message: "Job queued", CreatedAt: time.Now()},
-		{ID: generateHistoryID(), JobID: jobID, Status: "processing", Message: "Job started", CreatedAt: time.Now()},
-		{ID: generateHistoryID(), JobID: jobID, Status: "completed", Message: "Job finished", CreatedAt: time.Now()},
+		{JobID: jobID, Status: "queued", Message: "Job queued", CreatedAt: time.Now()},
+		{JobID: jobID, Status: "processing", Message: "Job started", CreatedAt: time.Now()},
+		{JobID: jobID, Status: "completed", Message: "Job finished", CreatedAt: time.Now()},
 	}
 
 	err = repo.CreateBatch(ctx, entries)
@@ -207,7 +206,6 @@ func TestJobHistoryRepository_DeleteOld(t *testing.T) {
 
 	// Create old history entry (manually set created_at to past)
 	oldEntry := &JobHistory{
-		ID:        generateHistoryID(),
 		JobID:     jobID,
 		Status:    "queued",
 		Message:   "Old entry",
@@ -218,7 +216,6 @@ func TestJobHistoryRepository_DeleteOld(t *testing.T) {
 
 	// Create recent entry
 	recentEntry := &JobHistory{
-		ID:        generateHistoryID(),
 		JobID:     jobID,
 		Status:    "processing",
 		Message:   "Recent entry",
@@ -254,7 +251,7 @@ func TestJobHistoryRepository_GetLatestByJobID_NotFound(t *testing.T) {
 	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
-	history, err := repo.GetLatestByJobID(ctx, "non-existent-job-id")
+	history, err := repo.GetLatestByJobID(ctx, "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err)
 	assert.Nil(t, history)
 }
@@ -263,7 +260,7 @@ func TestJobHistoryRepository_CountByJobID_Zero(t *testing.T) {
 	repo := NewJobHistoryRepository(testDB.Pool)
 	ctx := context.Background()
 
-	count, err := repo.CountByJobID(ctx, "non-existent-job-id")
+	count, err := repo.CountByJobID(ctx, "00000000-0000-0000-0000-000000000001")
 	require.NoError(t, err)
 	assert.Equal(t, 0, count)
 }
@@ -295,7 +292,7 @@ func TestJobHistory_StatusTransitions(t *testing.T) {
 	for _, tt := range validTransitions {
 		t.Run(tt.from+" to "+tt.to, func(t *testing.T) {
 			history := &JobHistory{
-				JobID:     generateHistoryID(),
+				JobID:     "test-job-id",
 				Status:    tt.to,
 				Message:   tt.message,
 				CreatedAt: time.Now(),
@@ -321,7 +318,7 @@ func TestJobHistory_Messages(t *testing.T) {
 	for _, tt := range testMessages {
 		t.Run(tt.name, func(t *testing.T) {
 			history := &JobHistory{
-				JobID:     generateHistoryID(),
+				JobID:     "test-job-id",
 				Status:    "processing",
 				Message:   tt.message,
 				CreatedAt: time.Now(),
@@ -337,24 +334,21 @@ func TestJobHistory_TimeFields(t *testing.T) {
 	past := now.Add(-1 * time.Hour)
 	future := now.Add(1 * time.Hour)
 
-	histories := []*JobHistory{
+histories := []*JobHistory{
 		{
-			ID:        generateHistoryID(),
-			JobID:     generateHistoryID(),
+			JobID:     "test-job-id",
 			Status:    "queued",
 			Message:   "Initial status",
 			CreatedAt: past,
 		},
 		{
-			ID:        generateHistoryID(),
-			JobID:     generateHistoryID(),
+			JobID:     "test-job-id",
 			Status:    "processing",
 			Message:   "Started processing",
 			CreatedAt: now,
 		},
 		{
-			ID:        generateHistoryID(),
-			JobID:     generateHistoryID(),
+			JobID:     "test-job-id",
 			Status:    "completed",
 			Message:   "Completed",
 			CreatedAt: future,
@@ -391,8 +385,7 @@ func TestJobHistory_JobLifecycle(t *testing.T) {
 	var historyIDs []string
 	for _, step := range lifecycle {
 		history := &JobHistory{
-			ID:        generateHistoryID(),
-			JobID:     jobID,
+				JobID:     jobID,
 			Status:    step.status,
 			Message:   step.message,
 			CreatedAt: time.Now(),
@@ -425,8 +418,7 @@ func TestJobHistory_MultipleJobs(t *testing.T) {
 		jobIDs = append(jobIDs, jobID)
 
 		history := &JobHistory{
-			ID:        generateHistoryID(),
-			JobID:     jobID,
+				JobID:     jobID,
 			Status:    "queued",
 			Message:   "Job created",
 			CreatedAt: time.Now(),
@@ -455,7 +447,6 @@ func TestJobHistory_LongMessages(t *testing.T) {
 	require.NoError(t, err)
 
 	history := &JobHistory{
-		ID:        generateHistoryID(),
 		JobID:     jobID,
 		Status:    "failed",
 		Message:   longMessage,
@@ -488,8 +479,7 @@ func TestJobHistory_SpecialCharacters(t *testing.T) {
 
 	for _, msg := range messages {
 		history := &JobHistory{
-			ID:        generateHistoryID(),
-			JobID:     jobID,
+				JobID:     jobID,
 			Status:    "processing",
 			Message:   msg,
 			CreatedAt: time.Now(),
@@ -517,8 +507,7 @@ func TestJobHistoryRepository_FindByStatus_Pagination(t *testing.T) {
 	status := "queued"
 	for i := 0; i < 5; i++ {
 		history := &JobHistory{
-			ID:        generateHistoryID(),
-			JobID:     jobID,
+				JobID:     jobID,
 			Status:    status,
 			Message:   "Test entry",
 			CreatedAt: time.Now(),
@@ -551,8 +540,7 @@ func TestJobHistoryRepository_List_Pagination(t *testing.T) {
 		require.NoError(t, err)
 
 		history := &JobHistory{
-			ID:        generateHistoryID(),
-			JobID:     jobID,
+				JobID:     jobID,
 			Status:    "queued",
 			Message:   "Test entry",
 			CreatedAt: time.Now(),
@@ -585,7 +573,6 @@ func TestJobHistoryRepository_Update_Status(t *testing.T) {
 	require.NoError(t, err)
 
 	history := &JobHistory{
-		ID:        generateHistoryID(),
 		JobID:     jobID,
 		Status:    "queued",
 		Message:   "Initial status",
@@ -596,7 +583,6 @@ func TestJobHistoryRepository_Update_Status(t *testing.T) {
 
 	// History entries are immutable - we create new entries for status changes
 	newHistory := &JobHistory{
-		ID:        generateHistoryID(),
 		JobID:     jobID,
 		Status:    "processing",
 		Message:   "Status changed to processing",
@@ -609,9 +595,4 @@ func TestJobHistoryRepository_Update_Status(t *testing.T) {
 	count, err := repo.CountByJobID(ctx, jobID)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, count, 2)
-}
-
-// Helper function to generate unique history IDs
-func generateHistoryID() string {
-	return "hist-" + time.Now().Format("20060102150405.000000000")
 }

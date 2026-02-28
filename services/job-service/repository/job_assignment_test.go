@@ -4,8 +4,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -14,22 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/openprint/openprint/internal/testutil"
 )
-
-var (
-	testDB *testutil.TestDB
-	ctx    = context.Background()
-)
-
-func TestMain(m *testing.M) {
-	var err error
-	testDB, err = testutil.SetupPostgresContainer(ctx)
-	if err != nil {
-		log.Fatalf("Failed to setup test database: %v", err)
-	}
-	defer testutil.Cleanup(testDB)
-
-	os.Exit(m.Run())
-}
 
 // setupAssignmentTestDB creates a test database connection for assignment tests.
 // It now uses the shared testDB from TestMain.
@@ -56,7 +38,6 @@ func createTestPrintJob(t *testing.T, db *pgxpool.Pool) *PrintJob {
 	require.NoError(t, err)
 
 	job := &PrintJob{
-		ID:          generateTestID(),
 		DocumentID:  documentID,
 		PrinterID:   printerID,
 		UserName:    "Test User",
@@ -74,15 +55,16 @@ func createTestPrintJob(t *testing.T, db *pgxpool.Pool) *PrintJob {
 	}
 
 	query := `
-		INSERT INTO print_jobs (id, document_id, printer_id, user_name, user_email, title,
+		INSERT INTO print_jobs (document_id, printer_id, user_name, user_email, title,
 			copies, color_mode, duplex, media_type, quality, status, priority, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		RETURNING id
 	`
 
-	_, err = db.Exec(ctx, query,
-		job.ID, job.DocumentID, job.PrinterID, job.UserName, job.UserEmail, job.Title,
+	err = db.QueryRow(ctx, query,
+		job.DocumentID, job.PrinterID, job.UserName, job.UserEmail, job.Title,
 		job.Copies, job.ColorMode, job.Duplex, job.MediaType, job.Quality, job.Status,
-		job.Priority, job.CreatedAt, job.UpdatedAt)
+		job.Priority, job.CreatedAt, job.UpdatedAt).Scan(&job.ID)
 
 	require.NoError(t, err, "Failed to create test print job")
 
@@ -406,10 +388,6 @@ func TestJobAssignmentRepository_GetStaleAssignments(t *testing.T) {
 	assert.GreaterOrEqual(t, len(stale), 1)
 }
 
-func generateTestID() string {
-	return "test-" + time.Now().Format("20060102150405.000000000")
-}
-
 // Additional tests for edge cases and error conditions
 
 func TestJobAssignmentRepository_AssignJob_Conflict(t *testing.T) {
@@ -449,7 +427,7 @@ func TestJobAssignmentRepository_FindByID_NotFound(t *testing.T) {
 	repo := NewJobAssignmentRepository(db)
 
 	// Try to find non-existent assignment
-	_, err := repo.FindByID(ctx, "non-existent-id")
+	_, err := repo.FindByID(ctx, "00000000-0000-0000-0000-000000000001")
 	assert.Error(t, err)
 }
 
@@ -649,7 +627,7 @@ func TestJobAssignmentRepository_UpdateStatus_NotFound(t *testing.T) {
 	repo := NewJobAssignmentRepository(db)
 
 	// Try to update non-existent assignment
-	err := repo.UpdateStatus(ctx, "non-existent-id", "in_progress")
+	err := repo.UpdateStatus(ctx, "00000000-0000-0000-0000-000000000001", "in_progress")
 	assert.Error(t, err)
 }
 
@@ -658,7 +636,7 @@ func TestJobAssignmentRepository_UpdateHeartbeat_NotFound(t *testing.T) {
 	repo := NewJobAssignmentRepository(db)
 
 	// Try to update heartbeat for non-existent assignment
-	err := repo.UpdateHeartbeat(ctx, "non-existent-id", time.Now())
+	err := repo.UpdateHeartbeat(ctx, "00000000-0000-0000-0000-000000000001", time.Now())
 	assert.Error(t, err)
 }
 
@@ -667,7 +645,7 @@ func TestJobAssignmentRepository_IncrementRetry_NotFound(t *testing.T) {
 	repo := NewJobAssignmentRepository(db)
 
 	// Try to increment retry for non-existent assignment
-	err := repo.IncrementRetry(ctx, "non-existent-id")
+	err := repo.IncrementRetry(ctx, "00000000-0000-0000-0000-000000000001")
 	assert.Error(t, err)
 }
 
@@ -676,7 +654,7 @@ func TestJobAssignmentRepository_SetError_NotFound(t *testing.T) {
 	repo := NewJobAssignmentRepository(db)
 
 	// Try to set error for non-existent assignment
-	err := repo.SetError(ctx, "non-existent-id", "Test error")
+	err := repo.SetError(ctx, "00000000-0000-0000-0000-000000000001", "Test error")
 	assert.Error(t, err)
 }
 
@@ -685,7 +663,7 @@ func TestJobAssignmentRepository_Delete_NotFound(t *testing.T) {
 	repo := NewJobAssignmentRepository(db)
 
 	// Try to delete non-existent assignment
-	err := repo.Delete(ctx, "non-existent-id")
+	err := repo.Delete(ctx, "00000000-0000-0000-0000-000000000001")
 	assert.Error(t, err)
 }
 
