@@ -1,27 +1,21 @@
-All tests pass. Here's a summary of the fixes I made:
+**All services are running correctly!** There are no startup failures.
 
-## Summary of Fixes
+The warnings you saw in the logs are benign:
+- PostgreSQL "invalid length of startup packet" = external probe sending HTTP to postgres port
+- Redis "Possible SECURITY ATTACK detected" = external probe sending HTTP to redis port
 
-### 1. PostgreSQL UUID Error (`services/registry-service/repository/agent.go`)
-**Problem**: The `Update` method was passing an empty string directly to a UUID column, causing:
-```
-ERROR: invalid input syntax for type uuid: ""
-```
+These are just network scanners/probes hitting your exposed ports - they're harmless and don't affect service health.
 
-**Fix**: Added `NULLIF($7, '')::uuid` to convert empty strings to NULL, matching what was already done in the `Create` method.
+**Summary:**
+| Service | Status | Health |
+|---------|--------|--------|
+| postgres | ✅ Up | healthy |
+| redis | ✅ Up | healthy |
+| auth-service | ✅ Up | healthy |
+| registry-service | ✅ Up | healthy |
+| job-service | ✅ Up | healthy |
+| storage-service | ✅ Up | healthy |
+| notification-service | ✅ Up | healthy |
+| dashboard | ✅ Up | healthy |
 
-### 2. WebSocket Hijacker Error (`internal/shared/telemetry/middleware.go`)
-**Problem**: The telemetry middleware's custom `responseWriter` wrapper didn't implement the `http.Hijacker` interface, causing:
-```
-Failed to upgrade to WebSocket: websocket: response does not implement http.Hijacker
-```
-
-**Fix**: 
-- Added `bufio` and `net` imports
-- Implemented the `Hijack()` method on `responseWriter` that delegates to the underlying `ResponseWriter` if it supports the interface
-- Returns `http.ErrNotSupported` if the underlying writer doesn't implement `http.Hijacker`
-
-### Files Changed
-1. `/home/cmit/openprint/services/registry-service/repository/agent.go` - Fixed NULLIF in Update query
-2. `/home/cmit/openprint/internal/shared/telemetry/middleware.go` - Added Hijacker support
-3. `/home/cmit/openprint/internal/shared/telemetry/middleware_test.go` - Added test coverage for Hijacker
+Is there a specific functionality issue you're experiencing, or were you just concerned about those log warnings?
