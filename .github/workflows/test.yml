@@ -1,0 +1,470 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.24'
+  DOCKER_BUILDX_VERSION: 'v0.11.0'
+
+jobs:
+  # Lint and format checks
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run gofmt
+        run: |
+          fmt_output=$(gofmt -l .)
+          if [ -n "$fmt_output" ]; then
+            echo "The following files are not formatted:"
+            echo "$fmt_output"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=10m
+
+  # Unit tests
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run unit tests
+        run: |
+          go test \
+            -short \
+            -race \
+            -coverprofile=coverage_unit.txt \
+            -covermode=atomic \
+            -timeout=10m \
+            ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage_unit.txt
+          flags: unit
+          name: unit-tests
+
+      - name: Generate coverage report
+        run: |
+          go tool cover -html=coverage_unit.txt -o coverage_unit.html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-unit
+          path: coverage_unit.html
+          retention-days: 7
+
+  # Integration tests with PostgreSQL
+  test-integration-postgres:
+    name: Integration Tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: openprint_test
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run integration tests (PostgreSQL)
+        run: |
+          go test \
+            -tags=integration \
+            -race \
+            -timeout=15m \
+            -coverprofile=coverage_integration_pg.txt \
+            -covermode=atomic \
+            ./...
+        env:
+          DATABASE_URL: postgres://testuser:testpass@localhost:5432/openprint_test?sslmode=disable
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage_integration_pg.txt
+          flags: integration-postgres
+          name: integration-tests-postgres
+
+  # Integration tests with Redis
+  test-integration-redis:
+    name: Integration Tests (Redis)
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run integration tests (Redis)
+        run: |
+          go test \
+            -tags=integration \
+            -race \
+            -timeout=15m \
+            -coverprofile=coverage_integration_redis.txt \
+            -covermode=atomic \
+            ./services/job-service/... \
+            ./internal/shared/middleware/...
+        env:
+          REDIS_URL: redis://localhost:6379/0
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage_integration_redis.txt
+          flags: integration-redis
+          name: integration-tests-redis
+
+  # Integration tests with S3 (MinIO)
+  test-integration-s3:
+    name: Integration Tests (S3)
+    runs-on: ubuntu-latest
+    services:
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        command: server /data --console-address ":9001"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run integration tests (S3)
+        run: |
+          go test \
+            -tags=integration \
+            -race \
+            -timeout=15m \
+            -coverprofile=coverage_integration_s3.txt \
+            -covermode=atomic \
+            ./services/storage-service/...
+        env:
+          S3_ENDPOINT: http://localhost:9000
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_REGION: us-east-1
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage_integration_s3.txt
+          flags: integration-s3
+          name: integration-tests-s3
+
+  # Full integration tests with all dependencies
+  test-integration-full:
+    name: Full Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: openprint_test
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        command: server /data --console-address ":9001"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run full integration tests
+        run: |
+          go test \
+            -tags=integration \
+            -race \
+            -timeout=20m \
+            ./tests/integration/...
+        env:
+          DATABASE_URL: postgres://testuser:testpass@localhost:5432/openprint_test?sslmode=disable
+          REDIS_URL: redis://localhost:6379/0
+          S3_ENDPOINT: http://localhost:9000
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_REGION: us-east-1
+          JWT_SECRET: test-secret-key-min-32-chars-for-testing
+
+  # Build test
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build all services
+        run: |
+          mkdir -p build
+          for service in auth-service registry-service job-service storage-service notification-service; do
+            echo "Building $service..."
+            go build -v -o build/$service ./services/$service
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: services
+          path: build/
+          retention-days: 7
+
+  # Security scan
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  # Benchmark tests
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run benchmarks
+        run: |
+          go test -bench=. -benchmem -run=^$ ./... | tee benchmark.txt
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'go'
+          output-file-path: benchmark.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '150%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@maintainers'
+
+  # Code coverage summary
+  coverage:
+    name: Coverage Summary
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration-postgres, test-integration-redis, test-integration-s3]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Download all coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage_*
+          path: coverage/
+
+      - name: Merge coverage profiles
+        run: |
+          go install github.com/wadey/gocovmerge@latest
+          gocovmerge coverage/coverage_*.txt > coverage.txt
+
+      - name: Generate coverage report
+        run: |
+          go tool cover -html=coverage.txt -o coverage.html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html
+          retention-days: 30
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.txt
+          flags: all
+          name: all-tests
+
+  # Test summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit, test-integration-postgres, test-integration-redis, test-integration-s3, test-integration-full]
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.test-unit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration (PostgreSQL) | ${{ needs.test-integration-postgres.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration (Redis) | ${{ needs.test-integration-redis.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration (S3) | ${{ needs.test-integration-s3.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Full Integration | ${{ needs.test-integration-full.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any test failed
+        if: |
+          needs.lint.result == 'failure' ||
+          needs.test-unit.result == 'failure' ||
+          needs.test-integration-postgres.result == 'failure' ||
+          needs.test-integration-redis.result == 'failure' ||
+          needs.test-integration-s3.result == 'failure' ||
+          needs.test-integration-full.result == 'failure'
+        run: exit 1

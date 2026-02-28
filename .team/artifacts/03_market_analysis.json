@@ -1,312 +1,299 @@
 {
   "competitor_summary": [
     {
-      "name": "PaperCut MF",
+      "name": "PaperCut",
       "strengths": [
-        "Cross-platform multi-brand printer support",
-        "User-based billing",
-        "Authentication + print logging",
-        "Mature enterprise feature set"
+        "100M+ users across 195+ countries",
+        "Cross-platform support (Windows, Mac, Linux, Chromebook, iOS, Android)",
+        "Secure print release with PIN/card authentication",
+        "Print quotas and cost allocation",
+        "Detailed reporting and analytics",
+        "Mobile printing",
+        "Blockchain print logs for HIPAA",
+        "AI-powered consumables forecasting"
       ],
       "weaknesses": [
-        "Higher cost",
-        "Complex deployment"
+        "Proprietary licensing",
+        "Complex enterprise deployments",
+        "Higher cost for smaller organizations"
       ],
-      "pricing_model": "Per-user licensing"
+      "pricing_model": "Per-user/printer licensing with enterprise tiers"
     },
     {
-      "name": "Canon uniFLOW",
+      "name": "uniFLOW Online",
       "strengths": [
-        "Enterprise customization",
-        "ID card/PIN secure printing",
-        "Data encryption",
-        "Compliance auditing"
+        "Azure cloud infrastructure",
+        "Scan management",
+        "On-prem server elimination",
+        "Canon hardware integration"
       ],
       "weaknesses": [
-        "Enterprise-only pricing",
+        "Vendor lock-in with Canon ecosystem",
+        "Limited printer brand support"
+      ],
+      "pricing_model": "Subscription-based with hardware bundles"
+    },
+    {
+      "name": "HP Edge Fusion",
+      "strengths": [
+        "Native HP printer integration",
+        "Strong enterprise features",
+        "Hardware-software bundle"
+      ],
+      "weaknesses": [
+        "HP hardware dependency",
+        "Limited multi-vendor support"
+      ],
+      "pricing_model": "Hardware-included subscription"
+    },
+    {
+      "name": "Konica Minolta Paramount",
+      "strengths": [
+        "Document workflow automation",
+        "MFP integration",
+        "Enterprise security"
+      ],
+      "weaknesses": [
+        "Konica Minolta hardware focus",
         "Complex setup"
       ],
       "pricing_model": "Enterprise licensing"
     },
     {
-      "name": "Print Manager Plus",
+      "name": "Ricoh @Remote",
       "strengths": [
-        "Real-time monitoring",
-        "Quota budgeting",
-        "Cost analysis",
-        "Easy deployment"
+        "Predictive maintenance",
+        "Remote device management",
+        "Strong Asia presence"
       ],
       "weaknesses": [
-        "Limited advanced security"
+        "Limited print policy features",
+        "Ricoh ecosystem dependency"
       ],
-      "pricing_model": "Per-seat licensing"
-    },
-    {
-      "name": "UniPrint InfinityCloud",
-      "strengths": [
-        "Cloud-native",
-        "VDI support",
-        "Remote printing"
-      ],
-      "weaknesses": [
-        "VDI-specific focus"
-      ],
-      "pricing_model": "Subscription"
-    },
-    {
-      "name": "\u5b89\u4f01\u795e/\u57df\u667a\u76fe",
-      "strengths": [
-        "Print prohibition",
-        "Whitelisting",
-        "Watermarking",
-        "Sensitive word auditing",
-        "Detailed audit trails"
-      ],
-      "weaknesses": [
-        "China-market focused",
-        "Language barriers"
-      ],
-      "pricing_model": "Perpetual license"
-    },
-    {
-      "name": "Print Conductor",
-      "strengths": [
-        "90+ file type support",
-        "Batch printing"
-      ],
-      "weaknesses": [
-        "Limited management features"
-      ],
-      "pricing_model": "One-time license"
+      "pricing_model": "Device-based subscription"
     }
   ],
   "feature_comparison": [
     {
-      "feature": "User Authentication & SSO",
+      "feature": "Secure Print Release (PIN/Card)",
       "competitors_with_feature": [
         "PaperCut",
         "uniFLOW",
-        "UniPrint",
-        "\u5b89\u4f01\u795e"
-      ],
-      "project_status": "implemented",
-      "priority": "critical",
-      "implementation_effort": "small"
-    },
-    {
-      "feature": "Print Job Queuing & Routing",
-      "competitors_with_feature": [
-        "PaperCut",
-        "uniFLOW",
-        "Print Manager Plus"
-      ],
-      "project_status": "implemented",
-      "priority": "critical",
-      "implementation_effort": "small"
-    },
-    {
-      "feature": "Real-time Monitoring & Notifications",
-      "competitors_with_feature": [
-        "PaperCut",
-        "Print Manager Plus",
-        "uniFLOW"
-      ],
-      "project_status": "implemented",
-      "priority": "high",
-      "implementation_effort": "small"
-    },
-    {
-      "feature": "Cost Tracking & Quota Management",
-      "competitors_with_feature": [
-        "PaperCut",
-        "Print Manager Plus",
-        "\u5b89\u4f01\u795e"
+        "HP Edge Fusion",
+        "Konica Minolta"
       ],
       "project_status": "missing",
       "priority": "critical",
       "implementation_effort": "medium"
     },
     {
-      "feature": "Secure Print Release (ID/PIN)",
+      "feature": "Print Quotas & Cost Allocation",
       "competitors_with_feature": [
         "PaperCut",
         "uniFLOW",
-        "\u5b89\u4f01\u795e"
+        "HP Edge Fusion"
       ],
       "project_status": "missing",
       "priority": "high",
-      "implementation_effort": "medium"
-    },
-    {
-      "feature": "Print Watermarking",
-      "competitors_with_feature": [
-        "\u5b89\u4f01\u795e",
-        "\u57df\u667a\u76fe",
-        "uniFLOW"
-      ],
-      "project_status": "missing",
-      "priority": "medium",
-      "implementation_effort": "small"
-    },
-    {
-      "feature": "Sensitive Content Auditing",
-      "competitors_with_feature": [
-        "\u5b89\u4f01\u795e",
-        "\u57df\u667a\u76fe"
-      ],
-      "project_status": "missing",
-      "priority": "high",
-      "implementation_effort": "large"
-    },
-    {
-      "feature": "Print Whitelist/Blacklist",
-      "competitors_with_feature": [
-        "\u5b89\u4f01\u795e",
-        "\u57df\u667a\u76fe"
-      ],
-      "project_status": "missing",
-      "priority": "medium",
-      "implementation_effort": "small"
-    },
-    {
-      "feature": "Detailed Audit Trails",
-      "competitors_with_feature": [
-        "PaperCut",
-        "uniFLOW",
-        "\u5b89\u4f01\u795e",
-        "Print Manager Plus"
-      ],
-      "project_status": "partial",
-      "priority": "critical",
-      "implementation_effort": "medium"
-    },
-    {
-      "feature": "Multi-format Document Conversion",
-      "competitors_with_feature": [
-        "Print Conductor"
-      ],
-      "project_status": "missing",
-      "priority": "medium",
-      "implementation_effort": "large"
-    },
-    {
-      "feature": "Mobile Printing",
-      "competitors_with_feature": [
-        "PaperCut",
-        "uniFLOW"
-      ],
-      "project_status": "missing",
-      "priority": "high",
-      "implementation_effort": "medium"
-    },
-    {
-      "feature": "VDI/Citrix Support",
-      "competitors_with_feature": [
-        "UniPrint InfinityCloud",
-        "uniFLOW"
-      ],
-      "project_status": "missing",
-      "priority": "low",
-      "implementation_effort": "large"
-    },
-    {
-      "feature": "Document Encryption at Rest",
-      "competitors_with_feature": [
-        "uniFLOW",
-        "\u5b89\u4f01\u795e"
-      ],
-      "project_status": "partial",
-      "priority": "high",
-      "implementation_effort": "small"
-    },
-    {
-      "feature": "Follow-me Printing",
-      "competitors_with_feature": [
-        "PaperCut",
-        "uniFLOW"
-      ],
-      "project_status": "missing",
-      "priority": "medium",
       "implementation_effort": "large"
     },
     {
       "feature": "Reporting & Analytics Dashboard",
       "competitors_with_feature": [
         "PaperCut",
-        "Print Manager Plus",
-        "uniFLOW"
+        "uniFLOW",
+        "HP Edge Fusion",
+        "Konica Minolta"
+      ],
+      "project_status": "partial",
+      "priority": "critical",
+      "implementation_effort": "large"
+    },
+    {
+      "feature": "Mobile Printing (iOS/Android)",
+      "competitors_with_feature": [
+        "PaperCut",
+        "HP Edge Fusion",
+        "Konica Minolta"
+      ],
+      "project_status": "missing",
+      "priority": "high",
+      "implementation_effort": "large"
+    },
+    {
+      "feature": "Scan Management",
+      "competitors_with_feature": [
+        "uniFLOW",
+        "Konica Minolta",
+        "Ricoh"
+      ],
+      "project_status": "missing",
+      "priority": "medium",
+      "implementation_effort": "medium"
+    },
+    {
+      "feature": "Multi-factor Authentication",
+      "competitors_with_feature": [
+        "PaperCut",
+        "uniFLOW",
+        "HP Edge Fusion"
       ],
       "project_status": "partial",
       "priority": "high",
+      "implementation_effort": "small"
+    },
+    {
+      "feature": "Print Policy Engine",
+      "competitors_with_feature": [
+        "PaperCut",
+        "uniFLOW",
+        "HP Edge Fusion"
+      ],
+      "project_status": "missing",
+      "priority": "high",
+      "implementation_effort": "large"
+    },
+    {
+      "feature": "Sustainability Reporting",
+      "competitors_with_feature": [
+        "PaperCut",
+        "HP Edge Fusion"
+      ],
+      "project_status": "missing",
+      "priority": "medium",
       "implementation_effort": "medium"
+    },
+    {
+      "feature": "AI-powered Optimization",
+      "competitors_with_feature": [
+        "PaperCut",
+        "HP Edge Fusion"
+      ],
+      "project_status": "missing",
+      "priority": "medium",
+      "implementation_effort": "large"
+    },
+    {
+      "feature": "Blockchain Audit Logs",
+      "competitors_with_feature": [
+        "PaperCut"
+      ],
+      "project_status": "missing",
+      "priority": "low",
+      "implementation_effort": "medium"
+    },
+    {
+      "feature": "Cross-platform Print Drivers",
+      "competitors_with_feature": [
+        "PaperCut",
+        "HP Edge Fusion"
+      ],
+      "project_status": "missing",
+      "priority": "high",
+      "implementation_effort": "large"
+    },
+    {
+      "feature": "OIDC/SAML SSO",
+      "competitors_with_feature": [
+        "PaperCut",
+        "uniFLOW",
+        "HP Edge Fusion"
+      ],
+      "project_status": "implemented",
+      "priority": "critical",
+      "implementation_effort": "small"
+    },
+    {
+      "feature": "WebSocket Real-time Updates",
+      "competitors_with_feature": [
+        "PaperCut",
+        "uniFLOW"
+      ],
+      "project_status": "implemented",
+      "priority": "medium",
+      "implementation_effort": "small"
+    },
+    {
+      "feature": "Document Encryption at Rest",
+      "competitors_with_feature": [
+        "PaperCut",
+        "uniFLOW",
+        "HP Edge Fusion"
+      ],
+      "project_status": "partial",
+      "priority": "critical",
+      "implementation_effort": "small"
     }
   ],
   "market_gaps": [
     {
-      "gap": "Cost allocation and quota budgeting per user/department",
+      "gap": "Secure print release with user authentication at device (PIN/card/biometric) to prevent sensitive documents from being left unattended",
       "competitors_offering": [
         "PaperCut",
-        "Print Manager Plus",
-        "\u5b89\u4f01\u795e"
+        "uniFLOW",
+        "HP Edge Fusion",
+        "Konica Minolta"
       ],
       "business_impact": "high",
       "recommended_priority": 1
     },
     {
-      "gap": "Secure print release with authentication at device",
+      "gap": "Print quota management and departmental cost allocation/chargeback for expense tracking and budget control",
       "competitors_offering": [
         "PaperCut",
         "uniFLOW",
-        "\u5b89\u4f01\u795e"
+        "HP Edge Fusion"
       ],
       "business_impact": "high",
       "recommended_priority": 2
     },
     {
-      "gap": "Print policy enforcement (whitelist/blacklist, color restrictions)",
-      "competitors_offering": [
-        "\u5b89\u4f01\u795e",
-        "\u57df\u667a\u76fe",
-        "PaperCut"
-      ],
-      "business_impact": "medium",
-      "recommended_priority": 3
-    },
-    {
-      "gap": "Sensitive data detection and content auditing",
-      "competitors_offering": [
-        "\u5b89\u4f01\u795e",
-        "\u57df\u667a\u76fe"
-      ],
-      "business_impact": "high",
-      "recommended_priority": 4
-    },
-    {
-      "gap": "Mobile printing support (email-to-print, mobile apps)",
+      "gap": "Comprehensive reporting and analytics including usage trends, cost analysis, and environmental impact",
       "competitors_offering": [
         "PaperCut",
         "uniFLOW",
-        "Print Manager Plus"
+        "HP Edge Fusion",
+        "Konica Minolta"
+      ],
+      "business_impact": "high",
+      "recommended_priority": 3
+    },
+    {
+      "gap": "Mobile printing applications for iOS and Android with native printing capabilities",
+      "competitors_offering": [
+        "PaperCut",
+        "HP Edge Fusion",
+        "Konica Minolta"
       ],
       "business_impact": "medium",
+      "recommended_priority": 4
+    },
+    {
+      "gap": "Print policy engine with rules-based routing (color/mono, duplex, paper selection) based on user/department/document",
+      "competitors_offering": [
+        "PaperCut",
+        "uniFLOW",
+        "HP Edge Fusion"
+      ],
+      "business_impact": "high",
       "recommended_priority": 5
     },
     {
-      "gap": "Advanced reporting with cost analysis and trends",
+      "gap": "Scan-to-destination workflows with OCR and document routing",
       "competitors_offering": [
-        "PaperCut",
-        "Print Manager Plus",
-        "uniFLOW"
+        "uniFLOW",
+        "Konica Minolta",
+        "Ricoh"
       ],
-      "business_impact": "high",
+      "business_impact": "medium",
       "recommended_priority": 6
     },
     {
-      "gap": "Document watermarking for security",
+      "gap": "User self-service portal for print job management, balance checking, and print history",
       "competitors_offering": [
-        "\u5b89\u4f01\u795e",
-        "\u57df\u667a\u76fe",
-        "uniFLOW"
+        "PaperCut",
+        "uniFLOW",
+        "HP Edge Fusion"
       ],
       "business_impact": "medium",
       "recommended_priority": 7
@@ -314,138 +301,135 @@
   ],
   "emerging_trends": [
     {
-      "trend": "Cloud-Native Print Management",
-      "description": "Shift from on-premise to cloud-based solutions with reduced infrastructure",
-      "adoption_stage": "mainstream",
-      "relevance": "high"
-    },
-    {
-      "trend": "Zero Trust Print Security",
-      "description": "Identity-based print release, no trusted devices, full authentication",
+      "trend": "AI-powered Print Optimization",
+      "description": "Machine learning for demand forecasting, consumable optimization, and predictive maintenance to reduce costs and downtime",
       "adoption_stage": "growing",
       "relevance": "high"
     },
     {
       "trend": "Sustainability Reporting",
-      "description": "Carbon footprint tracking, paper reduction analytics, eco-friendly defaults",
+      "description": "Paper usage tracking, carbon footprint calculation, and eco-friendly print routing to support ESG initiatives",
       "adoption_stage": "growing",
       "relevance": "medium"
     },
     {
-      "trend": "AI-powered Document Processing",
-      "description": "Auto-format detection, optimization, and intelligent routing",
+      "trend": "Blockchain Audit Trails",
+      "description": "Immutable logging for regulatory compliance (HIPAA, GDPR) and forensic security",
       "adoption_stage": "early",
       "relevance": "low"
     },
     {
-      "trend": "MPS (Managed Print Services) Integration",
-      "description": "API-first design for integration with managed service providers",
+      "trend": "Zero Trust Print Security",
+      "description": "Per-document encryption, identity-aware printing, and micro-segmentation following Zero Trust principles",
+      "adoption_stage": "growing",
+      "relevance": "high"
+    },
+    {
+      "trend": "Serverless Edge Printing",
+      "description": "Direct cloud-to-printer communication eliminating on-prem infrastructure",
       "adoption_stage": "mainstream",
       "relevance": "high"
     },
     {
-      "trend": "BYOD (Bring Your Own Device) Printing",
-      "description": "Guest printing, QR code release, mobile-first experience",
-      "adoption_stage": "growing",
-      "relevance": "medium"
+      "trend": "Hybrid Cloud Deployment",
+      "description": "Flexible deployment across public, private, and hybrid clouds with data sovereignty controls",
+      "adoption_stage": "mainstream",
+      "relevance": "high"
     }
   ],
   "compliance_gaps": [
     {
-      "standard": "GDPR",
-      "requirement": "Document data retention policies, right to deletion",
-      "project_status": "partial"
-    },
-    {
       "standard": "SOC2",
-      "requirement": "Audit logging, access controls, encryption at rest/transit",
+      "requirement": "Access controls, audit logging, data encryption, change management",
       "project_status": "partial"
     },
     {
       "standard": "ISO27001",
-      "requirement": "Security policies, risk management, access controls",
+      "requirement": "ISMS, risk assessment, asset management, access control",
       "project_status": "partial"
     },
     {
+      "standard": "GDPR",
+      "requirement": "Data portability, right to deletion, consent management, DPIAs",
+      "project_status": "partial"
+    },
+    {
+      "standard": "HIPAA",
+      "requirement": "PHI protection, audit trails, BAAs, minimum necessary standard",
+      "project_status": "missing"
+    },
+    {
       "standard": "FedRAMP",
-      "requirement": "Government-grade security controls for cloud services",
+      "requirement": "FISMA controls, continuous monitoring, incident response",
       "project_status": "missing"
     }
   ],
   "recommended_features": [
     {
-      "feature": "Cost Tracking & Quota Management",
-      "description": "Per-user and per-department print quotas, cost allocation, budget alerts",
+      "feature": "Secure Print Release Service",
+      "description": "Queue-based print release with PIN, card, or biometric authentication at the device; supports job hold-and-release for security",
       "priority": "critical",
       "effort": "medium",
-      "competitive_advantage": "Core enterprise requirement, table stakes for business sales"
+      "competitive_advantage": "Addresses top enterprise security requirement, prevents data leakage from uncollected documents"
     },
     {
-      "feature": "Secure Print Release",
-      "description": "Users authenticate at printer with PIN, badge, or mobile app to release jobs",
+      "feature": "Print Quota & Cost Management",
+      "description": "User/group-based quotas, departmental cost allocation, configurable chargeback models, budget alerts and enforcement",
       "priority": "high",
-      "effort": "medium",
-      "competitive_advantage": "Essential security feature for regulated industries"
+      "effort": "large",
+      "competitive_advantage": "Essential for education and enterprise cost control, currently missing from core offering"
+    },
+    {
+      "feature": "Analytics & Reporting Service",
+      "description": "Usage dashboards, cost analysis, trend reports, environmental impact (paper/energy), exportable reports (PDF/CSV), scheduled reports",
+      "priority": "critical",
+      "effort": "large",
+      "competitive_advantage": "Key decision-making tool for IT management, demonstrates ROI"
     },
     {
       "feature": "Print Policy Engine",
-      "description": "Configurable rules for print permissions, color/BW enforcement, size limits",
+      "description": "Rules-based routing (color/mono, duplex, paper size), user/group/document-based policies, time-based restrictions, watermarks",
       "priority": "high",
       "effort": "medium",
-      "competitive_advantage": "Key cost control feature for organizations"
+      "competitive_advantage": "Cost control and security differentiation"
     },
     {
-      "feature": "Advanced Audit Logging",
-      "description": "Immutable logs of all print activity with user, document, time, outcome",
-      "priority": "critical",
-      "effort": "medium",
-      "competitive_advantage": "Required for compliance and security auditing"
-    },
-    {
-      "feature": "Document Watermarking",
-      "description": "Automatic overlay of user info, timestamp, classification on printouts",
+      "feature": "Mobile Print Apps",
+      "description": "Native iOS and Android applications with camera scan, document preview, print job submission, and release station mode",
       "priority": "medium",
+      "effort": "large",
+      "competitive_advantage": "Modern workforce expectation, currently absent"
+    },
+    {
+      "feature": "MFA/Smart Card Authentication",
+      "description": "Hardware token support, smart card integration, TOTP, biometric authentication options for print release",
+      "priority": "high",
       "effort": "small",
-      "competitive_advantage": "Low-cost security feature valued in Asia markets"
+      "competitive_advantage": "Builds on existing auth-service, meets enterprise security standards"
     },
     {
-      "feature": "Multi-format Conversion Service",
-      "description": "Convert documents to print-ready formats server-side",
+      "feature": "Scan Workflow Service",
+      "description": "Scan-to-email, scan-to-cloud, OCR processing, metadata tagging, workflow automation",
       "priority": "medium",
-      "effort": "large",
-      "competitive_advantage": "Reduces client-side complexity, enables BYOD"
-    },
-    {
-      "feature": "Mobile & Email-to-Print",
-      "description": "Print from mobile devices or email documents directly to print queue",
-      "priority": "high",
       "effort": "medium",
-      "competitive_advantage": "Modern workforce requirement"
+      "competitive_advantage": "Expands platform value beyond printing, competes with uniFLOW"
     },
     {
-      "feature": "Analytics Dashboard",
-      "description": "Cost analysis, usage trends, environmental impact reports",
-      "priority": "high",
-      "effort": "medium",
-      "competitive_advantage": "Executive visibility drives adoption"
-    },
-    {
-      "feature": "Follow-me Printing",
-      "description": "Users release jobs at any available printer on network",
+      "feature": "Compliance Audit Log Service",
+      "description": "Immutable audit trails with blockchain option, compliance report generation, log retention policies",
       "priority": "medium",
-      "effort": "large",
-      "competitive_advantage": "Premium enterprise feature, improves productivity"
+      "effort": "medium",
+      "competitive_advantage": "Enables regulated industry sales (healthcare, government)"
     }
   ],
   "unique_selling_points": [
-    "Open-source core with commercial flexibility",
-    "Cloud-native microservices architecture for horizontal scalability",
-    "Modern Go stack with OpenTelemetry observability built-in",
-    "Multi-tenant design from day one",
-    "API-first for easy integration and custom workflows",
-    "Support for both S3 and local storage backends",
-    "React/TypeScript dashboard with modern UX",
-    "OIDC and SAML support for enterprise SSO"
+    "Open-source architecture enabling vendor neutrality unlike competitors tied to specific hardware",
+    "Microservices design allows independent scaling and deployment flexibility",
+    "Modern Go-based infrastructure with container-first design",
+    "Extensible through internal packages for custom integrations",
+    "Self-hosted option for data sovereignty requirements",
+    "Lower total cost of ownership vs proprietary solutions",
+    "API-first design enables custom workflow integrations"
   ],
-  "summary": "OpenPrint Cloud is entering a mature print management market dominated by established players like PaperCut, Canon uniFLOW, and Print Manager Plus. The project has a strong foundation with cloud-native microservices architecture, modern authentication (OIDC/SAML), and real-time notifications. However, it lacks critical enterprise features present in competitors: cost tracking and quota management, secure print release, print policy enforcement, and comprehensive audit logging. The open-source nature and modern tech stack provide differentiation, but the product needs to add table-stakes enterprise features to be competitive. Priority should be given to implementing cost/quota management, secure print release, and advanced audit logging as these are critical for enterprise sales. The cloud-native approach aligns with market trends toward cloud-based solutions and could be a significant advantage if paired with robust security and compliance features."
+  "summary": "The global print management software market is valued at approximately $90 billion in 2024 with projected growth to over $100 billion by 2025, driven by enterprise digital transformation and remote work adoption. The market is dominated by hardware-anchored solutions (HP, Canon, Konica Minolta, Ricoh) and the platform-agnostic leader PaperCut with 100 million users. OpenPrint currently implements foundational microservices for authentication, job management, device registry, storage, and notifications with OIDC/SAML SSO and real-time WebSocket updates. However, critical enterprise features are missing: secure print release (PIN/card authentication), print quotas with cost allocation, comprehensive reporting and analytics, mobile printing applications, print policy enforcement, and scan workflow management. Compliance capabilities for SOC2, ISO27001, GDPR, HIPAA, and FedRAMP are partially implemented at best. Emerging trends including AI-powered optimization, sustainability reporting, zero-trust security, and hybrid cloud deployment present additional opportunities for differentiation. The project's open-source, microservices architecture with vendor neutrality represents a significant competitive advantage against hardware-locked proprietary solutions, particularly for organizations requiring multi-vendor printer support and data sovereignty through self-hosted deployment options."
 }

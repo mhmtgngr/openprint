@@ -1,258 +1,361 @@
 {
-  "project_name": "Job Service Test Infrastructure",
-  "summary": "Fix 9 failing tests in job-service repository layer by implementing testcontainers for automated PostgreSQL lifecycle management during test execution",
+  "project_name": "OpenPrint Test Infrastructure",
+  "summary": "Create comprehensive test infrastructure for all repository tests including internal/testutil package with testcontainers for PostgreSQL, Redis, and mock S3 storage, plus Makefile targets and bootstrapping scripts",
   "user_stories": [
     {
       "id": "US-001",
-      "as_a": "Developer",
-      "i_want": "tests to automatically provision and teardown a real PostgreSQL database",
-      "so_that": "I can run integration tests locally and in CI without manual database setup",
-      "priority": "high",
+      "as_a": "developer",
+      "i_want": "run full test suite without manually setting up infrastructure",
+      "so_that": "I can quickly verify code changes work correctly",
+      "priority": "critical",
       "acceptance_criteria": [
-        "Tests pass without requiring external PostgreSQL running",
-        "Testcontainers spins up PostgreSQL container automatically",
-        "Database is properly cleaned between tests",
-        "Containers are torn down after test completion"
+        "Running 'make test-all' automatically starts required dependencies",
+        "All tests pass with containerized dependencies",
+        "No manual PostgreSQL or Redis setup required",
+        "Tests clean up resources after completion"
       ]
     },
     {
       "id": "US-002",
-      "as_a": "Developer",
-      "i_want": "reusable test database utilities",
-      "so_that": "other services can use the same testing infrastructure",
-      "priority": "medium",
+      "as_a": "developer",
+      "i_want": "write integration tests using reusable test utilities",
+      "so_that": "I don't duplicate test setup code across services",
+      "priority": "high",
       "acceptance_criteria": [
-        "internal/testutil/db.go provides SetupTestDB function",
-        "Function returns connection string and cleanup function",
-        "Utilities support schema migrations",
-        "Package is well-documented"
+        "internal/testutil package provides database setup helpers",
+        "internal/testutil package provides Redis setup helpers",
+        "internal/testutil package provides mock S3 storage helpers",
+        "All helpers use testcontainers for isolation"
       ]
     },
     {
       "id": "US-003",
-      "as_a": "CI/CD Pipeline",
-      "i_want": "tests to run in isolated containers",
-      "so_that": "test runs are reproducible and don't interfere with each other",
+      "as_a": "developer",
+      "i_want": "quick bootstrap script for test environment",
+      "so_that": "I can start testing immediately after cloning the repository",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "scripts/test-env.sh installs all test dependencies",
+        "scripts/test-env.sh validates Docker is running",
+        "scripts/test-env.sh provides clear error messages for missing dependencies"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "new contributor",
+      "i_want": "clear documentation for running tests",
+      "so_that": "I can understand how to verify my changes",
       "priority": "high",
       "acceptance_criteria": [
-        "Each test run uses unique container",
-        "Tests can run in parallel safely",
-        "No port conflicts between concurrent test runs"
+        "CONTRIBUTING.md documents test prerequisites",
+        "CONTRIBUTING.md explains all Makefile test targets",
+        "CONTRIBUTING.md provides troubleshooting section",
+        "CONTRIBUTING.md includes examples for each service"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "CI/CD engineer",
+      "i_want": "run integration tests separately from unit tests",
+      "so_that": "CI pipeline provides fast feedback and comprehensive coverage",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "make test-integration runs only integration tests",
+        "Integration tests are tagged with build tag",
+        "Unit tests can run without external dependencies",
+        "Both targets report coverage metrics"
       ]
     }
   ],
   "functional_requirements": [
     {
       "id": "FR-001",
-      "title": "Testcontainers Integration",
-      "description": "Integrate testcontainers-go library to manage PostgreSQL container lifecycle during tests",
-      "service": "job-service"
+      "title": "Test Utilities Package",
+      "description": "Create internal/testutil package with reusable test helpers using testcontainers-go for PostgreSQL, Redis, and S3/MinIO mock storage",
+      "service": "all"
     },
     {
       "id": "FR-002",
-      "title": "Test Database Helper Package",
-      "description": "Create internal/testutil/db.go with reusable database setup and cleanup functions",
-      "service": "internal"
+      "title": "Database Test Helpers",
+      "description": "Provide SetupPostgreSQL, TeardownPostgreSQL, RunMigrations, TruncateTables functions for database tests with automatic schema cleanup",
+      "service": "all"
     },
     {
       "id": "FR-003",
-      "title": "Test Suite Migration",
-      "description": "Update job_assignment_test.go to use testcontainers instead of hardcoded localhost connection",
-      "service": "job-service"
+      "title": "Redis Test Helpers",
+      "description": "Provide SetupRedis, TeardownRedis, FlushAll functions for Redis-dependent tests with automatic data isolation",
+      "service": "job-service, auth-service, notification-service"
     },
     {
       "id": "FR-004",
-      "title": "Migration Support",
-      "description": "Test database should run migrations before test execution",
-      "service": "job-service"
+      "title": "S3 Mock Storage",
+      "description": "Provide SetupMockS3, CreateBucket, PutTestObject, GetTestObject functions using localstack or minio container for storage-service tests",
+      "service": "storage-service"
     },
     {
       "id": "FR-005",
-      "title": "Test Isolation",
-      "description": "Each test should have a clean database state with proper rollback/cleanup",
-      "service": "job-service"
+      "title": "Makefile Test Targets",
+      "description": "Add test-db, test-all, test-integration, test-unit, test-coverage targets to root Makefile with proper dependency management",
+      "service": "all"
     },
     {
-      "id": "FR-M006",
-      "title": "Cost Tracking & Quota Management",
-      "description": "Per-user and per-department print quotas, cost allocation, budget alerts",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Core enterprise requirement, table stakes for business sales"
+      "id": "FR-006",
+      "title": "Test Environment Bootstrap Script",
+      "description": "Create scripts/test-env.sh that checks Docker, installs testcontainers dependencies, and validates environment setup",
+      "service": "all"
     },
     {
-      "id": "FR-M007",
-      "title": "Secure Print Release",
-      "description": "Users authenticate at printer with PIN, badge, or mobile app to release jobs",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Essential security feature for regulated industries"
+      "id": "FR-007",
+      "title": "Test Documentation",
+      "description": "Update CONTRIBUTING.md with comprehensive testing section including prerequisites, commands, and troubleshooting",
+      "service": "all"
     },
     {
-      "id": "FR-M008",
-      "title": "Print Policy Engine",
-      "description": "Configurable rules for print permissions, color/BW enforcement, size limits",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Key cost control feature for organizations"
+      "id": "FR-008",
+      "title": "JWT Test Helpers",
+      "description": "Provide GenerateTestJWT, GenerateExpiredJWT functions for auth testing in auth-service and middleware tests",
+      "service": "auth-service"
     },
     {
-      "id": "FR-M009",
-      "title": "Advanced Audit Logging",
-      "description": "Immutable logs of all print activity with user, document, time, outcome",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Required for compliance and security auditing"
+      "id": "FR-009",
+      "title": "HTTP Test Server",
+      "description": "Provide SetupTestServer helper that creates httptest.Server with configured middleware for endpoint testing",
+      "service": "all"
     },
     {
       "id": "FR-M010",
-      "title": "Mobile & Email-to-Print",
-      "description": "Print from mobile devices or email documents directly to print queue",
+      "title": "Secure Print Release Service",
+      "description": "Queue-based print release with PIN, card, or biometric authentication at the device; supports job hold-and-release for security",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Modern workforce requirement"
+      "competitive_advantage": "Addresses top enterprise security requirement, prevents data leakage from uncollected documents"
     },
     {
       "id": "FR-M011",
-      "title": "Analytics Dashboard",
-      "description": "Cost analysis, usage trends, environmental impact reports",
+      "title": "Print Quota & Cost Management",
+      "description": "User/group-based quotas, departmental cost allocation, configurable chargeback models, budget alerts and enforcement",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Executive visibility drives adoption"
+      "competitive_advantage": "Essential for education and enterprise cost control, currently missing from core offering"
+    },
+    {
+      "id": "FR-M012",
+      "title": "Analytics & Reporting Service",
+      "description": "Usage dashboards, cost analysis, trend reports, environmental impact (paper/energy), exportable reports (PDF/CSV), scheduled reports",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Key decision-making tool for IT management, demonstrates ROI"
+    },
+    {
+      "id": "FR-M013",
+      "title": "Print Policy Engine",
+      "description": "Rules-based routing (color/mono, duplex, paper size), user/group/document-based policies, time-based restrictions, watermarks",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Cost control and security differentiation"
+    },
+    {
+      "id": "FR-M014",
+      "title": "MFA/Smart Card Authentication",
+      "description": "Hardware token support, smart card integration, TOTP, biometric authentication options for print release",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Builds on existing auth-service, meets enterprise security standards"
     }
   ],
   "non_functional_requirements": [
     {
       "id": "NFR-001",
       "category": "performance",
-      "requirement": "Test container startup should not significantly slow down test execution",
-      "metric": "<5s additional overhead per test suite"
+      "requirement": "Unit tests must complete within 30 seconds, integration tests within 2 minutes",
+      "metric": "total test execution time"
     },
     {
       "id": "NFR-002",
-      "category": "security",
-      "requirement": "Test database credentials should be isolated from production",
-      "metric": "Separate test credentials, no access to production data"
+      "category": "performance",
+      "requirement": "Testcontainers startup time optimized with reusable containers",
+      "metric": "container reuse enabled for local development"
     },
     {
       "id": "NFR-003",
-      "category": "scalability",
-      "requirement": "Test utilities should be reusable across all services",
-      "metric": "Support for auth, registry, storage, notification services"
+      "category": "security",
+      "requirement": "Test credentials must not overlap with production credentials",
+      "metric": "separate test database and credentials"
     },
     {
       "id": "NFR-004",
+      "category": "security",
+      "requirement": "Test containers must be isolated from development/production infrastructure",
+      "metric": "testcontainers use random ports"
+    },
+    {
+      "id": "NFR-005",
+      "category": "scalability",
+      "requirement": "Tests must run in parallel without conflicts",
+      "metric": "t.Parallel() support with database isolation"
+    },
+    {
+      "id": "NFR-006",
+      "category": "maintainability",
+      "requirement": "Test utilities must be documented with examples",
+      "metric": "godoc comments on all exported functions"
+    },
+    {
+      "id": "NFR-007",
       "category": "reliability",
-      "requirement": "Containers must always be cleaned up even on test failure",
-      "metric": "100% cleanup rate via defer statements"
+      "requirement": "Tests must clean up resources even on failure",
+      "metric": "defer cleanup in all helpers"
     }
   ],
   "api_endpoints": [],
   "database_changes": [
     {
-      "table": "test_infrastructure",
+      "table": "test_users",
       "action": "create",
       "columns": [
-        "testcontainers_config json",
-        "migrations_path string"
+        "id UUID PRIMARY KEY",
+        "email VARCHAR(255) UNIQUE",
+        "password_hash VARCHAR(255)",
+        "role VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "test_printers",
+      "action": "create",
+      "columns": [
+        "id UUID PRIMARY KEY",
+        "name VARCHAR(255)",
+        "agent_id VARCHAR(255)",
+        "status VARCHAR(50)",
+        "last_heartbeat TIMESTAMP"
+      ]
+    },
+    {
+      "table": "test_jobs",
+      "action": "create",
+      "columns": [
+        "id UUID PRIMARY KEY",
+        "user_id UUID",
+        "printer_id UUID",
+        "document_key VARCHAR(500)",
+        "status VARCHAR(50)",
+        "created_at TIMESTAMP"
       ]
     }
   ],
   "affected_services": [
+    "auth-service",
+    "registry-service",
     "job-service",
-    "internal/testutil"
+    "storage-service",
+    "notification-service"
   ],
   "risks": [
     {
-      "risk": "Docker daemon not available in all CI environments",
-      "mitigation": "Provide fallback to mock-based tests or use CI with Docker-in-Docker support"
+      "risk": "Testcontainers requires Docker daemon running, causing CI failures if Docker unavailable",
+      "mitigation": "Add Docker check in test-env.sh, provide fallback to mock implementations for CI without Docker"
     },
     {
-      "risk": "Testcontainers may slow down test execution significantly",
-      "mitigation": "Reuse single container across test suite with proper database truncation between tests"
+      "risk": "Port conflicts when running tests alongside local development services",
+      "mitigation": "Testcontainers uses random port assignment, update connection strings dynamically"
     },
     {
-      "risk": "Port conflicts when running tests in parallel",
-      "mitigation": "Testcontainers automatically assigns random available ports"
+      "risk": "Database migration files may not exist for test schema",
+      "mitigation": "Create migrations directory under internal/testutil with test-specific migrations"
     },
     {
-      "risk": "Migrations may fail in test database",
-      "mitigation": "Include migration rollback in cleanup, use separate test schema"
+      "risk": "Flaky tests due to container startup timing",
+      "mitigation": "Add readiness checks with exponential backoff in Setup* functions"
+    },
+    {
+      "risk": "Resource leaks from tests that don't clean up containers",
+      "mitigation": "Use t.Cleanup() in all helpers, add goroutine leak detection in CI"
     }
   ],
   "implementation_phases": [
     {
       "phase": 1,
-      "name": "Dependencies & Setup",
+      "name": "Test Utilities Foundation",
       "tasks": [
-        "Add testcontainers-go dependency to go.mod",
-        "Create internal/testutil directory structure",
-        "Verify Docker daemon availability in test environment"
+        "Create internal/testutil package structure",
+        "Implement SetupPostgreSQL and TeardownPostgreSQL with testcontainers",
+        "Implement SetupRedis and TeardownRedis with testcontainers",
+        "Add base test configuration and constants"
       ]
     },
     {
       "phase": 2,
-      "name": "Test Utility Package",
+      "name": "S3 Mock and JWT Helpers",
       "tasks": [
-        "Create internal/testutil/db.go with SetupPostgresContainer function",
-        "Implement database connection string generation",
-        "Add migration runner integration",
-        "Implement cleanup and teardown functions",
-        "Add godoc documentation"
+        "Implement SetupMockS3 with localstack/minio container",
+        "Implement GenerateTestJWT and GenerateExpiredJWT helpers",
+        "Implement HTTP test server helper",
+        "Add unit tests for testutil package"
       ]
     },
     {
       "phase": 3,
-      "name": "Test Suite Migration",
+      "name": "Makefile Integration",
       "tasks": [
-        "Update job_assignment_test.go to use testcontainers",
-        "Add TestMain function for container lifecycle",
-        "Ensure proper cleanup with defer statements",
-        "Run tests and verify all 9 tests pass"
+        "Add test-db target to start PostgreSQL and Redis containers",
+        "Add test-all target to run all tests with dependency checks",
+        "Add test-integration target with build tag filtering",
+        "Add test-unit and test-coverage targets"
       ]
     },
     {
       "phase": 4,
-      "name": "Documentation & Reuse",
+      "name": "Bootstrap and Documentation",
       "tasks": [
-        "Add testing guide to CLAUDE.md",
-        "Document testcontainers usage for other services",
-        "Verify tests pass in CI environment"
+        "Create scripts/test-env.sh with dependency checks",
+        "Add test setup section to CONTRIBUTING.md",
+        "Document each test target with examples",
+        "Add troubleshooting section for common issues"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Service Test Migration",
+      "tasks": [
+        "Update auth-service tests to use testutil",
+        "Update job-service tests to use testutil",
+        "Update storage-service tests to use testutil",
+        "Update registry-service and notification-service tests",
+        "Verify all tests pass with make test-all"
       ]
     }
   ],
   "market_context": {
     "competitors_analyzed": [
-      "PaperCut MF",
-      "Canon uniFLOW",
-      "Print Manager Plus",
-      "UniPrint InfinityCloud",
-      "\u5b89\u4f01\u795e/\u57df\u667a\u76fe",
-      "Print Conductor"
+      "PaperCut",
+      "uniFLOW Online",
+      "HP Edge Fusion",
+      "Konica Minolta Paramount",
+      "Ricoh @Remote"
     ],
     "key_gaps": [
-      "Cost allocation and quota budgeting per user/department",
-      "Secure print release with authentication at device",
-      "Print policy enforcement (whitelist/blacklist, color restrictions)",
-      "Sensitive data detection and content auditing",
-      "Mobile printing support (email-to-print, mobile apps)"
+      "Secure print release with user authentication at device (PIN/card/biometric) to prevent sensitive documents from being left unattended",
+      "Print quota management and departmental cost allocation/chargeback for expense tracking and budget control",
+      "Comprehensive reporting and analytics including usage trends, cost analysis, and environmental impact",
+      "Mobile printing applications for iOS and Android with native printing capabilities",
+      "Print policy engine with rules-based routing (color/mono, duplex, paper selection) based on user/department/document"
     ],
     "trends": [
-      "Cloud-Native Print Management",
-      "Zero Trust Print Security",
+      "AI-powered Print Optimization",
       "Sustainability Reporting",
-      "AI-powered Document Processing",
-      "MPS (Managed Print Services) Integration"
+      "Blockchain Audit Trails",
+      "Zero Trust Print Security",
+      "Serverless Edge Printing"
     ],
     "unique_selling_points": [
-      "Open-source core with commercial flexibility",
-      "Cloud-native microservices architecture for horizontal scalability",
-      "Modern Go stack with OpenTelemetry observability built-in",
-      "Multi-tenant design from day one",
-      "API-first for easy integration and custom workflows",
-      "Support for both S3 and local storage backends",
-      "React/TypeScript dashboard with modern UX",
-      "OIDC and SAML support for enterprise SSO"
+      "Open-source architecture enabling vendor neutrality unlike competitors tied to specific hardware",
+      "Microservices design allows independent scaling and deployment flexibility",
+      "Modern Go-based infrastructure with container-first design",
+      "Extensible through internal packages for custom integrations",
+      "Self-hosted option for data sovereignty requirements",
+      "Lower total cost of ownership vs proprietary solutions",
+      "API-first design enables custom workflow integrations"
     ]
   }
 }

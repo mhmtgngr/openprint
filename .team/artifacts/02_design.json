@@ -1,1 +1,992 @@
-Now I have all the information I need. Let me create the comprehensive JSON solution:</think>{"architecture_decisions":[{"decision":"Use testcontainers-go for PostgreSQL lifecycle management","rationale":"Eliminates need for external PostgreSQL dependency, provides isolated test environments, enables parallel test execution, ensures consistent schema through automated migrations"},{"decision":"Create reusable internal/testutil package","rationale":"Provides centralized test utilities for all microservices, reduces code duplication, standardizes test database setup across the codebase"},{"decision":"Implement TestMain for container lifecycle","rationale":"Ensures single container instance per test package, manages cleanup with defer statements, provides graceful handling of test interruptions"},{"decision":"Use pgx migrate or direct SQL execution for migrations","rationationale":"Lightweight migration runner without external tool dependencies, leverages existing migration files in migrations/ directory"}],"backend_tasks":[{"order":1,"file":"go.mod","action":"modify","purpose":"Add testcontainers-go dependency for PostgreSQL container management","key_functions":[]},{"order":2,"file":"internal/testutil/db.go","action":"create","purpose":"Create reusable test database utility package with SetupPostgresContainer, RunMigrations, Cleanup functions","key_functions":["SetupPostgresContainer","RunMigrations","Cleanup","GetTestDBConnection"]},{"order":3,"file":"internal/testutil/migrate.go","action":"create","purpose":"Migration runner that executes .sql files from migrations/ directory","key_functions":["ReadMigrations","ExecuteMigration","CreateSchema"]},{"order":4,"file":"internal/testutil/fixtures.go","action":"create","purpose":"Test fixture creation helper for print_jobs, job_assignments, and related tables","key_functions":["CreateTestPrintJob","CreateTestPrinter","CreateTestAgent","CreateTestDocument","CleanupTestData"]},{"order":5,"file":"services/job-service/repository/job_assignment_test.go","action":"modify","purpose":"Replace setupAssignmentTestDB with testcontainers, add TestMain for lifecycle management","key_functions":["TestMain"]},{"order":6,"file":"services/job-service/repository/job_history_test.go","action":"modify","purpose":"Remove Skip calls, integrate with testcontainers, add TestMain","key_functions":["TestMain"]},{"order":7,"file":"services/job-service/repository/job_test.go","action":"modify","purpose":"Remove Skip calls, integrate with testcontainers, add TestMain","key_functions":["TestMain"]},{"order":8,"file":"internal/testutil/README.md","action":"create","purpose":"Documentation for testutil package usage across services","key_functions":[]}],"frontend_tasks":[],"database_migrations":[{"file":"migrations/000021_test_setup_functions.up.sql","sql":"-- Helper functions for test cleanup\nCREATE OR REPLACE FUNCTION IF NOT EXISTS truncate_tables() RETURNS void AS $$\nBEGIN\n    TRUNCATE TABLE job_assignments, job_history, print_jobs, documents, agents, printers CASCADE;\nEND;\n$$ LANGUAGE plpgsql;"}],"api_contracts":[],"test_plan":{"unit_tests":[{"file":"internal/testutil/db_test.go","cases":["TestSetupPostgresContainer_creates_container","TestSetupPostgresContainer_returns_connection_string","TestRunMigrations_executes_all_migrations","TestCleanup_removes_container"]},{"file":"services/job-service/repository/job_assignment_test.go","cases":["TestJobAssignmentRepository_AssignJob","TestJobAssignmentRepository_UpdateStatus","TestJobAssignmentRepository_UpdateStatus_SQLInjection","TestJobAssignmentRepository_FindByAgent","TestJobAssignmentRepository_FindByJobAndAgent","TestJobAssignmentRepository_UpdateHeartbeat","TestJobAssignmentRepository_IncrementRetry","TestJobAssignmentRepository_SetError","TestJobAssignmentRepository_GetStaleAssignments"]},{"file":"services/job-service/repository/job_test.go","cases":["TestJobRepository_CRUD","TestJobRepository_QueryMethods","TestJobRepository_AdvancedOperations","TestJobRepository_ListWithFilters_EmptyFilters","TestJobRepository_ListWithFilters_SingleFilter"]},{"file":"services/job-service/repository/job_history_test.go","cases":["TestJobHistoryRepository_CRUD","TestJobHistoryRepository_QueryMethods","TestJobHistoryRepository_BatchOperations","TestJobHistoryRepository_DeleteOld"]}],"e2e_tests":[]},"security_notes":["testcontainers-go uses Docker socket - ensure test environment has proper Docker daemon access","Database credentials in tests use default openprint/openprint - never use production credentials","Migration files contain DDL statements - validate no malicious SQL in contributed migrations","SQL injection tests verify parameterized queries - maintain this security practice"]},"docker_changes":["Add testcontainers-go to go.mod which programmatically manages Docker containers","No Docker Compose changes required - tests manage containers independently"],"market_driven_features":["FR-M006: Cost Tracking & Quota Management - test infrastructure supports usage_stats table testing","FR-M007: Secure Print Release - test fixtures support agent assignment testing","FR-M008: Print Policy Engine - isolated test environment enables policy validation testing","FR-M009: Advanced Audit Logging - testutil provides audit_logs table fixture support"]}
+{
+  "architecture_decisions": [
+    {
+      "decision": "Use testcontainers-go for all external dependencies (PostgreSQL, Redis, S3)",
+      "rationale": "Provides real containerized dependencies matching production, more reliable than mocks, supports parallel test execution with unique containers per test"
+    },
+    {
+      "decision": "Create internal/testutil as standalone package with no external dependencies on services",
+      "rationale": "Makes test utilities reusable across all services, prevents circular dependencies, allows tests to run independently"
+    },
+    {
+      "decision": "Implement cleanup registry with t.Cleanup() pattern",
+      "rationale": "Guarantees resource cleanup even on test failure, prevents dangling containers, follows Go testing best practices"
+    },
+    {
+      "decision": "Add build tag integration for tests requiring containers",
+      "rationale": "Allows unit tests to run fast without containers, integration tests opt-in with //go:build integration"
+    },
+    {
+      "decision": "Implement shared test fixtures package",
+      "rationale": "Reduces test setup duplication, provides consistent test data across services, maintains test data invariants"
+    },
+    {
+      "decision": "Add Makefile test targets with dependency checking",
+      "rationale": "Simplifies developer workflow, ensures Docker is available before running containerized tests, provides single entry point for all test types"
+    }
+  ],
+  "backend_tasks": [
+    {
+      "order": 1,
+      "file": "internal/testutil/go.mod",
+      "action": "create",
+      "purpose": "Separate module for test utilities to avoid circular dependencies",
+      "key_functions": []
+    },
+    {
+      "order": 2,
+      "file": "internal/testutil/postgres.go",
+      "action": "create",
+      "purpose": "PostgreSQL testcontainer setup with test database creation",
+      "key_functions": [
+        "SetupPostgreSQL",
+        "TeardownPostgreSQL",
+        "CreateTestDatabase",
+        "GetTestDSN",
+        "TruncateTables"
+      ]
+    },
+    {
+      "order": 3,
+      "file": "internal/testutil/redis.go",
+      "action": "create",
+      "purpose": "Redis testcontainer setup for caching and queue testing",
+      "key_functions": [
+        "SetupRedis",
+        "TeardownRedis",
+        "GetTestRedisClient",
+        "FlushAll"
+      ]
+    },
+    {
+      "order": 4,
+      "file": "internal/testutil/s3.go",
+      "action": "create",
+      "purpose": "MinIO container for S3-compatible storage testing",
+      "key_functions": [
+        "SetupMockS3",
+        "TeardownMockS3",
+        "CreateTestBucket",
+        "GetS3Client",
+        "CleanupBucket"
+      ]
+    },
+    {
+      "order": 5,
+      "file": "internal/testutil/jwt.go",
+      "action": "create",
+      "purpose": "JWT token generation for authentication testing",
+      "key_functions": [
+        "GenerateTestJWT",
+        "GenerateExpiredJWT",
+        "GenerateInvalidJWT",
+        "GetTestPrivateKey",
+        "GetTestPublicKey"
+      ]
+    },
+    {
+      "order": 6,
+      "file": "internal/testutil/http.go",
+      "action": "create",
+      "purpose": "HTTP test server helper for API endpoint testing",
+      "key_functions": [
+        "NewTestServer",
+        "CloseTestServer",
+        "MakeTestRequest",
+        "AssertJSONResponse"
+      ]
+    },
+    {
+      "order": 7,
+      "file": "internal/testutil/fixtures.go",
+      "action": "modify",
+      "purpose": "Shared test data fixtures for consistent test data",
+      "key_functions": [
+        "NewTestUser",
+        "NewTestPrinter",
+        "NewTestJob",
+        "NewTestDocument"
+      ]
+    },
+    {
+      "order": 8,
+      "file": "internal/testutil/context.go",
+      "action": "create",
+      "purpose": "Test context management with timeouts and cancellation",
+      "key_functions": [
+        "NewTestContext",
+        "WithTestTimeout",
+        "WithTestUserID"
+      ]
+    },
+    {
+      "order": 9,
+      "file": "internal/testutil/config.go",
+      "action": "create",
+      "purpose": "Test configuration with environment variable isolation",
+      "key_functions": [
+        "GetTestConfig",
+        "SetTestEnv",
+        "UnsetTestEnv",
+        "ResetTestEnv"
+      ]
+    },
+    {
+      "order": 10,
+      "file": "internal/testutil/migrate.go",
+      "action": "modify",
+      "purpose": "Database migration helpers for test schema setup",
+      "key_functions": [
+        "RunTestMigrations",
+        "RollbackTestMigrations",
+        "GetMigrationsDir"
+      ]
+    },
+    {
+      "order": 11,
+      "file": "scripts/test-env.sh",
+      "action": "create",
+      "purpose": "Bootstrap script to check Docker availability and setup test environment",
+      "key_functions": [
+        "check_docker",
+        "check_dependencies",
+        "setup_test_env",
+        "print_usage"
+      ]
+    },
+    {
+      "order": 12,
+      "file": "Makefile",
+      "action": "modify",
+      "purpose": "Add comprehensive test targets with dependency checks",
+      "key_functions": [
+        "test-db",
+        "test-all",
+        "test-unit",
+        "test-integration",
+        "test-coverage",
+        "test-clean"
+      ]
+    },
+    {
+      "order": 13,
+      "file": ".github/workflows/test.yml",
+      "action": "modify",
+      "purpose": "GitHub Actions workflow for CI/CD testing",
+      "key_functions": [
+        "run-unit-tests",
+        "run-integration-tests",
+        "upload-coverage"
+      ]
+    },
+    {
+      "order": 14,
+      "file": "services/auth-service/internal/handler/jwt_test.go",
+      "action": "modify",
+      "purpose": "Update auth service JWT tests to use testutil",
+      "key_functions": [
+        "TestGenerateToken",
+        "TestValidateToken",
+        "TestExpiredToken"
+      ]
+    },
+    {
+      "order": 15,
+      "file": "services/job-service/internal/processor/queue_test.go",
+      "action": "modify",
+      "purpose": "Update job service tests to use testutil Redis",
+      "key_functions": [
+        "TestJobEnqueue",
+        "TestJobDequeue",
+        "TestJobPriority"
+      ]
+    },
+    {
+      "order": 16,
+      "file": "services/storage-service/internal/storage/s3_test.go",
+      "action": "modify",
+      "purpose": "Update storage service tests to use testutil S3",
+      "key_functions": [
+        "TestUploadDocument",
+        "TestDownloadDocument",
+        "TestDeleteDocument"
+      ]
+    },
+    {
+      "order": 17,
+      "file": "services/registry-service/internal/registry/printer_test.go",
+      "action": "modify",
+      "purpose": "Update registry service tests to use testutil PostgreSQL",
+      "key_functions": [
+        "TestRegisterPrinter",
+        "TestHeartbeat",
+        "TestGetPrinter"
+      ]
+    },
+    {
+      "order": 18,
+      "file": "services/notification-service/internal/hub/websocket_test.go",
+      "action": "modify",
+      "purpose": "Update notification service tests to use testutil",
+      "key_functions": [
+        "TestWebSocketConnection",
+        "TestBroadcast",
+        "TestSubscribe"
+      ]
+    },
+    {
+      "order": 19,
+      "file": "services/auth-service/internal/handler/mfa_test.go",
+      "action": "create",
+      "purpose": "Test MFA/Smart card authentication (market-driven feature)",
+      "key_functions": [
+        "TestGenerateMFAToken",
+        "TestValidateMFAToken",
+        "TestSmartCardAuth"
+      ]
+    },
+    {
+      "order": 20,
+      "file": "services/job-service/internal/quota/manager_test.go",
+      "action": "create",
+      "purpose": "Test print quota and cost management (market-driven feature)",
+      "key_functions": [
+        "TestCheckQuota",
+        "TestDeductQuota",
+        "TestQuotaExceeded"
+      ]
+    },
+    {
+      "order": 21,
+      "file": "services/job-service/internal/policy/engine_test.go",
+      "action": "create",
+      "purpose": "Test print policy engine (market-driven feature)",
+      "key_functions": [
+        "TestEvaluatePolicy",
+        "TestColorPrintingPolicy",
+        "TestDuplexPolicy"
+      ]
+    },
+    {
+      "order": 22,
+      "file": "services/job-service/internal/release/secure_test.go",
+      "action": "create",
+      "purpose": "Test secure print release service (market-driven feature)",
+      "key_functions": [
+        "TestReleaseWithPIN",
+        "TestReleaseWithCard",
+        "TestReleaseHistory"
+      ]
+    },
+    {
+      "order": 23,
+      "file": "services/analytics-service/internal/reporting/aggregator_test.go",
+      "action": "create",
+      "purpose": "Test analytics and reporting (market-driven feature)",
+      "key_functions": [
+        "TestGenerateReport",
+        "TestAggregateUsage",
+        "TestCostAnalysis"
+      ]
+    },
+    {
+      "order": 24,
+      "file": "internal/testutil/assertions.go",
+      "action": "create",
+      "purpose": "Custom assertion helpers for cleaner test code",
+      "key_functions": [
+        "AssertJSONEqual",
+        "AssertHeadersContain",
+        "AssertErrorType",
+        "AssertWithin"
+      ]
+    },
+    {
+      "order": 25,
+      "file": "internal/testutil/metrics.go",
+      "action": "create",
+      "purpose": "Test metrics collection for telemetry testing",
+      "key_functions": [
+        "CaptureMetrics",
+        "ResetMetrics",
+        "GetMetricValue",
+        "AssertMetric"
+      ]
+    }
+  ],
+  "frontend_tasks": [
+    {
+      "order": 1,
+      "file": "web/dashboard/src/test/utils/testServer.ts",
+      "action": "create",
+      "purpose": "MSW-based mock server for frontend testing",
+      "key_functions": [
+        "setupTestServer",
+        "createMockResponse",
+        "resetHandlers"
+      ]
+    },
+    {
+      "order": 2,
+      "file": "web/dashboard/src/test/utils/fixtures.ts",
+      "action": "create",
+      "purpose": "Shared test fixtures for frontend components",
+      "key_functions": [
+        "mockUser",
+        "mockPrinter",
+        "mockJob",
+        "mockDocument"
+      ]
+    },
+    {
+      "order": 3,
+      "file": "web/dashboard/src/test/utils/render.tsx",
+      "action": "create",
+      "purpose": "Custom render function with providers for React Testing Library",
+      "key_functions": [
+        "renderWithProviders",
+        "renderWithAuth",
+        "renderWithRouter"
+      ]
+    },
+    {
+      "order": 4,
+      "file": "web/dashboard/src/features/auth/tests/mfa.test.tsx",
+      "action": "create",
+      "purpose": "MFA component tests (market-driven feature)",
+      "key_functions": [
+        "testMFAPrompt",
+        "testTOTPInput",
+        "testBackupCodes"
+      ]
+    },
+    {
+      "order": 5,
+      "file": "web/dashboard/src/features/jobs/tests/quota.test.tsx",
+      "action": "create",
+      "purpose": "Print quota UI tests (market-driven feature)",
+      "key_functions": [
+        "testQuotaDisplay",
+        "testQuotaWarning",
+        "testCostEstimate"
+      ]
+    },
+    {
+      "order": 6,
+      "file": "web/dashboard/src/features/analytics/tests/reports.test.tsx",
+      "action": "create",
+      "purpose": "Analytics dashboard tests (market-driven feature)",
+      "key_functions": [
+        "testReportGeneration",
+        "testChartRendering",
+        "testExportCSV"
+      ]
+    },
+    {
+      "order": 7,
+      "file": "web/dashboard/src/features/release/tests/secureRelease.test.tsx",
+      "action": "create",
+      "purpose": "Secure print release UI tests (market-driven feature)",
+      "key_functions": [
+        "testPINEntry",
+        "testCardReader",
+        "testReleaseHistory"
+      ]
+    }
+  ],
+  "database_migrations": [
+    {
+      "file": "migrations/000001_create_users_table.up.sql",
+      "sql": "CREATE TABLE users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    email VARCHAR(255) UNIQUE NOT NULL,\n    password_hash VARCHAR(255),\n    full_name VARCHAR(255),\n    role VARCHAR(50) DEFAULT 'user',\n    mfa_enabled BOOLEAN DEFAULT false,\n    mfa_secret VARCHAR(255),\n    smart_card_id VARCHAR(255) UNIQUE,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000002_create_printers_table.up.sql",
+      "sql": "CREATE TABLE printers (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    agent_id VARCHAR(255) UNIQUE NOT NULL,\n    ip_address INET,\n    status VARCHAR(50) DEFAULT 'offline',\n    capabilities JSONB,\n    location VARCHAR(255),\n    last_heartbeat TIMESTAMP,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000003_create_jobs_table.up.sql",
+      "sql": "CREATE TABLE print_jobs (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    document_id UUID NOT NULL REFERENCES documents(id),\n    printer_id UUID REFERENCES printers(id),\n    status VARCHAR(50) DEFAULT 'queued',\n    priority INTEGER DEFAULT 0,\n    pages INTEGER DEFAULT 0,\n    color_pages INTEGER DEFAULT 0,\n    duplex BOOLEAN DEFAULT false,\n    cost_cents INTEGER DEFAULT 0,\n    pin VARCHAR(255),\n    released_at TIMESTAMP,\n    completed_at TIMESTAMP,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000004_create_documents_table.up.sql",
+      "sql": "CREATE TABLE documents (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    filename VARCHAR(255) NOT NULL,\n    storage_key VARCHAR(255) UNIQUE NOT NULL,\n    content_type VARCHAR(100),\n    size_bytes BIGINT,\n    encryption_enabled BOOLEAN DEFAULT false,\n    checksum VARCHAR(255),\n    uploaded_by UUID REFERENCES users(id),\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000005_create_quotas_table.up.sql",
+      "sql": "CREATE TABLE quotas (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    period_type VARCHAR(50) DEFAULT 'monthly',\n    page_limit INTEGER DEFAULT 0,\n    pages_used INTEGER DEFAULT 0,\n    cost_limit_cents INTEGER DEFAULT 0,\n    cost_used_cents INTEGER DEFAULT 0,\n    reset_at TIMESTAMP,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000006_create_policies_table.up.sql",
+      "sql": "CREATE TABLE policies (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    description TEXT,\n    rules JSONB NOT NULL,\n    priority INTEGER DEFAULT 0,\n    enabled BOOLEAN DEFAULT true,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000007_create_policy_assignments_table.up.sql",
+      "sql": "CREATE TABLE policy_assignments (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    policy_id UUID NOT NULL REFERENCES policies(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\n    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,\n    CONSTRAINT target_exclusion CHECK (\n        (user_id IS NOT NULL)::integer + (group_id IS NOT NULL)::integer = 1\n    )\n)"
+    },
+    {
+      "file": "migrations/000008_create_sessions_table.up.sql",
+      "sql": "CREATE TABLE sessions (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    token_hash VARCHAR(255) UNIQUE NOT NULL,\n    expires_at TIMESTAMP NOT NULL,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n    last_used_at TIMESTAMP\n)"
+    },
+    {
+      "file": "migrations/000009_create_release_history_table.up.sql",
+      "sql": "CREATE TABLE release_history (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    job_id UUID NOT NULL REFERENCES print_jobs(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id),\n    release_method VARCHAR(50) NOT NULL,\n    released_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n    printer_id UUID REFERENCES printers(id),\n    ip_address INET\n)"
+    },
+    {
+      "file": "migrations/000010_create_analytics_events_table.up.sql",
+      "sql": "CREATE TABLE analytics_events (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    event_type VARCHAR(100) NOT NULL,\n    user_id UUID REFERENCES users(id),\n    printer_id UUID REFERENCES printers(id),\n    properties JSONB,\n    occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+    }
+  ],
+  "api_contracts": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/setup",
+      "request": {
+        "secret": "string",
+        "code": "string"
+      },
+      "response": {
+        "enabled": true,
+        "backup_codes": [
+          "string"
+        ]
+      },
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/validate",
+      "request": {
+        "code": "string"
+      },
+      "response": {
+        "valid": true
+      },
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/smartcard/login",
+      "request": {
+        "card_id": "string",
+        "certificate": "string"
+      },
+      "response": {
+        "token": "string",
+        "user": {
+          "id": "uuid",
+          "email": "string"
+        }
+      },
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/quota/:userId",
+      "request": {},
+      "response": {
+        "page_limit": 1000,
+        "pages_used": 150,
+        "cost_limit_cents": 5000,
+        "cost_used_cents": 750,
+        "reset_at": "2024-03-01T00:00:00Z"
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/quota/:UserId/estimate",
+      "request": {
+        "pages": 10,
+        "color": true,
+        "duplex": false
+      },
+      "response": {
+        "cost_cents": 50,
+        "within_quota": true
+      },
+      "status_codes": [
+        200,
+        400
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs/:jobId/release",
+      "request": {
+        "method": "pin",
+        "value": "1234",
+        "printer_id": "uuid"
+      },
+      "response": {
+        "success": true,
+        "printer": "string"
+      },
+      "status_codes": [
+        200,
+        400,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/release/pending",
+      "request": {},
+      "response": {
+        "jobs": [
+          {
+            "id": "uuid",
+            "document": "string",
+            "created_at": "timestamp"
+          }
+        ]
+      },
+      "status_codes": [
+        200,
+        401
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/policies",
+      "request": {
+        "name": "string",
+        "rules": {
+          "max_pages": 100,
+          "block_color": true
+        }
+      },
+      "response": {
+        "id": "uuid",
+        "name": "string"
+      },
+      "status_codes": [
+        201,
+        400
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/usage",
+      "request": {
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-31",
+        "group_by": "user"
+      },
+      "response": {
+        "summary": {
+          "total_pages": 1000,
+          "total_cost_cents": 5000
+        },
+        "by_user": [
+          {
+            "user_id": "uuid",
+            "pages": 500,
+            "cost_cents": 2500
+          }
+        ]
+      },
+      "status_codes": [
+        200,
+        400
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/cost",
+      "request": {
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-31"
+      },
+      "response": {
+        "by_user": [
+          {
+            "user_id": "uuid",
+            "cost_cents": 2500
+          }
+        ],
+        "by_printer": [
+          {
+            "printer_id": "uuid",
+            "cost_cents": 1500
+          }
+        ]
+      },
+      "status_codes": [
+        200,
+        400
+      ]
+    }
+  ],
+  "test_plan": {
+    "unit_tests": [
+      {
+        "file": "internal/testutil/postgres_test.go",
+        "cases": [
+          "SetupPostgreSQL creates running container",
+          "TeardownPostgreSQL stops container",
+          "GetTestDSN returns valid connection string",
+          "CreateTestDatabase creates isolated database",
+          "TruncateTables clears all data"
+        ]
+      },
+      {
+        "file": "internal/testutil/redis_test.go",
+        "cases": [
+          "SetupRedis creates running container",
+          "GetTestRedisClient returns functional client",
+          "FlushAll clears all keys"
+        ]
+      },
+      {
+        "file": "internal/testutil/s3_test.go",
+        "cases": [
+          "SetupMockS3 creates MinIO container",
+          "CreateTestBucket creates new bucket",
+          "GetS3Client uploads and downloads files",
+          "CleanupBucket removes all objects"
+        ]
+      },
+      {
+        "file": "internal/testutil/jwt_test.go",
+        "cases": [
+          "GenerateTestJWT creates valid token",
+          "GenerateExpiredJWT creates expired token",
+          "GenerateInvalidJWT creates malformed token"
+        ]
+      },
+      {
+        "file": "internal/testutil/fixtures_test.go",
+        "cases": [
+          "NewTestUser creates user with defaults",
+          "NewTestPrinter creates printer with capabilities",
+          "NewTestJob creates job with valid references"
+        ]
+      },
+      {
+        "file": "internal/auth/jwt/jwt_test.go",
+        "cases": [
+          "GenerateToken creates valid JWT",
+          "ValidateToken accepts valid token",
+          "ValidateToken rejects expired token",
+          "ValidateToken rejects invalid signature"
+        ]
+      },
+      {
+        "file": "internal/auth/password/password_test.go",
+        "cases": [
+          "HashPassword creates different hash for same password",
+          "VerifyPassword accepts correct password",
+          "VerifyPassword rejects wrong password",
+          "HashPassword uses bcrypt cost factor"
+        ]
+      },
+      {
+        "file": "services/auth-service/internal/handler/auth_test.go",
+        "cases": [
+          "Login returns JWT for valid credentials",
+          "Login returns 401 for invalid credentials",
+          "Register creates new user",
+          "Logout invalidates session"
+        ]
+      },
+      {
+        "file": "services/auth-service/internal/handler/mfa_test.go",
+        "cases": [
+          "SetupMFA enables MFA for user",
+          "ValidateMFA accepts correct TOTP code",
+          "ValidateMFA rejects invalid code",
+          "GenerateBackupCodes creates 10 codes"
+        ]
+      },
+      {
+        "file": "services/job-service/internal/queue/processor_test.go",
+        "cases": [
+          "EnqueueJob adds job to Redis queue",
+          "DequeueJob removes job from queue",
+          "JobPriority orders by priority",
+          "JobStatus updates correctly"
+        ]
+      },
+      {
+        "file": "services/job-service/internal/quota/manager_test.go",
+        "cases": [
+          "CheckQuota returns true when under limit",
+          "CheckQuota returns false when over limit",
+          "DeductQuota increments used pages",
+          "DeductQuota handles per-user tracking",
+          "QuotaResets monthly"
+        ]
+      },
+      {
+        "file": "services/job-service/internal/policy/engine_test.go",
+        "cases": [
+          "EvaluatePolicy applies matching rules",
+          "ColorPrintingPolicy blocks when disabled",
+          "DuplexPolicy enforces double-sided",
+          "PolicyPriority applies highest priority first"
+        ]
+      },
+      {
+        "file": "services/job-service/internal/release/secure_test.go",
+        "cases": [
+          "ReleaseWithPIN accepts correct PIN",
+          "ReleaseWithPIN rejects wrong PIN",
+          "ReleaseWithCard validates smart card",
+          "ReleaseHistory records all releases"
+        ]
+      },
+      {
+        "file": "services/storage-service/internal/storage/local_test.go",
+        "cases": [
+          "UploadDocument saves file to disk",
+          "DownloadDocument retrieves file",
+          "DeleteDocument removes file",
+          "Encryption encrypts on upload"
+        ]
+      },
+      {
+        "file": "services/storage-service/internal/storage/s3_test.go",
+        "cases": [
+          "UploadToS3 stores object",
+          "DownloadFromS3 retrieves object",
+          "S3Delete removes object",
+          "PresignedURL generates valid link"
+        ]
+      },
+      {
+        "file": "services/registry-service/internal/registry/printer_test.go",
+        "cases": [
+          "RegisterPrinter creates new printer",
+          "Heartbeat updates last_heartbeat",
+          "GetPrinter returns printer details",
+          "ListPrinters filters by status"
+        ]
+      },
+      {
+        "file": "services/notification-service/internal/hub/websocket_test.go",
+        "cases": [
+          "WebSocketConnection upgrades HTTP",
+          "Broadcast sends to all subscribers",
+          "Subscribe filters by topic",
+          "Unsubscribe removes client"
+        ]
+      },
+      {
+        "file": "internal/shared/middleware/auth_test.go",
+        "cases": [
+          "AuthMiddleware validates JWT",
+          "AuthMiddleware sets user context",
+          "AuthMiddleware returns 401 without token",
+          "AuthMiddleware returns 401 for expired token"
+        ]
+      },
+      {
+        "file": "internal/shared/middleware/validation_test.go",
+        "cases": [
+          "ValidationMiddleware validates JSON",
+          "ValidationMiddleware returns 400 for invalid",
+          "ValidationMiddleware passes valid requests"
+        ]
+      }
+    ],
+    "e2e_tests": [
+      {
+        "name": "Complete Print Job Flow",
+        "steps": [
+          "User registers and logs in",
+          "User uploads document",
+          "User submits print job",
+          "Job queued in Redis",
+          "Agent polls for job",
+          "Job status updated to processing",
+          "Document retrieved from storage",
+          "Job sent to printer",
+          "Job status updated to completed",
+          "WebSocket notification sent",
+          "User sees job in history"
+        ]
+      },
+      {
+        "name": "Secure Print Release Flow",
+        "steps": [
+          "User submits print job with PIN",
+          "Job held in pending state",
+          "User walks to printer",
+          "User enters PIN at printer panel",
+          "System validates PIN",
+          "Job released to printer",
+          "Release history recorded"
+        ]
+      },
+      {
+        "name": "Quota Enforcement Flow",
+        "steps": [
+          "User has monthly quota of 100 pages",
+          "User prints 50 pages",
+          "Quota check passes",
+          "User prints 60 more pages",
+          "Quota check fails",
+          "Job rejected with quota error"
+        ]
+      },
+      {
+        "name": "Policy Engine Flow",
+        "steps": [
+          "Admin creates no-color policy",
+          "Policy assigned to department",
+          "User in department submits color job",
+          "Policy engine evaluates job",
+          "Color printing blocked",
+          "Job modified to grayscale"
+        ]
+      },
+      {
+        "name": "MFA Login Flow",
+        "steps": [
+          "User enables MFA",
+          "User receives backup codes",
+          "User logs out",
+          "User logs in with password",
+          "MFA prompt shown",
+          "User enters TOTP code",
+          "Login successful"
+        ]
+      },
+      {
+        "name": "Smart Card Authentication Flow",
+        "steps": [
+          "User inserts smart card",
+          "Reader reads card ID",
+          "System validates card",
+          "User enters PIN",
+          "Authentication successful",
+          "Session created"
+        ]
+      },
+      {
+        "name": "Analytics Report Generation Flow",
+        "steps": [
+          "User submits report request",
+          "System queries jobs table",
+          "System aggregates by user",
+          "System aggregates by printer",
+          "System calculates costs",
+          "Report generated and returned"
+        ]
+      },
+      {
+        "name": "Printer Registration and Heartbeat",
+        "steps": [
+          "Agent starts",
+          "Agent requests registration",
+          "System creates printer record",
+          "Agent starts heartbeat",
+          "System updates last_heartbeat",
+          "System detects printer online"
+        ]
+      },
+      {
+        "name": "Document Storage Encryption Flow",
+        "steps": [
+          "Encryption key configured",
+          "User uploads document",
+          "Document encrypted before storage",
+          "Encrypted data saved to S3",
+          "User downloads document",
+          "Document decrypted after retrieval"
+        ]
+      },
+      {
+        "name": "WebSocket Real-time Notifications",
+        "steps": [
+          "User connects WebSocket",
+          "User subscribes to job updates",
+          "Job status changes",
+          "Notification pushed to WebSocket",
+          "Client receives update",
+          "UI updates in real-time"
+        ]
+      }
+    ]
+  },
+  "security_notes": [
+    "All test containers use isolated networks, never exposed to host",
+    "Test JWT secrets are separate from production, never committed",
+    "Test database passwords are randomized per container run",
+    "S3 test buckets have lifecycle policies to auto-delete after 24 hours",
+    "Test certificates for smart card auth use self-signed certs only",
+    "MFA secrets in tests use well-known test vectors (RFC 6238)",
+    "Rate limiting disabled in test environment via config flag",
+    "CSRF protection can be bypassed with test-only headers",
+    "Encryption test keys are 32-byte zero array for reproducibility",
+    "Test user passwords are hashed with same bcrypt cost as production",
+    "PII in test fixtures uses obviously fake data (test@example.com)",
+    "Session tokens in tests expire after 1 hour vs production 24 hours",
+    "Test containers run as non-root user where possible",
+    "Test logs are written to /tmp and cleaned up on shutdown"
+  ],
+  "docker_changes": [
+    "Add testcontainers Dockerfile for Go test image with Docker CLI",
+    "Update docker-compose.yml with test-services profile for PostgreSQL, Redis, MinIO",
+    "Add volume mounts for test data persistence during test runs",
+    "Configure test network isolation for containerized tests",
+    "Add healthcheck delays for test containers to ensure readiness"
+  ],
+  "market_driven_features": [
+    {
+      "feature": "Secure Print Release (PIN/Card)",
+      "priority": "critical",
+      "implementation": "Secure release service in job-service, PIN/card storage, release history tracking"
+    },
+    {
+      "feature": "Print Quota & Cost Management",
+      "priority": "critical",
+      "implementation": "Quota manager with per-user/per-group limits, cost calculation engine, usage tracking"
+    },
+    {
+      "feature": "Analytics & Reporting Service",
+      "priority": "high",
+      "implementation": "Dedicated analytics-service, aggregation queries, export endpoints (CSV/PDF)"
+    },
+    {
+      "feature": "Print Policy Engine",
+      "priority": "high",
+      "implementation": "Policy evaluation engine with rule priority, user/group assignment, color/duplex/envelope controls"
+    },
+    {
+      "feature": "MFA/Smart Card Authentication",
+      "priority": "high",
+      "implementation": "TOTP support in auth-service, smart card certificate validation, backup code generation"
+    },
+    {
+      "feature": "Mobile Printing",
+      "priority": "medium",
+      "implementation": "Mobile-responsive dashboard, document upload from mobile, print job status API"
+    },
+    {
+      "feature": "Consumables Forecasting",
+      "priority": "medium",
+      "implementation": "Printer toner/ink tracking, predictive alerts, integration with registry service"
+    },
+    {
+      "feature": "Blockchain Print Logs (HIPAA)",
+      "priority": "low",
+      "implementation": "Immutable audit log, hash chaining for job history, compliance reports"
+    }
+  ]
+}
