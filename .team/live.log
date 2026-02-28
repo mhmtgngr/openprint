@@ -863,3 +863,27 @@ All changes passed `npm run type-check` with no errors.
 [0;32m[15:33:17][0m   ✓ :8003
 [0;32m[15:33:17][0m   ✓ :8004
 [0;35m[15:33:55][0m [1;37m🐳 DevOps[0m Working...
+[0;35m[15:41:38][0m [1;37m🐳 DevOps[0m ✓ Committed
+[0;32m[15:41:38][0m   🐳 Building (1/6): auth-service
+[0;32m[15:42:16][0m   ✓ Built: auth-service (38s)
+[0;32m[15:42:16][0m   🐳 Building (2/6): dashboard
+[0;32m[15:42:24][0m   ✓ Built: dashboard (8s)
+[0;32m[15:42:24][0m   🐳 Building (3/6): job-service
+[0;32m[15:42:55][0m   ✓ Built: job-service (31s)
+[0;32m[15:42:55][0m   🐳 Building (4/6): notification-service
+[0;32m[15:43:21][0m   ✓ Built: notification-service (26s)
+[0;32m[15:43:21][0m   🐳 Building (5/6): registry-service
+[0;32m[15:43:47][0m   ✓ Built: registry-service (26s)
+[0;32m[15:43:47][0m   🐳 Building (6/6): storage-service
+[0;32m[15:44:26][0m   ✓ Built: storage-service (39s)
+[0;32m[15:44:26][0m   Docker: 6/6 built, 0 failed
+[0;32m[15:44:31][0m   🚀 Starting services...
+[1;33m[15:45:15][0m   ✗ :15432
+[1;33m[15:45:15][0m   ✗ :16379
+[0;32m[15:45:15][0m   ✓ :18001
+[0;32m[15:45:15][0m   ✓ :18005
+[0;32m[15:45:15][0m   ✓ :3000
+[0;32m[15:45:15][0m   ✓ :8002
+[0;32m[15:45:15][0m   ✓ :8003
+[0;32m[15:45:15][0m   ✓ :8004
+[0;32m[15:45:15][0m   Health: 6/8
