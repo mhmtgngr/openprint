@@ -1,18 +1,22 @@
-Done. The job-service create job endpoint now correctly returns 201 instead of 400/500.
+Done! Created 28 migration files (14 pairs of `.up.sql` and `.down.sql`):
 
-**Summary of fixes:**
+| # | Migration | Description |
+|---|-----------|-------------|
+| 000001 | organizations | Multi-tenant orgs with plan, settings |
+| 000002 | users | Auth, roles, organization links |
+| 000003 | sessions | OAuth/SAML session state |
+| 000004 | agents | Print server agent registration |
+| 000005 | printers | Printers with capabilities |
+| 000006 | printer_permissions | Granular access control |
+| 000007 | print_jobs | Jobs + documents table |
+| 000008 | job_history | Status change tracking |
+| 000009 | audit_logs | Compliance audit trail |
+| 000010 | usage_stats | Analytics + environmental metrics |
+| 000011 | api_keys | Integration key management |
+| 000012 | webhooks | Event subscriptions |
+| 000013 | invitations | Team member invites |
+| 000014 | devices | Push notification devices |
 
-1. **`services/job-service/repository/job.go`**: Fixed NULL handling for `options` and `agent_id` fields:
-   - Empty `options` defaults to `"{}"` and properly cast to `jsonb`
-   - Empty `agent_id` converted to NULL with `NULLIF($17, '')::uuid`
-   - `scanJob` function properly handles NULL values from database
+Each includes proper indexes, foreign keys, constraints, and triggers for `updated_at`.
 
-2. **`services/registry-service/repository/printer.go` & `agent.go`**: Similar NULL handling fixes for `capabilities`, `organization_id` fields
-
-3. **`tests/integration/api_test.go`**: Added document upload setup to job service test for proper integration testing
-
-All job-service tests pass:
-- `list_jobs` ✓
-- `create_job` ✓ (returns 201)
-- `get_job_by_id` ✓
-- `get_queue_stats` ✓
+Tests passed: ✓ Go tests (all cached/ok), ✓ TypeScript type check

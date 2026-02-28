@@ -302,3 +302,8 @@ Files: 30 | Lines: 10347 | Issues: 0 (high severity)
 - `TestRegistryServiceEndpoints` ✓
 - `TestEndToEndWorkflow` ✓
 - All integration tests ✓
+[0;35m[04:07:06][0m [1;37m🧪 Tester[0m ✓ Committed
+[0;35m[04:07:11][0m [1;37m⚙️  Backend[0m Working...
+Each includes proper indexes, foreign keys, constraints, and triggers for `updated_at`.
+
+Tests passed: ✓ Go tests (all cached/ok), ✓ TypeScript type check
