@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useRequireAuth, useAuth } from './hooks/useAuth';
-import { Layout } from './components/Layout';
+import { PublicLayout } from './layouts/PublicLayout';
+import { DashboardLayout } from './layouts/DashboardLayout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Printers } from './pages/Printers';
@@ -8,6 +9,7 @@ import { Jobs } from './pages/Jobs';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { Organization } from './pages/Organization';
+import { Documents } from './pages/Documents';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useRequireAuth();
@@ -23,7 +25,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return isAuthenticated ? <Layout>{children}</Layout> : null;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -41,13 +47,23 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Layout>{children}</Layout>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      {/* Public routes */}
+      <Route
+        path="/login"
+        element={
+          <PublicLayout>
+            <Login />
+          </PublicLayout>
+        }
+      />
+
+      {/* Protected routes */}
       <Route
         path="/dashboard"
         element={
@@ -73,11 +89,11 @@ function App() {
         }
       />
       <Route
-        path="/analytics"
+        path="/documents"
         element={
-          <AdminRoute>
-            <Analytics />
-          </AdminRoute>
+          <ProtectedRoute>
+            <Documents />
+          </ProtectedRoute>
         }
       />
       <Route
@@ -89,6 +105,14 @@ function App() {
         }
       />
       <Route
+        path="/analytics"
+        element={
+          <AdminRoute>
+            <Analytics />
+          </AdminRoute>
+        }
+      />
+      <Route
         path="/organization"
         element={
           <AdminRoute>
@@ -96,7 +120,11 @@ function App() {
           </AdminRoute>
         }
       />
+
+      {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* Catch all - redirect to dashboard */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
