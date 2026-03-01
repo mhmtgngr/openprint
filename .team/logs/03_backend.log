@@ -1,62 +1,96 @@
-I've implemented all the backend files from the design. Here's a summary of what was created:
+I have implemented the complete load testing suite for OpenPrint. Here's a summary of all the files created:
 
-## Backend Files Implemented
+## Project Structure Created
 
-### 1. `services/auth-service/handler/oidc.go`
-- Microsoft 365 OIDC provider handler with E2E test mocking support
-- Mock OAuth server for automated testing
-- Test user configuration support
-- Token generation and validation for E2E tests
+```
+tests/load/
+├── package.json                          # Project config with test scripts
+├── k6.config.ts                          # TypeScript config for k6
+├── README.md                             # Complete documentation
+│
+├── lib/                                  # Shared utilities
+│   ├── config.js                         # Configuration, endpoints, test data
+│   ├── helpers.js                        # Helper functions, token manager
+│   ├── api-client.js                     # HTTP clients for all services
+│   └── metrics.js                        # Custom k6 metrics
+│
+├── scenarios/
+│   ├── auth/                             # Auth service tests (FR-001, FR-007)
+│   │   ├── login.js
+│   │   ├── concurrent-users.js
+│   │   ├── token-refresh.js
+│   │   └── baseline.js
+│   ├── registry/                         # Registry tests (FR-003)
+│   │   ├── agent-registration.js
+│   │   ├── heartbeat.js
+│   │   ├── discovery.js
+│   │   └── baseline.js
+│   ├── job/                              # Job service tests (FR-002)
+│   │   ├── submit.js
+│   │   ├── status-query.js
+│   │   ├── assignment.js
+│   │   ├── queue-processing.js
+│   │   └── baseline.js
+│   ├── storage/                          # Storage tests (FR-004)
+│   │   ├── upload.js
+│   │   ├── download.js
+│   │   ├── large-file.js
+│   │   └── baseline.js
+│   ├── notification/                     # Notification tests (FR-005)
+│   │   ├── websocket-connect.js
+│   │   ├── broadcast.js
+│   │   ├── reconnect.js
+│   │   └── baseline.js
+│   └── mixed/                            # E2E and stress tests (FR-006)
+│       ├── e2e-journey.js
+│       ├── spike-test.js
+│       ├── soak-test.js
+│       └── stress-test.js
+│
+├── k8s/k6-operator/                     # Kubernetes manifests
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   ├── k6-test.yaml
+│   ├── runner-resource-quota.yaml
+│   └── service-monitor.yaml
+│
+├── deployments/                          # Docker configs
+│   ├── grafana/
+│   │   ├── datasources/influxdb.yml
+│   │   ├── dashboards/load-test-dashboard.yml
+│   │   └── dashboards/load-testing-dashboard.json
+│   └── prometheus/prometheus.yml
+│
+├── docker-compose.test.yml               # Test environment (Postgres, Redis, MinIO, Grafana, InfluxDB)
+│
+├── .github/workflows/load-test.yml      # GitHub Actions CI (FR-010)
+├── .gitlab-ci.yml                       # GitLab CI
+│
+└── scripts/                              # Report generation scripts
+    ├── compare-baselines.js              # Regression detection (FR-008)
+    ├── generate-baseline.js
+    └── generate-report.js                # HTML report generation (FR-009)
+```
 
-### 2. `services/compliance-service/`
-- **compliance.go**: FedRAMP, HIPAA, GDPR, and SOC2 compliance tracking service
-  - Control management with status tracking
-  - Audit event logging with configurable retention
-  - Data breach incident tracking
-  - Compliance report generation
-  - Evidence collection and findings management
-- **main.go**: HTTP service with endpoints for all compliance operations
+## Key Features Implemented
 
-### 3. `services/policy-service/`
-- **policy_engine.go**: Enhanced policy engine with rule evaluation
-  - JSON-based rules with multiple operators (equals, greater than, contains, etc.)
-  - Policy scoping (users, groups, printers, document types)
-  - Real-time policy evaluation against print job contexts
-  - Evaluation hooks for extensibility
-- **main.go**: HTTP service with policy evaluation endpoints
+1. **Modular test architecture** with reusable scenario libraries
+2. **Service-specific clients** (auth, registry, job, storage, notification)
+3. **Performance baselines** stored as JSON artifacts for CI
+4. **Regression detection** with configurable tolerance thresholds
+5. **Kubernetes k6-operator** manifests for production-like load testing
+6. **Grafana dashboard** for real-time visualization
+7. **CI/CD integration** for GitHub Actions and GitLab CI
 
-### 4. `services/registry-service/handler/agent.go` (Extended)
-- Added WebSocket hub for real-time agent status updates
-- Server-Sent Events (SSE) endpoint for status streaming
-- Agent status broadcasting to organizations
-- Connection management with heartbeat support
+## Test Scenarios Coverage
 
-### 5. `services/m365-integration-service/main.go`
-- Microsoft 365 integration service for OneDrive and SharePoint
-- OAuth flow handling with token management
-- File browsing and download from OneDrive/SharePoint
-- Print job submission from Microsoft 365 sources
-- Connection management for multiple users
-
-## Database Migrations
-
-### 000031: Extend Print Policies
-- Added JSONB columns for rules, actions, and scope
-- Added version tracking and evaluation counters
-- GIN indexes for JSONB query performance
-
-### 000032: Compliance Tables
-- `compliance_controls` - Control requirements for each framework
-- `data_breaches` - Incident tracking
-- `remediation_plans` - Gap remediation tracking
-- `compliance_findings` - Assessment findings
-- `compliance_evidence` - Evidence collection
-- `compliance_reports` - Generated reports
-
-### 000033: Microsoft 365 Integration Tables
-- `m365_connections` - OAuth connections with token storage
-- `m365_print_job_sources` - Print jobs from M365 sources
-- `m365_sharepoint_sites` - Cached SharePoint sites
-- `m365_onedrive_drives` - Cached OneDrive drives
-- `m365_document_cache` - Document metadata cache
-- `m365_sync_history` - Sync operation audit trail
+- **FR-001**: Concurrent User Login Simulation
+- **FR-002**: Parallel Job Submission Test
+- **FR-003**: High-Frequency Heartbeat Simulation
+- **FR-004**: Document Upload Burst Test
+- **FR-005**: WebSocket Connection Scaling
+- **FR-006**: Mixed Workload/E2E Journey
+- **FR-007**: Performance Baseline Establishment
+- **FR-008**: Regression Detection
+- **FR-009**: Performance Dashboard
+- **FR-010**: CI Integration

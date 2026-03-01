@@ -1,0 +1,14 @@
+# Grafana dashboard provisioning for load testing
+
+apiVersion: 1
+
+providers:
+  - name: 'LoadTestDashboards'
+    orgId: 1
+    folder: 'Load Testing'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

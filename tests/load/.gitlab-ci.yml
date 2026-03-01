@@ -1,0 +1,175 @@
+# GitLab CI pipeline for load testing
+# FR-010: CI Integration for performance testing
+
+stages:
+  - setup
+  - baseline
+  - regression
+  - report
+
+variables:
+  K6_VERSION: "0.51.0"
+  BASELINE_FILE: ".baseline/metrics.json"
+
+# Cache dependencies
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - tests/load/node_modules/
+
+# Setup job - download k6 and install dependencies
+setup:
+  stage: setup
+  script:
+    - curl https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz -L | tar xvz
+    - sudo mv k6-${K6_VERSION}-linux-amd64/k6 /usr/local/bin/
+    - cd tests/load && npm ci
+  artifacts:
+    paths:
+      - tests/load/node_modules/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+# Baseline tests - run on all branches
+baseline:auth:
+  stage: baseline
+  needs: [setup]
+  script:
+    - cd tests/load
+    - k6 run --out json=reports/auth-raw.json scenarios/auth/baseline.js
+  artifacts:
+    paths:
+      - tests/load/reports/auth-raw.json
+    reports:
+      metrics: tests/load/reports/auth-metrics.json
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+baseline:registry:
+  stage: baseline
+  needs: [setup]
+  script:
+    - cd tests/load
+    - k6 run --out json=reports/registry-raw.json scenarios/registry/baseline.js
+  artifacts:
+    paths:
+      - tests/load/reports/registry-raw.json
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+baseline:job:
+  stage: baseline
+  needs: [setup]
+  script:
+    - cd tests/load
+    - k6 run --out json=reports/job-raw.json scenarios/job/baseline.js
+  artifacts:
+    paths:
+      - tests/load/reports/job-raw.json
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+baseline:storage:
+  stage: baseline
+  needs: [setup]
+  script:
+    - cd tests/load
+    - k6 run --out json=reports/storage-raw.json scenarios/storage/baseline.js
+  artifacts:
+    paths:
+      - tests/load/reports/storage-raw.json
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+baseline:notification:
+  stage: baseline
+  needs: [setup]
+  script:
+    - cd tests/load
+    - k6 run --out json=reports/notification-raw.json scenarios/notification/baseline.js
+  artifacts:
+    paths:
+      - tests/load/reports/notification-raw.json
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+# Regression tests - compare against baseline
+regression:compare:
+  stage: regression
+  needs: [baseline:auth, baseline:registry, baseline:job, baseline:storage, baseline:notification]
+  script:
+    - cd tests/load
+    - npm run report:compare
+  allow_failure: true
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+# Full regression tests - run nightly
+regression:full:
+  stage: regression
+  needs: [setup]
+  script:
+    - cd tests/load
+    - npm run test:baseline
+  artifacts:
+    paths:
+      - tests/load/reports/
+    expire_in: 1 week
+  only:
+    - schedules
+
+# Generate and publish report
+report:html:
+  stage: report
+  needs: [baseline:auth, baseline:registry, baseline:job, baseline:storage, baseline:notification]
+  script:
+    - cd tests/load
+    - npm run report:html
+    - mv reports/*.html reports/load-test-report.html
+  artifacts:
+    paths:
+      - tests/load/reports/load-test-report.html
+    expire_in: 30 days
+  only:
+    - main
+    - develop
+    - merge_requests
+    - schedules
+
+# Update baseline on main branch
+update:baseline:
+  stage: report
+  needs: [baseline:auth, baseline:registry, baseline:job, baseline:storage, baseline:notification]
+  script:
+    - cd tests/load
+    - node scripts/generate-baseline.js
+    - git config user.name "GitLab CI"
+    - git config user.email "ci@gitlab.com"
+    - git add .baseline/metrics.json
+    - git commit -m "Update performance baseline [skip ci]" || echo "No changes to baseline"
+    - git push origin HEAD:main 2>&1 || true
+  only:
+    - main
+  when: on_success

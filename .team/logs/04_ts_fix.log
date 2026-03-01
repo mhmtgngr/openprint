@@ -1,6 +1,15 @@
-TypeScript errors are resolved. The issue was that TypeScript wasn't installed at the project root. Running `npm install` in the root directory installed TypeScript, and now all type checks pass:
+All TypeScript errors are fixed. Here's what was done:
 
-- Root `tsc --noEmit`: ✓ Pass
-- Dashboard `npm run type-check`: ✓ Pass
+1. **Installed missing dependencies**:
+   - `typescript` - for running `tsc`
+   - `@types/node` - for Node.js built-ins (`process`, `fs`, `__dirname`, etc.)
+   - `@types/jest` - for Jest globals (`describe`, `beforeAll`, `expect`)
 
-The `.team/logs/04_typecheck.log` still shows the old error message from before dependencies were installed.
+2. **Updated `tsconfig.json`**:
+   - Added `types` array with `@playwright/test`, `node`, and `jest`
+   - Added `exclude` for `tests/load/**/*` (k6 config uses k6-specific globals like `__ENV`)
+
+3. **Fixed `tests/integration/diagnosis-scanner.test.ts`**:
+   - Added `/// <reference types="jest" />` directive
+   - Removed `describe` and `beforeAll` from Playwright imports (they're Jest globals)
+   - Kept `test` and `expect` from `@playwright/test`

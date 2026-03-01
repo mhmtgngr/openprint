@@ -1,0 +1,57 @@
+{
+  "name": "@openprint/load-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive performance testing infrastructure using k6 for OpenPrint Cloud",
+  "type": "module",
+  "scripts": {
+    "test": "k6 run",
+    "test:auth": "k6 run scenarios/auth/baseline.js",
+    "test:auth:login": "k6 run scenarios/auth/login.js",
+    "test:auth:concurrent": "k6 run scenarios/auth/concurrent-users.js",
+    "test:auth:refresh": "k6 run scenarios/auth/token-refresh.js",
+    "test:registry": "k6 run scenarios/registry/baseline.js",
+    "test:registry:heartbeat": "k6 run scenarios/registry/heartbeat.js",
+    "test:registry:discovery": "k6 run scenarios/registry/discovery.js",
+    "test:registry:registration": "k6 run scenarios/registry/agent-registration.js",
+    "test:job": "k6 run scenarios/job/baseline.js",
+    "test:job:submit": "k6 run scenarios/job/submit.js",
+    "test:job:status": "k6 run scenarios/job/status-query.js",
+    "test:job:assignment": "k6 run scenarios/job/assignment.js",
+    "test:job:queue": "k6 run scenarios/job/queue-processing.js",
+    "test:storage": "k6 run scenarios/storage/baseline.js",
+    "test:storage:upload": "k6 run scenarios/storage/upload.js",
+    "test:storage:download": "k6 run scenarios/storage/download.js",
+    "test:storage:large": "k6 run scenarios/storage/large-file.js",
+    "test:notification": "k6 run scenarios/notification/baseline.js",
+    "test:notification:connect": "k6 run scenarios/notification/websocket-connect.js",
+    "test:notification:broadcast": "k6 run scenarios/notification/broadcast.js",
+    "test:notification:reconnect": "k6 run scenarios/notification/reconnect.js",
+    "test:mixed": "k6 run scenarios/mixed/e2e-journey.js",
+    "test:mixed:spike": "k6 run scenarios/mixed/spike-test.js",
+    "test:mixed:soak": "k6 run scenarios/mixed/soak-test.js",
+    "test:stress": "k6 run scenarios/mixed/stress-test.js",
+    "test:smoke": "k6 run --stage '1s:1,5s:10' scenarios/auth/baseline.js",
+    "test:dashboard": "k6 run --out dashboard=reports/dashboard.html scenarios/auth/concurrent-users.js",
+    "test:all": "npm run test:auth && npm run test:registry && npm run test:job && npm run test:storage && npm run test:notification",
+    "test:baseline": "npm run test:auth:concurrent && npm run test:registry:heartbeat && npm run test:job:submit && npm run test:storage:upload && npm run test:notification:connect",
+    "report:html": "k6 run --out json=reports/raw.json --summary-export=reports/summary.json && node scripts/generate-report.js",
+    "report:compare": "node scripts/compare-baselines.js",
+    "clean": "rm -rf reports/*.html reports/*.json reports/*.json"
+  },
+  "keywords": [
+    "k6",
+    "performance",
+    "load-testing",
+    "openprint"
+  ],
+  "author": "OpenPrint Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@grafana/jsonparser": "^0.2.0",
+    "k6": "^0.51.0",
+    "k6-html-reporter": "^1.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

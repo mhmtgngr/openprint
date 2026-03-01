@@ -1,0 +1,16 @@
+# ServiceMonitor for Prometheus to scrape K6 metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: k6-metrics
+  namespace: load-testing
+  labels:
+    app: k6
+spec:
+  selector:
+    matchLabels:
+      app: k6
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics

@@ -1,125 +1,42 @@
 {
-  "overall_score": 45,
+  "overall_score": 78,
   "verdict": "NEEDS_FIXES",
   "code_issues": [
     {
-      "severity": "critical",
-      "file": "web/dashboard/e2e/",
-      "issue": "E2E tests failing with multiple test-failed-1.png artifacts",
-      "fix": "Review and fix failing test cases - tests are not passing"
-    },
-    {
-      "severity": "critical",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-001 Playwright framework setup appears incomplete - no test files visible",
-      "fix": "Complete Playwright initialization with proper test configuration"
-    },
-    {
-      "severity": "critical",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-002 Authentication test suite not visible/implemented",
-      "fix": "Implement authentication flow tests (login, logout, session management)"
-    },
-    {
       "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-003 Job Management test suite not visible",
-      "fix": "Implement job submission, tracking, cancellation tests"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-004 Device/Printer Registry test suite not visible",
-      "fix": "Implement printer registration, status monitoring tests"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-005 Document Storage test suite not visible",
-      "fix": "Implement upload, download, deletion tests"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-006 Dashboard Navigation test suite not visible",
-      "fix": "Implement routing and navigation tests"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-007 Settings Management test suite not visible",
-      "fix": "Implement settings CRUD tests"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-008 Visual Regression Testing not implemented",
-      "fix": "Add Playwright screenshot comparison for visual regression"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-009 Test Data Management not visible",
-      "fix": "Implement test data fixtures and factories"
-    },
-    {
-      "severity": "major",
-      "file": "web/dashboard/e2e/",
-      "issue": "FR-010 Multi-Environment Configuration not visible",
-      "fix": "Add environment-specific config files (dev, staging, prod)"
+      "file": "tests/load/scenarios/registry/heartbeat.js",
+      "issue": "HEARTBEAT_ENDPOINT_TEMPLATE uses wrong path structure",
+      "fix": "Change from template function to direct API path: '/agents/{id}' is not a valid heartbeat endpoint. Registry heartbeat should use PUT /agents/{id} (update) or implement /agents/{id}/heartbeat if that's the actual endpoint."
     },
     {
       "severity": "minor",
-      "file": "web/dashboard/e2e/error-context.md",
-      "issue": "Error context files only 74 bytes - insufficient detail",
-      "fix": "Add detailed error context including stack traces and reproduction steps"
+      "file": "tests/load/.github/workflows/load-test.yml",
+      "issue": "Workflow uses hardcoded sleep instead of proper health checks",
+      "fix": "Replace 'sleep 30' with proper service readiness checks using docker-compose-wait or curl retries against /health endpoints."
     },
     {
       "severity": "minor",
-      "file": "internal/middleware/cookie_auth.go",
-      "issue": "SameSite mode inconsistency between DefaultCookieSecurity (Lax) and ProductionCookieSecurity (Strict)",
-      "fix": "Document when to use each mode or standardize on one approach"
+      "file": "tests/load/scenarios/mixed/e2e-journey.js",
+      "issue": "Missing import for sleep function",
+      "fix": "Add 'import { sleep } from \"k6\";' at top of file."
     },
     {
       "severity": "minor",
-      "file": "services/api-gateway/main.go",
-      "issue": "Fatal errors on service URL parsing - no graceful degradation",
-      "fix": "Implement retry mechanism or fallback configuration for service discovery"
-    },
-    {
-      "severity": "minor",
-      "file": "internal/auth/jwt/",
-      "issue": "Missing tests for token validation edge cases (expired tokens, invalid signatures)",
-      "fix": "Add comprehensive unit tests for all validation scenarios"
-    },
-    {
-      "severity": "minor",
-      "file": "internal/middleware/",
-      "issue": "Missing tests for cookie expiration behavior",
-      "fix": "Add tests for session timeout and refresh token handling"
+      "file": "tests/load/lib/config.js",
+      "issue": "Inconsistent email variable naming (TEST_CREDENTIALS vs TestData)",
+      "fix": "Standardize on one pattern throughout codebase."
     }
   ],
   "missing_items": [
-    "Playwright test configuration files (playwright.config.ts)",
-    "Authentication E2E test suite",
-    "Job management E2E test suite",
-    "Device registry E2E test suite",
-    "Document storage E2E test suite",
-    "Navigation E2E test suite",
-    "Settings management E2E test suite",
-    "Visual regression baseline images",
-    "Test data fixtures and factories",
-    "Multi-environment configuration",
-    "CI/CD workflow files (.github/workflows/e2e-tests.yml)",
-    "Page object model files",
-    "Test utilities and helpers",
-    "API mocking setup for isolated testing"
+    "FR-M011: Mobile Print Apps - out of scope for load testing",
+    "FR-M012: Follow-Me Printing - out of scope for load testing",
+    "FR-M013: DLP Integration - out of scope for load testing",
+    "FR-M014: SOC 2 Certification - out of scope for load testing"
   ],
   "blocking_issues": [
-    "Multiple E2E tests failing (evidenced by test-failed-1.png artifacts)",
-    "No visible Playwright test implementation for core features",
-    "Visual regression testing not implemented",
-    "CI/CD integration not visible"
+    "No .baseline/metrics.json file committed - baseline establishment requires initial run",
+    "Unrelated frontend changes (Compliance.tsx, SecurePrint.tsx, etc.) mixed in commit",
+    "VU counts of 1000+ for heartbeat test may exceed typical machine capacity"
   ],
-  "fix_instructions": "1. Fix all failing E2E tests - review error-context.md files and video recordings\n2. Implement complete Playwright test framework with all required test suites\n3. Add visual regression testing with baseline images\n4. Implement test data management with fixtures\n5. Add multi-environment configuration\n6. Create CI/CD workflow for automated E2E testing\n7. Add comprehensive unit tests for JWT and middleware edge cases\n8. Document cookie SameSite mode usage guidelines"
+  "fix_instructions": "1. Run baseline tests to initialize .baseline/metrics.json\n2. Verify registry-service heartbeat endpoint matches test expectations\n3. Add sleep import to e2e-journey.js\n4. Separate frontend dashboard changes from load testing PR\n5. Consider reducing heartbeat test VU count or add scaling notes"
 }

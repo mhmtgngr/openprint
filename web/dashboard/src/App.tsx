@@ -23,6 +23,10 @@ const Policies = lazy(() => import('./pages/Policies').then(m => ({ default: m.P
 const AuditLogs = lazy(() => import('./pages/AuditLogs').then(m => ({ default: m.AuditLogs })));
 const EmailToPrint = lazy(() => import('./pages/EmailToPrint').then(m => ({ default: m.EmailToPrint })));
 const PrintReleasePage = lazy(() => import('./pages/PrintRelease').then(m => ({ default: m.PrintReleasePage })));
+const Compliance = lazy(() => import('./pages/Compliance').then(m => ({ default: m.Compliance })));
+const Microsoft365 = lazy(() => import('./pages/Microsoft365').then(m => ({ default: m.Microsoft365 })));
+const SecurePrint = lazy(() => import('./pages/SecurePrint').then(m => ({ default: m.SecurePrint })));
+const PoliciesEngine = lazy(() => import('./pages/PoliciesEngine').then(m => ({ default: m.PoliciesEngine })));
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoadingFallback />}>
@@ -244,6 +248,46 @@ function App() {
                 <PrintReleasePage />
               </SuspenseWrapper>
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/compliance"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <Compliance />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/microsoft365"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <Microsoft365 />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/secure-print"
+          element={
+            <ProtectedRoute>
+              <SuspenseWrapper>
+                <SecurePrint />
+              </SuspenseWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/policy-engine"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <PoliciesEngine />
+              </SuspenseWrapper>
+            </AdminRoute>
           }
         />
 

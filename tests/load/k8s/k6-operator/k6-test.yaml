@@ -1,0 +1,111 @@
+# K6 Test Resource for running load tests in Kubernetes
+# Requires k6-operator to be installed: https://k6.io/docs/kubernetes-operator/
+
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: auth-baseline-test
+  namespace: load-testing
+spec:
+  parallelism: 4
+  script:
+    configMap:
+      name: k6-test-scripts
+      file: baseline-auth.js
+  arguments: --out influxdb=http://influxdb:8086/k6
+  runner:
+    resources:
+      limits:
+        cpu: "1"
+        memory: "2Gi"
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+  environment:
+    - name: BASE_URL
+      value: "http://auth-service.openprint.svc.cluster.local:8001"
+
+---
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: registry-baseline-test
+  namespace: load-testing
+spec:
+  parallelism: 4
+  script:
+    configMap:
+      name: k6-test-scripts
+      file: baseline-registry.js
+  arguments: --out influxdb=http://influxdb:8086/k6
+  runner:
+    resources:
+      limits:
+        cpu: "1"
+        memory: "2Gi"
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+  environment:
+    - name: REGISTRY_URL
+      value: "http://registry-service.openprint.svc.cluster.local:8002"
+
+---
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: heartbeat-stress-test
+  namespace: load-testing
+  annotations:
+    testType: "stress"
+    service: "registry"
+spec:
+  parallelism: 10
+  script:
+    configMap:
+      name: k6-test-scripts
+      file: baseline-registry.js
+  arguments: --out influxdb=http://influxdb:8086/k6
+  runner:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - k6
+              topologyKey: kubernetes.io/hostname
+    resources:
+      limits:
+        cpu: "2"
+        memory: "4Gi"
+      requests:
+        cpu: "1"
+        memory: "2Gi"
+  starter:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - k6
+              topologyKey: kubernetes.io/hostname
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+    env:
+      - name: K6_STAGES
+        value: "30s:1000,5m:5000,1m:1000"

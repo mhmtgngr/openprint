@@ -1,0 +1,43 @@
+{
+  "auth": {
+    "p95": 0,
+    "p99": 0,
+    "avg": 0,
+    "error_rate": 0,
+    "note": "Initial baseline - run baseline tests to populate actual values"
+  },
+  "registry": {
+    "p95": 0,
+    "p99": 0,
+    "avg": 0,
+    "error_rate": 0,
+    "note": "Initial baseline - run baseline tests to populate actual values"
+  },
+  "job": {
+    "p95": 0,
+    "p99": 0,
+    "avg": 0,
+    "error_rate": 0,
+    "note": "Initial baseline - run baseline tests to populate actual values"
+  },
+  "storage": {
+    "p95": 0,
+    "p99": 0,
+    "avg": 0,
+    "error_rate": 0,
+    "note": "Initial baseline - run baseline tests to populate actual values"
+  },
+  "notification": {
+    "p95": 0,
+    "p99": 0,
+    "avg": 0,
+    "error_rate": 0,
+    "note": "Initial baseline - run baseline tests to populate actual values"
+  },
+  "metadata": {
+    "timestamp": "2026-03-01T00:00:00.000Z",
+    "commit": "unknown",
+    "branch": "unknown",
+    "note": "Run baseline tests using: k6 run tests/load/scenarios/*/baseline.js"
+  }
+}

@@ -2218,3 +2218,245 @@ Success Rate: 0%
 [0;32m[20:35:24][0m   🧪 Running E2E tests against: http://192.168.31.76:3000
 [0;32m[20:35:24][0m   🎭 Using Playwright at: web/dashboard
 [0;32m[20:35:26][0m   Running tests with BASE_URL=http://192.168.31.76:3000 (set via global-setup.ts)
+[0;32m[21:21:56][0m   ✓ Merged → main
+[0;32m[21:21:56][0m   🟢 Services running. Stop: ./dev.sh stop-services
+[0;32m[21:21:56][0m ✅ Deploy done
+[0;32m[21:21:56][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:21:56][0m PHASE 9: E2E PRODUCTION — 🧪 Full System Test
+[0;32m[21:21:56][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:21:57][0m   🌐 Testing against: http://192.168.31.76:3000
+[0;32m[21:21:57][0m   📡 Server IP: 192.168.31.76
+[0;32m[21:21:57][0m   🐳 Services should be running from deploy phase
+[1;33m[21:21:57][0m   Service on port 15432 not accessible
+[1;33m[21:21:57][0m   Service on port 16379 not accessible
+[1;33m[21:21:57][0m   Service on port 18001 not accessible
+[1;33m[21:21:57][0m   Some services not accessible - attempting restart...
+[0;32m[21:21:57][0m   🚀 Starting services...
+[0;32m[21:21:57][0m   🔧 Checking for stale containers...
+[1;33m[21:22:21][0m   ⚠️  Dependency errors detected, recreating containers...
+[1;33m[21:23:19][0m   ✗ :15432
+[1;33m[21:23:19][0m   ✗ :16379
+[0;32m[21:23:19][0m   ✓ :18001
+[0;32m[21:23:19][0m   ✓ :18005
+[0;32m[21:23:19][0m   ✓ :3000
+[0;32m[21:23:19][0m   ✓ :8002
+[0;32m[21:23:19][0m   ✓ :8003
+[0;32m[21:23:19][0m   ✓ :8004
+[0;32m[21:23:19][0m   Health: 6/8
+[0;32m[21:23:29][0m   🧪 Running E2E tests against: http://192.168.31.76:3000
+[0;36m[21:23:29][0m   🔍 Searching for E2E test framework...
+[0;36m[21:23:29][0m   ✓ Found playwright at web/dashboard/
+[0;32m[21:23:29][0m   🎭 Using Playwright at: web/dashboard
+[0;32m[21:23:32][0m   Running tests with BASE_URL=http://192.168.31.76:3000 (set via global-setup.ts)
+[1;33m[21:33:44][0m   ⚠️  No Playwright results found at expected locations
+[0;32m[21:33:44][0m   📊 E2E Results: 1/0 passed
+Status: FAILED
+Success Rate: 0%
+[0;32m[21:33:45][0m   📄 Final report: /home/cmit/openprint/.team/artifacts/final_system_status.json
+[1;33m[21:33:45][0m   ⚠️  E2E tests had issues - system may not be fully functional
+[0;32m[21:33:45][0m ✅ E2E Production done
+[0;32m[21:33:45][0m 
+[0;32m[21:33:45][0m ╔═══════════════════════════════════════════════╗
+[0;32m[21:33:45][0m ║   🎉 PROJECT COMPLETE                         ║
+[0;32m[21:33:45][0m ╚═══════════════════════════════════════════════╝
+[0;32m[21:33:45][0m   Time:      2h 31m
+[0;32m[21:33:45][0m   Loops:     0
+[0;32m[21:33:45][0m   Branch:    team/implement-comprehensive-e2e-tests-using--1772391720 → main
+[0;32m[21:33:45][0m   Artifacts: /home/cmit/openprint/.team/artifacts/
+[0;32m[21:33:45][0m 
+[0;32m[21:33:45][0m ╔═══════════════════════════════════════════════╗
+[0;32m[21:33:45][0m ║   🌐 CLIENT CONNECTION INFO                   ║
+[0;32m[21:33:45][0m ╚═══════════════════════════════════════════════╝
+[0;32m[21:33:45][0m   Server IP:      192.168.31.76
+[0;32m[21:33:45][0m   Dashboard URL:  http://192.168.31.76:3000
+[0;32m[21:33:45][0m   Status Report:  /home/cmit/openprint/.team/artifacts/final_system_status.json
+[0;32m[21:33:45][0m   System Status:  NEEDS FIXES
+[0;32m[21:33:45][0m   E2E Tests:      FAILED
+[0;32m[21:33:45][0m 
+[0;32m[21:33:45][0m   To connect from your client:
+[0;32m[21:33:45][0m     1. Ensure network connectivity to: 192.168.31.76
+[0;32m[21:33:45][0m     2. Open browser: http://192.168.31.76:3000
+[0;32m[21:33:45][0m     3. For firewall, allow ports: 15432 16379 18001 18005 3000 8002 8003 8004 
+[0;32m[21:33:45][0m 
+[0;32m[21:33:45][0m   Next:      ./dev.sh start "next feature"
+[0;32m[21:33:52][0m ╔═══════════════════════════════════════════════╗
+[0;32m[21:33:52][0m ║   AI Development Team                         ║
+[0;32m[21:33:52][0m ╠═══════════════════════════════════════════════╣
+[0;32m[21:33:52][0m ║ 🧑‍💼 PM → 🔍 Market → 🏗️ Arch → ⚙️ Back         ║
+[0;32m[21:33:52][0m ║ → 🎨 Front → 🧪 Test → 📋 QA → 🔒 Sec → 🐳      ║
+[0;32m[21:33:52][0m ║ → 🧪 E2E (Production)                          ║
+[0;32m[21:33:52][0m ╚═══════════════════════════════════════════════╝
+[0;32m[21:33:52][0m Project: Create load testing suite using k6 or Vegeta to validate system performance under stress. Define test scenarios simulating: concurrent user logins, parallel job submissions, high-frequency agent heartbeats, document upload bursts, and WebSocket connection scaling. Establish performance baselines and SLOs (e.g., 95th percentile latency < 200ms for API calls, 1000 concurrent users). Add tests/load/ directory with scenarios for each service. Create performance dashboard showing metrics over time. Set up automated performance regression detection in CI.
+[0;32m[21:33:52][0m Branch:  team/create-load-testing-suite-using-k6-or-ve-1772400830
+[0;32m[21:33:52][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:33:52][0m PHASE 1: REQUIREMENTS — 🧑‍💼 PM
+[0;32m[21:33:52][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[21:33:53][0m [1;37m🧑‍💼 PM[0m Thinking...
+[1;33m[21:33:54][0m   Z.ai HTTP 429
+[1;33m[21:33:54][0m   Z.ai failed — using Claude Code
+[0;35m[21:33:54][0m [1;37m🧑‍💼 PM[0m Using Claude Code...
+[0;35m[21:34:40][0m [1;37m🧑‍💼 PM[0m ✓ Done
+[0;32m[21:34:40][0m ✅ Requirements done
+[0;32m[21:34:40][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:34:40][0m PHASE 1.5: MARKET RESEARCH — 🔍 Researcher
+[0;32m[21:34:40][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[21:34:40][0m [1;37m🔍 Research[0m Starting market analysis...
+[0;35m[21:34:40][0m [1;37m🔍 Research[0m Searching: openprint # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  competitors comparison features 2025 enterprise
+[1;33m[21:34:42][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[21:34:42][0m [1;37m🔍 Research[0m Using Claude Code for: openprint # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  competitors comparison features 2025 enterprise
+[0;35m[21:35:20][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[21:35:20][0m [1;37m🔍 Research[0m Searching: openprint similar products features comparison best practices 2025
+[1;33m[21:35:21][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[21:35:21][0m [1;37m🔍 Research[0m Using Claude Code for: openprint similar products features comparison best practices 2025
+[0;35m[21:36:04][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[21:36:04][0m [1;37m🔍 Research[0m Searching: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  trends 2025 emerging technologies best practices
+[1;33m[21:36:05][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[21:36:05][0m [1;37m🔍 Research[0m Using Claude Code for: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  trends 2025 emerging technologies best practices
+[0;35m[21:36:39][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[21:36:39][0m [1;37m🔍 Research[0m Searching: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  security compliance SOC2 ISO27001 GDPR requirements 2025
+[1;33m[21:36:41][0m   Z.ai search failed (HTTP 400) — falling back to Claude
+[0;35m[21:36:41][0m [1;37m🔍 Research[0m Using Claude Code for: # OpenPrint Cloud  OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.  ## Project Overview  security compliance SOC2 ISO27001 GDPR requirements 2025
+[0;35m[21:38:15][0m [1;37m🔍 Research[0m ✓ Claude found 1 results
+[0;35m[21:38:15][0m [1;37m🔍 Research[0m Thinking...
+[1;33m[21:38:17][0m   Z.ai HTTP 429
+[1;33m[21:38:17][0m   Z.ai failed — using Claude Code
+[0;35m[21:38:17][0m [1;37m🔍 Research[0m Using Claude Code...
+[0;35m[21:38:50][0m [1;37m🔍 Research[0m ✓ Done
+[0;35m[21:38:50][0m [1;37m🔍 Research[0m ✓ Market analysis complete
+[0;32m[21:38:50][0m   Market gaps found:
+[0;32m[21:38:50][0m     • Mobile Print Apps: Native iOS and Android applications with camera scan, document preview, and print release
+[0;32m[21:38:50][0m     • Follow-Me Printing: Queue jobs and release at any available printer via card, PIN, or mobile app
+[0;32m[21:38:50][0m     • DLP Integration: Content inspection, keyword filtering, and redaction before printing
+[0;32m[21:38:50][0m     • SOC 2 Certification: Complete SOC 2 Type II audit for enterprise trust
+[0;32m[21:38:50][0m ✅ Market research done
+[0;32m[21:38:50][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:38:50][0m PHASE 2: DESIGN — 🏗️  Architect
+[0;32m[21:38:50][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[21:38:50][0m [1;37m🏗️  Architect[0m Thinking...
+[1;33m[21:38:51][0m   Z.ai HTTP 429
+[1;33m[21:38:51][0m   Z.ai failed — using Claude Code
+[0;35m[21:38:51][0m [1;37m🏗️  Architect[0m Using Claude Code...
+[0;35m[21:39:45][0m [1;37m🏗️  Architect[0m ✓ Done
+[0;32m[21:39:45][0m ✅ Design done
+[0;32m[21:39:45][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:39:45][0m PHASE 3: BACKEND — ⚙️  Backend Dev
+[0;32m[21:39:45][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[21:39:48][0m [1;37m⚙️  Backend[0m Working...
+[0;35m[21:49:40][0m [1;37m⚙️  Backend[0m ✓ Committed
+[0;32m[21:49:48][0m ✅ Backend done
+[0;32m[21:49:48][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:49:48][0m PHASE 4: FRONTEND — 🎨 Frontend Dev
+[0;32m[21:49:48][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[21:49:50][0m [1;37m🎨 Frontend[0m Working...
+[0;35m[21:57:06][0m [1;37m🎨 Frontend[0m ✓ Committed
+[0;35m[21:57:09][0m [1;37m🎨 Frontend[0m Working...
+[0;35m[21:59:22][0m [1;37m🎨 Frontend[0m ✓ Committed
+[0;32m[21:59:22][0m ✅ Frontend done
+[0;32m[21:59:22][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[21:59:22][0m PHASE 5: TESTING — 🧪 Tester
+[0;32m[21:59:22][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[21:59:25][0m [1;37m🧪 Tester[0m Working...
+[0;35m[22:02:23][0m [1;37m🧪 Tester[0m ✓ Committed
+[0;35m[22:02:23][0m [1;37m🧪 Tester[0m Running Go tests...
+[0;32m[22:02:41][0m ✅ Testing done
+[0;32m[22:02:41][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[22:02:41][0m PHASE 6: QA — 📋 QA Controller
+[0;32m[22:02:41][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[22:02:42][0m [1;37m📋 QA[0m Thinking...
+[1;33m[22:02:44][0m   Z.ai HTTP 429
+[1;33m[22:02:44][0m   Z.ai failed — using Claude Code
+[0;35m[22:02:44][0m [1;37m📋 QA[0m Using Claude Code...
+[0;35m[22:03:39][0m [1;37m📋 QA[0m ✓ Done
+[0;35m[22:03:39][0m [1;37m📋 QA[0m Verdict: NEEDS_FIXES
+[0;35m[22:03:39][0m [1;37m⚙️  Backend[0m Working...
+[0;35m[22:05:19][0m [1;37m⚙️  Backend[0m ✓ Committed
+[0;32m[22:05:19][0m ✅ QA: NEEDS_FIXES
+[0;32m[22:05:20][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[22:05:20][0m PHASE 7: SECURITY — 🔒 Security Auditor
+[0;32m[22:05:20][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;35m[22:05:20][0m [1;37m🔒 Security[0m Thinking...
+[1;33m[22:05:21][0m   Z.ai HTTP 429
+[1;33m[22:05:21][0m   Z.ai failed — using Claude Code
+[0;35m[22:05:21][0m [1;37m🔒 Security[0m Using Claude Code...
+[0;35m[22:05:39][0m [1;37m🔒 Security[0m ✓ Done
+[0;35m[22:05:40][0m [1;37m🔒 Security[0m Verdict: NEEDS_FIXES
+[0;35m[22:05:40][0m [1;37m⚙️  Backend[0m Working...
+[0;35m[22:09:38][0m [1;37m⚙️  Backend[0m ✓ Committed
+[0;35m[22:09:38][0m [1;37m🧪 Tester[0m Running Go tests...
+[0;32m[22:10:00][0m ✅ Security: NEEDS_FIXES
+[0;32m[22:10:00][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[22:10:00][0m PHASE 8: DEPLOY — 🐳 DevOps
+[0;32m[22:10:00][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[22:10:00][0m   🐳 Building (1/6): auth-service
+[0;32m[22:11:12][0m   ✓ Built: auth-service (72s)
+[0;32m[22:11:12][0m   🐳 Building (2/6): dashboard
+[0;32m[22:12:13][0m   ✓ Built: dashboard (61s)
+[0;32m[22:12:13][0m   🐳 Building (3/6): job-service
+[0;32m[22:13:15][0m   ✓ Built: job-service (62s)
+[0;32m[22:13:15][0m   🐳 Building (4/6): notification-service
+[1;33m[22:13:16][0m   ⚠️  No Playwright results found at expected locations
+[0;32m[22:13:16][0m   📊 E2E Results: 2/0 passed
+Status: FAILED
+Success Rate: 0%
+[0;32m[22:13:16][0m   📄 Final report: /home/cmit/openprint/.team/artifacts/final_system_status.json
+[1;33m[22:13:16][0m   ⚠️  E2E tests had issues - system may not be fully functional
+[0;32m[22:13:16][0m ✅ E2E Production done
+[0;32m[22:13:51][0m   ✓ Built: notification-service (36s)
+[0;32m[22:13:51][0m   🐳 Building (5/6): registry-service
+[0;32m[22:14:30][0m   ✓ Built: registry-service (39s)
+[0;32m[22:14:30][0m   🐳 Building (6/6): storage-service
+[0;32m[22:15:21][0m   ✓ Built: storage-service (51s)
+[0;32m[22:15:21][0m   Docker: 6/6 built, 0 failed
+[0;32m[22:15:21][0m   🚀 Starting services...
+[0;32m[22:15:21][0m   🔧 Checking for stale containers...
+[1;33m[22:15:44][0m   ⚠️  Dependency errors detected, recreating containers...
+[1;33m[22:16:37][0m   ✗ :15432
+[1;33m[22:16:37][0m   ✗ :16379
+[0;32m[22:16:37][0m   ✓ :18001
+[0;32m[22:16:37][0m   ✓ :18005
+[0;32m[22:16:37][0m   ✓ :3000
+[0;32m[22:16:37][0m   ✓ :8002
+[0;32m[22:16:37][0m   ✓ :8003
+[0;32m[22:16:37][0m   ✓ :8004
+[0;32m[22:16:37][0m   Health: 6/8
+[0;35m[22:16:37][0m [1;37m🐳 DevOps[0m Smoke testing...
+[1;33m[22:16:37][0m   ✗ :15432
+[1;33m[22:16:37][0m   ✗ :16379
+[0;32m[22:16:37][0m   ✓ :18001
+[0;32m[22:16:37][0m   ✓ :18005
+[0;32m[22:16:37][0m   ✓ :3000
+[0;32m[22:16:37][0m   ✓ :8002
+[0;32m[22:16:37][0m   ✓ :8003
+[0;32m[22:16:37][0m   ✓ :8004
+[0;35m[22:16:40][0m [1;37m🐳 DevOps[0m Working...
+[0;35m[22:26:46][0m [1;37m🐳 DevOps[0m ✓ Committed
+[0;32m[22:26:46][0m   🐳 Building (1/6): auth-service
+[0;32m[22:27:00][0m   ✓ Built: auth-service (14s)
+[0;32m[22:27:00][0m   🐳 Building (2/6): dashboard
+[0;32m[22:27:13][0m   ✓ Built: dashboard (13s)
+[0;32m[22:27:13][0m   🐳 Building (3/6): job-service
+[0;32m[22:27:27][0m   ✓ Built: job-service (14s)
+[0;32m[22:27:27][0m   🐳 Building (4/6): notification-service
+[0;32m[22:27:41][0m   ✓ Built: notification-service (14s)
+[0;32m[22:27:41][0m   🐳 Building (5/6): registry-service
+[0;32m[22:27:54][0m   ✓ Built: registry-service (13s)
+[0;32m[22:27:54][0m   🐳 Building (6/6): storage-service
+[0;32m[22:28:09][0m   ✓ Built: storage-service (15s)
+[0;32m[22:28:09][0m   Docker: 6/6 built, 0 failed
+[0;32m[22:28:15][0m   🚀 Starting services...
+[0;32m[22:28:15][0m   🔧 Checking for stale containers...
+[1;33m[22:28:31][0m   ⚠️  Dependency errors detected, recreating containers...
+[1;33m[22:29:24][0m   ✗ :15432
+[1;33m[22:29:24][0m   ✗ :16379
+[0;32m[22:29:24][0m   ✓ :18001
+[0;32m[22:29:24][0m   ✓ :18005
+[0;32m[22:29:24][0m   ✓ :3000
+[0;32m[22:29:24][0m   ✓ :8002
+[0;32m[22:29:24][0m   ✓ :8003
+[0;32m[22:29:24][0m   ✓ :8004
+[0;32m[22:29:24][0m   Health: 6/8
+[0;32m[22:29:24][0m 
+[0;32m[22:29:24][0m   📡 Generating access report...
+[0;32m[22:29:24][0m   🌐 External Access URL: http://192.168.31.76:3000
+[0;32m[22:29:24][0m   📄 Full report: /home/cmit/openprint/.team/artifacts/access_report.json
+[0;35m[22:29:24][0m [1;37m🧪 Tester[0m Running Playwright...

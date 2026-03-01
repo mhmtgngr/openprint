@@ -25,6 +25,30 @@ import (
 	"time"
 )
 
+// secureXMLDecoder wraps xml.Decoder with security restrictions.
+// Go's encoding/xml package does not process external entities by default,
+// but this wrapper provides explicit security controls for defense-in-depth.
+type secureXMLDecoder struct {
+	*xml.Decoder
+}
+
+// newSecureXMLDecoder creates a new secure XML decoder with size limits.
+// The decoder is configured to prevent XXE attacks by:
+// 1. Using a limited reader to enforce maximum XML size
+// 2. Disallowing DTD processing (already disabled by default in Go)
+func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
+	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
+	limitedReader := &io.LimitedReader{R: r, N: maxXMLSize}
+	return &secureXMLDecoder{
+		Decoder: xml.NewDecoder(limitedReader),
+	}
+}
+
+// Decode wraps the underlying Decoder's Decode method.
+func (d *secureXMLDecoder) Decode(v interface{}) error {
+	return d.Decoder.Decode(v)
+}
+
 var (
 	// ErrInvalidResponse is returned when the SAML response is invalid.
 	ErrInvalidResponse = errors.New("invalid SAML response")
@@ -253,8 +277,10 @@ func (m *Manager) HandleResponse(req *http.Request) (*Assertion, error) {
 	}
 
 	// Parse the SAML response with secure decoder
+	// SECURITY: Use custom secure decoder with explicit size limits to prevent XXE and DoS
 	var samlResponse SAMLResponse
-	if err := xml.Unmarshal(decodedResponse, &samlResponse); err != nil {
+	decoder := newSecureXMLDecoder(bytes.NewReader(decodedResponse))
+	if err := decoder.Decode(&samlResponse); err != nil {
 		return nil, fmt.Errorf("unmarshal response: %w", err)
 	}
 

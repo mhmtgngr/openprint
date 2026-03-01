@@ -1,60 +1,59 @@
-The E2E test infrastructure is complete. Here's the summary:
+## Load Testing Suite Summary
 
-## Test Results Summary
+I've reviewed and fixed the comprehensive k6 load testing suite for OpenPrint. The test infrastructure was already in place and I've corrected several issues:
 
-**Total Tests: 2685** (including 259+ new tests added)
+### Files Fixed
 
-The tests executed successfully (no syntax errors). Failures are expected because:
-- No web server is running (`SKIP_WEBSERVER` not set and `/dashboard` route not available)
-- UI components are being tested against a mock/stub environment
+1. **`tests/load/lib/config.js`** - Updated API paths to match actual service endpoints:
+   - `/auth/profile` → `/auth/me`
+   - `/jobs/history` → `/history`
+   - `/jobs/queue/stats` → `/queue/stats`
 
-## Files Created
+2. **`tests/load/lib/api-client.js`** - Fixed:
+   - Syntax error in `patch()` method (was `const http.patch` instead of `return http.patch`)
+   - Updated method calls for corrected endpoint paths
 
-### Page Objects (6 new files)
-| File | Description |
-|------|-------------|
-| `pages/BasePage.ts` | Base navigation, auth helpers, form utilities |
-| `pages/AuthPage.ts` | Login, registration, OIDC/SAML, 2FA, password reset |
-| `pages/Microsoft365Page.ts` | M365 config, OneDrive, SharePoint, Email-to-Print, sync |
-| `pages/CompliancePage.ts` | FedRAMP/HIPAA/GDPR, audit logs, reports, risk assessment |
-| `pages/SecurePrintPage.ts` | PIN-based job release, queue management, settings |
-| `pages/PoliciesPage.ts` | Policy CRUD, conditions, actions, evaluation, templates |
+3. **`tests/load/lib/helpers.js`** - Added missing `sleep` import from 'k6'
 
-### Test Suites (4 new files)  
-| File | Tests | Coverage |
-|------|-------|----------|
-| `tests/microsoft365.spec.ts` | ~87 | Configuration, OneDrive, SharePoint, Email, Sync, Permissions |
-| `tests/compliance.spec.ts` | ~60 | Overview, Audit Logs, Reports, Security, Risk Assessment |
-| `tests/secure-print.spec.ts` | ~50 | Job Queue, PIN Release, Actions, Settings, History |
-| `tests/policies-engine.spec.ts` | ~62 | CRUD, Conditions, Actions, Templates, Evaluation, Import/Export |
+4. **`tests/load/scenarios/auth/baseline.js`** - Updated to use `/auth/me` endpoint
 
-All TypeScript compilation passes successfully. Tests are ready for execution once the web application is deployed.
-tion, user menu, responsive |
-| `auth.spec.ts` | Login, registration, form validation |
-| `jobs.spec.ts` | Job list, filtering, creation, actions |
-| `printers.spec.ts` | Printer list, status, discovery |
-| `analytics.spec.ts` | Metrics, charts, audit logs (admin) |
-| `settings.spec.ts` | Profile, password, sessions, preferences |
-| `organization.spec.ts` | User management, roles (admin) |
-| `agents.spec.ts` | Agent list, status, detail pages |
-| `policies.spec.ts` | Policy engine rules |
-| `quotas.spec.ts` | Cost tracking and quotas |
-| `email-to-print.spec.ts` | Email to print configuration |
-| `print-release.spec.ts` | Secure print release |
-| `audit-logs.spec.ts` | Advanced audit logging |
-| `microsoft-365.spec.ts` | Microsoft 365 integration |
-| `compliance.spec.ts` | FedRAMP/HIPAA compliance |
-| `realtime-updates.spec.ts` | WebSocket real-time updates |
-| `code-splitting.spec.ts` | Code splitting verification |
-| `lazy-loading.spec.ts` | Lazy loading verification |
-| `visual-regression.spec.ts` | Screenshot-based UI testing |
+### Test Structure
 
-**Test Infrastructure Features:**
-- Page Object Model pattern
-- Test data factories (`TestDataFactory`)
-- WebSocket mock utilities
-- Visual regression tests
-- Multiple browser support
-- CI/CD integration ready
+The load testing suite includes:
 
-All test requirements from the DESIGN document have been satisfied.
+| Category | Tests | Purpose |
+|----------|-------|---------|
+| **Auth** | login.js, concurrent-users.js, token-refresh.js, baseline.js | Login performance, concurrent sessions, token refresh |
+| **Registry** | agent-registration.js, heartbeat.js, discovery.js, baseline.js | Agent registration, high-frequency heartbeats, printer discovery |
+| **Job** | submit.js, status-query.js, assignment.js, queue-processing.js, baseline.js | Job submission, status queries, queue processing |
+| **Storage** | upload.js, download.js, large-file.js, baseline.js | Document upload/download, large file handling |
+| **Notification** | websocket-connect.js, broadcast.js, reconnect.js, baseline.js | WebSocket connections, message broadcasting |
+| **Mixed** | e2e-journey.js, spike-test.js, soak-test.js, stress-test.js | End-to-end flows, spike/soak/stress testing |
+
+### Running the Tests
+
+```bash
+# Install k6 (if not already installed)
+wget https://github.com/grafana/k6/releases/download/v0.51.0/k6-v0.51.0-linux-amd64.tar.gz
+tar -xzf k6-v0.51.0-linux-amd64.tar.gz
+
+# Run individual tests
+cd /home/cmit/openprint/tests/load
+/tmp/k6-v0.51.0-linux-amd64/k6 run scenarios/auth/login.js
+
+# Run with custom endpoints
+BASE_URL=http://localhost:8001 REGISTRY_URL=http://localhost:8002 \
+  JOB_URL=http://localhost:8003 STORAGE_URL=http://localhost:8004 \
+  /tmp/k6-v0.51.0-linux-amd64/k6 run scenarios/auth/baseline.js
+
+# Run all baseline tests
+npm run test:baseline
+```
+
+### Infrastructure Included
+
+- **Docker Compose** (`docker-compose.test.yml`) - Test environment with InfluxDB/Grafana
+- **Kubernetes** (`k8s/k6-operator/`) - k6-operator manifests for cluster-based testing
+- **CI/CD** (`.github/workflows/load-test.yml`) - GitHub Actions workflow
+- **Monitoring** - Grafana dashboards, Prometheus metrics
+- **Scripts** - Baseline generation, report generation, comparison tools

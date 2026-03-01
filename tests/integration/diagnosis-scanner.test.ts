@@ -11,6 +11,8 @@
  *   npm run test:integration
  */
 
+/// <reference types="jest" />
+import { test, expect } from '@playwright/test';
 import { execSync, ExecSyncOptions } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -11,7 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["@playwright/test", "node", "jest"]
   },
-  "include": ["tests/**/*", "playwright.config.ts"]
+  "include": ["tests/**/*", "playwright.config.ts"],
+  "exclude": ["tests/load/**/*"]
 }
