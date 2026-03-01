@@ -1,1 +1,13 @@
-error: unknown option '--base-url=http://192.168.31.76:3000'
+TypeError: Cannot set properties of undefined (setting 'baseURL')
+
+   at ../global-setup.ts:6
+
+  4 |   // Override baseURL from environment variable (for testing against deployed instances)
+  5 |   if (process.env.BASE_URL) {
+> 6 |     config.use!.baseURL = process.env.BASE_URL;
+    |                        ^
+  7 |     console.log(`Using baseURL from environment: ${process.env.BASE_URL}`);
+  8 |   }
+  9 |   console.log('Starting E2E test run...');
+    at globalSetup (/home/cmit/openprint/web/dashboard/global-setup.ts:6:24)
+
