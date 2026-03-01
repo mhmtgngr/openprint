@@ -62,6 +62,10 @@ type AgentConfig struct {
 	PrintListenPort  int    `json:"print_listen_port"`
 	// StorageServiceURL is the URL of the OpenPrint storage service for document uploads.
 	StorageServiceURL string `json:"storage_service_url"`
+	// RegistryServiceURL is the URL of the registry service (agents/register, heartbeat, printers).
+	RegistryServiceURL string `json:"registry_service_url"`
+	// JobServiceURL is the URL of the job service (jobs, job polling).
+	JobServiceURL string `json:"job_service_url"`
 	// EnableReceiptPrinter creates an additional receipt/thermal virtual printer in server mode.
 	EnableReceiptPrinter bool `json:"enable_receipt_printer"`
 	// ReceiptPrinterName is the name of the receipt virtual printer.
@@ -75,6 +79,9 @@ type Agent struct {
 	config         *AgentConfig
 	client         *http.Client
 	serverURL      string
+	registryURL    string
+	jobURL         string
+	storageURL     string
 	printers       map[string]*DiscoveredPrinter
 	printersMutex  sync.RWMutex
 	hostname       string
@@ -265,10 +272,27 @@ func initializeAgent() (*Agent, error) {
 	ipAddress := getIPAddress()
 	macAddress := getMACAddress()
 
+	// Resolve service URLs: use dedicated URLs if set, otherwise fallback to serverURL
+	registryURL := config.RegistryServiceURL
+	if registryURL == "" {
+		registryURL = config.ServerURL
+	}
+	jobURL := config.JobServiceURL
+	if jobURL == "" {
+		jobURL = config.ServerURL
+	}
+	storageURL := config.StorageServiceURL
+	if storageURL == "" {
+		storageURL = config.ServerURL
+	}
+
 	agent := &Agent{
 		config:        config,
 		client:        client,
 		serverURL:     config.ServerURL,
+		registryURL:   registryURL,
+		jobURL:        jobURL,
+		storageURL:    storageURL,
 		printers:      make(map[string]*DiscoveredPrinter),
 		hostname:      hostname,
 		version:       "1.0.0",
@@ -295,7 +319,7 @@ func initializeAgent() (*Agent, error) {
 func (a *Agent) Run(ctx context.Context) {
 	log.Printf("Starting OpenPrint Agent v%s (role: %s)", a.version, a.getRole())
 	log.Printf("Agent ID: %s", a.config.AgentID)
-	log.Printf("Server: %s", a.serverURL)
+	log.Printf("Registry: %s | Jobs: %s | Storage: %s", a.registryURL, a.jobURL, a.storageURL)
 
 	// Initial printer discovery
 	a.discoverPrinters()
@@ -445,7 +469,7 @@ func (a *Agent) setupVirtualPrinter(ctx context.Context) error {
 
 	// Step 1: Create a Standard TCP/IP port pointing to localhost
 	addPortCmd := powershellCommand(fmt.Sprintf(
-		`Add-PrinterPort -Name "%s" -PrinterHostAddress "127.0.0.1" -PortNumber %d -SNMP $false -ErrorAction Stop`,
+		`Add-PrinterPort -Name "%s" -PrinterHostAddress "127.0.0.1" -PortNumber %d -ErrorAction Stop`,
 		portName, port,
 	))
 	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", addPortCmd)
@@ -513,7 +537,7 @@ func (a *Agent) setupReceiptVirtualPrinter(ctx context.Context) error {
 
 	// Create TCP port
 	addPortCmd := powershellCommand(fmt.Sprintf(
-		`Add-PrinterPort -Name "%s" -PrinterHostAddress "127.0.0.1" -PortNumber %d -SNMP $false -ErrorAction Stop`,
+		`Add-PrinterPort -Name "%s" -PrinterHostAddress "127.0.0.1" -PortNumber %d -ErrorAction Stop`,
 		portName, port,
 	))
 	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", addPortCmd)
@@ -805,7 +829,7 @@ func (a *Agent) resolveUserEmail(username string) string {
 	}
 
 	// Fallback: check OpenPrint server for username -> email mapping
-	url := fmt.Sprintf("%s/user-printer-mappings/resolve?username=%s", a.serverURL, username)
+	url := fmt.Sprintf("%s/user-printer-mappings/resolve?username=%s", a.registryURL, username)
 	resp, err := a.client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
@@ -827,12 +851,7 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 	log.Printf("Uploading captured job: user=%s title=%s size=%d", captured.UserName, captured.Title, captured.Size)
 
 	// Step 1: Upload document to storage service
-	storageURL := a.config.StorageServiceURL
-	if storageURL == "" {
-		storageURL = a.serverURL
-	}
-
-	documentID, checksum, err := a.uploadDocumentToStorage(storageURL, captured)
+	documentID, checksum, err := a.uploadDocumentToStorage(a.storageURL, captured)
 	if err != nil {
 		return fmt.Errorf("failed to upload document: %w", err)
 	}
@@ -868,7 +887,7 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 	}
 
 	body, _ := json.Marshal(jobReq)
-	resp, err := a.client.Post(a.serverURL+"/jobs", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.jobURL+"/jobs", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return fmt.Errorf("failed to create job: %w", err)
 	}
@@ -967,7 +986,7 @@ func (a *Agent) register() error {
 		return err
 	}
 
-	resp, err := a.client.Post(a.serverURL+"/agents/register", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.registryURL+"/agents/register", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return err
 	}
@@ -1037,7 +1056,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 		Name         string `json:"Name"`
 		DriverName   string `json:"DriverName"`
 		PortName     string `json:"PortName"`
-		DeviceType   string `json:"DeviceType"`
+		DeviceType   interface{} `json:"DeviceType"`
 		Shared       bool   `json:"Shared"`
 		ShareName    string `json:"ShareName"`
 		Location     string `json:"Location"`
@@ -1051,7 +1070,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 			Name         string `json:"Name"`
 			DriverName   string `json:"DriverName"`
 			PortName     string `json:"PortName"`
-			DeviceType   string `json:"DeviceType"`
+			DeviceType   interface{} `json:"DeviceType"`
 			Shared       bool   `json:"Shared"`
 			ShareName    string `json:"ShareName"`
 			Location     string `json:"Location"`
@@ -1063,7 +1082,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 				Name         string `json:"Name"`
 				DriverName   string `json:"DriverName"`
 				PortName     string `json:"PortName"`
-				DeviceType   string `json:"DeviceType"`
+				DeviceType   interface{} `json:"DeviceType"`
 				Shared       bool   `json:"Shared"`
 				ShareName    string `json:"ShareName"`
 				Location     string `json:"Location"`
@@ -1088,7 +1107,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 			Name:           ps.Name,
 			Driver:         ps.DriverName,
 			Port:           ps.PortName,
-			ConnectionType: getConnectionType(ps.PortName, ps.DeviceType),
+			ConnectionType: getConnectionType(ps.PortName, fmt.Sprintf("%v", ps.DeviceType)),
 			Status:         getPrinterStatus(ps.PrinterStatus),
 			IsDefault:      ps.Default,
 			IsShared:       ps.Shared,
@@ -1113,7 +1132,7 @@ func (a *Agent) pollForJobs() ([]PrintJob, error) {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.serverURL+"/agents/jobs/poll", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.jobURL+"/agents/jobs/poll", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return nil, err
 	}
@@ -1435,7 +1454,7 @@ func (a *Agent) updateJobStatus(job PrintJob, status, message string, pagesPrint
 	}
 
 	body, _ := json.Marshal(update)
-	url := fmt.Sprintf("%s/agents/%s/jobs/%s/status", a.serverURL, a.config.AgentID, job.JobID)
+	url := fmt.Sprintf("%s/agents/%s/jobs/%s/status", a.registryURL, a.config.AgentID, job.JobID)
 
 	req, _ := http.NewRequest("PUT", url, strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
@@ -1468,7 +1487,7 @@ func (a *Agent) sendHeartbeat() error {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.serverURL+"/agents/heartbeat", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.registryURL+"/agents/heartbeat", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return err
 	}
@@ -1515,7 +1534,7 @@ func (a *Agent) registerPrinters() {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.serverURL+"/agents/printers/discover", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.registryURL+"/agents/printers/discover", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		log.Printf("Failed to register printers: %v", err)
 		return
