@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -517,7 +516,6 @@ func (h *MobileHandler) SendPushNotificationHandler(w http.ResponseWriter, r *ht
 
 	// Get devices to notify
 	var devices []*MobileDevice
-	var err error
 
 	if req.DeviceID != "" {
 		device, _ := h.getDeviceByID(ctx, req.DeviceID)

@@ -55,6 +55,7 @@ func main() {
 	// Initialize repositories
 	agentRepo := repository.NewAgentRepository(db)
 	printerRepo := repository.NewPrinterRepository(db)
+	mappingRepo := repository.NewUserPrinterMappingRepository(db)
 
 	// Create handlers
 	h := handler.New(handler.Config{
@@ -62,6 +63,9 @@ func main() {
 		PrinterRepo:      printerRepo,
 		HeartbeatTimeout: cfg.HeartbeatTimeout,
 	})
+
+	// Create user-printer mapping handler
+	mappingHandler := handler.NewUserPrinterMappingHandler(mappingRepo)
 
 	// Start heartbeat monitor in background
 	go h.HeartbeatMonitor(ctx)
@@ -85,6 +89,8 @@ func main() {
 	mux.HandleFunc("/printers/register", h.RegisterPrinter)
 	mux.HandleFunc("/printers/", h.PrinterHandler)
 	mux.HandleFunc("/printers", h.ListPrinters)
+	mux.HandleFunc("/user-printer-mappings/", mappingHandler.MappingHandler)
+	mux.HandleFunc("/user-printer-mappings", mappingHandler.MappingsHandler)
 
 	// Build middleware chain: logging -> recovery -> auth -> telemetry -> security headers -> handler
 	// For registry service, we also support API key authentication for agents
@@ -94,7 +100,7 @@ func main() {
 		middleware.AuthMiddleware(middleware.JWTConfig{
 			SecretKey:  cfg.JWTSecret,
 			JWTManager: jwtManager,
-			SkipPaths:  []string{"/health", "/agents/register", "/printers/register"}, // Allow agent/printer registration with API key
+			SkipPaths:  []string{"/health", "/agents/register", "/printers/register", "/user-printer-mappings/resolve"}, // Allow agent/printer registration and username resolution
 		}),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
 		middleware.SecurityHeadersMiddleware(),
