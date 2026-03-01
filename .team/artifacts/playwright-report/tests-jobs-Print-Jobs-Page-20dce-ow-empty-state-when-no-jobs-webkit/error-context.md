@@ -1,88 +1,27 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e3]:
-  - complementary [ref=e4]:
-    - generic [ref=e5]:
-      - link "OpenPrint" [ref=e6]:
-        - /url: /dashboard
-        - img [ref=e8]
-        - generic [ref=e10]: OpenPrint
-      - navigation [ref=e11]:
-        - link "Dashboard" [ref=e12]:
-          - /url: /dashboard
-          - img [ref=e13]
-          - generic [ref=e15]: Dashboard
-        - link "Devices" [ref=e16]:
-          - /url: /printers
-          - img [ref=e17]
-          - generic [ref=e19]: Devices
-        - link "Jobs" [ref=e20]:
-          - /url: /jobs
-          - img [ref=e21]
-          - generic [ref=e23]: Jobs
-        - link "Documents" [ref=e24]:
-          - /url: /documents
-          - img [ref=e25]
-          - generic [ref=e27]: Documents
-        - link "Settings" [ref=e28]:
-          - /url: /settings
-          - img [ref=e29]
-          - generic [ref=e32]: Settings
-      - generic [ref=e33]:
-        - generic [ref=e34]:
-          - generic [ref=e35]: T
-          - generic [ref=e36]:
-            - paragraph [ref=e37]: Test User
-            - paragraph [ref=e38]: test@example.com
-        - button "Logout" [ref=e39] [cursor=pointer]:
-          - img [ref=e40]
-          - generic [ref=e42]: Logout
-  - generic [ref=e43]:
-    - banner [ref=e44]:
-      - heading "Jobs" [level=1] [ref=e46]
-    - main [ref=e47]:
-      - generic [ref=e48]:
-        - generic [ref=e49]:
-          - generic [ref=e50]:
-            - heading "Print Jobs" [level=1] [ref=e51]
-            - paragraph [ref=e52]: View and manage your print job history
-          - button "Refresh" [ref=e54] [cursor=pointer]:
-            - img [ref=e55]
-        - generic [ref=e57]:
-          - button "0 All Jobs" [ref=e58] [cursor=pointer]:
-            - paragraph [ref=e59]: "0"
-            - paragraph [ref=e60]: All Jobs
-          - button "0 Queued" [ref=e61] [cursor=pointer]:
-            - paragraph [ref=e62]: "0"
-            - paragraph [ref=e63]: Queued
-          - button "0 Processing" [ref=e64] [cursor=pointer]:
-            - paragraph [ref=e65]: "0"
-            - paragraph [ref=e66]: Processing
-          - button "0 Completed" [ref=e67] [cursor=pointer]:
-            - paragraph [ref=e68]: "0"
-            - paragraph [ref=e69]: Completed
-          - button "0 Failed" [ref=e70] [cursor=pointer]:
-            - paragraph [ref=e71]: "0"
-            - paragraph [ref=e72]: Failed
-          - button "0 Cancelled" [ref=e73] [cursor=pointer]:
-            - paragraph [ref=e74]: "0"
-            - paragraph [ref=e75]: Cancelled
-        - generic [ref=e76]:
-          - generic [ref=e77]:
-            - img [ref=e78]
-            - textbox "Search jobs by name or printer..." [ref=e80]
-          - generic [ref=e81]:
-            - img [ref=e82]
-            - combobox [ref=e84]:
-              - option "All Jobs" [selected]
-              - option "Queued"
-              - option "Processing"
-              - option "Completed"
-              - option "Failed"
-              - option "Cancelled"
-        - generic [ref=e86]:
-          - img [ref=e87]
-          - heading "No print jobs" [level=3] [ref=e89]
-          - paragraph [ref=e90]: Get started by submitting a new print job.
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - img [ref=e8]
+    - generic [ref=e10]: OpenPrint
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - img [ref=e15]
+      - heading "OpenPrint Cloud" [level=1] [ref=e17]
+      - paragraph [ref=e18]: Print from anywhere, to any printer
+    - generic [ref=e19]:
+      - heading "Sign in to your account" [level=2] [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Email Address
+          - textbox "Email Address" [ref=e24]:
+            - /placeholder: you@example.com
+        - generic [ref=e25]:
+          - generic [ref=e26]: Password
+          - textbox "Password" [ref=e27]:
+            - /placeholder: ••••••••
+        - button "Sign In" [ref=e28] [cursor=pointer]
+      - button "Don't have an account? Sign up" [ref=e30] [cursor=pointer]
+    - paragraph [ref=e31]: By continuing, you agree to our Terms of Service and Privacy Policy.
 ```

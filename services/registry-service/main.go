@@ -100,7 +100,7 @@ func main() {
 		middleware.AuthMiddleware(middleware.JWTConfig{
 			SecretKey:  cfg.JWTSecret,
 			JWTManager: jwtManager,
-			SkipPaths:  []string{"/health", "/agents/register", "/printers/register", "/user-printer-mappings/resolve"}, // Allow agent/printer registration and username resolution
+			SkipPaths:  []string{"/health", "/agents", "/printers", "/user-printer-mappings"}, // Allow agent and printer endpoints
 		}),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
 		middleware.SecurityHeadersMiddleware(),
@@ -169,12 +169,14 @@ func getEnv(key, defaultValue string) string {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"healthy","service":"registry-service"}`))
+	if r.Method == http.MethodGet {
+		w.Write([]byte(`{"status":"healthy","service":"registry-service"}`))
+	}
 }

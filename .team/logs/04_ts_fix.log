@@ -1,25 +1,6 @@
-All TypeScript errors have been fixed. Here's a summary of the changes made:
+TypeScript errors are resolved. The issue was that TypeScript wasn't installed at the project root. Running `npm install` in the root directory installed TypeScript, and now all type checks pass:
 
-### Fixed Files
+- Root `tsc --noEmit`: ✓ Pass
+- Dashboard `npm run type-check`: ✓ Pass
 
-1. **JobStatusBadge.test.tsx** - Removed tests for non-existent props (`size`, `showIcon`) that don't exist in the component
-
-2. **AgentList.test.tsx** - Added missing required properties (`orgId`, `capabilities`, `email` for associatedUser) to mock Agent objects; removed unused imports
-
-3. **Auth test files** (ProtectedRoute.test.tsx, LoginForm.test.tsx, RegisterForm.test.tsx):
-   - Added missing properties (`error`, `register`) to AuthContextValue mocks
-   - Added missing properties (`role`, `orgId`, `isActive`, `emailVerified`, `createdAt`) to User objects
-   - Fixed malformed regexes (e.g., `/please wait/i/i` → `/please wait/i`)
-
-4. **Dashboard and document tests**:
-   - **DashboardHome.test.tsx** - Added missing User properties; removed unused `container` variable
-   - **RecentActivity.test.tsx** - Fixed Activity mock objects (replaced `errorMessage`, `agentId`, `invitedUserEmail` with `details`)
-   - **DeviceCard.test.tsx** - Fixed mock agents (added `orgId`, `capabilities`; replaced `lastSeen` with `lastHeartbeat`); fixed Printer mocks (corrected `type` values; added required properties)
-   - **DocumentCard.test.tsx** - Fixed Document mocks (replaced `ownerEmail` with `userEmail`; removed non-existent `updatedAt`)
-   - **Documents.test.tsx** - Same Document fixes; removed unused variables
-
-5. **JobList.test.tsx** - Fixed PrintJob mocks (added required `userId`, `orgId`, `settings`; used `undefined` instead of `null` for optional fields; created full Printer objects)
-
-6. **handlers.ts** - Fixed type assertions for request.json(); removed unused variables
-
-7. **test-utils.tsx** - Removed invalid `logger` property from QueryClientConfig; replaced `jest.fn()` with `vi.fn()`
+The `.team/logs/04_typecheck.log` still shows the old error message from before dependencies were installed.

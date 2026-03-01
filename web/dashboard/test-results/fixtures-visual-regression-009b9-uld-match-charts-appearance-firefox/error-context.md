@@ -1,0 +1,133 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: A
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Admin User
+            - paragraph [ref=e38]: admin@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Dashboard" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - heading "Analytics" [level=1] [ref=e51]
+            - paragraph [ref=e52]: Track your printing usage and environmental impact
+          - generic [ref=e53]:
+            - button "7 Days" [ref=e54] [cursor=pointer]
+            - button "30 Days" [ref=e55] [cursor=pointer]
+            - button "90 Days" [ref=e56] [cursor=pointer]
+            - button "12 Months" [ref=e57] [cursor=pointer]
+            - combobox [ref=e58]:
+              - option "By Day" [selected]
+              - option "By Week"
+              - option "By Month"
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - img [ref=e63]
+              - generic [ref=e65]: +12.5%
+            - generic [ref=e66]:
+              - paragraph [ref=e67]: "0"
+              - paragraph [ref=e68]: Total Jobs
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - img [ref=e72]
+              - generic [ref=e74]: +8.2%
+            - generic [ref=e75]:
+              - paragraph [ref=e76]: "0"
+              - paragraph [ref=e77]: Pages Printed
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - img [ref=e81]
+              - generic [ref=e83]: +2.1%
+            - generic [ref=e84]:
+              - paragraph [ref=e85]: 0.0%
+              - paragraph [ref=e86]: Success Rate
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - img [ref=e90]
+              - generic [ref=e92]: "-5.3%"
+            - generic [ref=e93]:
+              - paragraph [ref=e94]: $0.00
+              - paragraph [ref=e95]: Estimated Cost
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - img [ref=e98]
+            - heading "Environmental Impact" [level=2] [ref=e100]
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - img [ref=e104]
+              - generic [ref=e106]:
+                - paragraph [ref=e107]: 1,234
+                - paragraph [ref=e108]: Pages Printed
+            - generic [ref=e109]:
+              - img [ref=e111]
+              - generic [ref=e113]:
+                - paragraph [ref=e114]: 245.6g
+                - paragraph [ref=e115]: CO₂ Saved
+            - generic [ref=e116]:
+              - img [ref=e118]
+              - generic [ref=e120]:
+                - paragraph [ref=e121]: "0.1"
+                - paragraph [ref=e122]: Trees Saved
+          - paragraph [ref=e124]:
+            - text: By using cloud printing, you've saved approximately
+            - generic [ref=e125]: 0.1 trees
+            - text: and avoided
+            - generic [ref=e126]: 245.6g
+            - text: of CO₂ emissions this 30d.
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - heading "Print Volume Over Time" [level=3] [ref=e129]
+            - generic [ref=e131]:
+              - img [ref=e132]
+              - list [ref=e141]:
+                - listitem [ref=e142]:
+                  - img [ref=e143]
+                  - text: Jobs
+                - listitem [ref=e145]:
+                  - img [ref=e146]
+                  - text: Pages
+          - generic [ref=e148]:
+            - heading "Job Status Distribution" [level=3] [ref=e149]
+            - img [ref=e152]
+        - generic [ref=e153]:
+          - heading "CO₂ Emissions Trend" [level=3] [ref=e154]
+          - img [ref=e157]
+        - heading "Recent Activity" [level=3] [ref=e167]
+```

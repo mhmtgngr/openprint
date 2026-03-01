@@ -1,483 +1,673 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Use Vitest with React Testing Library for unit testing",
-      "rationale": "Vitest is native to Vite ecosystem, faster than Jest, provides same testing APIs. React Testing Library encourages testing user behavior rather than implementation details."
+      "decision": "Use Playwright for E2E testing with TypeScript",
+      "rationale": "Already configured in the project, supports cross-browser testing (Chromium, Firefox, WebKit), mobile emulation, and has excellent TypeScript support"
     },
     {
-      "decision": "Implement 70% code coverage threshold enforced in CI",
-      "rationale": "Industry standard for critical business applications. Ensures core user flows are validated without maintaining 100% coverage which creates diminishing returns."
+      "decision": "Page Object Model (POM) pattern with fixture-based helpers",
+      "rationale": "Existing helpers.ts provides a solid foundation; POM improves maintainability by separating test logic from page interaction logic"
     },
     {
-      "decision": "Create test utilities and mocks for React Query and Router",
-      "rationale": "Isolates component tests from external dependencies. Mocking QueryClient and Router prevents network calls and enables testing of loading/error/empty states."
+      "decision": "Mock API responses for reliability",
+      "rationale": "Tests should not depend on backend services; mocking ensures consistent test data and faster test execution"
     },
     {
-      "decision": "Use Testing Library's userEvent for user interactions",
-      "rationale": "userEvent simulates real user behavior more accurately than fireEvent, testing the actual user experience."
+      "decision": "Visual regression testing using Playwright's built-in screenshot comparison",
+      "rationale": "Ensures UI consistency across browsers and detects unintended visual changes; Playwright has native support for screenshots"
     },
     {
-      "decision": "Implement market-driven feature: Print quota monitoring in tests",
-      "rationale": "Competitors like PaperCut emphasize cost control and quotas. Testing ensures quota limits work correctly, preventing unexpected overage charges."
+      "decision": "Test data factory pattern",
+      "rationale": "Generates realistic test data on-demand; avoids hardcoded data and enables parallel test execution without conflicts"
+    },
+    {
+      "decision": "Multi-environment configuration via environment-specific configs",
+      "rationale": "Supports testing against local, staging, and production-like environments with different base URLs and mock configurations"
+    },
+    {
+      "decision": "Real-time update testing with WebSocket mocking",
+      "rationale": "Tests notification-service WebSocket behavior; critical for print job status updates and agent heartbeat monitoring"
+    },
+    {
+      "decision": "Market-driven feature testing integration",
+      "rationale": "Tests for Secure Print Release, Cost Allocation, Print Policy Engine, Microsoft 365 Integration, and Compliance features validate competitive parity"
     }
   ],
-  "backend_tasks": [],
-  "frontend_tasks": [
+  "backend_tasks": [
     {
       "order": 1,
-      "file": "web/dashboard/vite.config.ts",
-      "action": "modify",
-      "purpose": "Add coverage configuration with 70% threshold and HTML reporter",
+      "file": "services/auth-service/handler/oidc.go",
+      "action": "create",
+      "purpose": "Microsoft 365 OIDC provider handler for E2E test mocking support",
       "key_functions": [
-        "test.coverage.thresholds",
-        "test.coverage.reporter"
+        "HandleMicrosoft365Login",
+        "HandleMicrosoft365Callback",
+        "GenerateMockToken"
       ]
     },
     {
       "order": 2,
-      "file": "web/dashboard/src/test/setup.ts",
-      "action": "modify",
-      "purpose": "Add global test utilities including QueryClient wrapper, router mock, and custom render functions",
+      "file": "services/compliance-service/compliance.go",
+      "action": "create",
+      "purpose": "New microservice for FedRAMP and HIPAA compliance tracking",
       "key_functions": [
-        "createMockQueryClient",
-        "renderWithQueryClient",
-        "renderWithRouter",
-        "mockAllTheWay"
+        "RecordAuditEvent",
+        "GetComplianceReport",
+        "ValidateDataHandling",
+        "ExportComplianceLog"
       ]
     },
     {
       "order": 3,
-      "file": "web/dashboard/src/test/mocks/handlers.ts",
-      "action": "create",
-      "purpose": "MSW handlers for API mocking - auth, jobs, devices, documents, analytics endpoints",
+      "file": "services/policy-service/policy_engine.go",
+      "action": "modify",
+      "purpose": "Enhanced policy engine for E2E testable rule evaluation",
       "key_functions": [
-        "authHandlers",
-        "jobsHandlers",
-        "devicesHandlers",
-        "documentsHandlers",
-        "analyticsHandlers"
+        "EvaluatePrintPolicy",
+        "ApplyPolicyRules",
+        "GetActivePolicies"
       ]
     },
     {
       "order": 4,
-      "file": "web/dashboard/src/test/mocks/server.ts",
-      "action": "create",
-      "purpose": "MSW server setup for request interception in tests",
+      "file": "services/registry-service/handler/agent.go",
+      "action": "modify",
+      "purpose": "Add WebSocket endpoint for real-time agent status updates",
       "key_functions": [
-        "server",
-        "setupMSW",
-        "teardownMSW"
+        "HandleAgentWebSocket",
+        "BroadcastAgentStatus",
+        "SendHeartbeat"
       ]
     },
     {
       "order": 5,
-      "file": "web/dashboard/src/test/utils/test-utils.tsx",
+      "file": "services/m365-integration-service/main.go",
       "action": "create",
-      "purpose": "Custom render functions with providers, custom matchers, and test data factories",
+      "purpose": "Microsoft 365 integration service for document handling",
       "key_functions": [
-        "renderWithProviders",
-        "createMockUser",
-        "createMockJob",
-        "createMockDevice",
-        "createMockDocument"
-      ]
-    },
-    {
-      "order": 6,
-      "file": "web/dashboard/src/features/auth/LoginForm.test.tsx",
-      "action": "create",
-      "purpose": "Comprehensive tests for LoginForm component - rendering, validation, submission, error handling, loading states",
-      "key_functions": [
-        "describe",
-        "it",
-        "expect",
-        "userEvent",
-        "waitFor"
-      ]
-    },
-    {
-      "order": 7,
-      "file": "web/dashboard/src/features/jobs/JobList.test.tsx",
-      "action": "create",
-      "purpose": "Tests for JobList - loading skeleton, error state, empty state, job entries, status badges, filtering, selection, actions",
-      "key_functions": [
-        "renderJobList",
-        "testLoadingState",
-        "testErrorState",
-        "testEmptyState",
-        "testJobRendering",
-        "testStatusBadges",
-        "testFiltering",
-        "testSelection",
-        "testCancelRetry"
-      ]
-    },
-    {
-      "order": 8,
-      "file": "web/dashboard/src/features/devices/Devices.test.tsx",
-      "action": "create",
-      "purpose": "Tests for Devices component - stat cards, table/grid view, status indicators, filtering by status/type, search, empty state",
-      "key_functions": [
-        "renderDevices",
-        "testStatCards",
-        "testViewToggle",
-        "testStatusIndicators",
-        "testFilters",
-        "testSearch",
-        "testEmptyState"
-      ]
-    },
-    {
-      "order": 9,
-      "file": "web/dashboard/src/features/documents/Documents.test.tsx",
-      "action": "create",
-      "purpose": "Tests for Documents component - stats, upload toggle, document grid, search filtering, loading/error/empty states, pagination",
-      "key_functions": [
-        "renderDocuments",
-        "testStats",
-        "testUploadToggle",
-        "testDocumentGrid",
-        "testSearchFiltering",
-        "testLoadingErrorEmptyStates",
-        "testPagination"
-      ]
-    },
-    {
-      "order": 10,
-      "file": "web/dashboard/src/features/dashboard/DashboardHome.test.tsx",
-      "action": "create",
-      "purpose": "Tests for DashboardHome - stat cards, loading states, JobChart, RecentActivity, trend indicators, error handling",
-      "key_functions": [
-        "renderDashboardHome",
-        "testStatCards",
-        "testLoadingStates",
-        "testJobChart",
-        "testRecentActivity",
-        "testTrendIndicators",
-        "testErrorHandling"
-      ]
-    },
-    {
-      "order": 11,
-      "file": "web/dashboard/src/features/dashboard/StatCard.test.tsx",
-      "action": "create",
-      "purpose": "Unit tests for StatCard component - value display, trend indicators, loading state, icon rendering, color variants",
-      "key_functions": [
-        "renderStatCard",
-        "testValueDisplay",
-        "testTrendIndicator",
-        "testLoadingState",
-        "testIconRendering",
-        "testColorVariants"
-      ]
-    },
-    {
-      "order": 12,
-      "file": "web/dashboard/src/features/dashboard/JobChart.test.tsx",
-      "action": "create",
-      "purpose": "Unit tests for JobChart component - chart rendering, empty data handling, loading state, statistics display",
-      "key_functions": [
-        "renderJobChart",
-        "testChartRendering",
-        "testEmptyDataHandling",
-        "testLoadingState",
-        "testStatisticsDisplay"
-      ]
-    },
-    {
-      "order": 13,
-      "file": "web/dashboard/src/features/dashboard/RecentActivity.test.tsx",
-      "action": "create",
-      "purpose": "Unit tests for RecentActivity component - activity feed rendering, max items limit, empty state, activity status indicators",
-      "key_functions": [
-        "renderRecentActivity",
-        "testActivityFeed",
-        "testMaxItemsLimit",
-        "testEmptyState",
-        "testStatusIndicators"
-      ]
-    },
-    {
-      "order": 14,
-      "file": "web/dashboard/src/features/jobs/JobStatusBadge.test.tsx",
-      "action": "create",
-      "purpose": "Comprehensive tests for JobStatusBadge - all status types (queued, processing, completed, failed, cancelled), custom className",
-      "key_functions": [
-        "testAllStatusTypes",
-        "testCustomClassName",
-        "testAccessibilityAttributes"
-      ]
-    },
-    {
-      "order": 15,
-      "file": "web/dashboard/src/features/auth/RegisterForm.test.tsx",
-      "action": "create",
-      "purpose": "Tests for RegisterForm component - form fields, validation, password confirmation, error handling, loading state",
-      "key_functions": [
-        "testFormFields",
-        "testValidation",
-        "testPasswordConfirmation",
-        "testErrorHandling",
-        "testLoadingState"
-      ]
-    },
-    {
-      "order": 16,
-      "file": "web/dashboard/src/features/auth/ProtectedRoute.test.tsx",
-      "action": "create",
-      "purpose": "Tests for ProtectedRoute - authentication check, role-based access, redirect behavior, loading state",
-      "key_functions": [
-        "testAuthenticationCheck",
-        "testRoleBasedAccess",
-        "testRedirectBehavior",
-        "testLoadingState"
-      ]
-    },
-    {
-      "order": 17,
-      "file": "web/dashboard/src/features/devices/DeviceCard.test.tsx",
-      "action": "create",
-      "purpose": "Tests for DeviceCard - agent vs printer display, status indicators, action buttons, click handling",
-      "key_functions": [
-        "testAgentDisplay",
-        "testPrinterDisplay",
-        "testStatusIndicators",
-        "testActionButtons",
-        "testClickHandling"
-      ]
-    },
-    {
-      "order": 18,
-      "file": "web/dashboard/src/features/documents/DocumentCard.test.tsx",
-      "action": "create",
-      "purpose": "Tests for DocumentCard - document info display, encryption badge, download/delete actions, click handling",
-      "key_functions": [
-        "testDocumentInfoDisplay",
-        "testEncryptionBadge",
-        "testDownloadAction",
-        "testDeleteAction",
-        "testClickHandling"
-      ]
-    },
-    {
-      "order": 19,
-      "file": "web/dashboard/src/features/documents/DocumentUpload.test.tsx",
-      "action": "create",
-      "purpose": "Tests for DocumentUpload - drag-drop zone, file selection, upload progress, error handling",
-      "key_functions": [
-        "testDragDropZone",
-        "testFileSelection",
-        "testUploadProgress",
-        "testErrorHandling"
-      ]
-    },
-    {
-      "order": 20,
-      "file": "web/dashboard/src/features/settings/Toast.test.tsx",
-      "action": "create",
-      "purpose": "Tests for Toast notification component - success/error/info variants, auto-dismiss, manual close",
-      "key_functions": [
-        "testVariants",
-        "testAutoDismiss",
-        "testManualClose",
-        "testMultipleToasts"
-      ]
-    },
-    {
-      "order": 21,
-      "file": "web/dashboard/src/components/AgentStatusBadge.test.tsx",
-      "action": "create",
-      "purpose": "Tests for AgentStatusBadge - online/offline/error status display with proper styling",
-      "key_functions": [
-        "testStatusDisplay",
-        "testStyling",
-        "testAccessibility"
-      ]
-    },
-    {
-      "order": 22,
-      "file": "web/dashboard/package.json",
-      "action": "modify",
-      "purpose": "Add test:coverage script, update test script for watch mode, add msw dependency",
-      "key_functions": [
-        "scripts.test:coverage",
-        "scripts.test:watch",
-        "devDependencies.msw"
+        "HandleOneDriveUpload",
+        "HandleSharePointIntegration",
+        "ListDocuments",
+        "GetDocument"
       ]
     }
   ],
-  "database_migrations": [],
-  "api_contracts": [],
+  "frontend_tasks": [
+    {
+      "order": 1,
+      "file": "web/dashboard/e2e/pages/BasePage.ts",
+      "action": "create",
+      "purpose": "Base Page Object Model class with common navigation and authentication methods"
+    },
+    {
+      "order": 2,
+      "file": "web/dashboard/e2e/pages/DashboardPage.ts",
+      "action": "create",
+      "purpose": "Dashboard page object with methods for stats, recent activity, and navigation"
+    },
+    {
+      "order": 3,
+      "file": "web/dashboard/e2e/pages/AuthPage.ts",
+      "action": "create",
+      "purpose": "Authentication page object covering login, registration, OIDC, SAML flows"
+    },
+    {
+      "order": 4,
+      "file": "web/dashboard/e2e/pages/JobsPage.ts",
+      "action": "create",
+      "purpose": "Jobs page object for job creation, filtering, status changes"
+    },
+    {
+      "order": 5,
+      "file": "web/dashboard/e2e/pages/PrintersPage.ts",
+      "action": "create",
+      "purpose": "Printers page object for device management and discovery"
+    },
+    {
+      "order": 6,
+      "file": "web/dashboard/e2e/pages/AnalyticsPage.ts",
+      "action": "create",
+      "purpose": "Analytics page object for metrics, charts, and audit logs"
+    },
+    {
+      "order": 7,
+      "file": "web/dashboard/e2e/pages/SettingsPage.ts",
+      "action": "create",
+      "purpose": "Settings page object for profile, security, and preferences"
+    },
+    {
+      "order": 8,
+      "file": "web/dashboard/e2e/pages/SecurePrintPage.ts",
+      "action": "create",
+      "purpose": "Secure print release page object for PIN-based job release"
+    },
+    {
+      "order": 9,
+      "file": "web/dashboard/e2e/pages/QuotasPage.ts",
+      "action": "create",
+      "purpose": "Cost tracking and quotas management page object"
+    },
+    {
+      "order": 10,
+      "file": "web/dashboard/e2e/pages/PoliciesPage.ts",
+      "action": "create",
+      "purpose": "Print policy engine management page object"
+    },
+    {
+      "order": 11,
+      "file": "web/dashboard/e2e/pages/Microsoft365Page.ts",
+      "action": "create",
+      "purpose": "Microsoft 365 integration configuration and testing page object"
+    },
+    {
+      "order": 12,
+      "file": "web/dashboard/e2e/pages/CompliancePage.ts",
+      "action": "create",
+      "purpose": "Compliance reports and audit log export page object"
+    },
+    {
+      "order": 13,
+      "file": "web/dashboard/e2e/factories/TestDataFactory.ts",
+      "action": "create",
+      "purpose": "Factory for generating realistic test data (users, jobs, printers, policies)"
+    },
+    {
+      "order": 14,
+      "file": "web/dashboard/e2e/fixtures/visual-regression.spec.ts",
+      "action": "create",
+      "purpose": "Visual regression tests using Playwright screenshot comparison"
+    },
+    {
+      "order": 15,
+      "file": "web/dashboard/e2e/fixtures/websocket-mock.ts",
+      "action": "create",
+      "purpose": "WebSocket mock utilities for testing real-time updates"
+    },
+    {
+      "order": 16,
+      "file": "web/dashboard/e2e/tests/microsoft-365.spec.ts",
+      "action": "create",
+      "purpose": "Microsoft 365 integration E2E tests (OneDrive, SharePoint, authentication)"
+    },
+    {
+      "order": 17,
+      "file": "web/dashboard/e2e/tests/compliance.spec.ts",
+      "action": "create",
+      "purpose": "FedRAMP and HIPAA compliance testing (audit logs, data export, security)"
+    },
+    {
+      "order": 18,
+      "file": "web/dashboard/e2e/tests/realtime-updates.spec.ts",
+      "action": "create",
+      "purpose": "WebSocket real-time update tests (job status, agent heartbeat, notifications)"
+    },
+    {
+      "order": 19,
+      "file": "web/dashboard/e2e/tests/visual-regression.spec.ts",
+      "action": "create",
+      "purpose": "Visual regression tests across browsers and viewport sizes"
+    },
+    {
+      "order": 20,
+      "file": "web/dashboard/e2e/tests/mobile-responsive.spec.ts",
+      "action": "create",
+      "purpose": "Mobile responsiveness tests for all major pages"
+    },
+    {
+      "order": 21,
+      "file": "web/dashboard/e2e/performance.spec.ts",
+      "action": "create",
+      "purpose": "Performance metrics tests (page load, interaction timing, bundle size)"
+    },
+    {
+      "order": 22,
+      "file": "web/dashboard/e2e/helpers.ts",
+      "action": "modify",
+      "purpose": "Extend with additional mock data and helper functions for new features"
+    },
+    {
+      "order": 23,
+      "file": "web/dashboard/playwright.config.ts",
+      "action": "modify",
+      "purpose": "Add projects for visual regression and configure snapshot options"
+    },
+    {
+      "order": 24,
+      "file": "web/dashboard/e2e/accessibility.spec.ts",
+      "action": "create",
+      "purpose": "Accessibility testing (WCAG 2.1 AA compliance, ARIA attributes, keyboard navigation)"
+    },
+    {
+      "order": 25,
+      "file": "web/dashboard/src/pages/Microsoft365.tsx",
+      "action": "create",
+      "purpose": "Frontend UI page for Microsoft 365 integration configuration"
+    },
+    {
+      "order": 26,
+      "file": "web/dashboard/src/pages/Compliance.tsx",
+      "action": "create",
+      "purpose": "Frontend UI page for compliance reports and audit export"
+    }
+  ],
+  "database_migrations": [
+    {
+      "file": "migrations/001_create_compliance_audit_tables.up.sql",
+      "sql": "CREATE TABLE compliance_audit_logs (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  user_id UUID REFERENCES users(id),\n  event_type VARCHAR(100) NOT NULL,\n  resource_type VARCHAR(50),\n  resource_id UUID,\n  ip_address INET,\n  user_agent TEXT,\n  compliance_framework VARCHAR(20) CHECK (compliance_framework IN ('HIPAA', 'FedRAMP', 'SOC2', 'GDPR')),\n  data_classification VARCHAR(20) CHECK (data_classification IN ('PHI', 'PII', 'PUBLIC', 'INTERNAL')),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_compliance_org (org_id),\n  INDEX idx_compliance_framework (compliance_framework),\n  INDEX idx_compliance_created (created_at)\n);"
+    },
+    {
+      "file": "migrations/002_create_print_release_pins.up.sql",
+      "sql": "CREATE TABLE print_release_pins (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id),\n  pin_hash VARCHAR(255) NOT NULL,\n  card_id VARCHAR(255),\n  is_active BOOLEAN DEFAULT true,\n  expires_at TIMESTAMP WITH TIME ZONE,\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  last_used_at TIMESTAMP WITH TIME ZONE,\n  INDEX idx_release_user (user_id),\n  INDEX idx_release_active (is_active)\n);"
+    },
+    {
+      "file": "migrations/003_create_quota_allocations.up.sql",
+      "sql": "CREATE TABLE quota_allocations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  user_id UUID REFERENCES users(id),\n  department_id UUID,\n  quota_type VARCHAR(20) CHECK (quota_type IN ('monthly_pages', 'monthly_cost', 'color_pages')),\n  limit_value INTEGER NOT NULL,\n  used_value INTEGER DEFAULT 0,\n  period_type VARCHAR(10) CHECK (period_type IN ('monthly', 'quarterly', 'annual')),\n  action_on_exceed VARCHAR(20) CHECK (action_on_exceed IN ('block', 'warn', 'charge')),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  UNIQUE (org_id, user_id, quota_type, period_type),\n  INDEX idx_quota_org (org_id),\n  INDEX idx_quota_user (user_id)\n);"
+    },
+    {
+      "file": "migrations/004_create_print_policies.up.sql",
+      "sql": "CREATE TABLE print_policies (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  priority INTEGER DEFAULT 0,\n  is_active BOOLEAN DEFAULT true,\n  conditions JSONB NOT NULL,\n  actions JSONB NOT NULL,\n  created_by UUID REFERENCES users(id),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_policy_org (org_id),\n  INDEX idx_policy_active (is_active),\n  INDEX idx_policy_priority (priority)\n);"
+    },
+    {
+      "file": "migrations/005_create_microsoft365_integration.up.sql",
+      "sql": "CREATE TABLE microsoft365_config (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  tenant_id VARCHAR(100) NOT NULL,\n  client_id VARCHAR(100) NOT NULL,\n  client_secret_encrypted TEXT,\n  is_enabled BOOLEAN DEFAULT false,\n  onedrive_enabled BOOLEAN DEFAULT false,\n  sharepoint_site_url TEXT,\n  default_document_library VARCHAR(255),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  UNIQUE (org_id),\n  INDEX idx_m365_org (org_id)\n);\n\nCREATE TABLE m365_document_mappings (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  user_id UUID REFERENCES users(id),\n  job_id UUID REFERENCES print_jobs(id),\n  m365_drive_id VARCHAR(255),\n  m365_item_id VARCHAR(500),\n  item_url TEXT,\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_m365_doc_org (org_id),\n  INDEX idx_m365_doc_job (job_id)\n);"
+    },
+    {
+      "file": "migrations/006_create_agent_heartbeat.up.sql",
+      "sql": "CREATE TABLE agent_heartbeats (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  agent_id UUID NOT NULL REFERENCES agents(id),\n  status VARCHAR(20) CHECK (status IN ('online', 'offline', 'error')),\n  job_queue_depth INTEGER DEFAULT 0,\n  memory_usage INTEGER,\n  cpu_usage FLOAT,\n  ip_address INET,\n  session_state VARCHAR(20),\n  received_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_heartbeat_agent (agent_id),\n  INDEX idx_heartbeat_received (received_at)\n);"
+    }
+  ],
+  "api_contracts": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/m365/login",
+      "request": "{\"provider\": \"microsoft365\", \"redirect_uri\": \"string\", \"state\": \"string\"}",
+      "response": "{\"authorization_url\": \"string\", \"state\": \"string\"}",
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/m365/callback",
+      "request": "{\"code\": \"string\", \"state\": \"string\"}",
+      "response": "{\"access_token\": \"string\", \"refresh_token\": \"string\", \"user\": {\"id\": \"string\", \"email\": \"string\", \"name\": \"string\"}}",
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/audit-logs",
+      "request": "",
+      "response": "{\"data\": [{\"id\": \"string\", \"event_type\": \"string\", \"timestamp\": \"string\", \"user\": {}, \"details\": {}}], \"total\": 0}",
+      "status_codes": [
+        200,
+        401,
+        403
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/compliance/export",
+      "request": "{\"framework\": \"HIPAA\", \"date_range\": {\"start\": \"string\", \"end\": \"string\"}, \"format\": \"CSV\"}",
+      "response": "{\"export_id\": \"string\", \"download_url\": \"string\", \"expires_at\": \"string\"}",
+      "status_codes": [
+        200,
+        400,
+        401,
+        403
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/quotas/:userId",
+      "request": "",
+      "response": "{\"quotas\": [{\"type\": \"monthly_pages\", \"limit\": 1000, \"used\": 450, \"remaining\": 550, \"action\": \"warn\"}]}",
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/quotas/:quotaId",
+      "request": "{\"limit\": 1500, \"action_on_exceed\": \"block\"}",
+      "response": "{\"id\": \"string\", \"limit\": 1500, \"action_on_exceed\": \"block\", \"updated_at\": \"string\"}",
+      "status_codes": [
+        200,
+        400,
+        401,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/policies",
+      "request": "",
+      "response": "{\"policies\": [{\"id\": \"string\", \"name\": \"string\", \"priority\": 1, \"is_active\": true, \"conditions\": {}, \"actions\": {}}]}",
+      "status_codes": [
+        200,
+        401,
+        403
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/policies",
+      "request": "{\"name\": \"string\", \"description\": \"string\", \"priority\": 1, \"conditions\": {}, \"actions\": {}}",
+      "response": "{\"id\": \"string\", \"name\": \"string\", \"priority\": 1, \"created_at\": \"string\"}",
+      "status_codes": [
+        201,
+        400,
+        401,
+        403
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/print-release/pin/setup",
+      "request": "{\"pin\": \"123456\"}",
+      "response": "{\"success\": true, \"pin_expires_at\": \"string\"}",
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/print-release/release",
+      "request": "{\"printer_id\": \"string\", \"pin\": \"123456\", \"job_ids\": [\"string\"]}",
+      "response": "{\"released\": [\"string\"], \"failed\": [], \"timestamp\": \"string\"}",
+      "status_codes": [
+        200,
+        400,
+        401,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/m365/documents",
+      "request": "",
+      "response": "{\"documents\": [{\"id\": \"string\", \"name\": \"string\", \"drive_id\": \"string\", \"web_url\": \"string\", \"size\": 0}]}",
+      "status_codes": [
+        200,
+        401,
+        502
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/m365/print",
+      "request": "{\"item_id\": \"string\", \"drive_id\": \"string\", \"printer_id\": \"string\", \"settings\": {}}",
+      "response": "{\"job_id\": \"string\", \"status\": \"queued\", \"document_name\": \"string\"}",
+      "status_codes": [
+        201,
+        400,
+        401,
+        404,
+        502
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/:id/health",
+      "request": "",
+      "response": "{\"uptime\": 86400, \"jobs_processed\": 100, \"success_rate\": 98.5, \"last_heartbeat\": \"string\"}",
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/policies/evaluate",
+      "request": "{\"job\": {}, \"user\": {}, \"printer\": {}}",
+      "response": "{\"allowed\": true, \"applied_policies\": [{\"id\": \"string\", \"actions\": {}}], \"modified_settings\": {}}",
+      "status_codes": [
+        200,
+        400
+      ]
+    }
+  ],
   "test_plan": {
     "unit_tests": [
       {
-        "file": "web/dashboard/src/features/auth/LoginForm.test.tsx",
+        "file": "internal/auth/jwt/jwt_test.go",
         "cases": [
-          "renders email input field with correct attributes",
-          "renders password input field with minlength 8",
-          "displays error message when error prop is provided",
-          "shows loading state when isLoading is true",
-          "prevents form submission with empty fields",
-          "calls onSubmit with email and password on valid submission",
-          "updates email state on input change",
-          "updates password state on input change",
-          "has accessible form labels linked to inputs",
-          "disables submit button during loading"
+          "TokenGeneration",
+          "TokenValidation",
+          "TokenExpiry",
+          "InvalidToken",
+          "RefreshTokenFlow"
         ]
       },
       {
-        "file": "web/dashboard/src/features/jobs/JobList.test.tsx",
+        "file": "services/compliance-service/compliance_test.go",
         "cases": [
-          "renders loading skeleton when isLoading is true",
-          "renders error state when error prop is provided",
-          "renders empty state when jobs array is empty",
-          "renders job entries table with all columns",
-          "displays job status badges correctly for each status type",
-          "filters jobs by status when filter is applied",
-          "handles job selection checkbox changes",
-          "calls onJobClick when job row is clicked",
-          "shows cancel button for queued jobs",
-          "shows retry button for failed jobs",
-          "displays printer name when printer is assigned",
-          "displays error message for failed jobs",
-          "formats file size correctly",
-          "formats relative time correctly",
-          "indeterminate checkbox state when some jobs selected"
+          "AuditLogCreation",
+          "HIPAAComplianceCheck",
+          "FedRAMPDataClassification",
+          "ExportAuditLog",
+          "RetentionPolicy"
         ]
       },
       {
-        "file": "web/dashboard/src/features/devices/Devices.test.tsx",
+        "file": "services/policy-service/policy_engine_test.go",
         "cases": [
-          "renders device stats cards",
-          "displays online/offline status indicators",
-          "renders devices in table view mode",
-          "renders devices in grid view mode",
-          "filters devices by status (online/offline/error)",
-          "filters devices by type (agent/printer)",
-          "search functionality filters by device name",
-          "shows empty state when no devices exist",
-          "toggles between table and grid view modes",
-          "opens register modal on Add Device click",
-          "displays correct agent count in stat card",
-          "displays correct printer count in stat card",
-          "delete confirmation dialog appears on delete click",
-          "toggle switch appears for printers only"
+          "PolicyEvaluation",
+          "PriorityOrdering",
+          "ConditionMatching",
+          "ActionApplication",
+          "DefaultPolicyBehavior"
         ]
       },
       {
-        "file": "web/dashboard/src/features/documents/Documents.test.tsx",
+        "file": "e2e/pages/BasePage_test.ts",
         "cases": [
-          "renders document statistics (total count, storage, encrypted)",
-          "displays upload button that toggles upload form",
-          "renders document grid with document cards",
-          "filters documents by search query",
-          "shows empty state when no documents exist",
-          "shows loading state during initial fetch",
-          "displays error state on API failure",
-          "pagination controls work correctly",
-          "pagination disables Previous button on first page",
-          "pagination disables Next button on last page",
-          "calculates total storage correctly",
-          "shows encrypted document count",
-          "refresh button refetches documents",
-          "upload button text changes when form is visible"
-        ]
-      },
-      {
-        "file": "web/dashboard/src/features/dashboard/DashboardHome.test.tsx",
-        "cases": [
-          "renders all stat cards (Total Jobs, Active Devices, Pages Today, Completed Jobs)",
-          "displays loading state while fetching data",
-          "renders JobChart component with statistics",
-          "renders RecentActivity feed",
-          "shows trend indicators on stat cards",
-          "handles failed API calls gracefully",
-          "displays queued and failed job counts in additional stats",
-          "active devices shows ratio of active/total",
-          "pages today shows correct value from analytics",
-          "completed jobs shows count from filtered job data",
-          "total jobs shows count from jobs data"
-        ]
-      },
-      {
-        "file": "web/dashboard/src/features/dashboard/StatCard.test.tsx",
-        "cases": [
-          "displays title and value correctly",
-          "displays unit when provided",
-          "shows trend indicator when provided",
-          "shows positive trend with up arrow and green color",
-          "shows negative trend with down arrow and red color",
-          "displays loading skeleton when loading is true",
-          "renders icon component when provided",
-          "applies correct color variant classes"
-        ]
-      },
-      {
-        "file": "web/dashboard/src/features/dashboard/JobChart.test.tsx",
-        "cases": [
-          "renders chart with provided statistics data",
-          "displays empty state when no data available",
-          "shows loading skeleton when loading is true",
-          "displays total jobs count",
-          "displays completed jobs count",
-          "displays failed jobs count",
-          "displays average jobs per day",
-          "labels x-axis with day labels"
-        ]
-      },
-      {
-        "file": "web/dashboard/src/features/dashboard/RecentActivity.test.tsx",
-        "cases": [
-          "renders activity items from provided activities",
-          "limits displayed items to maxItems prop",
-          "shows empty state when no activities",
-          "displays activity status indicator",
-          "formats relative time correctly",
-          "displays activity description",
-          "shows loading skeleton when loading is true"
-        ]
-      },
-      {
-        "file": "web/dashboard/src/features/auth/RegisterForm.test.tsx",
-        "cases": [
-          "renders name, email, password fields",
-          "validates required fields",
-          "validates password minimum length",
-          "validates password confirmation matches",
-          "shows error message when provided",
-          "disables submit button during loading",
-          "calls onSubmit with form data on valid submission"
-        ]
-      },
-      {
-        "file": "web/dashboard/src/features/auth/ProtectedRoute.test.tsx",
-        "cases": [
-          "renders children when user is authenticated",
-          "redirects to login when user is not authenticated",
-          "redirects to custom path when specified",
-          "blocks access for users without required role",
-          "allows access for users with required role",
-          "shows loading state during auth check"
+          "PageNavigation",
+          "AuthenticationSetup",
+          "APIResponseMocking",
+          "LocalStorageManagement"
         ]
       }
     ],
-    "e2e_tests": []
+    "e2e_tests": [
+      {
+        "name": "Authentication Flow Tests",
+        "steps": [
+          "Navigate to /login",
+          "Verify login form elements are visible",
+          "Enter valid credentials",
+          "Submit form",
+          "Verify redirect to /dashboard",
+          "Verify auth tokens in localStorage",
+          "Logout and verify redirect to /login",
+          "Verify tokens are cleared"
+        ]
+      },
+      {
+        "name": "Microsoft 365 Integration Tests",
+        "steps": [
+          "Navigate to /settings/integrations/microsoft365",
+          "Click 'Connect to Microsoft 365' button",
+          "Mock OIDC authorization callback",
+          "Verify tenant connection status",
+          "Test OneDrive document listing",
+          "Test document selection for printing",
+          "Verify print job creation with OneDrive document",
+          "Test SharePoint site configuration",
+          "Test SharePoint document library access",
+          "Verify secure token storage"
+        ]
+      },
+      {
+        "name": "Secure Print Release Tests",
+        "steps": [
+          "Setup print release PIN",
+          "Submit secure print job",
+          "Navigate to print release station",
+          "Select printer",
+          "Enter correct PIN",
+          "Verify job is released to printer",
+          "Test incorrect PIN rejection",
+          "Test card-based release (if configured)",
+          "Verify job is removed from queue after release",
+          "Test auto-release timeout"
+        ]
+      },
+      {
+        "name": "Quota Management Tests",
+        "steps": [
+          "Navigate to /quotas as admin",
+          "Verify quota overview cards display",
+          "Create new user quota (monthly pages)",
+          "Set limit and action on exceed",
+          "Save quota",
+          "Verify quota appears in table",
+          "Test quota warning threshold",
+          "Test hard limit enforcement",
+          "Verify cost allocation tracking",
+          "Export quota report as CSV"
+        ]
+      },
+      {
+        "name": "Print Policy Engine Tests",
+        "steps": [
+          "Navigate to /policies as admin",
+          "Click 'Create Policy'",
+          "Set policy name and priority",
+          "Configure conditions (max pages, color mode)",
+          "Configure actions (force duplex, force grayscale)",
+          "Save policy",
+          "Test policy evaluation via API",
+          "Verify policy is applied to matching jobs",
+          "Test policy priority ordering",
+          "Edit existing policy",
+          "Delete policy with confirmation"
+        ]
+      },
+      {
+        "name": "Compliance Audit Tests",
+        "steps": [
+          "Navigate to /compliance as admin",
+          "Select compliance framework (HIPAA/FedRAMP)",
+          "Set date range",
+          "Generate audit report",
+          "Verify report includes all required fields",
+          "Test data classification filters",
+          "Test IP address logging",
+          "Test user agent logging",
+          "Export report as CSV/PDF",
+          "Verify audit log immutability",
+          "Test retention policy enforcement"
+        ]
+      },
+      {
+        "name": "Real-time Updates Tests",
+        "steps": [
+          "Setup WebSocket connection mock",
+          "Navigate to /jobs",
+          "Trigger job status change event",
+          "Verify UI updates without refresh",
+          "Test agent heartbeat update",
+          "Verify agent status badge changes",
+          "Test notification toast display",
+          "Test WebSocket reconnection",
+          "Verify error handling on disconnect"
+        ]
+      },
+      {
+        "name": "Visual Regression Tests",
+        "steps": [
+          "Navigate to each major page",
+          "Take screenshots at defined viewports",
+          "Compare against baseline screenshots",
+          "Report visual differences",
+          "Test dark mode variations",
+          "Test across browsers (Chromium, Firefox, WebKit)",
+          "Test mobile responsive layouts",
+          "Generate visual diff report"
+        ]
+      },
+      {
+        "name": "Mobile Responsiveness Tests",
+        "steps": [
+          "Set viewport to mobile dimensions (375x667)",
+          "Navigate to each page",
+          "Verify hamburger menu is present",
+          "Test navigation drawer interaction",
+          "Verify touch targets are minimum 44x44px",
+          "Test horizontal scrolling is avoided",
+          "Verify readable font sizes",
+          "Test form input usability",
+          "Verify tap targets are properly spaced"
+        ]
+      },
+      {
+        "name": "Accessibility Tests",
+        "steps": [
+          "Run axe-core accessibility scan on each page",
+          "Verify all images have alt text",
+          "Verify form inputs have labels",
+          "Verify ARIA attributes on interactive elements",
+          "Test keyboard navigation through all features",
+          "Verify focus indicators are visible",
+          "Test screen reader announcements",
+          "Verify color contrast ratios meet WCAG AA",
+          "Test tab order follows logical flow"
+        ]
+      },
+      {
+        "name": "Performance Tests",
+        "steps": [
+          "Measure Time to First Byte (TTFB)",
+          "Measure First Contentful Paint (FCP)",
+          "Measure Largest Contentful Paint (LCP)",
+          "Measure Cumulative Layout Shift (CLS)",
+          "Verify bundle sizes are within limits",
+          "Test lazy loading of images and components",
+          "Measure API response times",
+          "Generate performance report"
+        ]
+      }
+    ]
   },
   "security_notes": [
-    "Tests must verify password field has minlength attribute of 8 characters",
-    "Tests must verify sensitive data (passwords) is not logged or exposed in error messages",
-    "Tests should verify XSS protection by ensuring user input is properly escaped",
-    "Auth token tests should verify tokens are stored securely (localStorage patterns)",
-    "Document encryption tests should verify encrypted documents display encryption badge",
-    "Role-based access tests must verify admin-only routes are protected"
+    "All E2E tests must use mock credentials - never use production credentials",
+    "API tokens in tests should be clearly marked as test tokens with limited scope",
+    "Screenshot tests must not capture sensitive user data in test runs",
+    "PII/PHI data in compliance tests must use anonymized fixtures",
+    "Print release PINs in tests should use predictable values for automation",
+    "Microsoft 365 integration tests should use dedicated test tenant",
+    "WebSocket connections in tests must point to test environment only",
+    "Audit log export tests should validate data redaction for PII",
+    "Rate limiting tests should use separate test IP ranges",
+    "Session tokens should have short expiry in test environments"
   ],
-  "docker_changes": [],
+  "docker_changes": [
+    "Add playwright-browsers stage to Dockerfile.dashboard",
+    "Add E2E test runner service to docker-compose.yml",
+    "Configure test environment variables in docker-compose.test.yml",
+    "Add volume for test screenshots and reports",
+    "Add mock API server container for E2E test isolation"
+  ],
   "market_driven_features": [
-    "Print quota monitoring tests - ensures cost control features like PaperCut",
-    "Multi-page document handling tests - matches competitor document management",
-    "Device status monitoring tests - real-time status like Printix",
-    "Encryption indicator tests - security focus like YSoft SafeQ",
-    "Activity feed tests - audit trail like enterprise solutions",
-    "Filtering and search tests - usability features from market leaders"
+    "Secure Print Release System - Tests cover PIN-based and card-based job release at print stations",
+    "Cost Allocation & Quotas - Tests for per-user, per-department quotas with blocking/warning actions",
+    "Print Policy Engine - Tests for rule-based print policies with priority evaluation",
+    "Microsoft 365 Integration - Tests for OneDrive/SharePoint document printing and OIDC authentication",
+    "FedRAMP & HIPAA Compliance - Tests for audit logging, data classification, and compliance reporting",
+    "Real-time Updates - WebSocket tests for job status, agent heartbeat, and notifications",
+    "Mobile Responsiveness - Cross-device tests for iOS/Android viewport compatibility",
+    "Visual Regression - Screenshot comparison tests for UI consistency across browsers",
+    "Accessibility Testing - WCAG 2.1 AA compliance tests for inclusive design"
   ]
 }

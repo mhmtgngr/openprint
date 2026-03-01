@@ -47,7 +47,7 @@
           - generic [ref=e50]:
             - heading "Printers" [level=1] [ref=e51]
             - paragraph [ref=e52]: Manage your organization's printing devices
-          - button "Add Printer" [active] [ref=e53] [cursor=pointer]:
+          - button "Add Printer" [ref=e53] [cursor=pointer]:
             - img [ref=e54]
             - text: Add Printer
         - generic [ref=e56]:
@@ -63,24 +63,39 @@
         - generic [ref=e66]:
           - generic [ref=e67]:
             - img [ref=e68]
-            - textbox "Search printers..." [ref=e70]
+            - textbox "Search printers" [ref=e70]
           - generic [ref=e71]:
             - img
-            - combobox [ref=e73]:
-              - option "All Printers" [selected]
-              - option "Online Only"
-              - option "Offline Only"
-        - generic [ref=e74]:
-          - img [ref=e75]
-          - heading "No printers found" [level=3] [ref=e77]
-          - paragraph [ref=e78]: Install the OpenPrint Agent on your network to add printers.
-        - generic [ref=e80]:
-          - img [ref=e82]
-          - generic [ref=e84]:
-            - heading "Install the OpenPrint Agent" [level=3] [ref=e85]
-            - paragraph [ref=e86]: Download and install the agent on a computer connected to your printers. The agent will automatically discover and register your printers.
-            - generic [ref=e87]:
-              - button "Download for Windows" [ref=e88] [cursor=pointer]
-              - button "Download for macOS" [ref=e89] [cursor=pointer]
-              - button "Download for Linux" [ref=e90] [cursor=pointer]
+            - generic [ref=e73]:
+              - button "All" [ref=e74] [cursor=pointer]
+              - button "Online" [ref=e75] [cursor=pointer]
+              - button "Offline" [ref=e76] [cursor=pointer]
+        - generic [ref=e77]:
+          - img [ref=e78]
+          - heading "No printers found" [level=3] [ref=e80]
+          - paragraph [ref=e81]: Add your first printer to get started.
+        - generic [ref=e83]:
+          - img [ref=e85]
+          - generic [ref=e87]:
+            - heading "Install the OpenPrint Agent" [level=3] [ref=e88]
+            - paragraph [ref=e89]: Download and install the agent on a computer connected to your printers. The agent will automatically discover and register your printers.
+            - generic [ref=e90]:
+              - button "Download for Windows" [ref=e91] [cursor=pointer]
+              - button "Download for macOS" [ref=e92] [cursor=pointer]
+              - button "Download for Linux" [ref=e93] [cursor=pointer]
+        - generic [ref=e95]:
+          - heading "Add Printer" [level=3] [ref=e97]
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: Printer Name
+              - textbox "e.g., HP LaserJet Pro" [active] [ref=e101]: New Printer
+            - generic [ref=e102]:
+              - generic [ref=e103]: Agent
+              - combobox [ref=e104]:
+                - option "Select an agent..."
+                - option "WORKSTATION-001" [selected]
+                - option "WORKSTATION-002"
+            - generic [ref=e105]:
+              - button "Cancel" [ref=e106] [cursor=pointer]
+              - button "Add Printer" [ref=e107] [cursor=pointer]
 ```

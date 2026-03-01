@@ -1,1 +1,691 @@
-{"project_name":"Dashboard Test Suite Implementation","summary":"Create comprehensive unit test suite for OpenPrint Dashboard React components using React Testing Library and Vitest. Establish testing infrastructure, achieve 70% code coverage, and ensure all critical user flows are validated through automated tests.","user_stories":[{"id":"US-001","as_a":"Developer","i_want":"automated tests for the LoginForm component","so_that":"I can ensure user authentication works correctly with valid and invalid credentials","priority":"critical","acceptance_criteria":["Test renders email and password input fields","Test validates form submission with valid credentials","Test displays error message with invalid credentials","Test shows loading state during submission","Test prevents submission with empty fields","Test password field has minlength of 8 characters"]},{"id":"US-002","as_a":"Developer","i_want":"automated tests for the JobList component","so_that":"I can verify print jobs display correctly and filtering functions work","priority":"critical","acceptance_criteria":["Test renders loading skeleton when isLoading is true","Test renders error state when error prop is provided","Test renders empty state when jobs array is empty","Test renders job entries table with all columns","Test displays job status badges correctly","Test filters jobs by status","Test handles job selection checkbox changes","Test calls onJobClick when job row is clicked","Test shows cancel button for queued jobs","Test shows retry button for failed jobs"]},{"id":"US-003","as_a":"Developer","i_want":"automated tests for the DeviceList component","so_that":"I can ensure devices and printers display with correct status indicators","priority":"high","acceptance_criteria":["Test renders device stats cards","Test displays online/offline status indicators","Test renders devices in table view","Test renders devices in grid view","Test filters devices by status (online/offline/error)","Test filters devices by type (agent/printer)","Test search functionality filters by device name","Test shows empty state when no devices exist","Test toggles between table and grid view modes"]},{"id":"US-004","as_a":"Developer","i_want":"automated tests for the DocumentList component","so_that":"I can verify document management operations function correctly","priority":"high","acceptance_criteria":["Test renders document statistics (total count, storage, encrypted)","Test displays upload button and toggles upload form","Test renders document grid with document cards","Test filters documents by search query","Test shows empty state when no documents exist","Test shows loading state during initial fetch","Test displays error state on API failure","Test pagination controls work correctly"]},{"id":"US-005","as_a":"Developer","i_want":"automated tests for the Dashboard home page","so_that":"I can verify statistics display and data aggregation works correctly","priority":"high","acceptance_criteria":["Test renders all stat cards (Total Jobs, Active Devices, Pages Today, Completed Jobs)","Test displays loading state while fetching data","Test renders JobChart component with statistics","Test renders RecentActivity feed","Test shows trend indicators on stat cards","Test handles failed API calls gracefully"]},{"id":"US-006","as_a":"Developer","i_want":"proper test infrastructure and configuration","so_that":"tests can run reliably in CI/CD pipelines","priority":"critical","acceptance_criteria":["Vitest configuration with jsdom environment","Test setup file with global cleanup","Coverage reporting enabled","npm run test executes all tests","Coverage threshold of at least 70% enforced","Tests run in watch mode for local development"]},{"id":"US-007","as_a":"Developer","i_want":"test utilities and mocks","so_that":"tests can isolate components from external dependencies","priority":"medium","acceptance_criteria":["Mock wrappers for React Query","Mock router context for navigation components","Mock API responses for backend services","Custom render function with providers","Test data factories for common entities"]},{"id":"US-008","as_a":"QA Engineer","i_want":"CI/CD integration for automated testing","so_that":"code changes are validated automatically before deployment","priority":"medium","acceptance_criteria":["Tests run on every pull request","Test results reported in GitHub Actions","Coverage badges updated automatically","Failed tests block merge","Test artifacts downloadable for debugging"]}],"functional_requirements":[{"id":"FR-001","title":"LoginForm Test Coverage","description":"Create comprehensive tests for LoginForm component including rendering, validation, submission handling, loading states, and error display","service":"dashboard"},{"id":"FR-002","title":"JobList Test Coverage","description":"Create tests for JobList component covering loading states, error handling, empty states, job rendering, filtering, selection, and action buttons","service":"dashboard"},{"id":"FR-003","title":"DeviceList Test Coverage","description":"Create tests for Devices component covering stats display, status indicators, view modes (table/grid), filtering by status/type, and search functionality","service":"dashboard"},{"id":"FR-004","title":"DocumentList Test Coverage","description":"Create tests for Documents component covering statistics display, upload toggle, document grid, search filtering, pagination, and loading/error states","service":"dashboard"},{"id":"FR-005","title":"DashboardHome Test Coverage","description":"Create tests for DashboardHome component covering stat cards, loading states, JobChart integration, and RecentActivity feed","service":"dashboard"},{"id":"FR-006","title":"Vitest Configuration","description":"Configure vitest.config.ts with proper test environment, coverage settings, and global setup","service":"dashboard"},{"id":"FR-007","title":"Test Utilities","description":"Create test utilities including custom render function, mock wrappers for React Query and React Router, and test data factories","service":"dashboard"},{"id":"FR-008","title":"CI/CD Test Integration","description":"Integrate test execution into GitHub Actions workflow with coverage reporting and artifact collection","service":"dashboard"}],"non_functional_requirements":[{"id":"NFR-001","category":"performance","requirement":"Test suite should complete execution within 60 seconds","metric":"< 60 seconds total execution time"},{"id":"NFR-002","category":"quality","requirement":"Minimum code coverage for tested components","metric":"≥ 70% code coverage"},{"id":"NFR-003","category":"maintainability","requirement":"Tests should be isolated and independent","metric":"Each test must be runnable independently"},{"id":"NFR-004","category":"reliability","requirement":"No flaky tests due to timing or async issues","metric":"100% consistent test results across runs"},{"id":"NFR-005","category":"usability","requirement":"Clear test failure messages","metric":"Descriptive assertion messages for all tests"},{"id":"NFR-006","category":"performance","requirement":"Individual test execution time","metric":"< 5 seconds per test file"}],"api_endpoints":[{"method":"POST","path":"/api/v1/auth/login","description":"Authentication endpoint for login tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/jobs","description":"Jobs listing endpoint for JobList tests","roles":["admin","user"]},{"method":"DELETE","path":"/api/v1/jobs/{id}","description":"Job cancellation endpoint for JobList tests","roles":["admin","user"]},{"method":"POST","path":"/api/v1/jobs/{id}/retry","description":"Job retry endpoint for JobList tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/devices","description":"Devices listing endpoint for DeviceList tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/documents","description":"Documents listing endpoint for DocumentList tests","roles":["admin","user"]},{"method":"POST","path":"/api/v1/documents/upload","description":"Document upload endpoint for DocumentList tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/analytics/usage","description":"Analytics endpoint for Dashboard tests","roles":["admin"]},{"method":"GET","path":"/api/v1/analytics/environment","description":"Environment report endpoint for Dashboard tests","roles":["admin"]}],"database_changes":[],"affected_services":["dashboard"],"risks":[{"risk":"Component dependencies on React Query may require complex mocking","mitigation":"Create custom wrapper components and test utilities to provide mocked query client"},{"risk":"Async operations may cause flaky tests","mitigation":"Use waitFor and findBy queries from React Testing Library for async assertions"},{"risk":"Tests may break when component implementations change","mitigation":"Focus on testing user behavior and accessibility rather than implementation details"},{"risk":"Global state (localStorage, sessionStorage) may interfere between tests","mitigation":"Clear all storage in beforeEach/afterEach hooks in test setup"},{"risk":"Mocking file uploads for DocumentList tests","mitigation":"Create mock File objects and use MSW (Mock Service Worker) or fetch mocks for API calls"}],"implementation_phases":[{"phase":1,"name":"Test Infrastructure Setup","tasks":["Create __tests__ directory structure","Update vitest.config.ts with coverage settings","Create test-utils.ts with custom render function and providers","Create test data factories for common entities","Add test setup for global cleanup and mocks"]},{"phase":2,"name":"LoginForm Tests","tasks":["Create LoginForm.test.tsx in __tests__/features/auth/","Test component renders with email and password fields","Test form submission with mock onSubmit callback","Test error message display","Test loading state when isLoading prop is true","Test HTML5 validation attributes (required, minLength)","Test keyboard navigation and accessibility"]},{"phase":3,"name":"JobList Tests","tasks":["Create JobList.test.tsx in __tests__/features/jobs/","Test loading skeleton rendering","Test error state rendering","Test empty state rendering","Test job table rendering with mock data","Test job status badges display","Test filter functionality","Test job selection (checkboxes)","Test cancel and retry action buttons"]},{"phase":4,"name":"DeviceList Tests","tasks":["Create Devices.test.tsx in __tests__/features/devices/","Test stats cards rendering (total agents, printers, online/offline)","Test table view rendering","Test grid view rendering","Test status indicator colors and labels","Test status filter dropdown","Test type filter dropdown","Test search input filtering","Test view mode toggle (table/grid)","Test empty state"]},{"phase":5,"name":"DocumentList Tests","tasks":["Create Documents.test.tsx in __tests__/features/documents/","Test statistics cards (total documents, storage, encrypted)","Test upload button and form toggle","Test document grid rendering","Test search filtering","Test pagination controls","Test loading state","Test error state","Test empty state"]},{"phase":6,"name":"Dashboard Home Tests","tasks":["Create DashboardHome.test.tsx in __tests__/features/dashboard/","Test stat cards rendering (Total Jobs, Active Devices, Pages Today, Completed Jobs)","Test loading state while data fetches","Test JobChart component receives correct data","Test RecentActivity component receives correct activities","Test trend indicators on stat cards"]},{"phase":7,"name":"CI/CD Integration","tasks":["Create GitHub Actions workflow for running tests","Configure coverage reporting","Add coverage badge to README","Set up test artifact upload","Configure test results blocking on PR"}]}}
+{
+  "project_name": "OpenPrint Dashboard E2E Testing with Playwright",
+  "summary": "Implement comprehensive end-to-end testing infrastructure using Playwright for the OpenPrint dashboard frontend, covering authentication, job management, device registry, document handling, navigation, and settings with visual regression capabilities and CI/CD integration.",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for user authentication flows",
+      "so_that": "login, logout, and password reset functionality is reliably verified across releases",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "Tests validate successful login with valid credentials",
+        "Tests reject invalid credentials with appropriate error messages",
+        "Tests verify logout functionality and session termination",
+        "Tests validate password reset flow with email verification",
+        "Tests verify session persistence and timeout behavior",
+        "Tests support both local and remote environment execution"
+      ]
+    },
+    {
+      "id": "US-002",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for print job management",
+      "so_that": "job creation, listing, cancellation, and retry workflows are thoroughly validated",
+      "priority": "critical",
+      "acceptance_criteria": [
+        "Tests verify job creation with document upload",
+        "Tests validate job listing with pagination and filtering",
+        "Tests confirm job cancellation functionality",
+        "Tests verify job retry for failed jobs",
+        "Tests validate job status updates and notifications",
+        "Tests cover edge cases like large file uploads and concurrent jobs"
+      ]
+    },
+    {
+      "id": "US-003",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for device/printer management",
+      "so_that": "printer registration, status monitoring, and configuration features are verified",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests validate printer registration flow",
+        "Tests verify printer status display and updates",
+        "Tests confirm printer configuration changes",
+        "Tests validate printer discovery functionality",
+        "Tests verify agent registration and heartbeat monitoring",
+        "Tests cover printer deletion and unregistration"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for document upload and retrieval",
+      "so_that": "document storage operations are validated end-to-end",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests verify document upload with various file formats",
+        "Tests validate document retrieval and preview",
+        "Tests confirm document deletion",
+        "Tests verify encryption-enabled document handling",
+        "Tests validate S3 and local storage backends",
+        "Tests cover large file handling and progress indicators"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for dashboard navigation",
+      "so_that": "all user navigation paths are verified and accessible",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests verify all sidebar navigation links",
+        "Tests validate breadcrumb navigation",
+        "Tests confirm direct URL routing",
+        "Tests verify mobile-responsive navigation",
+        "Tests validate keyboard navigation accessibility",
+        "Tests confirm role-based menu visibility"
+      ]
+    },
+    {
+      "id": "US-006",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for settings management",
+      "so_that": "user and system settings changes are properly validated",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests verify user profile updates",
+        "Tests validate notification preferences",
+        "Tests confirm email-to-print configuration",
+        "Tests verify admin-level system settings",
+        "Tests validate settings persistence",
+        "Tests confirm role-based settings access"
+      ]
+    },
+    {
+      "id": "US-007",
+      "as_a": "DevOps Engineer",
+      "i_want": "E2E tests configured for both local and remote environments",
+      "so_that": "tests can run against docker-compose locally and staging/production environments remotely",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests support environment variable configuration",
+        "Tests execute against local docker-compose stack",
+        "Tests execute against remote staging environments",
+        "Tests handle different base URLs dynamically",
+        "Tests support different authentication configurations per environment"
+      ]
+    },
+    {
+      "id": "US-008",
+      "as_a": "QA Engineer",
+      "i_want": "visual regression testing for critical pages",
+      "so_that": "UI changes are detected and unintended visual modifications are caught",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests capture screenshots of dashboard, jobs, printers, and settings pages",
+        "Tests compare against baseline images",
+        "Tests generate diff reports for visual changes",
+        "Tests support responsive design comparisons (desktop, tablet, mobile)",
+        "Tests handle dynamic content with appropriate masking"
+      ]
+    },
+    {
+      "id": "US-009",
+      "as_a": "DevOps Engineer",
+      "i_want": "E2E tests integrated into CI/CD pipeline",
+      "so_that": "tests run automatically on every PR and main branch build",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests execute on GitHub Actions/GitLab CI",
+        "Tests generate and upload video recordings on failure",
+        "Tests publish HTML test reports",
+        "Tests fail the build on critical test failures",
+        "Tests support parallel execution for faster results"
+      ]
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-001",
+      "title": "Playwright Test Framework Setup",
+      "description": "Configure Playwright with TypeScript, test utilities, page object models, and custom fixtures for the OpenPrint dashboard. Include browser configuration for Chromium, Firefox, and WebKit.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-002",
+      "title": "Authentication Test Suite",
+      "description": "Implement E2E tests covering login with valid/invalid credentials, logout, session management, password reset request, and OAuth/OIDC flows if configured.",
+      "service": "auth-service"
+    },
+    {
+      "id": "FR-003",
+      "title": "Job Management Test Suite",
+      "description": "Implement E2E tests for creating print jobs with file uploads, listing jobs with filters, cancelling jobs, retrying failed jobs, and viewing job details.",
+      "service": "job-service"
+    },
+    {
+      "id": "FR-004",
+      "title": "Device/Printer Registry Test Suite",
+      "description": "Implement E2E tests for printer registration, viewing printer lists, monitoring printer status, configuring printer settings, and discovering available printers.",
+      "service": "registry-service"
+    },
+    {
+      "id": "FR-005",
+      "title": "Document Storage Test Suite",
+      "description": "Implement E2E tests for uploading documents (PDF, images, Office docs), retrieving documents, deleting documents, and handling both S3 and local storage backends.",
+      "service": "storage-service"
+    },
+    {
+      "id": "FR-006",
+      "title": "Dashboard Navigation Test Suite",
+      "description": "Implement E2E tests for sidebar navigation, breadcrumbs, direct URL access, mobile menu toggle, and accessibility compliance.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-007",
+      "title": "Settings Management Test Suite",
+      "description": "Implement E2E tests for user profile updates, notification preferences, email-to-print configuration, and admin system settings.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-008",
+      "title": "Visual Regression Testing",
+      "description": "Implement screenshot capture and comparison for critical pages (dashboard, jobs, printers, settings) across multiple viewport sizes.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-009",
+      "title": "Test Data Management",
+      "description": "Implement test data fixtures and utilities for creating test users, printers, jobs, and documents. Include cleanup procedures for test isolation.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-010",
+      "title": "Multi-Environment Configuration",
+      "description": "Support configuration for local development (docker-compose), staging, and production environments with different base URLs and authentication methods.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-011",
+      "title": "CI/CD Integration",
+      "description": "Configure GitHub Actions or GitLab CI workflow for running E2E tests, generating HTML reports, and uploading artifacts (videos, screenshots, traces) on failure.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-012",
+      "title": "Real-time Updates Test Suite",
+      "description": "Implement E2E tests for WebSocket-based real-time notifications including job status updates, printer status changes, and new job alerts.",
+      "service": "notification-service"
+    },
+    {
+      "id": "FR-M013",
+      "title": "Secure Print Release System",
+      "description": "Implement PIN-based card-based and mobile-app-based print release with embedded terminal support",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Essential for enterprise adoption addressing document security and privacy compliance"
+    },
+    {
+      "id": "FR-M014",
+      "title": "Microsoft 365 Integration",
+      "description": "Deep integration with Microsoft 365 for direct document submission from Word Excel PowerPoint and Teams with SharePoint document library support",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Opens enterprise market with 350M+ Microsoft 365 business users"
+    },
+    {
+      "id": "FR-M015",
+      "title": "Mobile Apps (iOS/Android)",
+      "description": "Native mobile applications for print job submission release and printer discovery with push notifications",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Critical for hybrid work and BYOD environments"
+    },
+    {
+      "id": "FR-M016",
+      "title": "Cost Allocation & Quotas",
+      "description": "Per-user and per-department quotas with cost-per-page tracking and chargeback to cost centers or projects",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "ROI justification for businesses through cost recovery and visibility"
+    },
+    {
+      "id": "FR-M017",
+      "title": "Print Policy Engine",
+      "description": "Configurable rules for color/duplex enforcement size limits application-based routing and approval workflows",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Operational cost reduction through automated policy enforcement"
+    },
+    {
+      "id": "FR-M018",
+      "title": "FedRAMP & HIPAA Compliance",
+      "description": "Implement required security controls audit trails and encryption standards for government and healthcare sectors",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Access to regulated multi-billion dollar government and healthcare markets"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-001",
+      "category": "performance",
+      "requirement": "E2E test suite execution time",
+      "metric": "Full test suite completes within 15 minutes with parallel execution"
+    },
+    {
+      "id": "NFR-002",
+      "category": "performance",
+      "requirement": "Test flakiness rate",
+      "metric": "< 2% flaky test rate across 100 consecutive runs"
+    },
+    {
+      "id": "NFR-003",
+      "category": "scalability",
+      "requirement": "Parallel test execution",
+      "metric": "Support at least 4 parallel worker threads for concurrent test execution"
+    },
+    {
+      "id": "NFR-004",
+      "category": "performance",
+      "requirement": "Test startup time",
+      "metric": "Test environment initializes within 30 seconds"
+    },
+    {
+      "id": "NFR-005",
+      "category": "security",
+      "requirement": "Test credentials management",
+      "metric": "All sensitive test data stored in environment variables, never committed to repository"
+    },
+    {
+      "id": "NFR-006",
+      "category": "security",
+      "requirement": "Test data isolation",
+      "metric": "Each test uses isolated data to prevent cross-test contamination"
+    },
+    {
+      "id": "NFR-007",
+      "category": "scalability",
+      "requirement": "Browser compatibility",
+      "metric": "Tests run on Chromium, Firefox, and WebKit browsers"
+    },
+    {
+      "id": "NFR-008",
+      "category": "performance",
+      "requirement": "Visual regression comparison",
+      "metric": "Screenshot comparison completes within 5 seconds per image"
+    },
+    {
+      "id": "NFR-009",
+      "category": "scalability",
+      "requirement": "CI/CD integration",
+      "metric": "Tests run automatically on every PR with results reported within 20 minutes"
+    },
+    {
+      "id": "NFR-010",
+      "category": "security",
+      "requirement": "Artifact retention",
+      "metric": "Failed test artifacts (videos, traces) retained for 30 days"
+    }
+  ],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "description": "User authentication for test setup",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "description": "User logout verification",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reset-password",
+      "description": "Password reset flow testing",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs",
+      "description": "List print jobs",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs",
+      "description": "Create new print job",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/jobs/{id}",
+      "description": "Cancel print job",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs/{id}/retry",
+      "description": "Retry failed print job",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/printers",
+      "description": "List registered printers",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/printers",
+      "description": "Register new printer",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/printers/{id}",
+      "description": "Update printer configuration",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/printers/{id}",
+      "description": "Unregister printer",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/documents",
+      "description": "Upload document for printing",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/{id}",
+      "description": "Retrieve document",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents",
+      "description": "List print agents",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings",
+      "description": "Get user settings",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings",
+      "description": "Update user settings",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/analytics",
+      "description": "Get analytics data",
+      "roles": [
+        "admin"
+      ]
+    }
+  ],
+  "database_changes": [
+    {
+      "table": "test_users",
+      "action": "create",
+      "columns": [
+        "id SERIAL PRIMARY KEY",
+        "username VARCHAR(255) UNIQUE",
+        "email VARCHAR(255)",
+        "password_hash VARCHAR(255)",
+        "role VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "test_printers",
+      "action": "create",
+      "columns": [
+        "id SERIAL PRIMARY KEY",
+        "name VARCHAR(255)",
+        "agent_id VARCHAR(255)",
+        "status VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "test_jobs",
+      "action": "create",
+      "columns": [
+        "id SERIAL PRIMARY KEY",
+        "user_id INTEGER REFERENCES test_users(id)",
+        "printer_id INTEGER REFERENCES test_printers(id)",
+        "document_id VARCHAR(255)",
+        "status VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    }
+  ],
+  "affected_services": [
+    "auth-service",
+    "registry-service",
+    "job-service",
+    "storage-service",
+    "notification-service",
+    "dashboard"
+  ],
+  "risks": [
+    {
+      "risk": "Test flakiness due to timing issues with WebSocket updates",
+      "mitigation": "Implement explicit waits and retry logic for async operations; use Playwright's auto-waiting features"
+    },
+    {
+      "risk": "Visual regression tests failing due to dynamic content (timestamps, counters)",
+      "mitigation": "Implement dynamic content masking and stabilization techniques; use consistent test data"
+    },
+    {
+      "risk": "Test data pollution between test runs",
+      "mitigation": "Implement proper test teardown and cleanup; use database transactions with rollback; unique identifiers per test"
+    },
+    {
+      "risk": "CI/CD pipeline timeout due to long test execution",
+      "mitigation": "Implement parallel test execution; split tests into critical and non-critical suites; use test sharding"
+    },
+    {
+      "risk": "Different browser behaviors causing inconsistent results",
+      "mitigation": "Implement browser-specific assertions where needed; use consistent browser for critical tests"
+    },
+    {
+      "risk": "Local environment differences causing CI-only failures",
+      "mitigation": "Use docker-compose for local testing matching CI environment; document environment setup precisely"
+    },
+    {
+      "risk": "S3/MinIO dependency for document tests",
+      "mitigation": "Mock storage service for unit tests; use local storage backend for E2E tests when possible"
+    }
+  ],
+  "implementation_phases": [
+    {
+      "phase": 1,
+      "name": "Framework Setup and Configuration",
+      "tasks": [
+        "Initialize Playwright project in web/dashboard/e2e/",
+        "Configure TypeScript and test runner settings",
+        "Set up browser configuration (Chromium, Firefox, WebKit)",
+        "Create test fixtures and page object model base classes",
+        "Configure environment variable support for multiple environments",
+        "Set up test data utilities and API helpers",
+        "Create base test authentication fixture"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Authentication Test Implementation",
+      "tasks": [
+        "Implement login flow tests (valid and invalid credentials)",
+        "Implement logout and session termination tests",
+        "Implement password reset flow tests",
+        "Add session persistence and timeout tests",
+        "Create authentication page object models"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Job Management Test Implementation",
+      "tasks": [
+        "Implement job creation tests with document upload",
+        "Implement job listing and filtering tests",
+        "Implement job cancellation tests",
+        "Implement job retry tests for failed jobs",
+        "Create job management page object models"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Device/Printer Management Test Implementation",
+      "tasks": [
+        "Implement printer registration tests",
+        "Implement printer listing and status tests",
+        "Implement printer configuration tests",
+        "Implement printer discovery tests",
+        "Create device management page object models"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Document Storage Test Implementation",
+      "tasks": [
+        "Implement document upload tests (multiple formats)",
+        "Implement document retrieval tests",
+        "Implement document deletion tests",
+        "Test S3 and local storage backend handling",
+        "Create document storage page object models"
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Navigation and Settings Test Implementation",
+      "tasks": [
+        "Implement dashboard navigation tests",
+        "Implement settings management tests",
+        "Implement user profile update tests",
+        "Add accessibility validation tests",
+        "Create navigation and settings page object models"
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Visual Regression Testing",
+      "tasks": [
+        "Configure Playwright screenshot capture",
+        "Implement baseline image setup",
+        "Create visual comparison tests for critical pages",
+        "Add responsive design comparisons (desktop, tablet, mobile)",
+        "Configure dynamic content masking"
+      ]
+    },
+    {
+      "phase": 8,
+      "name": "Real-time Updates Test Implementation",
+      "tasks": [
+        "Implement WebSocket connection tests",
+        "Test job status update notifications",
+        "Test printer status change notifications",
+        "Test real-time dashboard updates"
+      ]
+    },
+    {
+      "phase": 9,
+      "name": "CI/CD Integration",
+      "tasks": [
+        "Create GitHub Actions or GitLab CI workflow",
+        "Configure test execution on PR and main branch",
+        "Set up HTML test report generation",
+        "Configure video and artifact upload on failure",
+        "Add test result comments to PRs"
+      ]
+    },
+    {
+      "phase": 10,
+      "name": "Documentation and Maintenance",
+      "tasks": [
+        "Write E2E testing documentation",
+        "Create test data setup guide",
+        "Document troubleshooting procedures",
+        "Set up test result monitoring and alerts",
+        "Create onboarding guide for new test scenarios"
+      ]
+    }
+  ],
+  "market_context": {
+    "competitors_analyzed": [
+      "PaperCut",
+      "PrinterLogic",
+      "YSoft SafeQ",
+      "HP/Canon/Xerox/Ricoh (OEM Cloud Solutions)"
+    ],
+    "key_gaps": [
+      "Secure print release with authentication at device (PIN badge tap mobile release)",
+      "Microsoft 365 and Google Workspace deep integration for document submission",
+      "Native mobile applications for iOS and Android",
+      "User-based quotas and departmental cost allocation",
+      "Environmental impact reporting with CO2 tracking and paper savings"
+    ],
+    "trends": [
+      "AI-Powered Predictive Maintenance",
+      "Sustainability Reporting",
+      "Zero Trust Print Security",
+      "Serverless Direct IP Printing",
+      "Hybrid Work Print Solutions"
+    ],
+    "unique_selling_points": [
+      "Modern microservices architecture with container-native deployment (Kubernetes-ready) vs legacy competitors",
+      "Open-source with potential for community-driven innovation vs proprietary vendor lock-in",
+      "Go-based high-performance services vs Java/.NET legacy stacks of competitors",
+      "Built-in OpenTelemetry observability from day one vs bolted-on monitoring",
+      "API-first design enabling easier integrations vs competitors' legacy APIs",
+      "Flexible storage backend (S3 or local) vs vendor-locked storage solutions",
+      "Modern React/TypeScript dashboard with superior UX compared to legacy Java-based admin consoles"
+    ]
+  }
+}

@@ -45,6 +45,6 @@
       - generic [ref=e49]:
         - img [ref=e50]
         - heading "Error loading agent" [level=2] [ref=e52]
-        - paragraph [ref=e53]: invalid or expired token
+        - paragraph [ref=e53]: An unknown error occurred
         - button "Back to Agents" [ref=e54] [cursor=pointer]
 ```

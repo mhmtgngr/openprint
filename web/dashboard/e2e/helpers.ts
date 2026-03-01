@@ -29,6 +29,17 @@ export async function setupAuthenticatedUser(
   page: Page,
   user: typeof mockUsers[number] = mockUsers[0]
 ) {
+  // Set auth tokens in localStorage using addInitScript for new page contexts
+  await page.addInitScript((tokens) => {
+    localStorage.setItem('auth_tokens', JSON.stringify(tokens));
+  }, {
+    accessToken: 'mock-access-token',
+    refreshToken: 'mock-refresh-token',
+  });
+
+  // Also set tokens directly for already-loaded pages
+  await setAuthTokens(page);
+
   // Mock ALL auth-related endpoints BEFORE any navigation
   await page.route('**/api/v1/auth/me', async (route) => {
     await mockApiResponse(route, user);
@@ -49,29 +60,34 @@ export async function setupAuthenticatedUser(
       refresh_token: 'mock-refresh-token',
     });
   });
+}
 
-  // Set auth tokens in localStorage using addInitScript
-  // This runs before page content loads, avoiding security errors
-  await page.addInitScript((tokens) => {
+/**
+ * Sets auth tokens in localStorage for an already-loaded page
+ */
+async function setAuthTokens(page: Page) {
+  await page.evaluate(() => {
+    const tokens = {
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token',
+    };
     localStorage.setItem('auth_tokens', JSON.stringify(tokens));
-  }, {
-    accessToken: 'mock-access-token',
-    refreshToken: 'mock-refresh-token',
   });
 }
 
 /**
  * Login helper - authenticates a user and navigates to dashboard
  * Uses mocked auth endpoints for reliability
- *
- * IMPORTANT: This does NOT pre-set tokens in localStorage, allowing the login flow to work properly
  */
 export async function login(
   page: Page,
   credentials: Credentials = testCredentials,
   user: typeof mockUsers[number] = mockUsers[0]
 ) {
-  // Mock auth endpoints (but don't set tokens in localStorage yet)
+  // Set auth tokens in localStorage for the current context
+  await setAuthTokens(page);
+
+  // Mock auth endpoints
   await page.route('**/api/v1/auth/me', async (route) => {
     await mockApiResponse(route, user);
   });
@@ -93,7 +109,6 @@ export async function login(
   });
 
   // Mock common dashboard APIs that are called during login flow
-  // These are needed because the app navigates to /dashboard first
   await page.route('**/api/v1/printers', async (route) => {
     await mockApiResponse(route, { printers: mockPrinters });
   });
@@ -126,6 +141,9 @@ export async function login(
 
   // Wait for navigation to dashboard
   await page.waitForURL('**/dashboard', { timeout: 10000 });
+
+  // Re-ensure tokens are set after login for subsequent navigations
+  await setAuthTokens(page);
 }
 
 /**

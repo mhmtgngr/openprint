@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "test:scanner": "bash tests/test-scanner.sh",
+    "test:diagnosis": "node tests/integration/diagnosis-scanner.test.js",
+    "test:integration": "node tests/integration/diagnosis-scanner.test.js",
+    "test:all": "npm run test:scanner && npm run test:diagnosis"
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2"
   }

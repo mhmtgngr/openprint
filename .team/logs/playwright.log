@@ -1,22 +1,83 @@
-SyntaxError: /home/cmit/openprint/frontend/e2e/tests/admin.spec.ts: Unexpected token, expected "," (171:53)
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
 
-  169 |
-  170 |     const policyList = page.locator('[data-testid="policy-list"]');
-> 171 |     const emptyState = page.getByText(/no policies/i });
-      |                                                      ^
-  172 |
-  173 |     const listVisible = await policyList.isVisible();
-  174 |     const emptyVisible = await emptyState.isVisible();
+   at e2e/tests/admin.spec.ts:5
 
-   at e2e/tests/admin.spec.ts:171
+  3 | import { testUsers, testPolicies, testQuotas } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Admin - Organization Settings', () => {
+    |      ^
+  6 |   test.beforeEach(async ({ page }) => {
+  7 |     const loginPage = new LoginPage(page);
+  8 |     await loginPage.goto();
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/admin.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
 
-  169 |
-  170 |     const policyList = page.locator('[data-testid="policy-list"]');
-> 171 |     const emptyState = page.getByText(/no policies/i });
-      |                                                     ^
-  172 |
-  173 |     const listVisible = await policyList.isVisible();
-  174 |     const emptyVisible = await emptyState.isVisible();
+   at e2e/tests/agents.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Agents Management', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |   let dashboardPage: DashboardPage;
+  8 |
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/agents.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/analytics.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Analytics Dashboard', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |   let analyticsPage: AnalyticsPage;
+  8 |
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/analytics.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/audit-logs.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Audit Logs', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/audit-logs.spec.ts:5:6
 Error: Playwright Test did not expect test.describe() to be called here.
 Most common reasons include:
 - You are calling test.describe() in a configuration file.
@@ -44,6 +105,26 @@ Most common reasons include:
 - You have two different versions of @playwright/test. This usually happens
   when one of the dependencies in your package.json depends on @playwright/test.
 
+   at e2e/tests/compliance.spec.ts:6
+
+  4 | import { testUsers } from '../helpers/test-data';
+  5 |
+> 6 | test.describe('Compliance - Overview', () => {
+    |      ^
+  7 |   let compliancePage: CompliancePage;
+  8 |
+  9 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/compliance.spec.ts:6:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
    at e2e/tests/dashboard.spec.ts:5
 
   3 | import { testUsers } from '../helpers/test-data';
@@ -57,25 +138,146 @@ Most common reasons include:
     at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
     at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
     at /home/cmit/openprint/frontend/e2e/tests/dashboard.spec.ts:5:6
-SyntaxError: /home/cmit/openprint/frontend/e2e/tests/jobs.spec.ts: Unexpected token, expected "," (239:53)
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
 
-  237 |       await retryButton.click();
-  238 |
-> 239 |       await expect(page.getByText(/retrying|queued/i })).toBeVisible();
-      |                                                      ^
-  240 |     }
-  241 |   });
-  242 | });
+   at e2e/tests/documents.spec.ts:5
 
-   at e2e/tests/jobs.spec.ts:239
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Documents Management', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/documents.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
 
-  237 |       await retryButton.click();
-  238 |
-> 239 |       await expect(page.getByText(/retrying|queued/i })).toBeVisible();
-      |                                                     ^
-  240 |     }
-  241 |   });
-  242 | });
+   at e2e/tests/email-to-print.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Email-to-Print', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/email-to-print.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/jobs.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Print Jobs', () => {
+    |      ^
+  6 |   test.beforeEach(async ({ page }) => {
+  7 |     const loginPage = new LoginPage(page);
+  8 |     await loginPage.goto();
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/jobs.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/microsoft365.spec.ts:6
+
+  4 | import { testUsers } from '../helpers/test-data';
+  5 |
+> 6 | test.describe('Microsoft 365 Integration - Configuration', () => {
+    |      ^
+  7 |   let m365Page: Microsoft365Page;
+  8 |
+  9 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/microsoft365.spec.ts:6:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/policies-engine.spec.ts:6
+
+  4 | import { testUsers } from '../helpers/test-data';
+  5 |
+> 6 | test.describe('Print Policies Engine - Overview', () => {
+    |      ^
+  7 |   let policiesPage: PoliciesPage;
+  8 |
+  9 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/policies-engine.spec.ts:6:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/policies.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Print Policy Engine', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/policies.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/print-release.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Print Release', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/print-release.spec.ts:5:6
 Error: Playwright Test did not expect test.describe() to be called here.
 Most common reasons include:
 - You are calling test.describe() in a configuration file.
@@ -96,5 +298,46 @@ Most common reasons include:
     at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
     at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
     at /home/cmit/openprint/frontend/e2e/tests/printers.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/quotas.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Cost Tracking & Quotas', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/quotas.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/secure-print.spec.ts:6
+
+  4 | import { testUsers } from '../helpers/test-data';
+  5 |
+> 6 | test.describe('Secure Print - Job Queue', () => {
+    |      ^
+  7 |   let securePrintPage: SecurePrintPage;
+  8 |
+  9 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/secure-print.spec.ts:6:6
 Error: No tests found
 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ✘   467 [firefox] › e2e/tests/analytics.spec.ts:109:3 › Analytics Page (Admin) › should display job status distribution chart (6.6s)

@@ -1282,23 +1282,23 @@ run_claude() {
 # Primary code execution: retry + prompt shrink + commit
 claude_do() {
   local role_name="$1" prompt="$2" log_file="$3"
-  local timeout="${4:-900}"
+  local timeout="${4:-1800}"  # Increased default: 30 minutes (was 900s)
   team "$role_name" "Working..."
   cd "$REPO_DIR"
 
-  # Truncate prompt if too large
+  # Truncate prompt if too large (reduced threshold for better reliability)
   local prompt_len=${#prompt}
-  if [ "$prompt_len" -gt 12000 ]; then
-    warn "  Prompt too large (${prompt_len} chars) — truncating to 12000"
-    prompt="${prompt:0:12000}
+  if [ "$prompt_len" -gt 8000 ]; then
+    warn "  Prompt too large (${prompt_len} chars) — truncating to 8000"
+    prompt="${prompt:0:8000}
 
 [TRUNCATED — original was ${prompt_len} chars. Focus on the most important parts above.]"
   fi
 
-  local attempt=0 ok=false exit_code=0
+  local attempt=0 ok=false exit_code=0 backoff=5
   while [ $attempt -lt 3 ]; do
     attempt=$((attempt + 1))
-    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/3"
+    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/3 (after ${backoff}s delay)"
 
     if timeout "$timeout" claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
       "$prompt" 2>&1 | tee "$log_file"; then
@@ -1307,14 +1307,18 @@ claude_do() {
 
     exit_code=$?
     if [ $exit_code -eq 124 ]; then
-      warn "  ⏰ Timeout after ${timeout}s"
+      warn "  ⏰ Timeout after ${timeout}s — increasing timeout for retry"
+      timeout=$((timeout + 600))  # Add 10 minutes for retry
     elif [ $exit_code -ge 137 ]; then
-      warn "  💀 Killed (exit $exit_code) — likely OOM or rate limit"
-      prompt="${prompt:0:6000}
+      warn "  💀 Killed (exit $exit_code) — likely OOM or rate limit, reducing prompt"
+      prompt="${prompt:0:4000}
 
-[REDUCED — Claude was killed. Simplified prompt.]"
+[REDUCED — Claude was killed. Simplified prompt for retry.]"
     fi
-    sleep 5
+
+    # Exponential backoff before retry
+    [ $attempt -lt 3 ] && sleep "$backoff"
+    backoff=$((backoff * 2))
   done
 
   if [ "$ok" = true ]; then
@@ -1491,7 +1495,7 @@ ${past:+$past
 }
 
 run_playwright() {
-  local dir="$REPO_DIR/frontend"
+  local dir="$REPO_DIR/${FRONTEND_DIR:-web/dashboard}"
   [ -d "$dir" ] || return 0
   team "🧪 Tester" "Running Playwright..."
   cd "$dir"
@@ -1646,7 +1650,8 @@ phase_design() {
 
   cd "$REPO_DIR"
   local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 4000)
-  local files; files=$(find internal frontend/src -name "*.go" -o -name "*.tsx" 2>/dev/null | grep -v _test | grep -v node_modules | sort | head -50 || true)
+  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+  local files; files=$(find internal "$frontend_dir/src" -name "*.go" -o -name "*.tsx" 2>/dev/null | grep -v _test | grep -v node_modules | sort | head -50 || true)
   local market; market=$(summarize_artifact "$ARTIFACTS/03_market_analysis.json" 2000)
 
   cat > "$DEV_DIR/tmp_sys.txt" << 'PROMPT'
@@ -1726,8 +1731,8 @@ phase_frontend() {
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   state_set frontend status running; ensure_branch
 
-  local design; design=$(summarize_artifact "$ARTIFACTS/02_design.json" 4000)
-  local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 2000)
+  local design; design=$(summarize_artifact "$ARTIFACTS/02_design.json" 2500)
+  local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 1500)
 
   claude_do "🎨 Frontend" \
     "Read CLAUDE.md first. You are the Frontend Developer for this project.
@@ -1735,11 +1740,12 @@ phase_frontend() {
 DESIGN: $design
 REQUIREMENTS: $reqs
 
-IMPLEMENT ALL frontend components/pages from design. Follow the conventions in CLAUDE.md. Create Playwright E2E tests in frontend/e2e/. Install deps if needed." \
-    "$PHASE_LOGS/04_frontend.log"
+IMPLEMENT ALL frontend components/pages from design. Follow the conventions in CLAUDE.md. Create Playwright E2E tests in ${FRONTEND_DIR:-web/dashboard}/e2e/. Install deps if needed." \
+    "$PHASE_LOGS/04_frontend.log" 2400  # 40 minutes for frontend implementation
 
-  if [ -d "$REPO_DIR/frontend" ]; then
-    cd "$REPO_DIR/frontend"; [ -d "node_modules" ] || npm install 2>&1 | tail -3 || true
+  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+  if [ -d "$REPO_DIR/$frontend_dir" ]; then
+    cd "$REPO_DIR/$frontend_dir"; [ -d "node_modules" ] || npm install 2>&1 | tail -3 || true
     local ts_ok=true
     npx tsc --noEmit 2>&1 | tee "$PHASE_LOGS/04_typecheck.log" | tail -5 || ts_ok=false
     if [ "$ts_ok" = false ]; then
@@ -1798,7 +1804,8 @@ Write comprehensive tests for ALL new files following CLAUDE.md conventions. Wri
 
   # Sub-step 3: E2E
   if [ "$(state_get testing e2e)" != "passed" ] && [ "$(state_get testing e2e)" != "skipped" ]; then
-    if [ -d "$REPO_DIR/frontend" ] && ls "$REPO_DIR/frontend/e2e/"*.spec.* >/dev/null 2>&1; then
+    local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+    if [ -d "$REPO_DIR/$frontend_dir" ] && ls "$REPO_DIR/$frontend_dir/e2e/"*.spec.* >/dev/null 2>&1; then
       if docker_build_all; then
         docker_up
         if ! run_playwright; then
@@ -2687,6 +2694,62 @@ run_dev_improvement() {
 # TRACK B: PROJECT IMPROVEMENT
 # ═══════════════════════════════════════════════════
 
+# scan_frontend_files - Accurately count TSX and TS files in the frontend directory
+# Returns JSON string with: tsx_count, ts_count, total_count, test_count, features{}
+# Uses detected FRONTEND_DIR with fallback to web/dashboard/src
+scan_frontend_files() {
+  local frontend_src="${1:-$REPO_DIR/${FRONTEND_DIR:-web/dashboard}/src}"
+
+  # Return zeros if directory doesn't exist
+  [ ! -d "$frontend_src" ] && echo '{"tsx_count":0,"ts_count":0,"total_count":0,"test_count":0,"features":{}}' && return 0
+
+  # Proper find command with grouped expressions and exclusions
+  # Excludes: node_modules, dist, build directories
+  local tsx_count ts_count total_count test_count features_json
+
+  tsx_count=$(find "$frontend_src" \
+    \( -name "node_modules" -o -name "dist" -o -name "build" \) -prune \
+    -o -type f -name "*.tsx" -print 2>/dev/null | wc -l || echo "0")
+  tsx_count="${tsx_count//[^0-9]/}"; tsx_count="${tsx_count:-0}"
+
+  ts_count=$(find "$frontend_src" \
+    \( -name "node_modules" -o -name "dist" -o -name "build" \) -prune \
+    -o -type f -name "*.ts" ! -name "*.tsx" -print 2>/dev/null | wc -l || echo "0")
+  ts_count="${ts_count//[^0-9]/}"; ts_count="${ts_count:-0}"
+
+  total_count=$((tsx_count + ts_count))
+
+  # Count test files (*.spec.ts, *.spec.tsx, *.test.ts, *.test.tsx)
+  test_count=$(find "$frontend_src" \
+    \( -name "node_modules" -o -name "dist" -o -name "build" \) -prune \
+    -o -type f \( -name "*.spec.ts" -o -name "*.spec.tsx" -o -name "*.test.ts" -o -name "*.test.tsx" \) -print 2>/dev/null | wc -l || echo "0")
+  test_count="${test_count//[^0-9]/}"; test_count="${test_count:-0}"
+
+  # Feature module breakdown - count files per feature directory
+  local features_json="{}"
+  if [ -d "$frontend_src/features" ]; then
+    local feature_dirs feature_dir feature_tsx feature_ts
+    feature_dirs=$(find "$frontend_src/features" -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
+    if [ -n "$feature_dirs" ]; then
+      features_json="{"
+      local first=true
+      while IFS= read -r feature_dir; do
+        [ ! -d "$feature_dir" ] && continue
+        local feature_name; feature_name=$(basename "$feature_dir")
+        feature_tsx=$(find "$feature_dir" -type f -name "*.tsx" 2>/dev/null | wc -l || echo "0")
+        feature_ts=$(find "$feature_dir" -type f -name "*.ts" ! -name "*.tsx" 2>/dev/null | wc -l || echo "0")
+        feature_tsx="${feature_tsx//[^0-9]/}"; feature_tsx="${feature_tsx:-0}"
+        feature_ts="${feature_ts//[^0-9]/}"; feature_ts="${feature_ts:-0}"
+        [ "$first" = true ] && first=false || features_json="${features_json},"
+        features_json="${features_json}\"${feature_name}\":{\"tsx\":${feature_tsx},\"ts\":${feature_ts}}"
+      done <<< "$feature_dirs"
+      features_json="${features_json}}"
+    fi
+  fi
+
+  echo "{\"tsx_count\":${tsx_count},\"ts_count\":${ts_count},\"total_count\":${total_count},\"test_count\":${test_count},\"features\":${features_json}}"
+}
+
 diagnose_project() {
   slog "🔍 DIAGNOSING project..."
   cd "$REPO_DIR"
@@ -2696,11 +2759,21 @@ diagnose_project() {
   go_files="${go_files//[^0-9]/}"; go_files="${go_files:-0}"
   local test_files; test_files=$(find "$REPO_DIR" -name "*_test.go" 2>/dev/null | wc -l || true)
   test_files="${test_files//[^0-9]/}"; test_files="${test_files:-0}"
-  local tsx_files; tsx_files=$(find "$REPO_DIR/frontend/src" -name "*.tsx" -o -name "*.ts" 2>/dev/null | wc -l || true)
+
+  # Use detected frontend directory for accurate file enumeration
+  local frontend_src_dir="$REPO_DIR/${FRONTEND_DIR:-web/dashboard}/src"
+  local frontend_scan; frontend_scan=$(scan_frontend_files "$frontend_src_dir")
+  local tsx_files; tsx_files=$(echo "$frontend_scan" | python3 -c "import json,sys; print(json.load(sys.stdin).get('tsx_count',0))" 2>/dev/null || echo "0")
   tsx_files="${tsx_files//[^0-9]/}"; tsx_files="${tsx_files:-0}"
-  local todo_count; todo_count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/frontend/src" 2>/dev/null | wc -l || true)
+  local ts_files; ts_files=$(echo "$frontend_scan" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ts_count',0))" 2>/dev/null || echo "0")
+  ts_files="${ts_files//[^0-9]/}"; ts_files="${ts_files:-0}"
+  local frontend_total; frontend_total=$((tsx_files + ts_files))
+
+  # Get frontend directory for TODO scanning (use detected path)
+  local frontend_for_scan="${FRONTEND_DIR:-web/dashboard}"
+  local todo_count; todo_count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/$frontend_for_scan" 2>/dev/null | wc -l || true)
   todo_count="${todo_count//[^0-9]/}"; todo_count="${todo_count:-0}"
-  local todo_list; todo_list=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/frontend/src" 2>/dev/null | head -20 || true)
+  local todo_list; todo_list=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/$frontend_for_scan" 2>/dev/null | head -20 || true)
 
   local build_ok="yes" compile_errors=""
   go build ./... 2>/dev/null || { build_ok="no"; compile_errors=$(go build ./... 2>&1 | tail -20 || true); }
@@ -2720,9 +2793,10 @@ diagnose_project() {
   [ -f "deployments/docker/docker-compose.yml" ] || [ -f "docker-compose.yml" ] && compose_exists="yes"
 
   local frontend_exists="no" ts_errors=""
-  if [ -d "$REPO_DIR/frontend" ]; then
+  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+  if [ -d "$REPO_DIR/$frontend_dir" ]; then
     frontend_exists="yes"
-    cd "$REPO_DIR/frontend"
+    cd "$REPO_DIR/$frontend_dir"
     [ -d node_modules ] || npm install 2>/dev/null || true
     [ -f node_modules/.bin/tsc ] && ts_errors=$(npx tsc --noEmit 2>&1 | grep "error TS" | head -10 || true)
     cd "$REPO_DIR"
@@ -2738,27 +2812,30 @@ import json, sys, os
 d = sys.argv
 report = {
     "project": {
-        "go_files": int(d[1]), "test_files": int(d[2]), "tsx_files": int(d[3]),
-        "todo_count": int(d[4]), "build": d[5], "tests": d[6],
-        "test_count": int(d[7]), "test_passed": int(d[8]),
-        "dockerfiles": int(d[9]), "compose": d[10], "frontend": d[11]
+        "go_files": int(d[1]), "test_files": int(d[2]),
+        "tsx_files": int(d[3]), "ts_files": int(d[4]), "frontend_total": int(d[5]),
+        "todo_count": int(d[6]), "build": d[7], "tests": d[8],
+        "test_count": int(d[9]), "test_passed": int(d[10]),
+        "dockerfiles": int(d[11]), "compose": d[12], "frontend": d[13],
+        "features": d[14] if len(d) > 14 else "{}"
     },
-    "compile_errors": open(d[12]).read().strip() if os.path.exists(d[12]) else "",
-    "test_failures": open(d[13]).read().strip() if os.path.exists(d[13]) else "",
-    "ts_errors": open(d[14]).read().strip() if os.path.exists(d[14]) else "",
-    "todos": open(d[15]).read().strip() if os.path.exists(d[15]) else ""
+    "compile_errors": open(d[15]).read().strip() if os.path.exists(d[15]) else "",
+    "test_failures": open(d[16]).read().strip() if os.path.exists(d[16]) else "",
+    "ts_errors": open(d[17]).read().strip() if os.path.exists(d[17]) else "",
+    "todos": open(d[18]).read().strip() if os.path.exists(d[18]) else ""
 }
-json.dump(report, open(d[16], "w"), indent=2)
-' "$go_files" "$test_files" "$tsx_files" "$todo_count" \
+json.dump(report, open(d[19], "w"), indent=2)
+' "$go_files" "$test_files" "$tsx_files" "$ts_files" "$frontend_total" "$todo_count" \
   "$build_ok" "$test_ok" "$test_count" "$test_passed" \
   "$dockerfiles" "$compose_exists" "$frontend_exists" \
+  "$frontend_scan" \
   "$DEV_DIR/tmp_ce.txt" "$DEV_DIR/tmp_tf.txt" "$DEV_DIR/tmp_ts.txt" \
   "$DEV_DIR/tmp_td.txt" "$report" 2>/dev/null || slog "  ⚠ Diagnosis write failed"
 
   rm -f "$DEV_DIR"/tmp_ce.txt "$DEV_DIR"/tmp_tf.txt "$DEV_DIR"/tmp_ts.txt "$DEV_DIR"/tmp_td.txt
 
   slog "📊 DIAGNOSIS:"
-  slog "  Code:    $go_files .go + $tsx_files .ts/tsx + $test_files tests"
+  slog "  Code:    $go_files .go + $tsx_files .tsx + $ts_files .ts = $frontend_total frontend + $test_files tests"
   slog "  Build:   $build_ok | Tests: $test_ok ($test_passed/$test_count)"
   slog "  TODOs:   $todo_count | Docker: $dockerfiles files"
   [ -n "$compile_errors" ] && slog "  ⚠ Compile errors found"
@@ -2921,8 +2998,9 @@ verify_results() {
   if [ "$failed" -eq 0 ] 2>/dev/null; then slog "  ✓ Tests: ALL PASS ($passed packages)"
   else slog "  ⚠ Tests: $passed pass, $failed fail"; score=$((score - 20)); fi
 
-  if [ -d "$REPO_DIR/frontend" ]; then
-    cd "$REPO_DIR/frontend"
+  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+  if [ -d "$REPO_DIR/$frontend_dir" ]; then
+    cd "$REPO_DIR/$frontend_dir"
     if [ -f node_modules/.bin/tsc ]; then
       if npx tsc --noEmit 2>/dev/null; then slog "  ✓ TypeScript: PASS"
       else
@@ -2997,7 +3075,8 @@ scan_project_completion() {
 
   local exist_go; exist_go=$(find internal cmd -name "*.go" 2>/dev/null | grep -v _test | wc -l || echo "0")
   exist_go="${exist_go//[^0-9]/}"; exist_go="${exist_go:-0}"
-  local exist_tsx; exist_tsx=$(find frontend/src -name "*.tsx" -o -name "*.ts" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
+  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+  local exist_tsx; exist_tsx=$(find "$frontend_dir/src" -type f \( -name "*.tsx" -o -name "*.ts" \) 2>/dev/null | grep -v node_modules | wc -l || echo "0")
   exist_tsx="${exist_tsx//[^0-9]/}"; exist_tsx="${exist_tsx:-0}"
   local exist_tests; exist_tests=$(find . -name "*_test.go" -o -name "*.spec.ts" -o -name "*.spec.tsx" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
   exist_tests="${exist_tests//[^0-9]/}"; exist_tests="${exist_tests:-0}"
@@ -3017,7 +3096,8 @@ scan_project_completion() {
   test_fail="${test_fail//[^0-9]/}"; test_fail="${test_fail:-0}"
   [ "$test_fail" -eq 0 ] && [ "$test_pass" -gt 0 ] && test_ok="yes"
 
-  local todos; todos=$(grep -rn "TODO\|FIXME\|HACK\|XXX" internal cmd frontend/src 2>/dev/null | wc -l || echo "0")
+  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
+  local todos; todos=$(grep -rn "TODO\|FIXME\|HACK\|XXX" internal cmd "$frontend_dir" 2>/dev/null | wc -l || echo "0")
   todos="${todos//[^0-9]/}"; todos="${todos:-0}"
   local docker_ok="no"
   { ls deployments/docker/Dockerfile.* >/dev/null 2>&1 || [ -f Dockerfile ]; } && docker_ok="yes"

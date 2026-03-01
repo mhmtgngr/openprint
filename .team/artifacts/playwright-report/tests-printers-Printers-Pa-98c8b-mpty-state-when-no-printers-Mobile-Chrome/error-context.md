@@ -1,86 +1,27 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e3]:
-  - complementary [ref=e4]:
-    - generic [ref=e5]:
-      - link "OpenPrint" [ref=e6] [cursor=pointer]:
-        - /url: /dashboard
-        - img [ref=e8]
-        - generic [ref=e10]: OpenPrint
-      - navigation [ref=e11]:
-        - link "Dashboard" [ref=e12] [cursor=pointer]:
-          - /url: /dashboard
-          - img [ref=e13]
-          - generic [ref=e15]: Dashboard
-        - link "Devices" [ref=e16] [cursor=pointer]:
-          - /url: /printers
-          - img [ref=e17]
-          - generic [ref=e19]: Devices
-        - link "Jobs" [ref=e20] [cursor=pointer]:
-          - /url: /jobs
-          - img [ref=e21]
-          - generic [ref=e23]: Jobs
-        - link "Documents" [ref=e24] [cursor=pointer]:
-          - /url: /documents
-          - img [ref=e25]
-          - generic [ref=e27]: Documents
-        - link "Settings" [ref=e28] [cursor=pointer]:
-          - /url: /settings
-          - img [ref=e29]
-          - generic [ref=e32]: Settings
-      - generic [ref=e33]:
-        - generic [ref=e34]:
-          - generic [ref=e35]: T
-          - generic [ref=e36]:
-            - paragraph [ref=e37]: Test User
-            - paragraph [ref=e38]: test@example.com
-        - button "Logout" [ref=e39] [cursor=pointer]:
-          - img [ref=e40]
-          - generic [ref=e42]: Logout
-  - generic [ref=e43]:
-    - banner [ref=e44]:
-      - heading "Devices" [level=1] [ref=e46]
-    - main [ref=e47]:
-      - generic [ref=e48]:
-        - generic [ref=e49]:
-          - generic [ref=e50]:
-            - heading "Printers" [level=1] [ref=e51]
-            - paragraph [ref=e52]: Manage your organization's printing devices
-          - button "Add Printer" [ref=e53] [cursor=pointer]:
-            - img [ref=e54]
-            - text: Add Printer
-        - generic [ref=e56]:
-          - generic [ref=e57]:
-            - paragraph [ref=e58]: Total Printers
-            - paragraph [ref=e59]: "0"
-          - generic [ref=e60]:
-            - paragraph [ref=e61]: Online
-            - paragraph [ref=e62]: "0"
-          - generic [ref=e63]:
-            - paragraph [ref=e64]: Active
-            - paragraph [ref=e65]: "0"
-        - generic [ref=e66]:
-          - generic [ref=e67]:
-            - img [ref=e68]
-            - textbox "Search printers..." [ref=e70]
-          - generic [ref=e71]:
-            - img
-            - combobox [ref=e73]:
-              - option "All Printers" [selected]
-              - option "Online Only"
-              - option "Offline Only"
-        - generic [ref=e74]:
-          - img [ref=e75]
-          - heading "No printers found" [level=3] [ref=e77]
-          - paragraph [ref=e78]: Install the OpenPrint Agent on your network to add printers.
-        - generic [ref=e80]:
-          - img [ref=e82]
-          - generic [ref=e84]:
-            - heading "Install the OpenPrint Agent" [level=3] [ref=e85]
-            - paragraph [ref=e86]: Download and install the agent on a computer connected to your printers. The agent will automatically discover and register your printers.
-            - generic [ref=e87]:
-              - button "Download for Windows" [ref=e88] [cursor=pointer]
-              - button "Download for macOS" [ref=e89] [cursor=pointer]
-              - button "Download for Linux" [ref=e90] [cursor=pointer]
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - img [ref=e8]
+    - generic [ref=e10]: OpenPrint
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - img [ref=e15]
+      - heading "OpenPrint Cloud" [level=1] [ref=e17]
+      - paragraph [ref=e18]: Print from anywhere, to any printer
+    - generic [ref=e19]:
+      - heading "Sign in to your account" [level=2] [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Email Address
+          - textbox "Email Address" [ref=e24]:
+            - /placeholder: you@example.com
+        - generic [ref=e25]:
+          - generic [ref=e26]: Password
+          - textbox "Password" [ref=e27]:
+            - /placeholder: ••••••••
+        - button "Sign In" [ref=e28] [cursor=pointer]
+      - button "Don't have an account? Sign up" [ref=e30] [cursor=pointer]
+    - paragraph [ref=e31]: By continuing, you agree to our Terms of Service and Privacy Policy.
 ```

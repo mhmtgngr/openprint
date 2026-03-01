@@ -217,12 +217,14 @@ func getEnv(key, defaultValue string) string {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","service":"%s"}`, "auth-service")
+	if r.Method == http.MethodGet {
+		fmt.Fprintf(w, `{"status":"healthy","service":"%s"}`, "auth-service")
+	}
 }

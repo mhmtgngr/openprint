@@ -20,17 +20,28 @@
 //
 // USAGE EXAMPLE:
 //
-//	security := middleware.DefaultCookieSecurity() // Use DevelopmentCookieSecurity() for local dev
+//	// Recommended: Use AutoCookieSecurity for environment-aware settings
+//	security := middleware.AutoCookieSecurity()
 //	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
 //
 //	// On logout:
 //	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
+//
+// PRODUCTION DEPLOYMENT:
+//
+// For production, ensure ENV=production or GO_ENV=production is set.
+// AutoCookieSecurity will automatically apply secure settings (Secure+HttpOnly).
+//
+// Alternatively, explicitly use ProductionCookieSecurity():
+//
+//	security := middleware.ProductionCookieSecurity()
 package middleware
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -86,8 +97,26 @@ func DefaultCookieSecurity() *CookieSecurityConfig {
 	}
 }
 
+// ProductionCookieSecurity returns secure cookie settings for production environments.
+// This function enforces security regardless of build tags and is the recommended way
+// to get cookie security settings for production deployments.
+//
+// SECURITY: In production, cookies MUST use Secure=true and HttpOnly=true to prevent:
+// - Session hijacking via network interception (Secure flag)
+// - XSS attacks stealing session tokens (HttpOnly flag)
+func ProductionCookieSecurity() *CookieSecurityConfig {
+	return &CookieSecurityConfig{
+		Secure:   true,  // REQUIRED: Only send cookies over HTTPS
+		HttpOnly: true,  // REQUIRED: Prevent JavaScript access
+		SameSite: http.SameSiteStrictMode, // Stricter CSRF protection for production
+		Path:     "/",
+	}
+}
+
 // DevelopmentCookieSecurity returns settings for local development.
 // These settings allow HTTP and relaxed same-site policies for testing.
+//
+// WARNING: These settings MUST NOT be used in production deployments.
 func DevelopmentCookieSecurity() *CookieSecurityConfig {
 	return &CookieSecurityConfig{
 		Secure:   false, // Allow HTTP locally
@@ -95,6 +124,48 @@ func DevelopmentCookieSecurity() *CookieSecurityConfig {
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	}
+}
+
+// IsProductionEnv detects if the application is running in a production environment.
+// It checks environment variables and connection security.
+//
+// Production is detected when:
+// - ENV=production is set, OR
+// - GO_ENV=production is set, OR
+// - The request is over HTTPS (when called from a request context)
+//
+// For use outside of request handling, use EnvIsProduction() instead.
+func IsProductionEnv() bool {
+	env := strings.ToLower(strings.TrimSpace(getEnv("ENV", "")))
+	goEnv := strings.ToLower(strings.TrimSpace(getEnv("GO_ENV", "")))
+	return env == "production" || goEnv == "production"
+}
+
+// EnvIsProduction detects if the current environment is production.
+// This is a simple check that doesn't depend on HTTP context.
+func EnvIsProduction() bool {
+	return IsProductionEnv()
+}
+
+// AutoCookieSecurity returns appropriate cookie security settings based on the environment.
+// In production, it returns ProductionCookieSecurity().
+// In development, it returns DevelopmentCookieSecurity().
+//
+// This is the RECOMMENDED way to get cookie security settings as it automatically
+// adapts to the environment.
+func AutoCookieSecurity() *CookieSecurityConfig {
+	if EnvIsProduction() {
+		return ProductionCookieSecurity()
+	}
+	return DevelopmentCookieSecurity()
+}
+
+// getEnv retrieves an environment variable or returns the default value.
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
 
 // SetSessionCookie sets a session cookie with appropriate security flags.

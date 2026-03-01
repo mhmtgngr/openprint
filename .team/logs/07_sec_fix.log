@@ -1,54 +1,37 @@
-All security vulnerabilities have been fixed. Here's a summary of the changes:
+All security fixes have been implemented. Here's a summary of the changes:
 
-## Security Fixes Summary
+## Security Fixes Implemented
 
-### 1. SHA-1 Signature Support Removed (HIGH → FIXED)
-**File**: `internal/auth/saml/saml.go`
-- Removed `AllowSHA1Signatures` config field
-- Removed SHA-1 import and signature verification code
-- Modified signature verification to reject SHA-1 explicitly with clear error message directing IdP upgrade to SHA-256+
-- Only SHA-256, SHA-384, and SHA-512 signature algorithms are now supported
+### 1. JWT Audience Validation (`internal/auth/jwt/jwt.go`)
 
-### 2. Refresh Token Expiration Reduced (HIGH → FIXED)
-**Files**: 
-- `internal/auth/jwt/jwt.go` - Added `MaxRefreshDuration` constant (48 hours)
-- `services/auth-service/handler/login.go` 
-- `services/auth-service/handler/register.go`
-- `services/auth-service/handler/http.go`
-- `internal/auth/jwt/jwt_test.go`
+**Changes:**
+- Added `DisableRequireAudienceValidation` field to `Config` struct as an escape hatch ONLY for testing
+- Modified `NewManager()` to enforce `RequireAudienceValidation = true` by default unless explicitly disabled
+- Added comprehensive security test `TestSecurity_AudienceValidationEnforced`
 
-**Change**: Reduced from 7 days to 48 hours maximum
+**Security Impact:** Audience validation is now mandatory by default, preventing token reuse across different services/applications (a common JWT security vulnerability).
 
-### 3. Token Revocation/Blacklist Mechanism Implemented (HIGH → FIXED)
-**Files**:
-- `services/auth-service/repository/session.go` - Added:
-  - `RevokeToken()` - Revokes a specific token
-  - `IsTokenRevoked()` - Blacklist check
-  - `RevokeUserTokens()` - Revokes all user tokens
-  
-- `services/auth-service/handler/logout.go` - Updated to use `RevokeUserTokens()`
-- `services/auth-service/handler/refresh_token.go` - Added explicit revocation check before token refresh
+### 2. Cookie Security Flags (`internal/middleware/cookie_auth.go`)
 
-### 4. Rate Limiting Applied to All Auth Endpoints (HIGH → FIXED)
-**File**: `services/auth-service/main.go`
+**Changes:**
+- Added `ProductionCookieSecurity()` function that enforces `Secure=true`, `HttpOnly=true`, and `SameSite=Strict` for production
+- Added `AutoCookieSecurity()` function that automatically selects appropriate security settings based on environment (`ENV=production` or `GO_ENV=production`)
+- Added `EnvIsProduction()` helper to detect production environment
+- Updated package documentation with production deployment guidance
 
-| Endpoint | Rate Limit | Purpose |
-|----------|-----------|---------|
-| `/auth/login` | 5/5min | Prevent brute force |
-| `/auth/register` | 5/5min | Prevent account creation abuse |
-| `/auth/refresh` | 10/5min | Prevent token abuse |
-| `/auth/logout` | 10/5min | Prevent abuse |
-| `/auth/oidc/` | 10/5min | Prevent OAuth abuse |
-| `/auth/saml/acs` | 10/5min | Prevent SAML abuse |
-| `/auth/me` | 60/5min | General endpoint |
+**Security Impact:** 
+- Production deployments now automatically use secure cookie settings (HTTPS-only, JavaScript-inaccessible, strict CSRF protection)
+- Development environments can still use relaxed settings for local testing
+
+### 3. Tests Added
+
+- `internal/auth/jwt/jwt_test.go`: Added `TestSecurity_AudienceValidationEnforced` test suite
+- `internal/middleware/cookie_auth_test.go`: Created new test file with 8 test cases covering all cookie security functions
 
 ### Test Results
-All tests pass:
 ```
-ok  	github.com/openprint/openprint/internal/auth/jwt	0.019s
-ok  	github.com/openprint/openprint/internal/auth/saml	0.006s
-ok  	github.com/openprint/openprint/services/auth-service/repository	0.352s
-...
+ok  github.com/openprint/openprint/internal/auth/jwt
+ok  github.com/openprint/openprint/internal/middleware
 ```
 
-Build successful with `go build ./...`
+All tests pass successfully.

@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/registry-service/repository"
 )
@@ -636,6 +638,402 @@ func printerToResponse(printer *repository.Printer) map[string]interface{} {
 		"agent_id":   printer.AgentID,
 		"status":     printer.Status,
 		"created_at": printer.CreatedAt.Format(time.RFC3339),
+	}
+}
+
+// AgentStatusUpdate represents a real-time agent status update sent over WebSocket.
+type AgentStatusUpdate struct {
+	AgentID        string                 `json:"agent_id"`
+	Name           string                 `json:"name"`
+	Status         string                 `json:"status"`
+	LastHeartbeat  time.Time              `json:"last_heartbeat"`
+	Version        string                 `json:"version"`
+	OS             string                 `json:"os"`
+	Hostname       string                 `json:"hostname"`
+	Architecture   string                 `json:"architecture"`
+	OnlinePrinters int                    `json:"online_printers"`
+	Timestamp      time.Time              `json:"timestamp"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// WebSocketAgentHub manages WebSocket connections for agent status updates.
+type WebSocketAgentHub struct {
+	clients    map[string][]*AgentWSConnection
+	broadcast  chan AgentStatusUpdate
+	register   chan *AgentWSConnection
+	unregister chan *AgentWSConnection
+	mu         sync.RWMutex
+}
+
+// AgentWSConnection represents a WebSocket connection for agent status.
+type AgentWSConnection struct {
+	AgentID      string
+	UserID       string
+	Organization string
+	Conn         *websocket.Conn
+	Send         chan AgentStatusUpdate
+	Hub          *WebSocketAgentHub
+	mu           sync.Mutex
+}
+
+// NewWebSocketAgentHub creates a new WebSocket hub for agent updates.
+func NewWebSocketAgentHub() *WebSocketAgentHub {
+	hub := &WebSocketAgentHub{
+		clients:    make(map[string][]*AgentWSConnection),
+		broadcast:  make(chan AgentStatusUpdate, 256),
+		register:   make(chan *AgentWSConnection),
+		unregister: make(chan *AgentWSConnection),
+	}
+	go hub.run()
+	return hub
+}
+
+// run processes hub events.
+func (h *WebSocketAgentHub) run() {
+	for {
+		select {
+		case client := <-h.register:
+			h.mu.Lock()
+			if h.clients[client.UserID] == nil {
+				h.clients[client.UserID] = []*AgentWSConnection{client}
+			} else {
+				h.clients[client.UserID] = append(h.clients[client.UserID], client)
+			}
+			h.mu.Unlock()
+
+		case client := <-h.unregister:
+			h.mu.Lock()
+			clients := h.clients[client.UserID]
+			for i, c := range clients {
+				if c == client {
+					h.clients[client.UserID] = append(clients[:i], clients[i+1:]...)
+					break
+				}
+			}
+			if len(h.clients[client.UserID]) == 0 {
+				delete(h.clients, client.UserID)
+			}
+			h.mu.Unlock()
+			close(client.Send)
+
+		case update := <-h.broadcast:
+			h.mu.RLock()
+			// Broadcast to all interested clients
+			for _, clients := range h.clients {
+				for _, client := range clients {
+					select {
+					case client.Send <- update:
+					default:
+						// Client channel full, skip
+					}
+				}
+			}
+			h.mu.RUnlock()
+		}
+	}
+}
+
+// BroadcastToUser sends an update to all connections for a specific user.
+func (h *WebSocketAgentHub) BroadcastToUser(userID string, update AgentStatusUpdate) {
+	h.mu.RLock()
+	clients := h.clients[userID]
+	h.mu.RUnlock()
+
+	for _, client := range clients {
+		select {
+		case client.Send <- update:
+		default:
+		}
+	}
+}
+
+// BroadcastToOrganization sends an update to all connections in an organization.
+func (h *WebSocketAgentHub) BroadcastToOrganization(orgID string, update AgentStatusUpdate) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	for _, clients := range h.clients {
+		for _, client := range clients {
+			if client.Organization == orgID {
+				select {
+				case client.Send <- update:
+				default:
+				}
+			}
+		}
+	}
+}
+
+// GetConnectionCount returns the number of active connections.
+func (h *WebSocketAgentHub) GetConnectionCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	count := 0
+	for _, clients := range h.clients {
+		count += len(clients)
+	}
+	return count
+}
+
+// AgentWebSocketHandler handles WebSocket connections for real-time agent status.
+func (h *Handler) AgentWebSocketHandler(hub *WebSocketAgentHub) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Upgrade to WebSocket
+		upgrader := websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+			CheckOrigin: func(r *http.Request) bool {
+				// In production, validate origin properly
+				return true
+			},
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			http.Error(w, "Failed to upgrade to WebSocket", http.StatusBadRequest)
+			return
+		}
+
+		// Extract user info from context (set by auth middleware)
+		userID := ""
+		if userIDValue := r.Context().Value("user_id"); userIDValue != nil {
+			if uid, ok := userIDValue.(string); ok {
+				userID = uid
+			}
+		}
+
+		orgID := ""
+		if orgIDValue := r.Context().Value("org_id"); orgIDValue != nil {
+			if oid, ok := orgIDValue.(string); ok {
+				orgID = oid
+			}
+		}
+
+		// Create connection
+		client := &AgentWSConnection{
+			Conn:         conn,
+			Send:         make(chan AgentStatusUpdate, 256),
+			Hub:          hub,
+			UserID:       userID,
+			Organization: orgID,
+		}
+
+		// Register client
+		hub.register <- client
+
+		// Start goroutines
+		go client.writePump()
+		go client.readPump()
+	}
+}
+
+// readPump reads messages from the WebSocket connection.
+func (c *AgentWSConnection) readPump() {
+	defer func() {
+		c.Hub.unregister <- c
+		c.Conn.Close()
+	}()
+
+	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	c.Conn.SetPongHandler(func(string) error {
+		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
+	for {
+		_, message, err := c.Conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				// Log error
+			}
+			break
+		}
+
+		// Handle incoming message
+		c.handleMessage(message)
+	}
+}
+
+// writePump writes messages to the WebSocket connection.
+func (c *AgentWSConnection) writePump() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer func() {
+		ticker.Stop()
+		c.Conn.Close()
+	}()
+
+	for {
+		select {
+		case update, ok := <-c.Send:
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if !ok {
+				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			c.mu.Lock()
+			err := c.Conn.WriteJSON(update)
+			c.mu.Unlock()
+
+			if err != nil {
+				return
+			}
+
+		case <-ticker.C:
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+
+// handleMessage processes incoming messages from the client.
+func (c *AgentWSConnection) handleMessage(data []byte) {
+	var msg map[string]interface{}
+	if err := json.Unmarshal(data, &msg); err != nil {
+		return
+	}
+
+	msgType, _ := msg["type"].(string)
+
+	switch msgType {
+	case "subscribe_agent":
+		// Subscribe to updates for a specific agent
+		if agentID, ok := msg["agent_id"].(string); ok {
+			c.AgentID = agentID
+		}
+	case "subscribe_organization":
+		// Already filtered by organization in hub broadcast
+	case "ping":
+		// Respond with pong
+		c.Send <- AgentStatusUpdate{
+			Timestamp: time.Now(),
+		}
+	}
+}
+
+// BroadcastAgentStatus broadcasts an agent status update.
+func (h *Handler) BroadcastAgentStatus(hub *WebSocketAgentHub, ctx context.Context, agentID string) error {
+	agent, err := h.agentRepo.FindByID(ctx, agentID)
+	if err != nil {
+		return err
+	}
+
+	// Get online printer count for this agent
+	printers, err := h.printerRepo.FindByAgent(ctx, agentID)
+	if err != nil {
+		printers = []*repository.Printer{}
+	}
+
+	onlinePrinters := 0
+	for _, p := range printers {
+		if p.Status == "online" {
+			onlinePrinters++
+		}
+	}
+
+	update := AgentStatusUpdate{
+		AgentID:        agent.ID,
+		Name:           agent.Name,
+		Status:         agent.Status,
+		LastHeartbeat:  agent.LastHeartbeat,
+		Version:        agent.Version,
+		OS:             agent.OS,
+		Hostname:       agent.Hostname,
+		Architecture:   agent.Architecture,
+		OnlinePrinters: onlinePrinters,
+		Timestamp:      time.Now(),
+	}
+
+	// Broadcast to organization members
+	if agent.OrganizationID != "" {
+		hub.BroadcastToOrganization(agent.OrganizationID, update)
+	}
+
+	return nil
+}
+
+// BroadcastAllAgents broadcasts status for all agents.
+func (h *Handler) BroadcastAllAgents(hub *WebSocketAgentHub, ctx context.Context) error {
+	agents, _, err := h.agentRepo.List(ctx, 1000, 0)
+	if err != nil {
+		return err
+	}
+
+	for _, agent := range agents {
+		if err := h.BroadcastAgentStatus(hub, ctx, agent.ID); err != nil {
+			// Log error but continue with other agents
+			continue
+		}
+	}
+
+	return nil
+}
+
+// AgentEventsHandler provides SSE endpoint for agent status changes.
+func (h *Handler) AgentEventsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "SSE not supported", http.StatusInternalServerError)
+		return
+	}
+
+	// Send initial connection message
+	fmt.Fprintf(w, "event: connected\ndata: {\"timestamp\":\"%s\"}\n\n", time.Now().Format(time.RFC3339))
+	flusher.Flush()
+
+	// Keep connection alive and send updates
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	// Get agent list to track changes
+	lastStatuses := make(map[string]string)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			// Send keepalive
+			fmt.Fprintf(w, ": keepalive\n\n")
+			flusher.Flush()
+
+			// Check for status changes
+			agents, _, err := h.agentRepo.List(ctx, 1000, 0)
+			if err != nil {
+				continue
+			}
+
+			for _, agent := range agents {
+				lastStatus := lastStatuses[agent.ID]
+				if lastStatus != agent.Status {
+					// Status changed, send event
+					update := AgentStatusUpdate{
+						AgentID:       agent.ID,
+						Name:          agent.Name,
+						Status:        agent.Status,
+						LastHeartbeat: agent.LastHeartbeat,
+						Timestamp:     time.Now(),
+					}
+
+					data, _ := json.Marshal(update)
+					fmt.Fprintf(w, "event: agent_status_changed\ndata: %s\n\n", string(data))
+					flusher.Flush()
+
+					lastStatuses[agent.ID] = agent.Status
+				}
+			}
+		}
 	}
 }
 

@@ -677,10 +677,11 @@ func splitToken(token string) []string {
 func TestManager_ExpiredToken(t *testing.T) {
 	// Create a manager with very short token duration
 	cfg := &Config{
-		SecretKey:       "this-is-a-secure-secret-key-32-chars-long",
-		AccessDuration:  1 * time.Millisecond,
-		RefreshDuration: 7 * 24 * time.Hour,
-		Issuer:          "openprint.cloud",
+		SecretKey:                     "this-is-a-secure-secret-key-32-chars-long",
+		AccessDuration:                1 * time.Millisecond,
+		RefreshDuration:               7 * 24 * time.Hour,
+		Issuer:                        "openprint.cloud",
+		DisableRequireAudienceValidation: true, // Only for testing
 	}
 	mgr, _ := NewManager(cfg)
 
@@ -887,6 +888,84 @@ func TestSecurity_SecretKeyValidation(t *testing.T) {
 		}
 		if !errors.Is(err, ErrSecretKeyTooShort) {
 			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
+	})
+}
+
+// TestSecurity_AudienceValidationEnforced tests that audience validation is enforced by default.
+func TestSecurity_AudienceValidationEnforced(t *testing.T) {
+	t.Run("NewManager enforces audience validation by default", func(t *testing.T) {
+		// Create a config without RequireAudienceValidation set
+		cfg := &Config{
+			SecretKey:       "this-is-a-secure-secret-key-32-chars-long",
+			AccessDuration:  15 * time.Minute,
+			RefreshDuration: 7 * 24 * time.Hour,
+			Issuer:          "openprint.cloud",
+		}
+		mgr, err := NewManager(cfg)
+
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+
+		// Audience validation should be enabled by default
+		if !mgr.config.RequireAudienceValidation {
+			t.Error("NewManager() should enforce audience validation by default")
+		}
+	})
+
+	t.Run("DisableRequireAudienceValidation allows skipping for testing", func(t *testing.T) {
+		// Create a config with audience validation explicitly disabled for testing
+		cfg := &Config{
+			SecretKey:                      "this-is-a-secure-secret-key-32-chars-long",
+			AccessDuration:                 15 * time.Minute,
+			RefreshDuration:                7 * 24 * time.Hour,
+			Issuer:                         "openprint.cloud",
+			DisableRequireAudienceValidation: true,
+		}
+		mgr, err := NewManager(cfg)
+
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+
+		// When explicitly disabled, RequireAudienceValidation should remain false
+		if mgr.config.RequireAudienceValidation {
+			t.Error("NewManager() should respect DisableRequireAudienceValidation flag")
+		}
+	})
+
+	t.Run("DefaultConfig always has audience validation enabled", func(t *testing.T) {
+		cfg, err := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+		if err != nil {
+			t.Fatalf("DefaultConfig() error = %v", err)
+		}
+
+		if !cfg.RequireAudienceValidation {
+			t.Error("DefaultConfig() should always enable audience validation")
+		}
+	})
+
+	t.Run("token without audience is rejected when validation is enabled", func(t *testing.T) {
+		cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+		mgr, _ := NewManager(cfg)
+
+		userID := "user-123"
+		email := "test@example.com"
+
+		// Generate a token (it will have audience from DefaultConfig)
+		token, err := mgr.GenerateToken(userID, email, "user", "", nil, AccessTokenType)
+		if err != nil {
+			t.Fatalf("Failed to generate token: %v", err)
+		}
+
+		// The token should validate successfully with audience
+		claims, err := mgr.ValidateToken(token)
+		if err != nil {
+			t.Errorf("Valid token with audience should pass validation, got error: %v", err)
+		}
+		if claims == nil {
+			t.Fatal("ValidateToken() returned nil claims for valid token")
 		}
 	})
 }

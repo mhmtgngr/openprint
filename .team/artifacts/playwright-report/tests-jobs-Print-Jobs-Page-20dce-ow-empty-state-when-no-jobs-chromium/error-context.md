@@ -17,10 +17,12 @@
           - generic [ref=e23]: Email Address
           - textbox "Email Address" [ref=e24]:
             - /placeholder: you@example.com
+            - text: test@example.com
         - generic [ref=e25]:
           - generic [ref=e26]: Password
-          - textbox "Password" [ref=e27]:
+          - textbox "Password" [active] [ref=e27]:
             - /placeholder: ••••••••
+            - text: TestPassword123!
         - button "Sign In" [ref=e28] [cursor=pointer]
       - button "Don't have an account? Sign up" [ref=e30] [cursor=pointer]
     - paragraph [ref=e31]: By continuing, you agree to our Terms of Service and Privacy Policy.

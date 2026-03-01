@@ -1,50 +1,29 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e3]:
-  - complementary [ref=e4]:
-    - generic [ref=e5]:
-      - link "OpenPrint" [ref=e6] [cursor=pointer]:
-        - /url: /dashboard
-        - img [ref=e8]
-        - generic [ref=e10]: OpenPrint
-      - navigation [ref=e11]:
-        - link "Dashboard" [ref=e12] [cursor=pointer]:
-          - /url: /dashboard
-          - img [ref=e13]
-          - generic [ref=e15]: Dashboard
-        - link "Devices" [ref=e16] [cursor=pointer]:
-          - /url: /printers
-          - img [ref=e17]
-          - generic [ref=e19]: Devices
-        - link "Jobs" [ref=e20] [cursor=pointer]:
-          - /url: /jobs
-          - img [ref=e21]
-          - generic [ref=e23]: Jobs
-        - link "Documents" [ref=e24] [cursor=pointer]:
-          - /url: /documents
-          - img [ref=e25]
-          - generic [ref=e27]: Documents
-        - link "Settings" [ref=e28] [cursor=pointer]:
-          - /url: /settings
-          - img [ref=e29]
-          - generic [ref=e32]: Settings
-      - generic [ref=e33]:
-        - generic [ref=e34]:
-          - generic [ref=e35]: T
-          - generic [ref=e36]:
-            - paragraph [ref=e37]: Test User
-            - paragraph [ref=e38]: test@example.com
-        - button "Logout" [ref=e39] [cursor=pointer]:
-          - img [ref=e40]
-          - generic [ref=e42]: Logout
-  - generic [ref=e43]:
-    - banner [ref=e44]:
-      - heading "Dashboard" [level=1] [ref=e46]
-    - main [ref=e47]:
-      - generic [ref=e49]:
-        - img [ref=e50]
-        - heading "Error loading agent" [level=2] [ref=e52]
-        - paragraph [ref=e53]: invalid or expired token
-        - button "Back to Agents" [ref=e54] [cursor=pointer]
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - img [ref=e8]
+    - generic [ref=e10]: OpenPrint
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - img [ref=e15]
+      - heading "OpenPrint Cloud" [level=1] [ref=e17]
+      - paragraph [ref=e18]: Print from anywhere, to any printer
+    - generic [ref=e19]:
+      - heading "Sign in to your account" [level=2] [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Email Address
+          - textbox "Email Address" [ref=e24]:
+            - /placeholder: you@example.com
+            - text: test@example.com
+        - generic [ref=e25]:
+          - generic [ref=e26]: Password
+          - textbox "Password" [active] [ref=e27]:
+            - /placeholder: ••••••••
+            - text: TestPassword123!
+        - button "Sign In" [ref=e28] [cursor=pointer]
+      - button "Don't have an account? Sign up" [ref=e30] [cursor=pointer]
+    - paragraph [ref=e31]: By continuing, you agree to our Terms of Service and Privacy Policy.
 ```
