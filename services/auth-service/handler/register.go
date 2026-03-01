@@ -94,6 +94,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Role:      "user",
+		IsActive:  true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
