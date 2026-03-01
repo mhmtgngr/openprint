@@ -1,77 +1,114 @@
 {
   "risk_level": "medium",
-  "security_score": 68,
+  "security_score": 72,
   "vulnerabilities": [
     {
       "id": "V-001",
       "severity": "high",
-      "file": "internal/middleware/cookie_auth.go",
-      "description": "Cookie authentication middleware appears incomplete - missing visibility on Secure, HttpOnly, SameSite flags and cookie expiration settings. Without these flags, session cookies are vulnerable to XSS and CSRF attacks.",
-      "fix": "Ensure all session cookies are set with Secure=true, HttpOnly=true, and SameSite=Strict or SameSite=Lax attributes."
+      "file": "internal/auth/saml/saml.go",
+      "description": "SHA-1 signature algorithm support for backward compatibility. SHA-1 is cryptographically broken due to collision vulnerabilities.",
+      "fix": "Remove SHA-1 support entirely or require explicit opt-in with security warning. Default AllowSHA1Signatures to false."
     },
     {
       "id": "V-002",
       "severity": "medium",
       "file": "internal/auth/jwt/jwt.go",
-      "description": "JWT validation may not explicitly verify the signing algorithm, potentially vulnerable to algorithm confusion attacks (none algorithm).",
-      "fix": "Explicitly verify the signing method equals jwt.SigningMethodHS256 in ValidateToken(). Reject tokens without expected algorithm."
+      "description": "7-day refresh token expiration is excessively long, increasing window of abuse if tokens are stolen.",
+      "fix": "Reduce refresh token duration to 24-48 hours maximum. Implement refresh token rotation."
     },
     {
       "id": "V-003",
       "severity": "medium",
-      "file": "internal/auth/saml/saml.go",
-      "description": "SAML implementation imports crypto/sha1 which is deprecated for cryptographic security due to collision vulnerabilities. SAML v2.0 requires SHA-1 for backward compatibility but should use SHA-256 where possible.",
-      "fix": "Prefer SHA-256 for signature verification. If SHA-1 is required for SAML compatibility, document the risk and implement additional validation layers."
+      "file": "internal/auth/oidc/oidc.go",
+      "description": "No visible rate limiting on OAuth/OIDC endpoints, enabling brute force attacks.",
+      "fix": "Implement rate limiting middleware on all authentication endpoints."
     },
     {
       "id": "V-004",
-      "severity": "low",
-      "file": "internal/auth/oidc/oidc.go",
-      "description": "State parameter storage in Redis may not have proper TTL expiration, potentially allowing replay attacks if states are not cleaned up.",
-      "fix": "Ensure Redis state entries have a short TTL (e.g., 10 minutes) and implement automatic cleanup."
+      "severity": "medium",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "No token revocation mechanism visible for compromised tokens.",
+      "fix": "Implement token blacklist/jti claim with Redis backend for revocation."
     },
     {
       "id": "V-005",
       "severity": "medium",
       "file": "internal/middleware/cookie_auth.go",
-      "description": "Code snippet is truncated - unable to verify proper token validation, error handling, and context population. Incomplete authentication code is a critical security risk.",
-      "fix": "Review and provide complete authentication middleware implementation for security audit."
+      "description": "SameSite cookie attribute not enforced to Strict mode for CSRF protection.",
+      "fix": "Default to SameSiteStrict mode in production for maximum CSRF protection."
+    },
+    {
+      "id": "V-006",
+      "severity": "low",
+      "file": "internal/auth/password/password.go",
+      "description": "Password hashing parameters are OWASP compliant but no pepper implementation.",
+      "fix": "Consider adding a secret pepper value stored separately from hashes for additional defense in depth."
+    },
+    {
+      "id": "V-007",
+      "severity": "low",
+      "file": "internal/auth/saml/saml.go",
+      "description": "XML parsing without explicit protection against XXE (XML External Entity) attacks.",
+      "fix": "Ensure xml.Decoder is configured with Entity resolution disabled."
     }
   ],
   "owasp_checks": [
     {
-      "category": "A01:2021-Broken Access Control",
-      "status": "fail",
-      "detail": "Cannot verify complete authorization checks in truncated cookie_auth.go"
-    },
-    {
-      "category": "A02:2021-Cryptographic Failures",
+      "category": "A01:2021 \u2013 Broken Access Control",
       "status": "partial",
-      "detail": "Argon2id for passwords is excellent. SHA-1 in SAML is a legacy concern. TLS enforcement not visible."
+      "detail": "JWT validation present but no token revocation mechanism found."
     },
     {
-      "category": "A03:2021-Injection",
+      "category": "A02:2021 \u2013 Cryptographic Failures",
+      "status": "fail",
+      "detail": "SHA-1 present in SAML for backward compatibility."
+    },
+    {
+      "category": "A03:2021 \u2013 Injection",
       "status": "pass",
-      "detail": "No SQL injection patterns visible. Uses parameterized approaches in code shown."
+      "detail": "Parameterized queries expected, ORM usage recommended."
     },
     {
-      "category": "A04:2021-Insecure Design",
+      "category": "A04:2021 \u2013 Insecure Design",
       "status": "partial",
-      "detail": "Good security patterns (Argon2id, constant-time compare), but incomplete code prevents full assessment."
+      "detail": "Long refresh token window (7 days) increases risk."
     },
     {
-      "category": "A05:2021-Security Misconfiguration",
-      "status": "fail",
-      "detail": "Cookie security flags not visible in truncated code."
+      "category": "A05:2021 \u2013 Security Misconfiguration",
+      "status": "pass",
+      "detail": "Secure cookie attributes properly implemented."
     },
     {
-      "category": "A07:2021-Identification and Authentication Failures",
+      "category": "A06:2021 \u2013 Vulnerable and Outdated Components",
+      "status": "pass",
+      "detail": "Using modern golang-jwt/jwt/v5 and Argon2id."
+    },
+    {
+      "category": "A07:2021 \u2013 Identification and Authentication Failures",
       "status": "partial",
-      "detail": "Good password hashing. JWT and OIDC appear solid but incomplete for verification."
+      "detail": "Strong password hashing (Argon2id) but no rate limiting visible."
+    },
+    {
+      "category": "A08:2021 \u2013 Software and Data Integrity Failures",
+      "status": "pass",
+      "detail": "HMAC state validation in OAuth flow."
+    },
+    {
+      "category": "A09:2021 \u2013 Security Logging and Monitoring",
+      "status": "partial",
+      "detail": "OpenTelemetry telemetry present but auth-specific logging not verified."
+    },
+    {
+      "category": "A10:2021 \u2013 Server-Side Request Forgery (SSRF)",
+      "status": "pass",
+      "detail": "No user-controlled URLs in outbound requests visible."
     }
   ],
   "verdict": "NEEDS_FIXES",
   "critical_fixes": [
-    "1. Add Secure, HttpOnly, SameSite flags to all session cookies\n2. Explicitly verify JWT signing algorithm to prevent 'none' attacks\n3. Complete the cookie_auth.go implementation for full security review\n4. Document and mitigate SHA-1 usage in SAML implementation"
+    "Remove SHA-1 signature support from SAML or default AllowSHA1Signatures to false",
+    "Reduce refresh token expiration from 7 days to maximum 48 hours",
+    "Implement token revocation/blacklist mechanism",
+    "Add rate limiting to all authentication endpoints"
   ]
 }

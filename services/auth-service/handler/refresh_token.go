@@ -8,7 +8,8 @@ import (
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
-// RefreshToken handles token refresh.
+// RefreshToken handles token refresh with explicit revocation checking.
+// It validates the refresh token, checks it hasn't been revoked, and issues a new access token.
 func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -30,14 +31,26 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate refresh token
+	// Validate refresh token JWT structure and signature
 	claims, err := h.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		respondError(w, apperrors.Wrap(err, "invalid refresh token", http.StatusUnauthorized))
 		return
 	}
 
-	// Verify session exists
+	// Check if token has been revoked (blacklist check)
+	// Even if the JWT is valid, if the session has been deleted, the token is revoked
+	revoked, err := h.sessionRepo.IsTokenRevoked(ctx, req.RefreshToken)
+	if err != nil {
+		respondError(w, apperrors.Wrap(err, "failed to verify token status", http.StatusInternalServerError))
+		return
+	}
+	if revoked {
+		respondError(w, apperrors.New("refresh token has been revoked", http.StatusUnauthorized))
+		return
+	}
+
+	// Verify session exists and matches the user
 	userID, err := h.sessionRepo.GetUserID(ctx, req.RefreshToken)
 	if err != nil || userID != claims.UserID {
 		respondError(w, apperrors.ErrUnauthorized)

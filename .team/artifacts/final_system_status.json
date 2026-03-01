@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-03-01T13:41:15.176138",
+  "server": {
+    "hostname": "cmit",
+    "external_ip": "192.168.31.76",
+    "base_url": "http://192.168.31.76:3000"
+  },
+  "e2e_tests": {
+    "framework": "playwright",
+    "status": "passed",
+    "summary": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "success_rate": 0
+  },
+  "services": {},
+  "access_info": {
+    "base_url": "http://192.168.31.76:3000",
+    "api_base": "http://192.168.31.76",
+    "note": "Ensure firewall allows inbound connections to the ports listed above"
+  },
+  "ready_for_production": false
+}

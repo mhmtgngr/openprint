@@ -1,239 +1,234 @@
 {
-  "project_name": "auth-service-enrollment-token-tests",
-  "summary": "Fix 4 failing tests in auth-service enrollment_token_test.go by ensuring database migrations run properly to create the enrollment_tokens table before tests execute",
+  "project_name": "OpenPrint Dashboard Build Validation",
+  "summary": "Validate and fix the frontend build process for the React + TypeScript + Vite dashboard. Ensure TypeScript compilation succeeds, Vite bundling works correctly, and production artifacts are generated in the dist/ directory.",
   "user_stories": [
     {
       "id": "US-001",
       "as_a": "developer",
-      "i_want": "test database migrations to run automatically before test execution",
-      "so_that": "all required tables exist when tests run and I get reliable test results",
+      "i_want": "the dashboard frontend to build successfully without errors",
+      "so_that": "the application can be deployed to production",
       "priority": "critical",
       "acceptance_criteria": [
-        "enrollment_tokens table is created before enrollment_token_test.go tests run",
-        "all migration files in migrations/ directory are executed during test setup",
-        "tests can be run with simple 'go test' command without manual database setup",
-        "test database is properly cleaned up after test completion"
+        "TypeScript compilation completes with no errors",
+        "Vite bundling generates production assets",
+        "Build artifacts exist in web/dashboard/dist/ directory",
+        "Generated files include index.html, CSS bundles, and JS bundles"
       ]
     },
     {
       "id": "US-002",
       "as_a": "developer",
-      "i_want": "testutil to support running all available migrations",
-      "so_that": "new migration files are automatically included in test runs",
+      "i_want": "type checking to pass before building",
+      "so_that": "type errors are caught early in the development cycle",
       "priority": "high",
       "acceptance_criteria": [
-        "testutil/migrate.go discovers and runs all .up.sql migration files",
-        "migrations run in correct order based on filename sequence",
-        "migration failures are reported with clear error messages"
+        "npm run type-check executes without errors",
+        "All TypeScript files compile successfully",
+        "No implicit any or missing type definition errors"
+      ]
+    },
+    {
+      "id": "US-003",
+      "as_a": "devops engineer",
+      "i_want": "reliable build output for containerization",
+      "so_that": "Docker images can be created consistently",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Build is deterministic and reproducible",
+        "dist/ directory contains all necessary static assets",
+        "Assets are optimized (minified, gzipped)"
       ]
     }
   ],
   "functional_requirements": [
     {
       "id": "FR-001",
-      "title": "Fix testutil migration execution",
-      "description": "internal/testutil/migrate.go must execute all migration files from the migrations directory, not just a hardcoded subset. The current implementation may only create the users table, missing the enrollment_tokens table created in 000006_create_enrollment_tokens_table.up.sql",
-      "service": "testutil"
+      "title": "TypeScript Compilation",
+      "description": "All TypeScript source files must compile without errors using the TypeScript compiler configured in tsconfig.json",
+      "service": "dashboard"
     },
     {
       "id": "FR-002",
-      "title": "Discover migration files dynamically",
-      "description": "testutil should scan the migrations directory for all .up.sql files and execute them in filename order to ensure complete database schema setup",
-      "service": "testutil"
+      "title": "Vite Production Build",
+      "description": "Vite must successfully bundle the React application for production, generating optimized static assets",
+      "service": "dashboard"
     },
     {
       "id": "FR-003",
-      "title": "Verify migration execution order",
-      "description": "Ensure migrations execute sequentially in filename order (000001 through 000006) to respect foreign key dependencies and table creation order",
-      "service": "testutil"
+      "title": "Asset Generation",
+      "description": "Build process must generate index.html, CSS bundles, and JavaScript bundles in the dist/ directory",
+      "service": "dashboard"
     },
     {
-      "id": "FR-M004",
-      "title": "Secure Print Release",
-      "description": "Implement PIN, badge, or mobile app authentication at printer before document release to prevent sensitive documents from being left unattended",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Essential for enterprise and healthcare markets - table stake for security-conscious customers"
+      "id": "FR-004",
+      "title": "Dependency Resolution",
+      "description": "All npm dependencies must be correctly installed and resolvable during the build process",
+      "service": "dashboard"
     },
     {
       "id": "FR-M005",
-      "title": "Print Quota & Cost Allocation",
-      "description": "User and departmental quotas with cost tracking, chargeback to cost centers, and budget enforcement",
+      "title": "AI-powered intelligent routing",
+      "description": "ML-based routing of print jobs to optimal devices based on availability, cost, and environmental impact",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Key differentiator for education and enterprise segments - enables cost recovery and accountability"
+      "competitive_advantage": "Significant differentiation in cloud-native print management"
     },
     {
       "id": "FR-M006",
-      "title": "Comprehensive Audit Logging",
-      "description": "Detailed logging of all print activities including user, document, printer, timestamp, page count, and outcome for compliance and forensics",
+      "title": "Mobile printing SDK",
+      "description": "Cross-platform mobile SDK and reference apps for iOS/Android",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Foundational for SOC2/ISO27001 compliance and enterprise sales"
+      "competitive_advantage": "Enables BYOD and remote work scenarios"
     },
     {
       "id": "FR-M007",
-      "title": "Sustainability Dashboard",
-      "description": "Track and report environmental impact including paper saved, trees preserved, CO2 reduction, and waste reduction metrics",
+      "title": "Follow-me printing",
+      "description": "Secure print release at any device via NFC, QR code, or authentication",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Appeals to ESG-focused organizations and helps with green certifications"
+      "competitive_advantage": "Essential enterprise feature, improves security and convenience"
     },
     {
       "id": "FR-M008",
-      "title": "Follow-Me Printing",
-      "description": "Users print to a virtual queue and release jobs at any available printer via authentication, improving flexibility and reducing waste",
+      "title": "Cost analytics dashboard",
+      "description": "Per-user, per-department, per-device cost tracking with budget alerts",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Must-have for modern mobile workforce and hot-desking environments"
+      "competitive_advantage": "Critical for enterprise procurement and cost management"
     },
     {
       "id": "FR-M009",
-      "title": "Mobile Print Applications",
-      "description": "Native iOS and Android apps for printing from mobile devices with camera scan and document upload capabilities",
+      "title": "Advanced IoT monitoring",
+      "description": "Predictive maintenance alerts, supplies tracking, device health scoring",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "PaperCut's Mobility Print has 100M+ downloads - huge market opportunity"
+      "competitive_advantage": "Reduces downtime and operational costs"
     },
     {
       "id": "FR-M010",
-      "title": "SOC2/ISO27001 Compliance Framework",
-      "description": "Implement security controls, audit trails, access management, and documentation required for enterprise compliance certifications",
+      "title": "Multi-tenant SaaS mode",
+      "description": "Organization isolation, branded portals, hierarchical admin",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Required for enterprise and government sales - significant revenue impact"
-    },
-    {
-      "id": "FR-M011",
-      "title": "Advanced Reporting & Analytics",
-      "description": "Customizable reports on usage, costs, environmental impact, user behavior, and trends with export capabilities and scheduled delivery",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Enables data-driven decision making and is a key evaluation criteria for buyers"
+      "competitive_advantage": "Enables scalable SaaS business model"
     }
   ],
   "non_functional_requirements": [
     {
       "id": "NFR-001",
-      "category": "reliability",
-      "requirement": "Tests must pass consistently on fresh database instances",
-      "metric": "100% pass rate on clean test database"
+      "category": "performance",
+      "requirement": "Build time should complete in under 30 seconds for production builds",
+      "metric": "< 30 seconds"
     },
     {
       "id": "NFR-002",
-      "category": "maintainability",
-      "requirement": "New migration files should be automatically picked up without code changes",
-      "metric": "zero code changes required for new migrations"
+      "category": "performance",
+      "requirement": "Bundle size should be optimized for web delivery",
+      "metric": "JS bundle < 1MB, CSS bundle < 100KB"
     },
     {
       "id": "NFR-003",
-      "category": "performance",
-      "requirement": "Test database setup should complete quickly",
-      "metric": "migration execution under 5 seconds"
+      "category": "quality",
+      "requirement": "Zero TypeScript compilation errors",
+      "metric": "0 errors"
+    },
+    {
+      "id": "NFR-004",
+      "category": "security",
+      "requirement": "No vulnerable dependencies in package.json",
+      "metric": "0 high/critical vulnerabilities"
     }
   ],
   "api_endpoints": [],
-  "database_changes": [
-    {
-      "table": "enrollment_tokens",
-      "action": "create",
-      "columns": [
-        "id uuid",
-        "token uuid",
-        "user_id uuid",
-        "expires_at timestamp",
-        "created_at timestamp",
-        "used boolean"
-      ]
-    }
-  ],
+  "database_changes": [],
   "affected_services": [
-    "auth-service",
-    "testutil"
+    "dashboard"
   ],
   "risks": [
     {
-      "risk": "Breaking existing tests by changing migration behavior",
-      "mitigation": "Run full test suite after changes to verify no regressions"
+      "risk": "TypeScript version mismatch between dependencies causing compilation failures",
+      "mitigation": "Use consistent TypeScript versions across all packages"
     },
     {
-      "risk": "Migration execution order dependencies causing failures",
-      "mitigation": "Ensure filename-based ordering is preserved and test with all migrations"
+      "risk": "Vite configuration conflicts with TypeScript paths",
+      "mitigation": "Ensure tsconfig.json paths match Vite resolve.alias configuration"
     },
     {
-      "risk": "Test database cleanup issues between test runs",
-      "mitigation": "Implement proper teardown and transaction rollback in test fixtures"
+      "risk": "Missing peer dependencies causing runtime errors after build",
+      "mitigation": "Verify all dependencies are installed before building"
     }
   ],
   "implementation_phases": [
     {
       "phase": 1,
-      "name": "Diagnosis",
+      "name": "Validate Dependencies",
       "tasks": [
-        "Read internal/testutil/migrate.go to understand current migration logic",
-        "Read 000006_create_enrollment_tokens_table.up.sql to verify table definition",
-        "Read enrollment_token_test.go to understand test requirements",
-        "List all migration files to confirm complete set"
+        "Navigate to web/dashboard directory",
+        "Run npm install to ensure all dependencies are present",
+        "Verify node_modules is complete"
       ]
     },
     {
       "phase": 2,
-      "name": "Fix Implementation",
+      "name": "TypeScript Validation",
       "tasks": [
-        "Modify internal/testutil/migrate.go to execute all migration files",
-        "Add dynamic migration file discovery if not present",
-        "Ensure migrations execute in filename order"
+        "Run npm run type-check",
+        "Review and fix any TypeScript errors",
+        "Ensure all type definitions are present"
       ]
     },
     {
       "phase": 3,
-      "name": "Verification",
+      "name": "Production Build",
       "tasks": [
-        "Run failing tests: go test -v ./services/auth-service/repository/...",
-        "Verify all 4 tests now pass",
-        "Run full auth-service test suite to ensure no regressions"
+        "Run npm run build",
+        "Verify build completes without errors",
+        "Check that dist/ directory contains expected files"
       ]
     },
     {
       "phase": 4,
-      "name": "Documentation",
+      "name": "Build Artifact Verification",
       "tasks": [
-        "Update CLAUDE.md with test database setup notes if needed",
-        "Comment the migration logic in testutil for future maintainers"
+        "Verify index.html exists in dist/",
+        "Verify CSS and JS bundles are generated",
+        "Confirm bundle sizes are acceptable",
+        "Validate assets are properly referenced"
       ]
     }
   ],
   "market_context": {
     "competitors_analyzed": [
+      "Fuji Xerox",
+      "Ricoh",
+      "HP",
+      "Konica Minolta",
       "PaperCut",
-      "Printix",
-      "PrinterLogic",
-      "Print Manager Plus",
-      "YSoft SafeQ",
-      "Canon uniFLOW"
+      "Google Cloud Print"
     ],
     "key_gaps": [
-      "Secure print release with authentication at device (PIN/badge/card) to prevent document theft and ensure confidentiality",
-      "Print quota management with departmental cost allocation and chargeback for accurate cost tracking and budget control",
-      "Comprehensive print job auditing and reporting for compliance, cost analysis, and usage optimization",
-      "Mobile printing application for iOS/Android to enable bring-your-own-device printing",
-      "Sustainability and environmental impact reporting (paper saved, trees saved, CO2 reduction)"
+      "AI-powered print optimization and predictive maintenance",
+      "Native mobile applications for iOS and Android",
+      "Follow-me printing with secure release",
+      "Environmental impact and carbon footprint tracking",
+      "Advanced cost allocation and chargeback"
     ],
     "trends": [
-      "Serverless Print Management",
-      "AI-powered Print Optimization",
-      "Sustainability Reporting",
-      "Zero Trust Print Security",
-      "Hybrid Cloud Deployment"
+      "AI/ML integration",
+      "Mobile-first printing",
+      "Sustainability tracking",
+      "IoT device integration",
+      "Zero-trust security"
     ],
     "unique_selling_points": [
-      "Modern microservices architecture with horizontal scalability, unlike legacy competitors",
-      "Open-source core enabling transparency and community contributions",
-      "Cloud-native design supporting hybrid and multi-cloud deployments from day one",
-      "Extensive identity provider support (OIDC/SAML) for enterprise integration",
-      "Go-based implementation offering better performance and resource efficiency than Java-based competitors",
-      "Built-in observability with OpenTelemetry tracing for operations excellence",
-      "Agent-based architecture supporting heterogeneous device ecosystems without vendor lock-in"
+      "Cloud-native microservices architecture with container deployment",
+      "Open source with no vendor lock-in",
+      "Modern tech stack (Go 1.24, React, TypeScript, Vite)",
+      "Pluggable storage backends (S3, MinIO, local)",
+      "Built-in OpenTelemetry observability",
+      "WebSocket-based real-time notifications",
+      "Comprehensive SSO support (OIDC, SAML, JWT)"
     ]
   }
 }

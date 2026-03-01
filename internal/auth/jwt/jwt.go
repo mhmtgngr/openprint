@@ -13,6 +13,8 @@ import (
 const (
 	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
 	MinSecretKeyLength = 32
+	// MaxRefreshDuration is the maximum allowed refresh token duration (48 hours for security).
+	MaxRefreshDuration = 48 * time.Hour
 )
 
 var (
@@ -66,7 +68,7 @@ func DefaultConfig(secretKey string) (*Config, error) {
 	return &Config{
 		SecretKey:       secretKey,
 		AccessDuration:  15 * time.Minute,
-		RefreshDuration: 7 * 24 * time.Hour, // 7 days
+		RefreshDuration: MaxRefreshDuration, // 48 hours - reduced from 7 days for security
 		Issuer:          "openprint.cloud",
 		AllowedAudiences: []string{"openprint.cloud", "api.openprint.cloud"},
 		RequireAudienceValidation: true,

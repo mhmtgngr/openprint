@@ -1,0 +1,100 @@
+SyntaxError: /home/cmit/openprint/frontend/e2e/tests/admin.spec.ts: Unexpected token, expected "," (171:53)
+
+  169 |
+  170 |     const policyList = page.locator('[data-testid="policy-list"]');
+> 171 |     const emptyState = page.getByText(/no policies/i });
+      |                                                      ^
+  172 |
+  173 |     const listVisible = await policyList.isVisible();
+  174 |     const emptyVisible = await emptyState.isVisible();
+
+   at e2e/tests/admin.spec.ts:171
+
+  169 |
+  170 |     const policyList = page.locator('[data-testid="policy-list"]');
+> 171 |     const emptyState = page.getByText(/no policies/i });
+      |                                                     ^
+  172 |
+  173 |     const listVisible = await policyList.isVisible();
+  174 |     const emptyVisible = await emptyState.isVisible();
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/auth.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Authentication', () => {
+    |      ^
+  6 |   let loginPage: LoginPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/auth.spec.ts:5:6
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/dashboard.spec.ts:5
+
+  3 | import { testUsers } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Dashboard', () => {
+    |      ^
+  6 |   let dashboardPage: DashboardPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/dashboard.spec.ts:5:6
+SyntaxError: /home/cmit/openprint/frontend/e2e/tests/jobs.spec.ts: Unexpected token, expected "," (239:53)
+
+  237 |       await retryButton.click();
+  238 |
+> 239 |       await expect(page.getByText(/retrying|queued/i })).toBeVisible();
+      |                                                      ^
+  240 |     }
+  241 |   });
+  242 | });
+
+   at e2e/tests/jobs.spec.ts:239
+
+  237 |       await retryButton.click();
+  238 |
+> 239 |       await expect(page.getByText(/retrying|queued/i })).toBeVisible();
+      |                                                     ^
+  240 |     }
+  241 |   });
+  242 | });
+Error: Playwright Test did not expect test.describe() to be called here.
+Most common reasons include:
+- You are calling test.describe() in a configuration file.
+- You are calling test.describe() in a file that is imported by the configuration file.
+- You have two different versions of @playwright/test. This usually happens
+  when one of the dependencies in your package.json depends on @playwright/test.
+
+   at e2e/tests/printers.spec.ts:5
+
+  3 | import { testUsers, testPrinters } from '../helpers/test-data';
+  4 |
+> 5 | test.describe('Printers & Devices', () => {
+    |      ^
+  6 |   let printersPage: PrintersPage;
+  7 |
+  8 |   test.beforeEach(async ({ page }) => {
+    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
+    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
+    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
+    at /home/cmit/openprint/frontend/e2e/tests/printers.spec.ts:5:6
+Error: No tests found
+

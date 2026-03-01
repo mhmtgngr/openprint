@@ -143,7 +143,13 @@
       "category": "project",
       "result": "done",
       "timestamp": "2026-02-28T15:45:15.577354"
+    },
+    {
+      "description": "Fix Failing Enrollment Token Tests: Fix 4 failing tests in services/auth-service/repository/enrollment_token_test.go. Tests fail with 'relation enrollment_tokens does not exist (SQLSTATE 42P01)'. The migration file 000006_create_enrollment_tokens_table.up.sql exists but tests aren't running migrations properly. Fix internal/testutil/migrate.go to ensure enrollment_tokens table is created before tests run. Verify testutil setup calls all migration files, not just users table. Run tests with full migration suite to confirm fix: go test -v ./services/auth-service/repository/...",
+      "category": "project",
+      "result": "done",
+      "timestamp": "2026-03-01T13:41:15.406494"
     }
   ],
-  "current_round": 24
+  "current_round": 25
 }

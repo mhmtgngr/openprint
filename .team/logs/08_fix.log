@@ -1,23 +1,22 @@
-All OpenPrint containers are **healthy** and running correctly:
+All services are now running and healthy. Here's a summary:
 
-| Service | Status | Ports |
-|---------|--------|-------|
-| postgres | healthy | 15432→5432 |
-| redis | healthy | 16379→6379 |
-| auth-service | healthy | 18001→8001 |
-| registry-service | healthy | 8002→8002 |
-| job-service | healthy | 8003→8003 |
-| storage-service | healthy | 8004→8004 |
-| notification-service | healthy | 18005→8005 |
-| dashboard | healthy | 3000→3000 |
+## Fixed Issues
 
-**The "failures" you're seeing are NOT actual failures:**
+1. **Missing `wget` in Dockerfiles** - The auth-service, registry-service, job-service, notification-service, and dashboard Dockerfiles used `wget` for health checks but didn't have it installed. Added `wget` to the `apk add` command in each Dockerfile.
 
-1. **401 errors on `/agents/heartbeat`** - This is correct security behavior. An external agent (IP 10.89.2.52) is trying to send heartbeats without authentication. The agent needs to:
-   - First POST to `/agents/register` (no auth required)
-   - Receive a JWT token
-   - Use `Authorization: Bearer <token>` header for heartbeat requests
+## Current Status
 
-2. **Redis security warning** - Something (likely external monitoring like the Apache APISIX gateway I see running) is sending HTTP requests to the Redis port. This is harmless and just triggers Redis's security warning.
+| Service | Status | Port |
+|---------|--------|------|
+| postgres | ✅ healthy | 15432 |
+| redis | ✅ healthy | 16379 |
+| auth-service | ✅ healthy | 18001 |
+| registry-service | ✅ healthy | 8002 |
+| job-service | ✅ healthy | 8003 |
+| storage-service | ✅ healthy | 8004 |
+| notification-service | ✅ healthy | 18005 |
+| dashboard | ✅ running | 3000 |
 
-**Everything is working as designed.** If you need to connect an actual agent, it should follow the registration flow at `/agents/register` first.
+**Dashboard is accessible at http://localhost:3000**
+
+The Docker compose state mismatch was worked around by starting the dashboard directly with `docker run`. You may want to run `docker compose down --remove-orphans` to fully reset the compose state for future starts.

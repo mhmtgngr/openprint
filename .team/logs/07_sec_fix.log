@@ -1,31 +1,54 @@
-All security fixes have been implemented. Here's a summary:
+All security vulnerabilities have been fixed. Here's a summary of the changes:
 
-## Security Fixes Applied
+## Security Fixes Summary
 
-### 1. Cookie Security (`internal/middleware/cookie_auth.go`)
-- **Added `CookieSecurityConfig` struct** with Secure, HttpOnly, SameSite, Domain, and Path settings
-- **Added `SetSessionCookie()` helper** - Sets cookies with all security flags
-- **Added `ClearSessionCookie()` helper** - Properly invalidates session cookies
-- **Added `DefaultCookieSecurity()`** - Production-ready settings (Secure=true, HttpOnly=true, SameSite=Lax)
-- **Added `DevelopmentCookieSecurity()`** - For local dev testing (Secure=false)
-- **Added comprehensive security documentation** explaining XSS/CSRF protection
+### 1. SHA-1 Signature Support Removed (HIGH → FIXED)
+**File**: `internal/auth/saml/saml.go`
+- Removed `AllowSHA1Signatures` config field
+- Removed SHA-1 import and signature verification code
+- Modified signature verification to reject SHA-1 explicitly with clear error message directing IdP upgrade to SHA-256+
+- Only SHA-256, SHA-384, and SHA-512 signature algorithms are now supported
 
-### 2. SAML SHA-1 Deprecation (`internal/auth/saml/saml.go`)
-- **Added `AllowSHA1Signatures` config field** (defaults to `false` - SHA-1 rejected)
-- **Added package-level security documentation** warning about SHA-1 vulnerabilities
-- **SHA-1 signatures now rejected by default** with clear error message
-- **Added SHA-384 and SHA-512 support** using `crypto/sha512`
-- **Algorithm preference order**: SHA-256 → SHA-384 → SHA-512 → SHA-1 (if allowed)
+### 2. Refresh Token Expiration Reduced (HIGH → FIXED)
+**Files**: 
+- `internal/auth/jwt/jwt.go` - Added `MaxRefreshDuration` constant (48 hours)
+- `services/auth-service/handler/login.go` 
+- `services/auth-service/handler/register.go`
+- `services/auth-service/handler/http.go`
+- `internal/auth/jwt/jwt_test.go`
 
-### 3. JWT Algorithm Verification (`internal/shared/middleware/agent_auth.go`)
-- **Fixed critical logic bug** in `validateAgentToken()` - signing method validation was incorrect
-- **Now explicitly rejects "none" algorithm** and other unexpected methods
-- **Uses `jwt.WithValidMethods([]string{"RS256", "HS256"})`** for enforcement
-- **Proper switch statement** for RSA vs HMAC validation with clear error messages
+**Change**: Reduced from 7 days to 48 hours maximum
 
-### 4. JWT Security Verification (`internal/auth/jwt/jwt.go`)
-- **Already secure** - verified explicit signing method check on line 152-154
-- **Uses `jwt.WithValidMethods([]string{"HS256"})`** for "none" attack prevention
+### 3. Token Revocation/Blacklist Mechanism Implemented (HIGH → FIXED)
+**Files**:
+- `services/auth-service/repository/session.go` - Added:
+  - `RevokeToken()` - Revokes a specific token
+  - `IsTokenRevoked()` - Blacklist check
+  - `RevokeUserTokens()` - Revokes all user tokens
+  
+- `services/auth-service/handler/logout.go` - Updated to use `RevokeUserTokens()`
+- `services/auth-service/handler/refresh_token.go` - Added explicit revocation check before token refresh
 
-## Test Results
-All tests pass: `go test ./...` → ✅ OK
+### 4. Rate Limiting Applied to All Auth Endpoints (HIGH → FIXED)
+**File**: `services/auth-service/main.go`
+
+| Endpoint | Rate Limit | Purpose |
+|----------|-----------|---------|
+| `/auth/login` | 5/5min | Prevent brute force |
+| `/auth/register` | 5/5min | Prevent account creation abuse |
+| `/auth/refresh` | 10/5min | Prevent token abuse |
+| `/auth/logout` | 10/5min | Prevent abuse |
+| `/auth/oidc/` | 10/5min | Prevent OAuth abuse |
+| `/auth/saml/acs` | 10/5min | Prevent SAML abuse |
+| `/auth/me` | 60/5min | General endpoint |
+
+### Test Results
+All tests pass:
+```
+ok  	github.com/openprint/openprint/internal/auth/jwt	0.019s
+ok  	github.com/openprint/openprint/internal/auth/saml	0.006s
+ok  	github.com/openprint/openprint/services/auth-service/repository	0.352s
+...
+```
+
+Build successful with `go build ./...`

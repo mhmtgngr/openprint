@@ -1,4 +1,0 @@
-services/api-gateway/main.go:21:2: no required module provides package github.com/openprint/openprint/services/api-gateway/handler; to add it:
-	go get github.com/openprint/openprint/services/api-gateway/handler
-services/job-service/handlers/secure_release_repository.go:13:2: no required module provides package github.com/jackc/pgx/v5/types; to add it:
-	go get github.com/jackc/pgx/v5/types

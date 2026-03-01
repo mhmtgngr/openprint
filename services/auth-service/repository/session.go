@@ -207,6 +207,31 @@ func (r *SessionRepository) RevokeAll(ctx context.Context) error {
 	return nil
 }
 
+// RevokeToken revokes a specific refresh token by removing it from the session store.
+// This is the primary method for token revocation - when a token is deleted from
+// the session store, it cannot be used to refresh access tokens even if the JWT
+// itself hasn't expired yet.
+func (r *SessionRepository) RevokeToken(ctx context.Context, token string) error {
+	return r.Delete(ctx, token)
+}
+
+// IsTokenRevoked checks if a token has been revoked (deleted from session store).
+// This provides a blacklist mechanism for tokens that are still within their
+// validity period but have been explicitly revoked.
+func (r *SessionRepository) IsTokenRevoked(ctx context.Context, token string) (bool, error) {
+	exists, err := r.Exists(ctx, token)
+	if err != nil {
+		return false, fmt.Errorf("check token revocation status: %w", err)
+	}
+	// Token is revoked if it does NOT exist in the session store
+	return !exists, nil
+}
+
+// RevokeUserTokens revokes all tokens for a specific user.
+func (r *SessionRepository) RevokeUserTokens(ctx context.Context, userID string) error {
+	return r.DeleteByUserID(ctx, userID)
+}
+
 // CountActiveSessions returns the number of active sessions for a user.
 func (r *SessionRepository) CountActiveSessions(ctx context.Context, userID string) (int, error) {
 	tokens, err := r.ListUserSessions(ctx, userID)

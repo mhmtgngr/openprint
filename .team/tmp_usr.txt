@@ -1,6 +1,32 @@
 AUTH CODE: 
 --- internal/middleware/cookie_auth.go ---
 // Package middleware provides HTTP middleware for cookie-based authentication.
+//
+// SECURITY CONSIDERATIONS FOR COOKIES:
+//
+// This package provides secure cookie helpers that enforce the following security attributes:
+//
+// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
+//    interception on the network. Always use Secure=true in production.
+//
+// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
+//    protecting against XSS attacks that attempt to steal session tokens.
+//
+// 3. SameSite Attribute - Controls cross-site cookie behavior:
+//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
+//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
+//    - SameSiteNone: Allows cross-site requests; requires Secure=true
+//
+// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
+//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
+//
+// USAGE EXAMPLE:
+//
+//	security := middleware.DefaultCookieSecurity() // Use DevelopmentCookieSecurity() for local dev
+//	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
+//
+//	// On logout:
+//	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
 package middleware
 
 import (
@@ -8,6 +34,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/openprint/openprint/internal/auth/jwt"
 )
@@ -26,39 +53,12 @@ const (
 	TokenKey   contextKey = "token"
 )
 
-// CookieAuthConfig holds cookie authentication configuration.
-type CookieAuthConfig struct {
-	SecretKey  string
-	SkipPaths  []string
-	JWTManager *jwt.Manager
-}
-
-// CookieAuthMiddleware creates middleware that authenticates using httpOnly cookies.
-// This is an alternative to AuthMiddleware for production environments with cookie-based auth.
-func CookieAuthMiddleware(cfg CookieAuthConfig) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check if path should be skipped
-			for _, skipPath := range cfg.SkipPaths {
-				if strings.HasPrefix(r.URL.Path, skipPath) {
-					next.ServeHTTP(w, r)
-					return
-				}
-			}
-
-			// Try to get token from cookie first
-			sessionCookie, err := r.Cookie(SessionCookieName)
-			tokenString := ""
-
-			if err == nil {
-				tokenString = sessionCookie.Value
-			} else {
-				// Fall back to Authorization header
-				authHeader := r.Header.Get("Authorization")
-				if authHeader != "" {
-					tokenString = strings.TrimPrefix(authHeader, "Bearer ")
-				}
-			}
+// CookieSecurityConfig defines security attributes for session cookies.
+// These settings help prevent XSS and CSRF attacks.
+type CookieSecurityConfig struct {
+	// Secure ensures the cookie is only sent over HTTPS.
+	// Should always be true in production.
+	Secure bool
 --- internal/agent/types.go ---
 // Package agent provides shared types for Windows Print Agent communication.
 package agent
@@ -245,6 +245,16 @@ func TestDefaultHasher(t *testing.T) {
 --- internal/auth/saml/saml.go ---
 // Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
 // This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
+//
+// SECURITY NOTE - SHA-1 USAGE:
+// This package includes support for SHA-1 signature verification for backward compatibility
+// with legacy SAML identity providers. SHA-1 is cryptographically deprecated due to known
+// collision vulnerabilities.
+//
+// The package prefers SHA-256 for signature verification and will reject SHA-1 signatures
+// when AllowSHA1Signatures is set to false (recommended for production).
+//
+// For new deployments, ensure your IdP uses SHA-256 or stronger signature algorithms.
 package saml
 
 import (
@@ -254,6 +264,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
@@ -292,17 +303,6 @@ type Config struct {
 	Key *rsa.PrivateKey
 	// IdPCertificate is the identity provider certificate.
 	IdPCertificate *x509.Certificate
-	// IDPName is a friendly name for the identity provider.
-	IDPName string
-	// ACSURL is the Assertion Consumer Service URL.
-	ACSURL string
-	// SLOResponseURL is the Single Logout response URL.
-	SLOResponseURL string
-}
-
-// Manager handles SAML authentication operations.
-type Manager struct {
-	config    *Config
 --- internal/auth/saml/saml_test.go ---
 // Package saml provides tests for SAML 2.0 SSO integration.
 package saml

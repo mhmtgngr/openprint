@@ -24,8 +24,8 @@ func TestDefaultConfig(t *testing.T) {
 		if cfg.AccessDuration != 15*time.Minute {
 			t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
 		}
-		if cfg.RefreshDuration != 7*24*time.Hour {
-			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, 7*24*time.Hour)
+		if cfg.RefreshDuration != MaxRefreshDuration {
+			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, MaxRefreshDuration)
 		}
 		if cfg.Issuer != "openprint.cloud" {
 			t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)

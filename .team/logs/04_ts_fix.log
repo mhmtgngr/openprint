@@ -1,0 +1,5 @@
+TypeScript errors fixed. The issue was that `frontend/e2e/` was missing its `node_modules` dependencies. Running `npm install` resolved it.
+
+Both type checks now pass:
+- `web/dashboard/` - no errors
+- `frontend/e2e/` - no errors

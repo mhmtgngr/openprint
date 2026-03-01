@@ -1,53 +1,118 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Direct SQL table creation in test setup",
-      "rationale": "The existing testutil.CreateSchema() approach failed due to partial migration state in the external database (localhost:15432). The _test_migrations tracking table indicated some migrations were applied, but the actual tables were missing. By creating the enrollment_tokens table directly with IF NOT EXISTS clauses, we ensure the table exists without depending on migration tracking state."
+      "decision": "Existing build process is functional - TypeScript compilation and Vite bundling work correctly",
+      "rationale": "Running `npm run type-check` passes with no errors, `npm run build` completes successfully generating dist/ with index.html, CSS bundle (41.86 kB), and JS bundle (881.62 kB)"
     },
     {
-      "decision": "Use gen_random_uuid() instead of uuid_generate_v4()",
-      "rationale": "PostgreSQL 16 includes gen_random_uuid() as a built-in function, eliminating the need for the uuid-ossp extension. However, we still create the extension as a fallback for broader compatibility."
+      "decision": "Implement code-splitting to reduce bundle size",
+      "rationale": "Current JS bundle is 881.62 kB - exceeds 500 kB threshold. Lazy loading of route components will reduce initial load time and improve perceived performance"
+    },
+    {
+      "decision": "Add Vite manual chunk configuration",
+      "rationale": "Separate vendor dependencies (React, React Router, TanStack Query, Recharts) from application code for better caching and parallel loading"
+    },
+    {
+      "decision": "Configure CSS optimization and purging",
+      "rationale": "Ensure unused Tailwind CSS classes are removed in production build to minimize bundle size"
     }
   ],
-  "backend_tasks": [
+  "backend_tasks": [],
+  "frontend_tasks": [
     {
       "order": 1,
-      "file": "services/auth-service/repository/enrollment_token_test.go",
+      "file": "web/dashboard/vite.config.ts",
       "action": "modify",
-      "purpose": "Add uuid-ossp extension creation and enrollment_tokens table creation in setupEnrollmentTokenTestDBFull() function before test data cleanup",
+      "purpose": "Add manual chunk configuration for code-splitting",
       "key_functions": [
-        "setupEnrollmentTokenTestDBFull"
+        "build.rollupOptions.output.manualChunks"
+      ]
+    },
+    {
+      "order": 2,
+      "file": "web/dashboard/src/App.tsx",
+      "action": "modify",
+      "purpose": "Implement lazy loading for route components using React.lazy",
+      "key_functions": [
+        "React.lazy",
+        "Suspense"
+      ]
+    },
+    {
+      "order": 3,
+      "file": "web/dashboard/src/components/LoadingFallback.tsx",
+      "action": "create",
+      "purpose": "Create reusable loading component for Suspense boundaries",
+      "key_functions": [
+        "LoadingFallback"
+      ]
+    },
+    {
+      "order": 4,
+      "file": "web/dashboard/.env.production",
+      "action": "create",
+      "purpose": "Production environment variables for API endpoints",
+      "key_functions": [
+        "VITE_API_URL"
+      ]
+    },
+    {
+      "order": 5,
+      "file": "web/dashboard/package.json",
+      "action": "modify",
+      "purpose": "Add build analysis script to track bundle sizes",
+      "key_functions": [
+        "analyze:build"
       ]
     }
   ],
-  "frontend_tasks": [],
   "database_migrations": [],
   "api_contracts": [],
   "test_plan": {
     "unit_tests": [
       {
-        "file": "services/auth-service/repository/enrollment_token_test.go",
+        "file": "web/dashboard/src/App.test.tsx",
         "cases": [
-          "TestEnrollmentTokenRepository_Create",
-          "TestEnrollmentTokenRepository_FindByToken",
-          "TestEnrollmentTokenRepository_Validate/valid_token",
-          "TestEnrollmentTokenRepository_Validate/expired_token",
-          "TestEnrollmentTokenRepository_Validate/revoked_token",
-          "TestEnrollmentTokenRepository_Validate/max_uses_exceeded",
-          "TestEnrollmentTokenRepository_Validate/wrong_organization",
-          "TestEnrollmentTokenRepository_IncrementUseCount",
-          "TestEnrollmentTokenRepository_Revoke",
-          "TestEnrollmentTokenRepository_List"
+          "lazy loaded routes render correctly",
+          "fallback shows during loading",
+          "navigation updates route correctly"
+        ]
+      },
+      {
+        "file": "web/dashboard/vite.config.test.ts",
+        "cases": [
+          "manual chunks are configured correctly",
+          "vendor dependencies are separated"
         ]
       }
     ],
-    "e2e_tests": []
+    "e2e_tests": [
+      {
+        "name": "Build artifact validation",
+        "steps": [
+          "Run npm run build",
+          "Verify dist/index.html exists",
+          "Verify dist/assets directory contains CSS and JS bundles",
+          "Check bundle sizes are within acceptable limits"
+        ]
+      }
+    ]
   },
   "security_notes": [
-    "Tests use DATABASE_URL environment variable or default to localhost:15432 (Docker external port)",
-    "Test data cleanup uses DELETE with LIKE patterns to avoid conflicts between test runs",
-    "Table creation uses IF NOT EXISTS for idempotency when tests are run repeatedly"
+    "Ensure API_BASE_URL is properly configured for production",
+    "Verify CORS headers are configured correctly in Vite proxy",
+    "Implement Content Security Policy headers in production",
+    "Validate environment variables are not bundled in client code"
   ],
-  "docker_changes": [],
-  "market_driven_features": []
+  "docker_changes": [
+    "Update deployments/docker/Dockerfile.dashboard to copy production-specific files",
+    "Add build argument for VITE_API_URL",
+    "Ensure dist/ directory is properly copied to nginx container"
+  ],
+  "market_driven_features": [
+    "Cost analytics dashboard - UI components for quota and cost tracking already exist in types and API services",
+    "Follow-me printing - PrintRelease page component with secure PIN release",
+    "Mobile printing SDK - API endpoints documented in services/api.ts for job creation",
+    "AI-powered intelligent routing - Infrastructure exists in job-service for routing algorithms"
+  ]
 }
