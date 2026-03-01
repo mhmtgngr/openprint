@@ -126,6 +126,8 @@ func (h *Handler) AgentHandler(w http.ResponseWriter, r *http.Request) {
 		// Check if this is a heartbeat
 		if strings.HasSuffix(r.URL.Path, "/heartbeat") {
 			h.heartbeat(w, r, ctx, agentID)
+		} else if strings.Contains(r.URL.Path, "/printers/discover") {
+			h.registerDiscoveredPrinters(w, r, ctx, agentID)
 		} else {
 			http.Error(w, "unknown action", http.StatusNotFound)
 		}
@@ -192,6 +194,77 @@ func (h *Handler) heartbeat(w http.ResponseWriter, r *http.Request, ctx context.
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"agent_id": agentID,
 		"status":   "online",
+	})
+}
+
+// registerDiscoveredPrinters handles bulk printer registration from an agent.
+func (h *Handler) registerDiscoveredPrinters(w http.ResponseWriter, r *http.Request, ctx context.Context, agentID string) {
+	// Verify agent exists
+	agent, err := h.agentRepo.FindByID(ctx, agentID)
+	if err != nil {
+		respondError(w, apperrors.New("agent not found", http.StatusNotFound))
+		return
+	}
+
+	var req struct {
+		Printers []struct {
+			Name           string      `json:"name"`
+			DisplayName    string      `json:"display_name"`
+			Driver         string      `json:"driver"`
+			Port           string      `json:"port"`
+			ConnectionType string      `json:"connection_type"`
+			Status         string      `json:"status"`
+			IsDefault      bool        `json:"is_default"`
+			IsShared       bool        `json:"is_shared"`
+			ShareName      string      `json:"share_name"`
+			Location       string      `json:"location"`
+			Capabilities   interface{} `json:"capabilities"`
+		} `json:"printers"`
+		Replace bool `json:"replace"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, apperrors.Wrap(err, "invalid request body", http.StatusBadRequest))
+		return
+	}
+
+	registered := 0
+	printerIDs := make(map[string]string)
+
+	for _, p := range req.Printers {
+		printerID := uuid.New().String()
+
+		// Marshal capabilities to JSON string
+		capsJSON := ""
+		if p.Capabilities != nil {
+			if capsBytes, err := json.Marshal(p.Capabilities); err == nil {
+				capsJSON = string(capsBytes)
+			}
+		}
+
+		printer := &repository.Printer{
+			ID:             printerID,
+			Name:           p.Name,
+			AgentID:        agentID,
+			OrganizationID: agent.OrganizationID,
+			Status:         "online",
+			Capabilities:   capsJSON,
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
+		}
+
+		if err := h.printerRepo.Create(ctx, printer); err != nil {
+			fmt.Printf("[WARN] Failed to register printer %s: %v\n", p.Name, err)
+			continue
+		}
+
+		printerIDs[p.Name] = printerID
+		registered++
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"registered":  registered,
+		"printer_ids": printerIDs,
 	})
 }
 

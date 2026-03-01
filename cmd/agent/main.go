@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
@@ -1037,7 +1036,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 		Name         string `json:"Name"`
 		DriverName   string `json:"DriverName"`
 		PortName     string `json:"PortName"`
-		DeviceType   string `json:"DeviceType"`
+		DeviceType   int    `json:"DeviceType"`
 		Shared       bool   `json:"Shared"`
 		ShareName    string `json:"ShareName"`
 		Location     string `json:"Location"`
@@ -1051,7 +1050,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 			Name         string `json:"Name"`
 			DriverName   string `json:"DriverName"`
 			PortName     string `json:"PortName"`
-			DeviceType   string `json:"DeviceType"`
+			DeviceType   int    `json:"DeviceType"`
 			Shared       bool   `json:"Shared"`
 			ShareName    string `json:"ShareName"`
 			Location     string `json:"Location"`
@@ -1063,7 +1062,7 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 				Name         string `json:"Name"`
 				DriverName   string `json:"DriverName"`
 				PortName     string `json:"PortName"`
-				DeviceType   string `json:"DeviceType"`
+				DeviceType   int    `json:"DeviceType"`
 				Shared       bool   `json:"Shared"`
 				ShareName    string `json:"ShareName"`
 				Location     string `json:"Location"`
@@ -1468,7 +1467,7 @@ func (a *Agent) sendHeartbeat() error {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.serverURL+"/agents/heartbeat", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.serverURL+"/agents/"+a.config.AgentID+"/heartbeat", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return err
 	}
@@ -1515,7 +1514,7 @@ func (a *Agent) registerPrinters() {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.serverURL+"/agents/printers/discover", "application/json", strings.NewReader(string(body)))
+	resp, err := a.client.Post(a.serverURL+"/agents/"+a.config.AgentID+"/printers/discover", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		log.Printf("Failed to register printers: %v", err)
 		return
@@ -1529,7 +1528,7 @@ func (a *Agent) registerPrinters() {
 
 // Helper functions
 
-func getConnectionType(port, deviceType string) string {
+func getConnectionType(port string, deviceType int) string {
 	port = strings.ToLower(port)
 	if strings.HasPrefix(port, "usb") {
 		return "local"
