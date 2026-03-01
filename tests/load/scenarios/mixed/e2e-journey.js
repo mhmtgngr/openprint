@@ -6,7 +6,7 @@
  */
 
 import http from 'k6/http';
-import { check, group } from 'k6';
+import { check, group, sleep } from 'k6';
 import { Rate, Trend, Counter } from 'k6/metrics';
 import { BASE_URL, STORAGE_URL, JOB_URL, TestData } from '../../lib/config.js';
 import { createPrintJobData, generateFileData } from '../../lib/helpers.js';

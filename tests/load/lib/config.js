@@ -24,7 +24,8 @@ export const API_PATHS = {
 
   // Registry service
   AGENTS: '/agents',
-  AGENT_HEARTBEAT: (id) => `/agents/${id}`,  // Agent handler handles heartbeat via PUT
+  AGENT_HEARTBEAT: (id) => `/agents/${id}/heartbeat`,  // POST to agent heartbeat endpoint
+  AGENT_HEARTBEAT_STATUS: (id) => `/agents/${id}/heartbeat/status`,  // GET heartbeat status
   AGENT_REGISTER: '/agents/register',
   PRINTERS: '/printers',
   PRINTER_REGISTER: '/printers/register',

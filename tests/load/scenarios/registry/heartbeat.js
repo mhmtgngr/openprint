@@ -22,11 +22,15 @@ export const heartbeatPongs = new Counter('heartbeat_pongs');
 const agentStates = new Map();
 
 // Test configuration - high frequency heartbeat simulation
+// SCALING_NOTE: For machines with limited resources, reduce VUs:
+// - 4GB RAM: 50-100 VUs
+// - 8GB RAM: 100-200 VUs
+// - 16GB+ RAM: 500+ VUs
 export const options = {
   scenarios: {
     heartbeat: {
       executor: 'constant-vus',
-      vus: 1000,
+      vus: 100,  // Reduced from 1000 for typical machine capacity
       duration: '5m',
       gracefulStop: '30s',
     },
@@ -197,7 +201,7 @@ export function setup() {
   console.log('High-Frequency Heartbeat Simulation');
   console.log('========================================');
   console.log(`Target: ${REGISTRY_URL}`);
-  console.log(`Concurrent VUs: 1000`);
+  console.log(`Concurrent VUs: 100 (adjust based on machine capacity)`);
   console.log(`Duration: 5 minutes`);
   console.log('Heartbeat interval: ~1 second per agent');
   console.log('========================================');
