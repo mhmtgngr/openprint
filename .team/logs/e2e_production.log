@@ -1501,3 +1501,5 @@ Running 1995 tests using 4 workers
   ✘  1489 [Mobile Chrome] › e2e/tests/policies.spec.ts:26:3 › Print Policy Engine › should open create policy modal (32.8s)
   ✘  1496 [Mobile Chrome] › e2e/tests/policies.spec.ts:134:3 › Print Policy Engine › should validate form inputs (32.9s)
   ✘  1497 [Mobile Chrome] › e2e/tests/policies.spec.ts:147:3 › Policy Form Modal › should show all form sections (32.7s)
+  ✘  1500 [Mobile Chrome] › e2e/tests/print-release.spec.ts:8:3 › Secure Print Release › should display print release page header (5.9s)
+  ✘  1501 [Mobile Chrome] › e2e/tests/print-release.spec.ts:12:3 › Secure Print Release › should display release station card (5.9s)
