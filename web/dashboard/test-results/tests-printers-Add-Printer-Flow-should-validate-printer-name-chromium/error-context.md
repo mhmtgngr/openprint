@@ -1,0 +1,101 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Devices" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - heading "Printers" [level=1] [ref=e51]
+            - paragraph [ref=e52]: Manage your organization's printing devices
+          - button "Add Printer" [active] [ref=e53] [cursor=pointer]:
+            - img [ref=e54]
+            - text: Add Printer
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - paragraph [ref=e58]: Total Printers
+            - paragraph [ref=e59]: "0"
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Online
+            - paragraph [ref=e62]: "0"
+          - generic [ref=e63]:
+            - paragraph [ref=e64]: Active
+            - paragraph [ref=e65]: "0"
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - img [ref=e68]
+            - textbox "Search printers..." [ref=e70]
+          - generic [ref=e71]:
+            - img [ref=e72]
+            - combobox [ref=e74]:
+              - option "All Printers" [selected]
+              - option "Online Only"
+              - option "Offline Only"
+        - generic [ref=e75]:
+          - img [ref=e76]
+          - heading "No printers found" [level=3] [ref=e78]
+          - paragraph [ref=e79]: Add your first printer to get started.
+        - generic [ref=e81]:
+          - img [ref=e83]
+          - generic [ref=e85]:
+            - heading "Install the OpenPrint Agent" [level=3] [ref=e86]
+            - paragraph [ref=e87]: Download and install the agent on a computer connected to your printers. The agent will automatically discover and register your printers.
+            - generic [ref=e88]:
+              - button "Download for Windows" [ref=e89] [cursor=pointer]
+              - button "Download for macOS" [ref=e90] [cursor=pointer]
+              - button "Download for Linux" [ref=e91] [cursor=pointer]
+        - generic [ref=e93]:
+          - heading "Add Printer" [level=3] [ref=e95]
+          - generic [ref=e96]:
+            - generic [ref=e97]:
+              - generic [ref=e98]: Printer Name
+              - textbox "e.g., HP LaserJet Pro" [ref=e99]
+            - generic [ref=e100]:
+              - generic [ref=e101]: Agent
+              - combobox [ref=e102]:
+                - option "Select an agent..." [selected]
+                - option "WORKSTATION-001"
+                - option "WORKSTATION-002"
+            - generic [ref=e103]:
+              - button "Cancel" [ref=e104] [cursor=pointer]
+              - button "Add Printer" [ref=e105] [cursor=pointer]
+```

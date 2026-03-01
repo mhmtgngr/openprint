@@ -1,88 +1,160 @@
 REQUIREMENTS (enriched with market research):
 {
- "project_name": "Frontend Artifact Scanner Fix",
- "summary": "Investigation reveals the diagnosis scanner reports 0 TSX files despite 80 TSX and 33 TS files existing in web/dashboard/src. The scanning logic needs correction to properly enumerate frontend artifacts.",
+ "project_name": "OpenPrint Dashboard E2E Testing with Playwright",
+ "summary": "Implement comprehensive end-to-end testing infrastructure using Playwright for the OpenPrint dashboard frontend, covering authentication, job management, device registry, document handling, navigation, and settings with visual regression capabilities and CI/CD integration.",
  "functional_requirements": [
   {
    "id": "FR-001",
-   "title": "Accurate TSX File Enumeration"
+   "title": "Playwright Test Framework Setup"
   },
   {
    "id": "FR-002",
-   "title": "TypeScript File Enumeration"
+   "title": "Authentication Test Suite"
   },
   {
    "id": "FR-003",
-   "title": "Feature Module Breakdown"
+   "title": "Job Management Test Suite"
   },
   {
    "id": "FR-004",
-   "title": "Test File Enumeration"
+   "title": "Device/Printer Registry Test Suite"
   },
   {
-   "id": "FR-M005",
-   "title": "Secure Print Release"
+   "id": "FR-005",
+   "title": "Document Storage Test Suite"
   },
   {
-   "id": "FR-M006",
-   "title": "Print Quota & Cost Allocation"
+   "id": "FR-006",
+   "title": "Dashboard Navigation Test Suite"
   },
   {
-   "id": "FR-M007",
+   "id": "FR-007",
+   "title": "Settings Management Test Suite"
+  },
+  {
+   "id": "FR-008",
+   "title": "Visual Regression Testing"
+  },
+  {
+   "id": "FR-009",
+   "title": "Test Data Management"
+  },
+  {
+   "id": "FR-010",
+   "title": "Multi-Environment Configuration"
+  },
+  {
+   "id": "FR-011",
+   "title": "CI/CD Integration"
+  },
+  {
+   "id": "FR-012",
+   "title": "Real-time Updates Test Suite"
+  },
+  {
+   "id": "FR-M013",
+   "title": "Secure Print Release System"
+  },
+  {
+   "id": "FR-M014",
    "title": "Microsoft 365 Integration"
   },
   {
-   "id": "FR-M008",
-   "title": "Multi-tenant Architecture"
+   "id": "FR-M015",
+   "title": "Mobile Apps (iOS/Android)"
   },
   {
-   "id": "FR-M009",
+   "id": "FR-M016",
+   "title": "Cost Allocation & Quotas"
+  },
+  {
+   "id": "FR-M017",
    "title": "Print Policy Engine"
+  },
+  {
+   "id": "FR-M018",
+   "title": "FedRAMP & HIPAA Compliance"
   }
  ],
  "affected_services": [
-  "diagnostic-scanner"
+  "auth-service",
+  "registry-service",
+  "job-service",
+  "storage-service",
+  "notification-service",
+  "dashboard"
  ],
  "implementation_phases": [
   {
    "phase": 1,
-   "name": "Diagnose Scanner Logic",
+   "name": "Framework Setup and Configuration",
    "tasks": [
-    "Locate the diagnostic scanner code that generates diagnosis.json",
-    "Review the glob patterns and search paths used for TSX file enumeration",
-    "Add debug logging to trace scanner execution through frontend code path"
+    "Initialize Playwright project in web/dashboard/e2e/",
+    "Configure TypeScript and test runner settings",
+    "Set up browser configuration (Chromium, Firefox, WebKit)",
+    "Create test fixtures and page object model base classes",
+    "Configure environment variable support for multiple environments",
+    "Set up test data utilities and API helpers",
+    "Create base test authentication fixture"
    ]
   },
   {
    "phase": 2,
-   "name": "Fix File Enumeration",
+   "name": "Authentication Test Implementation",
    "tasks": [
-    "Update scanner base path to include web/dashboard/src",
-    "Correct glob pattern from '*.tsx' to '**/*.tsx' or use find command equivalent",
-    "Add exclusion patterns for node_modules, dist, build artifacts"
+    "Implement login flow tests (valid and invalid credentials)",
+    "Implement logout and session termination tests",
+    "Implement password reset flow tests",
+    "Add session persistence and timeout tests",
+    "Create authentication page object models"
    ]
   },
   {
    "phase": 3,
-   "name": "Add Feature Breakdown",
+   "name": "Job Management Test Implementation",
    "tasks": [
-    "Implement per-module counting for src/features subdirectories",
-    "Separate test file counting from production code",
-    "Add TypeScript configuration validation"
+    "Implement job creation tests with document upload",
+    "Implement job listing and filtering tests",
+    "Implement job cancellation tests",
+    "Implement job retry tests for failed jobs",
+    "Create job management page object models"
    ]
   },
   {
    "phase": 4,
-   "name": "Verify and Test",
+   "name": "Device/Printer Management Test Implementation",
    "tasks": [
-    "Run scanner and verify tsx_files count equals 80",
-    "Verify total TypeScript files equals 113",
-    "Confirm diagnosis.json updated with correct values",
-    "Add regression test for scanner accuracy"
+    "Implement printer registration tests",
+    "Implement printer listing and status tests",
+    "Implement printer configuration tests",
+    "Implement printer discovery tests",
+    "Create device management page object models"
    ]
-  }
- ]
-}
+  },
+  {
+   "phase": 5,
+   "name": "Document Storage Test Implementation",
+   "tasks": [
+    "Implement document upload tests (multiple formats)",
+    "Implement document retrieval tests",
+    "Implement document deletion tests",
+    "Test S3 and local storage backend handling",
+    "Create document storage page object models"
+   ]
+  },
+  {
+   "phase": 6,
+   "name": "Navigation and Settings Test Implementation",
+   "tasks": [
+    "Implement dashboard navigation tests",
+    "Implement settings management tests",
+    "Implement user profile update tests",
+    "Add accessibility validation tests",
+    "Create navigation and settings page object models"
+   ]
+  },
+  {
+ 
 
 MARKET ANALYSIS:
 {
@@ -90,86 +162,80 @@ MARKET ANALYSIS:
   {
    "name": "PaperCut",
    "strengths": [
-    "100M+ users across 195 countries",
-    "99% printer brand support",
-    "Microsoft 365/Google Workspace integration",
+    "Microsoft 365 integration",
+    "Behavior analysis",
+    "Cross-platform support (Windows/Linux/Mac/Chromebook/Android/iOS)",
+    "User quotas and cost allocation",
     "Environmental reporting",
-    "Mobile/BYOD support",
-    "Quota management",
     "Secure print release",
-    "Dual solutions (MF/Hive)"
+    "100M+ users across 70K organizations"
    ],
    "weaknesses": [
-    "Higher cost for enterprise",
-    "Complex setup for MF version"
+    "Enterprise-focused pricing may exclude SMBs",
+    "Complex deployment for small organizations"
    ],
-   "pricing_model": "Freemium for small business (Pocket), subscription for Hive, perpetual license for MF"
+   "pricing_model": "Per-user/per-printer licensing with enterprise tiers"
   },
   {
-   "name": "HP JetAdvantage",
+   "name": "PrinterLogic",
    "strengths": [
-    "Deep HP hardware integration",
-    "Simple management",
-    "Hardware-optimized"
+    "Serverless SaaS architecture",
+    "Direct IP printing",
+    "Mobile printing support",
+    "Cloud-based management",
+    "Zero infrastructure footprint"
    ],
    "weaknesses": [
-    "HP hardware lock-in",
-    "Limited cross-vendor support"
+    "Limited offline capabilities",
+    "Dependent on internet connectivity"
    ],
-   "pricing_model": "Included with HP printers, subscription for advanced features"
+   "pricing_model": "Subscription-based SaaS pricing"
   },
   {
-   "name": "Printix",
+   "name": "YSoft SafeQ",
    "strengths": [
-    "Cloud-native architecture",
-    "Multi-branch support",
-    "Quick deployment"
+    "Embedded terminal solutions",
+    "3D print management",
+    "Comprehensive reporting",
+    "Rule-based printing policies"
    ],
    "weaknesses": [
-    "Smaller market presence",
-    "Fewer enterprise features"
+    "Hardware dependency for full features",
+    "Higher cost of ownership"
    ],
-   "pricing_model": "Subscription-based SaaS"
+   "pricing_model": "Per-device licensing with optional hardware"
   },
   {
-   "name": "Ping32",
+   "name": "HP/Canon/Xerox/Ricoh (OEM Cloud Solutions)",
    "strengths": [
-    "Print behavior monitoring",
-    "Content auditing",
-    "Dynamic watermarking",
-    "Sensitive word interception",
-    "DLP capabilities"
+    "Hardware-software integration",
+    "Predictive maintenance",
+    "Hardware-level support",
+    "Enterprise support contracts"
    ],
    "weaknesses": [
-    "Focus on surveillance vs management",
-    "Regional availability"
+    "Vendor lock-in",
+    "Limited multi-vendor support"
    ],
-   "pricing_model": "Perpetual license with maintenance"
-  },
-  {
-   "name": "Lansweeper",
-   "strengths": [
-    "IT asset inventory integration",
-    "Hardware discovery",
-    "Automated reporting"
-   ],
-   "weaknesses": [
-    "Print management is secondary feature"
-   ],
-   "pricing_model": "Per-asset subscription"
+   "pricing_model": "Bundled with hardware or separate enterprise licensing"
   }
  ],
  "feature_comparison": [
   {
-   "feature": "Secure Print Release",
+   "feature": "Secure Print Release (PIN/Card)",
    "competitors_with_feature": [
     "PaperCut",
-    "HP JetAdvantage",
-    "Printix"
+    "YSoft SafeQ",
+    "PrinterLogic",
+    "HP",
+    "Canon"
    ],
    "project_status": "missing",
    "priority": "critical",
-   "implementation_effort
+   "implementation_effort": "large"
+  },
+  {
+   "feature": "User Quotas & Cost 
 
 PROJECT CONTEXT (from CLAUDE.md):
 # OpenPrint Cloud

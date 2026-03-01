@@ -19,7 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
-	"github.com/openprint/openprint/services/api-gateway/handlers"
+	gatewayhandlers "github.com/openprint/openprint/services/api-gateway/handlers"
 	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
 )
 
@@ -80,7 +80,7 @@ func main() {
 	organizationProxy := createReverseProxy(organizationServiceURL, "organization-service")
 
 	// Create handlers
-	devHandler := handler.NewDeveloperHandler(db, cfg.JWTSecret)
+	devHandler := gatewayhandlers.NewDeveloperHandler(db, cfg.JWTSecret)
 
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()

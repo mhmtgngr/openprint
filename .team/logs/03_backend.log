@@ -1,44 +1,62 @@
-Implementation complete. Here's a summary of the changes:
+I've implemented all the backend files from the design. Here's a summary of what was created:
 
-## Backend Changes Made
+## Backend Files Implemented
 
-### 1. New `scan_frontend_files()` function (lines ~2692-2742)
-- Proper TSX/TS file enumeration with correct `find` syntax using grouped expressions `\( -name "*.tsx" -o -name "*.ts" \)`
-- Excludes `node_modules`, `dist`, `build` directories using `-prune`
-- Returns JSON with separate counts: `tsx_count`, `ts_count`, `total_count`, `test_count`
-- **Feature module breakdown**: counts files per feature directory (dashboard, documents, printers, auth, agents, settings, jobs, devices)
+### 1. `services/auth-service/handler/oidc.go`
+- Microsoft 365 OIDC provider handler with E2E test mocking support
+- Mock OAuth server for automated testing
+- Test user configuration support
+- Token generation and validation for E2E tests
 
-### 2. Updated `diagnose_project()` function
-- Now uses detected `FRONTEND_DIR` (defaults to `web/dashboard`) instead of hardcoded `frontend/src`
-- Calls `scan_frontend_files()` for accurate enumeration
-- Fixed TODO scanning to use correct frontend directory
+### 2. `services/compliance-service/`
+- **compliance.go**: FedRAMP, HIPAA, GDPR, and SOC2 compliance tracking service
+  - Control management with status tracking
+  - Audit event logging with configurable retention
+  - Data breach incident tracking
+  - Compliance report generation
+  - Evidence collection and findings management
+- **main.go**: HTTP service with endpoints for all compliance operations
 
-### 3. Fixed `phase_design()` function
-- Uses detected frontend directory for file discovery
+### 3. `services/policy-service/`
+- **policy_engine.go**: Enhanced policy engine with rule evaluation
+  - JSON-based rules with multiple operators (equals, greater than, contains, etc.)
+  - Policy scoping (users, groups, printers, document types)
+  - Real-time policy evaluation against print job contexts
+  - Evaluation hooks for extensibility
+- **main.go**: HTTP service with policy evaluation endpoints
 
-### 4. Fixed `scan_project_completion()` function  
-- Uses detected frontend directory with proper `find` syntax
+### 4. `services/registry-service/handler/agent.go` (Extended)
+- Added WebSocket hub for real-time agent status updates
+- Server-Sent Events (SSE) endpoint for status streaming
+- Agent status broadcasting to organizations
+- Connection management with heartbeat support
 
-### 5. Fixed `run_playwright()` function
-- Uses detected frontend directory
+### 5. `services/m365-integration-service/main.go`
+- Microsoft 365 integration service for OneDrive and SharePoint
+- OAuth flow handling with token management
+- File browsing and download from OneDrive/SharePoint
+- Print job submission from Microsoft 365 sources
+- Connection management for multiple users
 
-### 6. Updated frontend existence checks
-- All references to `$REPO_DIR/frontend` now use detected `$FRONTEND_DIR`
+## Database Migrations
 
-## Results
-```
-Before: tsx_files: 0
-After:  tsx_files: 113 (80 TSX + 33 TS)
+### 000031: Extend Print Policies
+- Added JSONB columns for rules, actions, and scope
+- Added version tracking and evaluation counters
+- GIN indexes for JSONB query performance
 
-Feature breakdown:
-{
-  "dashboard": {"tsx": 8, "ts": 2},
-  "documents": {"tsx": 7, "ts": 3},
-  "printers":  {"tsx": 2, "ts": 1},
-  "auth":      {"tsx": 6, "ts": 1},
-  "agents":    {"tsx": 5, "ts": 2},
-  "settings":  {"tsx": 5, "ts": 4},
-  "jobs":      {"tsx": 6, "ts": 2},
-  "devices":   {"tsx": 6, "ts": 3}
-}
-```
+### 000032: Compliance Tables
+- `compliance_controls` - Control requirements for each framework
+- `data_breaches` - Incident tracking
+- `remediation_plans` - Gap remediation tracking
+- `compliance_findings` - Assessment findings
+- `compliance_evidence` - Evidence collection
+- `compliance_reports` - Generated reports
+
+### 000033: Microsoft 365 Integration Tables
+- `m365_connections` - OAuth connections with token storage
+- `m365_print_job_sources` - Print jobs from M365 sources
+- `m365_sharepoint_sites` - Cached SharePoint sites
+- `m365_onedrive_drives` - Cached OneDrive drives
+- `m365_document_cache` - Document metadata cache
+- `m365_sync_history` - Sync operation audit trail

@@ -1,7 +1,31 @@
-All packages build successfully. The compilation errors have been fixed:
+All Go compilation errors have been fixed. Here's a summary of the changes:
 
-1. **services/api-gateway/main.go** - The import was already correct using `"github.com/openprint/openprint/services/api-gateway/handlers"` and the package name in `developer.go` is `package handler`, so `handler.NewDeveloperHandler` works correctly.
+**1. compliance-service** (`services/compliance-service/`):
+- Changed `compliance.go` package from `package compliance` to `package main`
+- Removed self-import from `main.go`
+- Renamed `Config` to `ServerConfig` in `main.go` to avoid collision with `Config` in `compliance.go`
+- Removed unused variables (`ctx`, `repo`)
+- Removed incorrect `event.DataTypes` reference
+- Added missing `net/http` import to `compliance.go`
 
-2. **services/job-service/handlers/secure_release_repository.go** - No missing imports; the file compiles correctly.
+**2. policy-service** (`services/policy-service/`):
+- Changed `policy_engine.go` package from `package policy` to `package main`
+- Removed self-import from `main.go`
+- Renamed `Config` to `ServerConfig` in `main.go` to avoid collision
+- Fixed malformed function signature: `func (s, substr string) bool` → `func hasPrefixOrSuffix(s, substr string) bool`
+- Fixed `contains` function call to use `hasPrefixOrSuffix`
+- Removed unused variables (`ctx`, `repo`)
 
-3. **services/notification-service/websocket/handler.go** - No syntax errors; the file compiles correctly.
+**3. api-gateway** (`services/api-gateway/`):
+- Fixed import path alias: `handlers` → `gatewayhandlers` and updated all references
+
+**4. auth-service** (`services/auth-service/handler/oidc.go`):
+- Fixed unused variables (`oidcConfig`, `ctx`)
+
+**5. m365-integration-service** (`services/m365-integration-service/main.go`):
+- Fixed unused variable (`ctx`)
+
+**6. registry-service** (`services/registry-service/handler/agent.go`):
+- Changed `FindByAgentID` → `FindByAgent` (correct method name)
+- Fixed `agent.OrganizationID != nil` → `agent.OrganizationID != ""` (it's a string, not a pointer)
+- Removed unnecessary dereference `*agent.OrganizationID`

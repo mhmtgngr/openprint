@@ -1,0 +1,49 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Dashboard" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e49]:
+        - img [ref=e50]
+        - heading "Error loading agents" [level=2] [ref=e52]
+        - paragraph [ref=e53]: An unknown error occurred
+```

@@ -1,220 +1,691 @@
 {
-  "project_name": "Frontend Artifact Scanner Fix",
-  "summary": "Investigation reveals the diagnosis scanner reports 0 TSX files despite 80 TSX and 33 TS files existing in web/dashboard/src. The scanning logic needs correction to properly enumerate frontend artifacts.",
+  "project_name": "OpenPrint Dashboard E2E Testing with Playwright",
+  "summary": "Implement comprehensive end-to-end testing infrastructure using Playwright for the OpenPrint dashboard frontend, covering authentication, job management, device registry, document handling, navigation, and settings with visual regression capabilities and CI/CD integration.",
   "user_stories": [
     {
       "id": "US-001",
-      "as_a": "development team",
-      "i_want": "the project scanner to accurately count all TypeScript and TSX files",
-      "so_that": "we have correct metrics about the frontend codebase size and composition",
-      "priority": "high",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for user authentication flows",
+      "so_that": "login, logout, and password reset functionality is reliably verified across releases",
+      "priority": "critical",
       "acceptance_criteria": [
-        "Scanner reports correct count of TSX files (actual: 80)",
-        "Scanner reports correct count of TS files (actual: 33)",
-        "Scanner distinguishes between component files (TSX) and utility files (TS)",
-        "Scanner excludes node_modules from counting",
-        "diagnosis.json shows accurate tsx_files count > 0"
+        "Tests validate successful login with valid credentials",
+        "Tests reject invalid credentials with appropriate error messages",
+        "Tests verify logout functionality and session termination",
+        "Tests validate password reset flow with email verification",
+        "Tests verify session persistence and timeout behavior",
+        "Tests support both local and remote environment execution"
       ]
     },
     {
       "id": "US-002",
-      "as_a": "project manager",
-      "i_want": "visibility into frontend feature modules",
-      "so_that": "I can track progress and understand codebase organization",
-      "priority": "medium",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for print job management",
+      "so_that": "job creation, listing, cancellation, and retry workflows are thoroughly validated",
+      "priority": "critical",
       "acceptance_criteria": [
-        "Scanner reports files per feature module (agents, auth, dashboard, devices, documents, jobs, printers, settings)",
-        "Scanner reports test file counts per module",
-        "Scanner distinguishes between src/features, src/pages, src/components, src/layouts"
+        "Tests verify job creation with document upload",
+        "Tests validate job listing with pagination and filtering",
+        "Tests confirm job cancellation functionality",
+        "Tests verify job retry for failed jobs",
+        "Tests validate job status updates and notifications",
+        "Tests cover edge cases like large file uploads and concurrent jobs"
       ]
     },
     {
       "id": "US-003",
-      "as_a": "developer",
-      "i_want": "the scanner to verify TypeScript configuration",
-      "so_that": "we ensure the frontend is properly configured for type checking",
-      "priority": "low",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for device/printer management",
+      "so_that": "printer registration, status monitoring, and configuration features are verified",
+      "priority": "high",
       "acceptance_criteria": [
-        "Scanner validates tsconfig.json exists",
-        "Scanner checks for correct jsx configuration (react-jsx)",
-        "Scanner confirms path aliases (@/*) are configured"
+        "Tests validate printer registration flow",
+        "Tests verify printer status display and updates",
+        "Tests confirm printer configuration changes",
+        "Tests validate printer discovery functionality",
+        "Tests verify agent registration and heartbeat monitoring",
+        "Tests cover printer deletion and unregistration"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for document upload and retrieval",
+      "so_that": "document storage operations are validated end-to-end",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests verify document upload with various file formats",
+        "Tests validate document retrieval and preview",
+        "Tests confirm document deletion",
+        "Tests verify encryption-enabled document handling",
+        "Tests validate S3 and local storage backends",
+        "Tests cover large file handling and progress indicators"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for dashboard navigation",
+      "so_that": "all user navigation paths are verified and accessible",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests verify all sidebar navigation links",
+        "Tests validate breadcrumb navigation",
+        "Tests confirm direct URL routing",
+        "Tests verify mobile-responsive navigation",
+        "Tests validate keyboard navigation accessibility",
+        "Tests confirm role-based menu visibility"
+      ]
+    },
+    {
+      "id": "US-006",
+      "as_a": "QA Engineer",
+      "i_want": "automated E2E tests for settings management",
+      "so_that": "user and system settings changes are properly validated",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests verify user profile updates",
+        "Tests validate notification preferences",
+        "Tests confirm email-to-print configuration",
+        "Tests verify admin-level system settings",
+        "Tests validate settings persistence",
+        "Tests confirm role-based settings access"
+      ]
+    },
+    {
+      "id": "US-007",
+      "as_a": "DevOps Engineer",
+      "i_want": "E2E tests configured for both local and remote environments",
+      "so_that": "tests can run against docker-compose locally and staging/production environments remotely",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests support environment variable configuration",
+        "Tests execute against local docker-compose stack",
+        "Tests execute against remote staging environments",
+        "Tests handle different base URLs dynamically",
+        "Tests support different authentication configurations per environment"
+      ]
+    },
+    {
+      "id": "US-008",
+      "as_a": "QA Engineer",
+      "i_want": "visual regression testing for critical pages",
+      "so_that": "UI changes are detected and unintended visual modifications are caught",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests capture screenshots of dashboard, jobs, printers, and settings pages",
+        "Tests compare against baseline images",
+        "Tests generate diff reports for visual changes",
+        "Tests support responsive design comparisons (desktop, tablet, mobile)",
+        "Tests handle dynamic content with appropriate masking"
+      ]
+    },
+    {
+      "id": "US-009",
+      "as_a": "DevOps Engineer",
+      "i_want": "E2E tests integrated into CI/CD pipeline",
+      "so_that": "tests run automatically on every PR and main branch build",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Tests execute on GitHub Actions/GitLab CI",
+        "Tests generate and upload video recordings on failure",
+        "Tests publish HTML test reports",
+        "Tests fail the build on critical test failures",
+        "Tests support parallel execution for faster results"
       ]
     }
   ],
   "functional_requirements": [
     {
       "id": "FR-001",
-      "title": "Accurate TSX File Enumeration",
-      "description": "Update scanning logic to correctly identify and count all .tsx files in the web/dashboard directory, excluding node_modules and dist directories. Must find files in src/features, src/pages, src/components, src/layouts directories.",
-      "service": "diagnostic-scanner"
+      "title": "Playwright Test Framework Setup",
+      "description": "Configure Playwright with TypeScript, test utilities, page object models, and custom fixtures for the OpenPrint dashboard. Include browser configuration for Chromium, Firefox, and WebKit.",
+      "service": "dashboard"
     },
     {
       "id": "FR-002",
-      "title": "TypeScript File Enumeration",
-      "description": "Count all .ts files excluding .d.ts type definition files, node_modules, and build artifacts. Include API files, hooks, services, and utility modules.",
-      "service": "diagnostic-scanner"
+      "title": "Authentication Test Suite",
+      "description": "Implement E2E tests covering login with valid/invalid credentials, logout, session management, password reset request, and OAuth/OIDC flows if configured.",
+      "service": "auth-service"
     },
     {
       "id": "FR-003",
-      "title": "Feature Module Breakdown",
-      "description": "Provide per-feature file counts for: agents (6 files), auth (6 files), dashboard (10 files), devices (8 files), documents (9 files), jobs (8 files), printers (2 files), settings (8 files).",
-      "service": "diagnostic-scanner"
+      "title": "Job Management Test Suite",
+      "description": "Implement E2E tests for creating print jobs with file uploads, listing jobs with filters, cancelling jobs, retrying failed jobs, and viewing job details.",
+      "service": "job-service"
     },
     {
       "id": "FR-004",
-      "title": "Test File Enumeration",
-      "description": "Separate counting of test files (*.test.tsx, *.test.ts) from production code to provide accurate test coverage metrics.",
-      "service": "diagnostic-scanner"
+      "title": "Device/Printer Registry Test Suite",
+      "description": "Implement E2E tests for printer registration, viewing printer lists, monitoring printer status, configuring printer settings, and discovering available printers.",
+      "service": "registry-service"
     },
     {
-      "id": "FR-M005",
-      "title": "Secure Print Release",
-      "description": "Users authenticate at printer to release jobs, preventing abandoned documents",
+      "id": "FR-005",
+      "title": "Document Storage Test Suite",
+      "description": "Implement E2E tests for uploading documents (PDF, images, Office docs), retrieving documents, deleting documents, and handling both S3 and local storage backends.",
+      "service": "storage-service"
+    },
+    {
+      "id": "FR-006",
+      "title": "Dashboard Navigation Test Suite",
+      "description": "Implement E2E tests for sidebar navigation, breadcrumbs, direct URL access, mobile menu toggle, and accessibility compliance.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-007",
+      "title": "Settings Management Test Suite",
+      "description": "Implement E2E tests for user profile updates, notification preferences, email-to-print configuration, and admin system settings.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-008",
+      "title": "Visual Regression Testing",
+      "description": "Implement screenshot capture and comparison for critical pages (dashboard, jobs, printers, settings) across multiple viewport sizes.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-009",
+      "title": "Test Data Management",
+      "description": "Implement test data fixtures and utilities for creating test users, printers, jobs, and documents. Include cleanup procedures for test isolation.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-010",
+      "title": "Multi-Environment Configuration",
+      "description": "Support configuration for local development (docker-compose), staging, and production environments with different base URLs and authentication methods.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-011",
+      "title": "CI/CD Integration",
+      "description": "Configure GitHub Actions or GitLab CI workflow for running E2E tests, generating HTML reports, and uploading artifacts (videos, screenshots, traces) on failure.",
+      "service": "dashboard"
+    },
+    {
+      "id": "FR-012",
+      "title": "Real-time Updates Test Suite",
+      "description": "Implement E2E tests for WebSocket-based real-time notifications including job status updates, printer status changes, and new job alerts.",
+      "service": "notification-service"
+    },
+    {
+      "id": "FR-M013",
+      "title": "Secure Print Release System",
+      "description": "Implement PIN-based card-based and mobile-app-based print release with embedded terminal support",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Prevents data breaches from uncollected documents"
+      "competitive_advantage": "Essential for enterprise adoption addressing document security and privacy compliance"
     },
     {
-      "id": "FR-M006",
-      "title": "Print Quota & Cost Allocation",
-      "description": "Department/user-level quotas with cost center billing",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Enables cost recovery and chargeback models"
-    },
-    {
-      "id": "FR-M007",
+      "id": "FR-M014",
       "title": "Microsoft 365 Integration",
-      "description": "Universal Print integration, Azure AD sync, SharePoint printing",
+      "description": "Deep integration with Microsoft 365 for direct document submission from Word Excel PowerPoint and Teams with SharePoint document library support",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Leverages Microsoft's modern print infrastructure"
+      "competitive_advantage": "Opens enterprise market with 350M+ Microsoft 365 business users"
     },
     {
-      "id": "FR-M008",
-      "title": "Multi-tenant Architecture",
-      "description": "Isolated environments for MSP/enterprise customers",
+      "id": "FR-M015",
+      "title": "Mobile Apps (iOS/Android)",
+      "description": "Native mobile applications for print job submission release and printer discovery with push notifications",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Enables SaaS business model"
+      "competitive_advantage": "Critical for hybrid work and BYOD environments"
     },
     {
-      "id": "FR-M009",
+      "id": "FR-M016",
+      "title": "Cost Allocation & Quotas",
+      "description": "Per-user and per-department quotas with cost-per-page tracking and chargeback to cost centers or projects",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "ROI justification for businesses through cost recovery and visibility"
+    },
+    {
+      "id": "FR-M017",
       "title": "Print Policy Engine",
-      "description": "Rule-based routing (color, duplex, size restrictions)",
+      "description": "Configurable rules for color/duplex enforcement size limits application-based routing and approval workflows",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Automates governance and cost control"
+      "competitive_advantage": "Operational cost reduction through automated policy enforcement"
+    },
+    {
+      "id": "FR-M018",
+      "title": "FedRAMP & HIPAA Compliance",
+      "description": "Implement required security controls audit trails and encryption standards for government and healthcare sectors",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Access to regulated multi-billion dollar government and healthcare markets"
     }
   ],
   "non_functional_requirements": [
     {
       "id": "NFR-001",
       "category": "performance",
-      "requirement": "Scanner must complete within 5 seconds for codebases up to 10,000 files",
-      "metric": "5000ms max execution time"
+      "requirement": "E2E test suite execution time",
+      "metric": "Full test suite completes within 15 minutes with parallel execution"
     },
     {
       "id": "NFR-002",
-      "category": "accuracy",
-      "requirement": "File counting must be 100% accurate - zero false negatives",
-      "metric": "0% margin of error"
+      "category": "performance",
+      "requirement": "Test flakiness rate",
+      "metric": "< 2% flaky test rate across 100 consecutive runs"
     },
     {
       "id": "NFR-003",
-      "category": "maintainability",
-      "requirement": "Scanning logic must handle future addition of new feature modules without code changes",
-      "metric": "zero configuration for new modules"
+      "category": "scalability",
+      "requirement": "Parallel test execution",
+      "metric": "Support at least 4 parallel worker threads for concurrent test execution"
+    },
+    {
+      "id": "NFR-004",
+      "category": "performance",
+      "requirement": "Test startup time",
+      "metric": "Test environment initializes within 30 seconds"
+    },
+    {
+      "id": "NFR-005",
+      "category": "security",
+      "requirement": "Test credentials management",
+      "metric": "All sensitive test data stored in environment variables, never committed to repository"
+    },
+    {
+      "id": "NFR-006",
+      "category": "security",
+      "requirement": "Test data isolation",
+      "metric": "Each test uses isolated data to prevent cross-test contamination"
+    },
+    {
+      "id": "NFR-007",
+      "category": "scalability",
+      "requirement": "Browser compatibility",
+      "metric": "Tests run on Chromium, Firefox, and WebKit browsers"
+    },
+    {
+      "id": "NFR-008",
+      "category": "performance",
+      "requirement": "Visual regression comparison",
+      "metric": "Screenshot comparison completes within 5 seconds per image"
+    },
+    {
+      "id": "NFR-009",
+      "category": "scalability",
+      "requirement": "CI/CD integration",
+      "metric": "Tests run automatically on every PR with results reported within 20 minutes"
+    },
+    {
+      "id": "NFR-010",
+      "category": "security",
+      "requirement": "Artifact retention",
+      "metric": "Failed test artifacts (videos, traces) retained for 30 days"
     }
   ],
-  "api_endpoints": [],
-  "database_changes": [],
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "description": "User authentication for test setup",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "description": "User logout verification",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reset-password",
+      "description": "Password reset flow testing",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs",
+      "description": "List print jobs",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs",
+      "description": "Create new print job",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/jobs/{id}",
+      "description": "Cancel print job",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs/{id}/retry",
+      "description": "Retry failed print job",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/printers",
+      "description": "List registered printers",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/printers",
+      "description": "Register new printer",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/printers/{id}",
+      "description": "Update printer configuration",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/printers/{id}",
+      "description": "Unregister printer",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/documents",
+      "description": "Upload document for printing",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/{id}",
+      "description": "Retrieve document",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents",
+      "description": "List print agents",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings",
+      "description": "Get user settings",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings",
+      "description": "Update user settings",
+      "roles": [
+        "admin",
+        "user"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/analytics",
+      "description": "Get analytics data",
+      "roles": [
+        "admin"
+      ]
+    }
+  ],
+  "database_changes": [
+    {
+      "table": "test_users",
+      "action": "create",
+      "columns": [
+        "id SERIAL PRIMARY KEY",
+        "username VARCHAR(255) UNIQUE",
+        "email VARCHAR(255)",
+        "password_hash VARCHAR(255)",
+        "role VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "test_printers",
+      "action": "create",
+      "columns": [
+        "id SERIAL PRIMARY KEY",
+        "name VARCHAR(255)",
+        "agent_id VARCHAR(255)",
+        "status VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    },
+    {
+      "table": "test_jobs",
+      "action": "create",
+      "columns": [
+        "id SERIAL PRIMARY KEY",
+        "user_id INTEGER REFERENCES test_users(id)",
+        "printer_id INTEGER REFERENCES test_printers(id)",
+        "document_id VARCHAR(255)",
+        "status VARCHAR(50)",
+        "created_at TIMESTAMP DEFAULT NOW()"
+      ]
+    }
+  ],
   "affected_services": [
-    "diagnostic-scanner"
+    "auth-service",
+    "registry-service",
+    "job-service",
+    "storage-service",
+    "notification-service",
+    "dashboard"
   ],
   "risks": [
     {
-      "risk": "Scanner may be using incorrect glob patterns or missing the web/dashboard directory entirely",
-      "mitigation": "Verify scanner configuration includes web/dashboard/src in search paths, uses pattern '**/*.tsx' with proper base directory"
+      "risk": "Test flakiness due to timing issues with WebSocket updates",
+      "mitigation": "Implement explicit waits and retry logic for async operations; use Playwright's auto-waiting features"
     },
     {
-      "risk": "Scanner may be filtering out TSX files due to incorrect file extension matching",
-      "mitigation": "Review extension matching logic to ensure .tsx is not confused with .ts or excluded"
+      "risk": "Visual regression tests failing due to dynamic content (timestamps, counters)",
+      "mitigation": "Implement dynamic content masking and stabilization techniques; use consistent test data"
     },
     {
-      "risk": "Scanner may be throwing an error silently during frontend scanning",
-      "mitigation": "Add error handling and logging to diagnose-scanner to capture any failures during file enumeration"
+      "risk": "Test data pollution between test runs",
+      "mitigation": "Implement proper test teardown and cleanup; use database transactions with rollback; unique identifiers per test"
+    },
+    {
+      "risk": "CI/CD pipeline timeout due to long test execution",
+      "mitigation": "Implement parallel test execution; split tests into critical and non-critical suites; use test sharding"
+    },
+    {
+      "risk": "Different browser behaviors causing inconsistent results",
+      "mitigation": "Implement browser-specific assertions where needed; use consistent browser for critical tests"
+    },
+    {
+      "risk": "Local environment differences causing CI-only failures",
+      "mitigation": "Use docker-compose for local testing matching CI environment; document environment setup precisely"
+    },
+    {
+      "risk": "S3/MinIO dependency for document tests",
+      "mitigation": "Mock storage service for unit tests; use local storage backend for E2E tests when possible"
     }
   ],
   "implementation_phases": [
     {
       "phase": 1,
-      "name": "Diagnose Scanner Logic",
+      "name": "Framework Setup and Configuration",
       "tasks": [
-        "Locate the diagnostic scanner code that generates diagnosis.json",
-        "Review the glob patterns and search paths used for TSX file enumeration",
-        "Add debug logging to trace scanner execution through frontend code path"
+        "Initialize Playwright project in web/dashboard/e2e/",
+        "Configure TypeScript and test runner settings",
+        "Set up browser configuration (Chromium, Firefox, WebKit)",
+        "Create test fixtures and page object model base classes",
+        "Configure environment variable support for multiple environments",
+        "Set up test data utilities and API helpers",
+        "Create base test authentication fixture"
       ]
     },
     {
       "phase": 2,
-      "name": "Fix File Enumeration",
+      "name": "Authentication Test Implementation",
       "tasks": [
-        "Update scanner base path to include web/dashboard/src",
-        "Correct glob pattern from '*.tsx' to '**/*.tsx' or use find command equivalent",
-        "Add exclusion patterns for node_modules, dist, build artifacts"
+        "Implement login flow tests (valid and invalid credentials)",
+        "Implement logout and session termination tests",
+        "Implement password reset flow tests",
+        "Add session persistence and timeout tests",
+        "Create authentication page object models"
       ]
     },
     {
       "phase": 3,
-      "name": "Add Feature Breakdown",
+      "name": "Job Management Test Implementation",
       "tasks": [
-        "Implement per-module counting for src/features subdirectories",
-        "Separate test file counting from production code",
-        "Add TypeScript configuration validation"
+        "Implement job creation tests with document upload",
+        "Implement job listing and filtering tests",
+        "Implement job cancellation tests",
+        "Implement job retry tests for failed jobs",
+        "Create job management page object models"
       ]
     },
     {
       "phase": 4,
-      "name": "Verify and Test",
+      "name": "Device/Printer Management Test Implementation",
       "tasks": [
-        "Run scanner and verify tsx_files count equals 80",
-        "Verify total TypeScript files equals 113",
-        "Confirm diagnosis.json updated with correct values",
-        "Add regression test for scanner accuracy"
+        "Implement printer registration tests",
+        "Implement printer listing and status tests",
+        "Implement printer configuration tests",
+        "Implement printer discovery tests",
+        "Create device management page object models"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Document Storage Test Implementation",
+      "tasks": [
+        "Implement document upload tests (multiple formats)",
+        "Implement document retrieval tests",
+        "Implement document deletion tests",
+        "Test S3 and local storage backend handling",
+        "Create document storage page object models"
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Navigation and Settings Test Implementation",
+      "tasks": [
+        "Implement dashboard navigation tests",
+        "Implement settings management tests",
+        "Implement user profile update tests",
+        "Add accessibility validation tests",
+        "Create navigation and settings page object models"
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Visual Regression Testing",
+      "tasks": [
+        "Configure Playwright screenshot capture",
+        "Implement baseline image setup",
+        "Create visual comparison tests for critical pages",
+        "Add responsive design comparisons (desktop, tablet, mobile)",
+        "Configure dynamic content masking"
+      ]
+    },
+    {
+      "phase": 8,
+      "name": "Real-time Updates Test Implementation",
+      "tasks": [
+        "Implement WebSocket connection tests",
+        "Test job status update notifications",
+        "Test printer status change notifications",
+        "Test real-time dashboard updates"
+      ]
+    },
+    {
+      "phase": 9,
+      "name": "CI/CD Integration",
+      "tasks": [
+        "Create GitHub Actions or GitLab CI workflow",
+        "Configure test execution on PR and main branch",
+        "Set up HTML test report generation",
+        "Configure video and artifact upload on failure",
+        "Add test result comments to PRs"
+      ]
+    },
+    {
+      "phase": 10,
+      "name": "Documentation and Maintenance",
+      "tasks": [
+        "Write E2E testing documentation",
+        "Create test data setup guide",
+        "Document troubleshooting procedures",
+        "Set up test result monitoring and alerts",
+        "Create onboarding guide for new test scenarios"
       ]
     }
   ],
   "market_context": {
     "competitors_analyzed": [
       "PaperCut",
-      "HP JetAdvantage",
-      "Printix",
-      "Ping32",
-      "Lansweeper"
+      "PrinterLogic",
+      "YSoft SafeQ",
+      "HP/Canon/Xerox/Ricoh (OEM Cloud Solutions)"
     ],
     "key_gaps": [
-      "Secure print release with user authentication at device",
-      "Environmental impact reporting and sustainability metrics",
-      "Microsoft 365 and Google Workspace deep integration",
-      "Print quota management and cost allocation",
-      "Content security (watermarking, sensitive word detection)"
+      "Secure print release with authentication at device (PIN badge tap mobile release)",
+      "Microsoft 365 and Google Workspace deep integration for document submission",
+      "Native mobile applications for iOS and Android",
+      "User-based quotas and departmental cost allocation",
+      "Environmental impact reporting with CO2 tracking and paper savings"
     ],
     "trends": [
-      "AI-Powered Print Optimization",
-      "Zero Trust Print Security",
+      "AI-Powered Predictive Maintenance",
       "Sustainability Reporting",
-      "Cloud-Native Only Deployment",
-      "MPS (Managed Print Services) Integration"
+      "Zero Trust Print Security",
+      "Serverless Direct IP Printing",
+      "Hybrid Work Print Solutions"
     ],
     "unique_selling_points": [
-      "Modern microservices architecture vs legacy monoliths",
-      "Open-source potential for community contributions",
-      "Vendor-agnostic by design with no hardware lock-in",
-      "Built for cloud-native deployment from ground up",
-      "OpenTelemetry observability built-in",
-      "Real-time WebSocket notifications",
-      "Modern React/TypeScript dashboard"
+      "Modern microservices architecture with container-native deployment (Kubernetes-ready) vs legacy competitors",
+      "Open-source with potential for community-driven innovation vs proprietary vendor lock-in",
+      "Go-based high-performance services vs Java/.NET legacy stacks of competitors",
+      "Built-in OpenTelemetry observability from day one vs bolted-on monitoring",
+      "API-first design enabling easier integrations vs competitors' legacy APIs",
+      "Flexible storage backend (S3 or local) vs vendor-locked storage solutions",
+      "Modern React/TypeScript dashboard with superior UX compared to legacy Java-based admin consoles"
     ]
   }
 }

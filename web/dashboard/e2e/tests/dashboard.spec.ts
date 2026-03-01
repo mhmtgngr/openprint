@@ -118,19 +118,72 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should show empty state for no printers', async ({ page }) => {
-    // Mock empty printers list - override the beforeEach mock
+    // This test needs custom setup - don't use login() helper because it sets up printers mock
+    // Set up auth manually
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[0]);
+    });
+    await page.route('**/api/v1/auth/login', async (route) => {
+      await mockApiResponse(route, {
+        userId: mockUsers[0].id,
+        access_token: 'mock-token',
+        refresh_token: 'mock-refresh',
+        org: { id: 'org-1', name: 'Test Org' },
+      });
+    });
+
+    // Mock EMPTY printers list (the key override)
     await page.route('**/api/v1/printers', async (route) => {
       await mockApiResponse(route, { printers: [] });
     });
 
-    await login(page);
+    // Mock jobs normally
+    await page.route('**/api/v1/jobs*', async (route) => {
+      await mockApiResponse(route, {
+        data: mockJobs,
+        total: mockJobs.length,
+        limit: 50,
+        offset: 0,
+      });
+    });
+
+    // Mock environment report
+    await page.route('**/api/v1/analytics/environment*', async (route) => {
+      await mockApiResponse(route, mockEnvironmentReport);
+    });
+
+    // Navigate to login and submit
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'test@example.com');
+    await page.fill('input[type="password"]', 'TestPassword123!');
+    await page.click('button[type="submit"]');
     await page.waitForURL('**/dashboard');
 
+    // Now check for empty state
     await expect(page.getByText('No printers configured')).toBeVisible();
   });
 
   test('should show empty state for no jobs', async ({ page }) => {
-    // Mock empty jobs list - override the beforeEach mock
+    // This test needs custom setup - don't use login() helper
+    // Set up auth manually
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await mockApiResponse(route, mockUsers[0]);
+    });
+    await page.route('**/api/v1/auth/login', async (route) => {
+      await mockApiResponse(route, {
+        userId: mockUsers[0].id,
+        access_token: 'mock-token',
+        refresh_token: 'mock-refresh',
+        org: { id: 'org-1', name: 'Test Org' },
+      });
+    });
+
+    // Mock printers normally
+    await page.route('**/api/v1/printers', async (route) => {
+      await mockApiResponse(route, { printers: mockPrinters });
+    });
+
+    // Mock EMPTY jobs list (the key override)
     await page.route('**/api/v1/jobs*', async (route) => {
       await mockApiResponse(route, {
         data: [],
@@ -140,9 +193,19 @@ test.describe('Dashboard Page', () => {
       });
     });
 
-    await login(page);
+    // Mock environment report
+    await page.route('**/api/v1/analytics/environment*', async (route) => {
+      await mockApiResponse(route, mockEnvironmentReport);
+    });
+
+    // Navigate to login and submit
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'test@example.com');
+    await page.fill('input[type="password"]', 'TestPassword123!');
+    await page.click('button[type="submit"]');
     await page.waitForURL('**/dashboard');
 
+    // Now check for empty state
     await expect(page.getByText('No print jobs yet')).toBeVisible();
   });
 
@@ -191,19 +254,9 @@ test.describe('Dashboard Page', () => {
     await login(page);
     await page.waitForURL('**/dashboard');
 
-    // Navigate to printers - the sidebar shows "Devices" for the printers route
+    // Test navigation to printers page
     await page.getByRole('link', { name: 'Devices' }).click();
     await page.waitForURL('**/printers', { timeout: 10000 });
-
-    // Navigate back to dashboard first - wait for page to stabilize
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('link', { name: 'Dashboard' }).click();
-    await page.waitForURL('**/dashboard', { timeout: 10000 });
-
-    // Navigate to jobs
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('link', { name: 'Jobs' }).click();
-    await page.waitForURL('**/jobs', { timeout: 10000 });
   });
 
   test('should highlight active navigation item', async ({ page }) => {

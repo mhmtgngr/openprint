@@ -2,7 +2,9 @@
   "project": {
     "go_files": 41,
     "test_files": 36,
-    "tsx_files": 113,
+    "tsx_files": 80,
+    "ts_files": 33,
+    "frontend_total": 113,
     "todo_count": 1995,
     "build": "yes",
     "tests": "pass",
@@ -10,7 +12,8 @@
     "test_passed": 16,
     "dockerfiles": 6,
     "compose": "yes",
-    "frontend": "yes"
+    "frontend": "yes",
+    "features": "{\"tsx_count\":80,\"ts_count\":33,\"total_count\":113,\"test_count\":18,\"features\":{\"dashboard\":{\"tsx\":8,\"ts\":2},\"documents\":{\"tsx\":7,\"ts\":3},\"printers\":{\"tsx\":2,\"ts\":1},\"auth\":{\"tsx\":6,\"ts\":1},\"agents\":{\"tsx\":5,\"ts\":2},\"settings\":{\"tsx\":5,\"ts\":4},\"jobs\":{\"tsx\":6,\"ts\":2},\"devices\":{\"tsx\":6,\"ts\":3}}}"
   },
   "compile_errors": "",
   "test_failures": "",

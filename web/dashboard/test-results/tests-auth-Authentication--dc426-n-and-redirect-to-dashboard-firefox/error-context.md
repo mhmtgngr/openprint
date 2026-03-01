@@ -1,0 +1,83 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Dashboard" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - heading "Welcome back, Test!" [level=1] [ref=e50]
+          - paragraph [ref=e51]: Here's what's happening with your print environment today.
+        - generic [ref=e52]:
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - img
+            - generic [ref=e56]:
+              - paragraph [ref=e57]: "0"
+              - paragraph [ref=e58]: Active Printers
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e64]:
+              - paragraph [ref=e65]: "0"
+              - paragraph [ref=e66]: Jobs Today
+          - generic [ref=e68]:
+            - img [ref=e70]
+            - generic [ref=e72]:
+              - paragraph [ref=e73]: 1,234
+              - paragraph [ref=e74]: Pages This Month
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - heading "Recent Print Jobs" [level=2] [ref=e78]
+              - link "View all" [ref=e79] [cursor=pointer]:
+                - /url: /jobs
+            - generic [ref=e81]:
+              - text: No print jobs yet.
+              - link "Select a printer" [ref=e82] [cursor=pointer]:
+                - /url: /printers
+              - text: to get started.
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - heading "Available Printers" [level=2] [ref=e85]
+              - link "Manage" [ref=e86] [cursor=pointer]:
+                - /url: /printers
+            - generic [ref=e88]: No printers configured. Install the OpenPrint Agent to add printers.
+```

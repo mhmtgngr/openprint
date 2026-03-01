@@ -1,0 +1,81 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Settings" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - heading "Settings" [level=1] [ref=e50]
+          - paragraph [ref=e51]: Manage your account and preferences
+        - navigation [ref=e53]:
+          - button "Profile" [ref=e54] [cursor=pointer]
+          - button "Security" [active] [ref=e55] [cursor=pointer]
+          - button "Preferences" [ref=e56] [cursor=pointer]
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - heading "Change Password" [level=2] [ref=e60]
+              - paragraph [ref=e61]: Ensure your account is secure with a strong password
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - generic [ref=e64]: Current Password
+                - textbox "Current Password" [ref=e65]
+              - generic [ref=e66]:
+                - generic [ref=e67]: New Password
+                - textbox "New Password" [ref=e68]
+                - paragraph [ref=e69]: Must be at least 8 characters
+              - generic [ref=e70]:
+                - generic [ref=e71]: Confirm New Password
+                - textbox "Confirm New Password" [ref=e72]
+              - button "Change Password" [ref=e74] [cursor=pointer]
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - heading "Active Sessions" [level=2] [ref=e77]
+              - paragraph [ref=e78]: Manage your active login sessions
+            - generic [ref=e80]:
+              - generic [ref=e81]:
+                - img [ref=e82]
+                - generic [ref=e84]:
+                  - paragraph [ref=e85]: Current Session
+                  - paragraph [ref=e86]: localhost • Active now
+              - generic [ref=e87]: Current
+```
