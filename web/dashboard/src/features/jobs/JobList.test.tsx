@@ -3,56 +3,99 @@
  * Comprehensive tests for the print job list component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@/test/utils/test-utils';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@/test/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import { JobList } from './JobList';
 import type { PrintJob } from '@/types/jobs';
 
+const mockPrinter1 = {
+  id: 'printer-1',
+  name: 'Office HP',
+  agentId: 'agent-1',
+  orgId: 'org-1',
+  type: 'network' as const,
+  capabilities: {
+    supportsColor: true,
+    supportsDuplex: true,
+    supportedPaperSizes: ['A4', 'Letter'],
+    resolution: '600x600',
+  },
+  isActive: true,
+  isOnline: true,
+  createdAt: '2025-01-01T00:00:00Z',
+};
+
+const mockPrinter2 = {
+  id: 'printer-2',
+  name: 'Design Canon',
+  agentId: 'agent-2',
+  orgId: 'org-1',
+  type: 'usb' as const,
+  capabilities: {
+    supportsColor: true,
+    supportsDuplex: false,
+    supportedPaperSizes: ['A4'],
+    resolution: '1200x1200',
+  },
+  isActive: true,
+  isOnline: false,
+  createdAt: '2025-01-01T00:00:00Z',
+};
+
 const mockJobs: PrintJob[] = [
   {
     id: 'job-1',
+    userId: 'user-1',
+    orgId: 'org-1',
     documentName: 'Quarterly Report.pdf',
     status: 'queued',
     pageCount: 15,
     colorPages: 3,
     fileSize: 2048576,
     createdAt: '2025-02-28T10:30:00Z',
-    printer: null,
-    errorMessage: null,
+    printer: undefined,
+    settings: {},
   },
   {
     id: 'job-2',
+    userId: 'user-1',
+    orgId: 'org-1',
     documentName: 'Presentation.pptx',
     status: 'processing',
     pageCount: 24,
     colorPages: 12,
     fileSize: 5242880,
     createdAt: '2025-02-28T11:15:00Z',
-    printer: { id: 'printer-1', name: 'Office HP' },
-    errorMessage: null,
+    printer: mockPrinter1,
+    settings: {},
   },
   {
     id: 'job-3',
+    userId: 'user-1',
+    orgId: 'org-1',
     documentName: 'Failed_Doc.pdf',
     status: 'failed',
     pageCount: 5,
     colorPages: 0,
     fileSize: 512000,
     createdAt: '2025-02-28T09:00:00Z',
-    printer: { id: 'printer-2', name: 'Design Canon' },
+    printer: mockPrinter2,
+    settings: {},
     errorMessage: 'Printer out of paper',
   },
   {
     id: 'job-4',
+    userId: 'user-1',
+    orgId: 'org-1',
     documentName: 'Completed.pdf',
     status: 'completed',
     pageCount: 10,
     colorPages: 5,
     fileSize: 1048576,
     createdAt: '2025-02-28T08:00:00Z',
-    printer: { id: 'printer-1', name: 'Office HP' },
-    errorMessage: null,
+    printer: mockPrinter1,
+    settings: {},
   },
 ];
 

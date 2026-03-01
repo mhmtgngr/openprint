@@ -7,7 +7,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@/test/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import { Documents } from './Documents';
-import type { Document as DocType } from './types';
 
 // Mock the API module
 vi.mock('./api', () => ({
@@ -21,7 +20,7 @@ vi.mock('./api', () => ({
           contentType: 'application/pdf',
           isEncrypted: true,
           createdAt: '2025-02-28T10:00:00Z',
-          updatedAt: '2025-02-28T10:00:00Z',
+          userEmail: 'admin@example.com',
         },
       ],
       count: 1,
@@ -31,39 +30,6 @@ vi.mock('./api', () => ({
     delete: vi.fn(() => Promise.resolve({})),
   },
 }));
-
-const mockDocuments: DocType[] = [
-  {
-    id: 'doc-1',
-    name: 'Quarterly Report.pdf',
-    size: 2048576,
-    contentType: 'application/pdf',
-    isEncrypted: true,
-    createdAt: '2025-02-20T10:00:00Z',
-    updatedAt: '2025-02-20T10:00:00Z',
-    ownerEmail: 'admin@example.com',
-  },
-  {
-    id: 'doc-2',
-    name: 'Presentation.pptx',
-    size: 5242880,
-    contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    isEncrypted: false,
-    createdAt: '2025-02-25T14:30:00Z',
-    updatedAt: '2025-02-25T14:30:00Z',
-    ownerEmail: 'user@example.com',
-  },
-  {
-    id: 'doc-3',
-    name: 'Contract.pdf',
-    size: 102400,
-    contentType: 'application/pdf',
-    isEncrypted: true,
-    createdAt: '2025-02-26T09:15:00Z',
-    updatedAt: '2025-02-26T09:15:00Z',
-    ownerEmail: 'admin@example.com',
-  },
-];
 
 describe('Documents', () => {
   beforeEach(() => {
@@ -223,7 +189,6 @@ describe('Documents', () => {
     });
 
     it('should show document count', async () => {
-      const user = userEvent.setup();
       render(<Documents />);
 
       await waitFor(() => {

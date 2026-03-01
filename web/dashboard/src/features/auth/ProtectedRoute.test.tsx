@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@/test/utils/test-utils';
+import { render, screen } from '@/test/utils/test-utils';
 import { ProtectedRoute, AdminRoute } from './ProtectedRoute';
 import * as useAuthHook from '@/hooks/useAuth';
 
@@ -24,7 +24,9 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: true,
         user: null,
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn(() => false),
       });
@@ -35,7 +37,7 @@ describe('ProtectedRoute', () => {
         </ProtectedRoute>
       );
 
-      expect(screen.getByText(/loading/i/i)).toBeInTheDocument();
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
     });
 
     it('should not render children while loading', () => {
@@ -43,7 +45,9 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: true,
         user: null,
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn(() => false),
       });
@@ -62,7 +66,9 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: true,
         user: null,
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn(() => false),
       });
@@ -73,7 +79,7 @@ describe('ProtectedRoute', () => {
         </ProtectedRoute>
       );
 
-      const container = screen.getByText(/loading/i/i).closest('div');
+      const container = screen.getByText(/loading/i).closest('div');
       expect(container).toHaveClass(/flex items-center justify-center/);
     });
   });
@@ -84,7 +90,9 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: false,
         user: null,
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn(() => false),
       });
@@ -103,8 +111,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'test@example.com', name: 'Test User' },
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          name: 'Test User',
+          role: 'user',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn(() => true),
       });
@@ -123,7 +142,9 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
         isLoading: false,
         user: null,
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn(() => false),
       });
@@ -143,8 +164,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'admin@example.com', name: 'Admin', role: 'admin' },
+        user: {
+          id: '1',
+          email: 'admin@example.com',
+          name: 'Admin',
+          role: 'admin',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn((roles) => roles.includes('admin')),
       });
@@ -162,8 +194,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'user@example.com', name: 'User', role: 'user' },
+        user: {
+          id: '1',
+          email: 'user@example.com',
+          name: 'User',
+          role: 'user',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn((roles) => roles.includes('admin')),
       });
@@ -182,38 +225,60 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'user@example.com', name: 'User', role: 'user' },
+        user: {
+          id: '1',
+          email: 'user@example.com',
+          name: 'User',
+          role: 'user',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: hasRoleMock,
       });
 
       render(
-        <ProtectedRoute requiredRoles={['admin', 'moderator']}>
+        <ProtectedRoute requiredRoles={['admin', 'owner']}>
           <div>Protected Content</div>
         </ProtectedRoute>
       );
 
-      expect(hasRoleMock).toHaveBeenCalledWith(['admin', 'moderator']);
+      expect(hasRoleMock).toHaveBeenCalledWith(['admin', 'owner']);
     });
 
     it('should allow access when user has one of multiple required roles', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'mod@example.com', name: 'Moderator', role: 'moderator' },
+        user: {
+          id: '1',
+          email: 'owner@example.com',
+          name: 'Owner',
+          role: 'owner',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
-        hasRole: vi.fn((roles) => roles.some((r: string) => ['admin', 'moderator'].includes(r))),
+        hasRole: vi.fn((roles) => roles.some((r: string) => ['admin', 'owner'].includes(r))),
       });
 
       render(
-        <ProtectedRoute requiredRoles={['admin', 'moderator']}>
-          <div>Moderator Content</div>
+        <ProtectedRoute requiredRoles={['admin', 'owner']}>
+          <div>Owner Content</div>
         </ProtectedRoute>
       );
 
-      expect(screen.getByText('Moderator Content')).toBeInTheDocument();
+      expect(screen.getByText('Owner Content')).toBeInTheDocument();
     });
 
     it('should not check roles when requiredRoles is not provided', () => {
@@ -221,8 +286,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'user@example.com', name: 'User' },
+        user: {
+          id: '1',
+          email: 'user@example.com',
+          name: 'User',
+          role: 'user',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: hasRoleMock,
       });
@@ -242,8 +318,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'user@example.com', name: 'User' },
+        user: {
+          id: '1',
+          email: 'user@example.com',
+          name: 'User',
+          role: 'user',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: hasRoleMock,
       });
@@ -264,8 +351,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'admin@example.com', name: 'Admin', role: 'admin' },
+        user: {
+          id: '1',
+          email: 'admin@example.com',
+          name: 'Admin',
+          role: 'admin',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn((roles) => roles.includes('admin')),
       });
@@ -283,8 +381,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'user@example.com', name: 'User', role: 'user' },
+        user: {
+          id: '1',
+          email: 'user@example.com',
+          name: 'User',
+          role: 'user',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn((roles) => roles.includes('admin') || roles.includes('owner')),
       });
@@ -302,8 +411,19 @@ describe('ProtectedRoute', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         isLoading: false,
-        user: { id: '1', email: 'owner@example.com', name: 'Owner', role: 'owner' },
+        user: {
+          id: '1',
+          email: 'owner@example.com',
+          name: 'Owner',
+          role: 'owner',
+          orgId: 'org-1',
+          isActive: true,
+          emailVerified: true,
+          createdAt: '2025-01-01T00:00:00Z',
+        },
+        error: null,
         login: vi.fn(),
+        register: vi.fn(),
         logout: vi.fn(),
         hasRole: vi.fn((roles) => roles.includes('owner')),
       });

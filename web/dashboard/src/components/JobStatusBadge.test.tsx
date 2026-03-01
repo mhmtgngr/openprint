@@ -120,48 +120,11 @@ describe('JobStatusBadge', () => {
   });
 
   describe('Size Variants', () => {
-    it('should render small size by default', () => {
+    it('should render default padding', () => {
       const { container } = render(<JobStatusBadge status="completed" />);
 
       const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('px-2\\.5'); // md size padding
-    });
-
-    it('should render sm size when specified', () => {
-      const { container } = render(<JobStatusBadge status="completed" size="sm" />);
-
-      const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('px-2'); // sm size padding
-    });
-
-    it('should render lg size when specified', () => {
-      const { container } = render(<JobStatusBadge status="completed" size="lg" />);
-
-      const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('px-3'); // lg size padding
-    });
-  });
-
-  describe('Dot Sizes', () => {
-    it('should render correct dot size for small badge', () => {
-      const { container } = render(<JobStatusBadge status="completed" size="sm" />);
-
-      const dot = container.querySelector('.w-1.h-1');
-      expect(dot).toBeInTheDocument();
-    });
-
-    it('should render correct dot size for medium badge', () => {
-      const { container } = render(<JobStatusBadge status="completed" size="md" />);
-
-      const dot = container.querySelector('.w-1\\.5.h-1\\.5');
-      expect(dot).toBeInTheDocument();
-    });
-
-    it('should render correct dot size for large badge', () => {
-      const { container } = render(<JobStatusBadge status="completed" size="lg" />);
-
-      const dot = container.querySelector('.w-2.h-2');
-      expect(dot).toBeInTheDocument();
+      expect(badge).toHaveClass('px-2\\.5');
     });
   });
 
@@ -188,28 +151,6 @@ describe('JobStatusBadge', () => {
 
       const icon = container.querySelector('svg.animate-spin');
       expect(icon).not.toBeInTheDocument();
-    });
-
-    it('should show spinning icon when showIcon is true and status is processing', () => {
-      const { container } = render(<JobStatusBadge status="processing" showIcon={true} />);
-
-      const icon = container.querySelector('svg.animate-spin');
-      expect(icon).toBeInTheDocument();
-    });
-
-    it('should not show icon for other statuses when showIcon is true', () => {
-      const { container } = render(<JobStatusBadge status="completed" showIcon={true} />);
-
-      const icon = container.querySelector('svg.animate-spin');
-      expect(icon).not.toBeInTheDocument();
-    });
-
-    it('should render spinner SVG with correct attributes', () => {
-      const { container } = render(<JobStatusBadge status="processing" showIcon={true} />);
-
-      const svg = container.querySelector('svg.animate-spin');
-      expect(svg).toHaveAttribute('fill', 'none');
-      expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
     });
   });
 

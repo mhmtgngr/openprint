@@ -131,7 +131,6 @@ describe('Devices', () => {
     it('should render view toggle buttons', () => {
       render(<Devices />);
 
-      const tableIcon = document.querySelector('.TableIcon') || document.querySelector('button');
       expect(document.querySelector('button')).toBeInTheDocument();
     });
   });
@@ -305,7 +304,6 @@ describe('Devices', () => {
 
   describe('View Toggle', () => {
     it('should toggle between table and grid view', async () => {
-      const user = userEvent.setup();
       render(<Devices />);
 
       const viewButtons = document.querySelectorAll('button');

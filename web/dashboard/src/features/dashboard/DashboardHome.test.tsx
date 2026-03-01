@@ -29,8 +29,19 @@ describe('DashboardHome', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
-      user: { id: '1', email: 'admin@example.com', name: 'Admin' },
+      user: {
+        id: '1',
+        email: 'admin@example.com',
+        name: 'Admin',
+        role: 'admin',
+        orgId: 'org-1',
+        isActive: true,
+        emailVerified: true,
+        createdAt: '2025-01-01T00:00:00Z',
+      },
+      error: null,
       login: vi.fn(),
+      register: vi.fn(),
       logout: vi.fn(),
       hasRole: vi.fn(() => true),
     });
@@ -374,7 +385,7 @@ describe('DashboardHome', () => {
     });
 
     it('should set maxItems to 6 for RecentActivity', () => {
-      const { container } = render(<DashboardHome />);
+      render(<DashboardHome />);
 
       // RecentActivity should be rendered
       expect(screen.getByText('Recent Activity')).toBeInTheDocument();

@@ -24,13 +24,13 @@ const mockActivities: Activity[] = [
     jobId: 'job-2',
     jobName: 'Invoice.pdf',
     printerName: 'Design Canon',
-    errorMessage: 'Out of paper',
+    details: 'Out of paper',
     timestamp: '2025-02-28T09:15:00Z',
   },
   {
     id: 'act-3',
     type: 'agent_connected',
-    agentId: 'agent-1',
+    details: 'agent-1',
     timestamp: '2025-02-28T08:00:00Z',
   },
   {
@@ -404,7 +404,7 @@ describe('RecentActivity', () => {
       const activity: Activity = {
         id: 'act-1',
         type: 'agent_disconnected',
-        agentId: 'agent-1',
+        details: 'agent-1',
         timestamp: '2025-02-28T10:00:00Z',
       };
 
@@ -417,7 +417,7 @@ describe('RecentActivity', () => {
       const activity: Activity = {
         id: 'act-1',
         type: 'user_invited',
-        invitedUserEmail: 'new@example.com',
+        details: 'new@example.com',
         timestamp: '2025-02-28T10:00:00Z',
       };
 

@@ -369,7 +369,7 @@ export const jobsHandlers = [
   // Create job
   http.post(`${API_URL}/jobs`, async ({ request }) => {
     await delay(500);
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
 
     return HttpResponse.json({
       id: `job-${Date.now()}`,
@@ -596,10 +596,8 @@ export const devicesHandlers = [
   }),
 
   // Delete device
-  http.delete(`${API_URL}/devices/:id`, async ({ request }) => {
+  http.delete(`${API_URL}/devices/:id`, async () => {
     await delay(300);
-    const url = new URL(request.url);
-    const type = url.searchParams.get('type');
 
     return HttpResponse.json({ success: true });
   }),
@@ -607,7 +605,7 @@ export const devicesHandlers = [
   // Register device
   http.post(`${API_URL}/devices/register`, async ({ request }) => {
     await delay(500);
-    const body = await request.json();
+    const body = await request.json() as { device_name?: string; location?: string };
 
     return HttpResponse.json({
       id: `device-${Date.now()}`,
@@ -640,7 +638,7 @@ export const documentsHandlers = [
   }),
 
   // Upload document
-  http.post(`${API_URL}/documents`, async ({ request }) => {
+  http.post(`${API_URL}/documents`, async () => {
     await delay(800);
 
     return HttpResponse.json({
@@ -695,7 +693,7 @@ export const documentsHandlers = [
 // Analytics handlers
 export const analyticsHandlers = [
   // Get usage statistics
-  http.get(`${API_URL}/analytics/usage`, async ({ request }) => {
+  http.get(`${API_URL}/analytics/usage`, async () => {
     await delay(300);
 
     return HttpResponse.json(mockAnalytics);
@@ -718,7 +716,7 @@ export const analyticsHandlers = [
   }),
 
   // Get quota status (print quota monitoring feature)
-  http.get(`${API_URL}/analytics/quota`, async ({ request }) => {
+  http.get(`${API_URL}/analytics/quota`, async () => {
     await delay(200);
 
     return HttpResponse.json({

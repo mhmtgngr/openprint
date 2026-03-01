@@ -3,8 +3,8 @@
  * Tests for the agent listing component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@/test/utils/test-utils';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@/test/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import { AgentList } from './AgentList';
 import type { Agent } from '@/types/agents';
@@ -18,7 +18,14 @@ const mockAgents: Agent[] = [
     status: 'online',
     createdAt: '2025-02-01T10:00:00Z',
     lastHeartbeat: '2025-02-28T12:00:00Z',
-    associatedUser: { id: 'user-1', name: 'John Doe' },
+    orgId: 'org-1',
+    capabilities: {
+      supportedFormats: ['pdf', 'docx'],
+      maxJobSize: 10485760,
+      supportsColor: true,
+      supportsDuplex: true,
+    },
+    associatedUser: { id: 'user-1', name: 'John Doe', email: 'john@example.com' },
     printerCount: 3,
     jobQueueDepth: 2,
   },
@@ -30,6 +37,13 @@ const mockAgents: Agent[] = [
     status: 'offline',
     createdAt: '2025-02-10T14:00:00Z',
     lastHeartbeat: '2025-02-28T08:00:00Z',
+    orgId: 'org-1',
+    capabilities: {
+      supportedFormats: ['pdf'],
+      maxJobSize: 5242880,
+      supportsColor: false,
+      supportsDuplex: true,
+    },
     printerCount: 2,
   },
   {
@@ -40,6 +54,13 @@ const mockAgents: Agent[] = [
     status: 'error',
     createdAt: '2025-02-15T09:00:00Z',
     lastHeartbeat: '2025-02-28T11:30:00Z',
+    orgId: 'org-1',
+    capabilities: {
+      supportedFormats: ['pdf', 'jpg', 'png'],
+      maxJobSize: 10485760,
+      supportsColor: true,
+      supportsDuplex: true,
+    },
     printerCount: 1,
   },
 ];

@@ -164,7 +164,7 @@ describe('LoginForm', () => {
     it('should show loading text when isLoading is true', () => {
       render(<LoginForm onSubmit={mockOnSubmit} isLoading={true} />);
 
-      expect(screen.getByRole('button', { name: /please wait/i/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /please wait/i })).toBeInTheDocument();
     });
 
     it('should show normal button text when isLoading is false', () => {
@@ -182,7 +182,7 @@ describe('LoginForm', () => {
     it('should disable submit button when isLoading is true', () => {
       render(<LoginForm onSubmit={mockOnSubmit} isLoading={true} />);
 
-      const submitButton = screen.getByRole('button', { name: /please wait/i/i });
+      const submitButton = screen.getByRole('button', { name: /please wait/i });
       expect(submitButton).toBeDisabled();
     });
 
@@ -196,7 +196,7 @@ describe('LoginForm', () => {
     it('should apply disabled styling when isLoading is true', () => {
       render(<LoginForm onSubmit={mockOnSubmit} isLoading={true} />);
 
-      const submitButton = screen.getByRole('button', { name: /please wait/i/i });
+      const submitButton = screen.getByRole('button', { name: /please wait/i });
       expect(submitButton).toHaveClass(/disabled:opacity-50/);
     });
   });

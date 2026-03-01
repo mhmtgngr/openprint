@@ -127,11 +127,6 @@ const createTestQueryClient = () =>
         retry: false,
       },
     },
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {},
-    },
   });
 
 const AllTheProviders = ({ children, queryClient, router: Router = BrowserRouter, routerProps }: AllTheProvidersProps) => {
@@ -244,7 +239,7 @@ export { createTestQueryClient };
 /**
  * Wait for all pending React Query promises to resolve
  */
-export const waitForQueryUpdates = async (queryClient: QueryClient) => {
+export const waitForQueryUpdates = async () => {
   return new Promise<void>((resolve) => {
     setTimeout(() => resolve(), 0);
   });
@@ -279,7 +274,7 @@ export const createAsyncMock = <T extends (...args: any[]) => any>(
 export const suppressConsoleErrors = () => {
   const originalError = console.error;
   beforeEach(() => {
-    console.error = jest.fn();
+    console.error = vi.fn();
   });
   afterEach(() => {
     console.error = originalError;

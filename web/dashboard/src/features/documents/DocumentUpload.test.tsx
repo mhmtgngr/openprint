@@ -203,7 +203,6 @@ describe('DocumentUpload', () => {
     });
 
     it('should handle drop event', async () => {
-      const user = userEvent.setup();
       render(<DocumentUpload onUpload={mockOnUpload} />);
 
       const dropZone = screen.getByText('Upload Documents').closest('div');

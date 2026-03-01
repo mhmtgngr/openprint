@@ -16,8 +16,7 @@ const mockDocument: Document = {
   contentType: 'application/pdf',
   isEncrypted: true,
   createdAt: '2025-02-20T10:00:00Z',
-  updatedAt: '2025-02-20T10:00:00Z',
-  ownerEmail: 'admin@example.com',
+  userEmail: 'admin@example.com',
 };
 
 const mockImageDocument: Document = {
@@ -27,8 +26,7 @@ const mockImageDocument: Document = {
   contentType: 'image/jpeg',
   isEncrypted: false,
   createdAt: '2025-02-25T14:30:00Z',
-  updatedAt: '2025-02-25T14:30:00Z',
-  ownerEmail: 'user@example.com',
+  userEmail: 'user@example.com',
 };
 
 const mockWordDocument: Document = {
@@ -38,8 +36,7 @@ const mockWordDocument: Document = {
   contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   isEncrypted: true,
   createdAt: '2025-02-26T09:15:00Z',
-  updatedAt: '2025-02-26T09:15:00Z',
-  ownerEmail: 'admin@example.com',
+  userEmail: 'admin@example.com',
   checksum: 'abc123def456',
 };
 
@@ -137,7 +134,7 @@ describe('DocumentCard', () => {
 
     it('should not render encryption section when isEncrypted is undefined', () => {
       const docWithoutEncryption = { ...mockDocument, isEncrypted: undefined };
-      const { container } = render(<DocumentCard document={docWithoutEncryption} />);
+      render(<DocumentCard document={docWithoutEncryption} />);
 
       expect(screen.queryByText('Encrypted')).not.toBeInTheDocument();
       expect(screen.queryByText('Not encrypted')).not.toBeInTheDocument();

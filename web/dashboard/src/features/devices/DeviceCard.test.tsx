@@ -16,7 +16,14 @@ const mockAgent: DeviceAgent = {
   agentVersion: '1.2.0',
   status: 'online',
   createdAt: '2025-02-01T10:00:00Z',
-  lastSeen: '2025-02-28T12:00:00Z',
+  lastHeartbeat: '2025-02-28T12:00:00Z',
+  orgId: 'org-1',
+  capabilities: {
+    supportedFormats: ['pdf', 'docx'],
+    maxJobSize: 10485760,
+    supportsColor: true,
+    supportsDuplex: true,
+  },
   printerCount: 3,
 };
 
@@ -27,7 +34,14 @@ const mockOfflineAgent: DeviceAgent = {
   agentVersion: '1.1.5',
   status: 'offline',
   createdAt: '2025-02-10T14:00:00Z',
-  lastSeen: '2025-02-28T08:00:00Z',
+  lastHeartbeat: '2025-02-28T08:00:00Z',
+  orgId: 'org-1',
+  capabilities: {
+    supportedFormats: ['pdf'],
+    maxJobSize: 5242880,
+    supportsColor: false,
+    supportsDuplex: true,
+  },
   printerCount: 2,
 };
 
@@ -36,13 +50,15 @@ const mockPrinter: DevicePrinter = {
   name: 'Office HP',
   agentName: 'Office Agent',
   agentId: 'agent-1',
-  type: 'laser',
+  orgId: 'org-1',
+  type: 'network',
   isOnline: true,
   isActive: true,
   capabilities: {
     supportsColor: true,
     supportsDuplex: true,
-    paperSizes: ['A4', 'Letter'],
+    supportedPaperSizes: ['A4', 'Letter'],
+    resolution: '600x600',
   },
   createdAt: '2025-02-01T10:00:00Z',
   lastSeen: '2025-02-28T12:00:00Z',
@@ -53,13 +69,15 @@ const mockOfflinePrinter: DevicePrinter = {
   name: 'Warehouse Brother',
   agentName: 'Warehouse Agent',
   agentId: 'agent-2',
-  type: 'inkjet',
+  orgId: 'org-1',
+  type: 'usb',
   isOnline: false,
   isActive: false,
   capabilities: {
     supportsColor: false,
     supportsDuplex: true,
-    paperSizes: ['A4'],
+    supportedPaperSizes: ['A4'],
+    resolution: '600x600',
   },
   createdAt: '2025-02-10T14:00:00Z',
   lastSeen: '2025-02-28T08:00:00Z',
@@ -177,14 +195,14 @@ describe('DeviceCard', () => {
 
   describe('Status Indicators', () => {
     it('should apply green color for online status', () => {
-      const { container } = render(<DeviceCard device={mockAgent} />);
+      render(<DeviceCard device={mockAgent} />);
 
       const statusContainer = screen.getByText('Online').closest('span');
       expect(statusContainer?.className).toContain('text-green');
     });
 
     it('should apply gray color for offline status', () => {
-      const { container } = render(<DeviceCard device={mockOfflineAgent} />);
+      render(<DeviceCard device={mockOfflineAgent} />);
 
       const statusContainer = screen.getByText('Offline').closest('span');
       expect(statusContainer?.className).toContain('text-gray');
