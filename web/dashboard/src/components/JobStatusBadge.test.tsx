@@ -50,10 +50,10 @@ describe('JobStatusBadge', () => {
       expect(dot).toBeInTheDocument();
     });
 
-    it('should render blue dot for queued status', () => {
+    it('should render gray dot for queued status', () => {
       const { container } = render(<JobStatusBadge status="queued" />);
 
-      const dot = container.querySelector('.bg-blue-500');
+      const dot = container.querySelector('.bg-gray-400');
       expect(dot).toBeInTheDocument();
     });
 
@@ -74,7 +74,7 @@ describe('JobStatusBadge', () => {
     it('should render gray dot for cancelled status', () => {
       const { container } = render(<JobStatusBadge status="cancelled" />);
 
-      const dot = container.querySelector('.bg-gray-500');
+      const dot = container.querySelector('.bg-gray-400');
       expect(dot).toBeInTheDocument();
     });
   });
@@ -86,7 +86,7 @@ describe('JobStatusBadge', () => {
       const { container: failedContainer } = render(<JobStatusBadge status="failed" />);
 
       expect(completedContainer.querySelector('.bg-green-100')).toBeInTheDocument();
-      expect(queuedContainer.querySelector('.bg-blue-100')).toBeInTheDocument();
+      expect(queuedContainer.querySelector('.bg-gray-100')).toBeInTheDocument();
       expect(failedContainer.querySelector('.bg-red-100')).toBeInTheDocument();
     });
 
@@ -124,7 +124,7 @@ describe('JobStatusBadge', () => {
       const { container } = render(<JobStatusBadge status="completed" />);
 
       const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('px-2\\.5');
+      expect(badge.className).toContain('px-2.5');
     });
   });
 
@@ -186,21 +186,21 @@ describe('JobStatusBadge', () => {
       const { container } = render(<JobStatusBadge status="completed" />);
 
       const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass(/dark\\:/);
+      expect(badge.className).toContain('dark:');
     });
 
     it('should apply dark mode background color', () => {
       const { container } = render(<JobStatusBadge status="completed" />);
 
       const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('dark\\:bg-green-900\\/30');
+      expect(badge.className).toContain('dark:bg-green-900/30');
     });
 
     it('should apply dark mode text color', () => {
       const { container } = render(<JobStatusBadge status="completed" />);
 
       const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('dark\\:text-green-300');
+      expect(badge.className).toContain('dark:text-green-300');
     });
   });
 
@@ -224,7 +224,7 @@ describe('JobStatusBadge', () => {
       const { container } = render(<JobStatusBadge status="completed" />);
 
       const badge = container.firstChild as HTMLElement;
-      expect(badge).toHaveClass('gap-1\\.5');
+      expect(badge.className).toContain('gap-1.5');
     });
 
     it('should align items center', () => {

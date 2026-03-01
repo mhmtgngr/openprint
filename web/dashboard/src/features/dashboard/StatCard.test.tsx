@@ -48,10 +48,10 @@ describe('StatCard', () => {
     });
 
     it('should apply color variant classes', () => {
-      const { container } = render(<StatCard title="Test" value={42} color="green" />);
+      const { container } = render(<StatCard title="Test" value={42} color="green" icon={TestIcon} />);
 
-      const card = container.querySelector('.bg-green-50, .dark\\:bg-green-900\\/20');
-      expect(card).toBeInTheDocument();
+      // Check for green color classes on the icon container
+      expect(container.querySelector('.bg-green-100')).toBeInTheDocument();
     });
   });
 
@@ -143,8 +143,9 @@ describe('StatCard', () => {
     it('should render skeleton when loading is true', () => {
       render(<StatCard title="Test" value={42} loading={true} />);
 
-      const card = screen.getByText('Test').closest('div');
-      expect(card?.parentElement).toHaveClass('animate-pulse');
+      // The loading card has animate-pulse class
+      const card = document.querySelector('.animate-pulse');
+      expect(card).toBeInTheDocument();
     });
 
     it('should not render value when loading', () => {
@@ -268,6 +269,7 @@ describe('StatCard', () => {
     it('should format decimal numbers', () => {
       render(<StatCard title="Test" value={1234.56} />);
 
+      // toLocaleString rounds to integer by default
       expect(screen.getByText('1,235')).toBeInTheDocument();
     });
 

@@ -191,9 +191,9 @@ describe('RecentActivity', () => {
     it('should display relative timestamps', () => {
       render(<RecentActivity activities={mockActivities} />);
 
-      // Just check that some time elements are present
-      const timeElements = document.querySelectorAll('text-xs.text-gray-500');
-      expect(timeElements.length).toBeGreaterThan(0);
+      // Just check that some time elements are present with "ago" text
+      const agoElements = screen.getAllByText(/ago/);
+      expect(agoElements.length).toBeGreaterThan(0);
     });
 
     it('should show "Just now" for very recent activities', () => {
@@ -221,8 +221,9 @@ describe('RecentActivity', () => {
     it('should render correct number of skeleton items', () => {
       render(<RecentActivity activities={[]} loading={true} maxItems={3} />);
 
+      // There are 4 animate-pulse elements: 1 header title + 3 activity skeletons
       const skeletons = document.querySelectorAll('.animate-pulse');
-      expect(skeletons.length).toBe(3); // maxItems controls skeleton count
+      expect(skeletons.length).toBe(4);
     });
 
     it('should not show empty state when loading', () => {
@@ -348,12 +349,9 @@ describe('RecentActivity', () => {
 
       render(<RecentActivity activities={activitiesWithoutDetails} />);
 
-      // Details should only show for the failed job
-      const detailsElements = document.querySelectorAll('.text-xs.text-gray-500');
-      const detailsWithText = Array.from(detailsElements).filter(el =>
-        el.textContent && el.textContent.trim().length > 0 && !el.textContent.includes('ago')
-      );
-      expect(detailsWithText.length).toBe(0);
+      // Details paragraph should not be present when activity has no details
+      const detailsParagraph = document.querySelector('p.text-xs.text-gray-500.mt-1');
+      expect(detailsParagraph).not.toBeInTheDocument();
     });
   });
 

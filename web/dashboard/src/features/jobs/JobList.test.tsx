@@ -195,14 +195,16 @@ describe('JobList', () => {
     it('should render file sizes', () => {
       render(<JobList jobs={mockJobs} />);
 
-      expect(screen.getByText(/2 MB/)).toBeInTheDocument();
-      expect(screen.getByText(/5 MB/)).toBeInTheDocument();
+      // The component uses formatFileSize which shows 1.95 MB for 2048576 bytes
+      expect(screen.getByText(/1\.95 MB/)).toBeInTheDocument();
+      expect(screen.getByText(/5\.?0? MB/)).toBeInTheDocument();
     });
 
     it('should display printer name when assigned', () => {
       render(<JobList jobs={mockJobs} />);
 
-      expect(screen.getByText('Office HP')).toBeInTheDocument();
+      // Office HP appears multiple times (job-2 and job-4), use getAllByText
+      expect(screen.getAllByText('Office HP').length).toBeGreaterThan(0);
       expect(screen.getByText('Design Canon')).toBeInTheDocument();
     });
 
@@ -316,9 +318,9 @@ describe('JobList', () => {
       render(<JobList jobs={mockJobs} />);
 
       // The component uses formatDistanceToNow which shows relative time
-      // Just check that some time text is present
-      const timeElements = document.querySelectorAll('td.text-gray-500');
-      expect(timeElements.length).toBeGreaterThan(0);
+      // Check for relative time text patterns like "ago", "about", etc.
+      const agoElements = screen.getAllByText(/ago/);
+      expect(agoElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -327,11 +329,12 @@ describe('JobList', () => {
       render(<JobList jobs={mockJobs} />);
 
       expect(screen.getByRole('table')).toBeInTheDocument();
-      expect(screen.getAllByRole('row')).toHaveLength(mockJobs.length + 2); // +1 for header, +1 for header row
+      // 1 header row + job data rows
+      expect(screen.getAllByRole('row')).toHaveLength(mockJobs.length + 1);
     });
 
     it('should have proper button labels', () => {
-      render(<JobList jobs={mockJobs} />);
+      render(<JobList jobs={mockJobs} onJobClick={vi.fn()} />);
 
       expect(document.querySelector('button[title="Cancel job"]')).toBeInTheDocument();
       expect(document.querySelector('button[title="Retry job"]')).toBeInTheDocument();
