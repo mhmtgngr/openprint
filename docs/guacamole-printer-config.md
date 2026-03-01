@@ -75,6 +75,29 @@ RDP session host and routes them to the user's local printer via the cloud.
 9. Job-service matches the job to the client agent via **user_printer_mappings** table
 10. Client Agent downloads the document and prints to the user's local physical printer
 
+### Print Fidelity: Comparison with Windows RDP Printer Redirection
+
+| Feature | Windows RDP Redirection | OpenPrint Agent |
+|---------|------------------------|-----------------|
+| User experience | Print → appears on local printer | Print → appears on local printer |
+| Fonts | Preserved (EMF) | Preserved (PostScript) |
+| Graphics/images | Preserved (EMF) | Preserved (PostScript) |
+| Colors | Full color | Full color |
+| Layout/formatting | Exact | Exact |
+| Requires RDP client | Yes (mstsc.exe, not Guacamole) | No (works with Guacamole browser) |
+| Network path | RDP virtual channel | Cloud (HTTPS) |
+| Offline support | No | No |
+
+The OpenPrint agent uses a **PostScript driver** (Microsoft PS Class Driver) on the virtual
+printer. PostScript is a page description language that captures the complete visual output
+including all fonts, vector graphics, raster images, colors, and layout. The client agent
+then renders and prints the PostScript data using Ghostscript or sends it directly to
+PostScript-capable printers.
+
+**For best results on the client workstation**, install **Ghostscript** for PostScript-to-PDF
+conversion, or **SumatraPDF** for lightweight PDF printing. The agent will automatically
+detect and use these tools.
+
 ---
 
 ## Setup Guide
@@ -124,9 +147,12 @@ sc.exe start OpenPrintAgent
 ```
 
 The server agent will automatically:
-- Create a virtual printer called "OpenPrint" using the "Generic / Text Only" driver
+- Create a virtual printer called "OpenPrint" using a **PostScript driver** (Microsoft PS Class Driver)
+- The PostScript driver preserves full formatting, fonts, graphics, and colors — producing
+  output equivalent to Windows RDP local printer redirection
 - Create a TCP/IP port pointing to localhost:9100
 - Start listening for print data on port 9100
+- Detect the print data format (PostScript, PDF, PCL, XPS)
 - Discover existing printers on the server
 
 #### Required Windows Components (Server)
@@ -137,7 +163,7 @@ The server agent will automatically:
 | Remote Desktop Services | `Install-WindowsFeature RDS-RD-Server` |
 | PowerShell 5.1+ | Pre-installed |
 | .NET Framework 4.7.2+ | Pre-installed |
-| "Generic / Text Only" printer driver | Pre-installed (Windows built-in) |
+| "Microsoft PS Class Driver" | Pre-installed (Windows built-in PostScript driver for full-fidelity output) |
 
 ### Step 3: Install Client Agent (User Workstation)
 
@@ -178,6 +204,8 @@ The client agent will automatically:
 | PowerShell 5.1+ | Pre-installed |
 | .NET Framework 4.7.2+ | Pre-installed |
 | Printer drivers | Vendor installer for each connected printer |
+| Ghostscript (recommended) | Download from ghostscript.com — converts PostScript to PDF for printing |
+| SumatraPDF (recommended) | Download from sumatrapdfreader.org — lightweight silent PDF printing |
 
 ### Step 4: Create User-Printer Mapping
 

@@ -88,6 +88,7 @@ type Agent struct {
 type CapturedPrintJob struct {
 	FilePath    string `json:"file_path"`
 	FileName    string `json:"file_name"`
+	ContentType string `json:"content_type"`
 	UserName    string `json:"user_name"`
 	UserEmail   string `json:"user_email"`
 	Title       string `json:"title"`
@@ -119,18 +120,19 @@ type PrinterCaps struct {
 
 // PrintJob represents a print job from the server.
 type PrintJob struct {
-	JobID            string `json:"job_id"`
-	DocumentID       string `json:"document_id"`
-	DocumentURL      string `json:"document_url"`
-	DocumentChecksum string `json:"document_checksum"`
-	PrinterID        string `json:"printer_id"`
-	PrinterName      string `json:"printer_name"`
-	Title            string `json:"title"`
-	Copies           int    `json:"copies"`
-	ColorMode        string `json:"color_mode"`
-	Duplex           bool   `json:"duplex"`
-	MediaType        string `json:"media_type"`
-	Quality          string `json:"quality"`
+	JobID            string            `json:"job_id"`
+	DocumentID       string            `json:"document_id"`
+	DocumentURL      string            `json:"document_url"`
+	DocumentChecksum string            `json:"document_checksum"`
+	PrinterID        string            `json:"printer_id"`
+	PrinterName      string            `json:"printer_name"`
+	Title            string            `json:"title"`
+	Copies           int               `json:"copies"`
+	ColorMode        string            `json:"color_mode"`
+	Duplex           bool              `json:"duplex"`
+	MediaType        string            `json:"media_type"`
+	Quality          string            `json:"quality"`
+	Options          map[string]string `json:"options,omitempty"`
 }
 
 // JobStatusUpdate represents a status update for a job.
@@ -369,8 +371,23 @@ func (a *Agent) getPrintListenPort() int {
 	return 9100
 }
 
+// virtualPrinterDrivers is the preference order for virtual printer drivers.
+// PostScript preserves full formatting, fonts, graphics, and colors — matching
+// the fidelity of native Windows RDP local printer redirection (EMF/RAW).
+// Falls back to less capable drivers if the preferred one is unavailable.
+var virtualPrinterDrivers = []struct {
+	Name        string
+	ContentType string
+}{
+	{"Microsoft PS Class Driver", "application/postscript"},
+	{"MS Publisher Color Printer", "application/postscript"},
+	{"Generic / Text Only", "text/plain"},
+}
+
 // setupVirtualPrinter creates a virtual printer that sends print data to a local TCP port.
-// This uses the "Generic / Text Only" driver with a Standard TCP/IP port pointing to localhost.
+// It uses a PostScript driver (preferred) to capture full-fidelity output including
+// fonts, graphics, layout, and colors — producing output equivalent to what Windows
+// RDP local printer redirection provides.
 func (a *Agent) setupVirtualPrinter(ctx context.Context) error {
 	printerName := a.getVirtualPrinterName()
 	port := a.getPrintListenPort()
@@ -397,15 +414,28 @@ func (a *Agent) setupVirtualPrinter(ctx context.Context) error {
 		log.Printf("Add printer port output: %s (err: %v)", string(output), err)
 	}
 
-	// Step 2: Ensure the "Generic / Text Only" driver is available
-	driverName := "Generic / Text Only"
-	checkDriverCmd := powershellCommand(fmt.Sprintf(`Get-PrinterDriver -Name "%s" -ErrorAction SilentlyContinue`, driverName))
-	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", checkDriverCmd)
-	if _, err := cmd.Output(); err != nil {
+	// Step 2: Find the best available printer driver (prefer PostScript for full fidelity)
+	driverName := ""
+	for _, driver := range virtualPrinterDrivers {
+		checkDriverCmd := powershellCommand(fmt.Sprintf(`Get-PrinterDriver -Name "%s" -ErrorAction SilentlyContinue`, driver.Name))
+		cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", checkDriverCmd)
+		if _, err := cmd.Output(); err == nil {
+			driverName = driver.Name
+			log.Printf("Using printer driver: %s (content type: %s)", driver.Name, driver.ContentType)
+			break
+		}
 		// Try adding the driver
-		addDriverCmd := powershellCommand(fmt.Sprintf(`Add-PrinterDriver -Name "%s" -ErrorAction SilentlyContinue`, driverName))
+		addDriverCmd := powershellCommand(fmt.Sprintf(`Add-PrinterDriver -Name "%s" -ErrorAction SilentlyContinue`, driver.Name))
 		cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", addDriverCmd)
-		cmd.Run()
+		if err := cmd.Run(); err == nil {
+			driverName = driver.Name
+			log.Printf("Installed and using printer driver: %s (content type: %s)", driver.Name, driver.ContentType)
+			break
+		}
+	}
+
+	if driverName == "" {
+		return fmt.Errorf("no suitable printer driver found; tried: %v", virtualPrinterDrivers)
 	}
 
 	// Step 3: Create the virtual printer
@@ -418,7 +448,7 @@ func (a *Agent) setupVirtualPrinter(ctx context.Context) error {
 		return fmt.Errorf("failed to create virtual printer: %s: %w", string(output), err)
 	}
 
-	log.Printf("Virtual printer '%s' created successfully", printerName)
+	log.Printf("Virtual printer '%s' created successfully with driver '%s'", printerName, driverName)
 	return nil
 }
 
@@ -502,9 +532,14 @@ func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn) {
 
 	log.Printf("Captured print job: %d bytes -> %s", bytesWritten, tempFile)
 
+	// Detect the content type from the captured data
+	contentType := detectPrintDataFormat(tempFile)
+	log.Printf("Detected print data format: %s", contentType)
+
 	// Identify the RDP session user who printed
 	capturedJob := a.identifyPrintJobOwner(tempFile, bytesWritten)
 	capturedJob.FilePath = tempFile
+	capturedJob.ContentType = contentType
 
 	// Upload to OpenPrint Cloud and create a routed job
 	if err := a.uploadCapturedJob(ctx, capturedJob); err != nil {
@@ -513,6 +548,46 @@ func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn) {
 
 	// Clean up temp file after upload
 	os.Remove(tempFile)
+}
+
+// detectPrintDataFormat examines the file header to determine the print data format.
+func detectPrintDataFormat(filePath string) string {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "application/octet-stream"
+	}
+	defer f.Close()
+
+	header := make([]byte, 64)
+	n, err := f.Read(header)
+	if err != nil || n == 0 {
+		return "application/octet-stream"
+	}
+	header = header[:n]
+
+	headerStr := string(header)
+
+	// PostScript: starts with %!PS or %!
+	if strings.HasPrefix(headerStr, "%!PS") || strings.HasPrefix(headerStr, "%!") {
+		return "application/postscript"
+	}
+
+	// PDF: starts with %PDF
+	if strings.HasPrefix(headerStr, "%PDF") {
+		return "application/pdf"
+	}
+
+	// PCL: starts with ESC character sequences
+	if len(header) > 0 && header[0] == 0x1B {
+		return "application/vnd.hp-pcl"
+	}
+
+	// XPS: ZIP-based format (PK magic bytes)
+	if len(header) >= 2 && header[0] == 0x50 && header[1] == 0x4B {
+		return "application/oxps"
+	}
+
+	return "application/octet-stream"
 }
 
 // identifyPrintJobOwner identifies the user who submitted a print job using the Windows spooler.
@@ -648,13 +723,14 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 		"user_email":  captured.UserEmail,
 		"title":       captured.Title,
 		"copies":      1,
-		"color_mode":  "monochrome",
+		"color_mode":  "auto",
 		"media_type":  "a4",
 		"quality":     "normal",
 		"options": map[string]string{
-			"source":          "rdp_capture",
-			"server_agent_id": a.config.AgentID,
-			"captured_size":   fmt.Sprintf("%d", captured.Size),
+			"source":            "rdp_capture",
+			"server_agent_id":   a.config.AgentID,
+			"captured_size":     fmt.Sprintf("%d", captured.Size),
+			"content_type":      captured.ContentType,
 		},
 	}
 
@@ -698,10 +774,16 @@ func (a *Agent) uploadDocumentToStorage(storageURL string, captured *CapturedPri
 	hash.Write(fileData)
 	checksum := hex.EncodeToString(hash.Sum(nil))
 
+	// Use the detected content type for proper handling on the client side
+	contentType := captured.ContentType
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
 	// Build the request body for the upload
 	uploadReq := map[string]interface{}{
 		"name":         captured.Title,
-		"content_type": "application/octet-stream",
+		"content_type": contentType,
 		"size":         captured.Size,
 		"checksum":     checksum,
 		"user_email":   captured.UserEmail,
@@ -941,9 +1023,22 @@ func (a *Agent) processJob(ctx context.Context, job PrintJob) error {
 	// Update job status to in_progress
 	a.updateJobStatus(job, "in_progress", "Downloading document", 0)
 
-	// Download document
+	// Download document with appropriate extension based on content type
 	tempDir := os.TempDir()
-	tempFile := filepath.Join(tempDir, fmt.Sprintf("openprint_%s.pdf", job.JobID))
+	ext := ".prn"
+	if ct := getJobOption(job, "content_type"); ct != "" {
+		switch ct {
+		case "application/postscript":
+			ext = ".ps"
+		case "application/pdf":
+			ext = ".pdf"
+		case "application/vnd.hp-pcl":
+			ext = ".pcl"
+		case "application/oxps":
+			ext = ".xps"
+		}
+	}
+	tempFile := filepath.Join(tempDir, fmt.Sprintf("openprint_%s%s", job.JobID, ext))
 
 	if err := a.downloadDocument(job.DocumentURL, tempFile); err != nil {
 		return fmt.Errorf("download failed: %w", err)
@@ -1013,26 +1108,152 @@ func (a *Agent) downloadDocument(url, destPath string) error {
 }
 
 // printDocument prints a document using Windows print commands.
+// Handles PostScript, PDF, and raw print data from the server-side capture.
 func (a *Agent) printDocument(filePath, printerName string, job PrintJob) error {
-	// For PDF files, we can use several methods:
-	// 1. Adobe Reader Reader (if installed)
-	// 2. Foxit Reader (if installed)
-	// 3. Microsoft Print to PDF (converting to print)
-	// 4. Windows Shell print command
-
-	// Try using the Windows shell print command
-	args := []string{
-		"/C",
-		"cd /d " + filepath.Dir(filePath),
-		"&&",
-		"timeout /t 2 /nobreak > nul", // Small delay
-		"&&",
-		fmt.Sprintf("powershell -Command \"Add-Type -AssemblyName System.Drawing; $p = New-Object System.Drawing.Printing.PrintDocument; $p.PrinterSettings.PrinterName = '%s'; $p.DocumentName = '%s'; Start-Process -FilePath '%s' -ArgumentList '/t', '/p' \"%s\" -Wait -WindowStyle Hidden\"",
-			printerName, job.Title, filePath, filePath),
+	// Determine the content type from job options or file extension
+	contentType := ""
+	if job.ColorMode == "auto" {
+		// Check job options for content_type hint (set by server agent capture)
+		contentType = getJobOption(job, "content_type")
+	}
+	if contentType == "" {
+		contentType = detectPrintDataFormat(filePath)
 	}
 
-	cmd := exec.Command("cmd", args...)
+	log.Printf("Printing document: printer=%s content_type=%s file=%s", printerName, contentType, filePath)
+
+	switch contentType {
+	case "application/postscript":
+		return a.printPostScript(filePath, printerName, job)
+	case "application/pdf":
+		return a.printPDF(filePath, printerName, job)
+	case "application/vnd.hp-pcl":
+		// PCL data can be sent directly to the printer via RAW port
+		return a.printRaw(filePath, printerName)
+	default:
+		// For raw/unknown data, try sending directly to printer
+		return a.printRaw(filePath, printerName)
+	}
+}
+
+// printPostScript prints a PostScript file by converting to PDF first, then printing.
+// This ensures the full formatting, fonts, graphics, and colors are preserved.
+func (a *Agent) printPostScript(filePath, printerName string, job PrintJob) error {
+	// Try Ghostscript to convert PS to PDF, then print the PDF
+	gsPath := findGhostscript()
+	if gsPath != "" {
+		pdfPath := filePath + ".pdf"
+		defer os.Remove(pdfPath)
+
+		cmd := exec.Command(gsPath,
+			"-dBATCH", "-dNOPAUSE", "-dQUIET",
+			"-sDEVICE=pdfwrite",
+			"-sOutputFile="+pdfPath,
+			filePath,
+		)
+		if err := cmd.Run(); err == nil {
+			return a.printPDF(pdfPath, printerName, job)
+		}
+		log.Printf("Ghostscript PS->PDF conversion failed, falling back to raw print")
+	}
+
+	// Fallback: send PostScript directly to printer (works for PS-capable printers)
+	return a.printRaw(filePath, printerName)
+}
+
+// printPDF prints a PDF file using the best available method on Windows.
+func (a *Agent) printPDF(filePath, printerName string, job PrintJob) error {
+	// Method 1: Use SumatraPDF (lightweight, supports silent printing)
+	sumatraPath := findSumatraPDF()
+	if sumatraPath != "" {
+		cmd := exec.Command(sumatraPath,
+			"-print-to", printerName,
+			"-silent",
+			"-print-settings", fmt.Sprintf("copies=%d", max(job.Copies, 1)),
+			filePath,
+		)
+		if err := cmd.Run(); err == nil {
+			return nil
+		}
+	}
+
+	// Method 2: Use PowerShell with .NET to print PDF
+	psCmd := powershellCommand(fmt.Sprintf(
+		`$printJob = Start-Process -FilePath "%s" -Verb PrintTo -ArgumentList "%s" -PassThru -WindowStyle Hidden; `+
+			`$printJob | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue`,
+		filePath, printerName,
+	))
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psCmd)
 	return cmd.Run()
+}
+
+// printRaw sends raw print data directly to the printer's port using PowerShell.
+func (a *Agent) printRaw(filePath, printerName string) error {
+	// Use PowerShell to send raw data to the printer via Windows spooler
+	psCmd := powershellCommand(fmt.Sprintf(
+		`$bytes = [System.IO.File]::ReadAllBytes("%s"); `+
+			`$printer = Get-Printer -Name "%s"; `+
+			`$port = $printer.PortName; `+
+			`Copy-Item -Path "%s" -Destination ("\\.\\" + $port) -Force`,
+		filePath, printerName, filePath,
+	))
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psCmd)
+	if err := cmd.Run(); err != nil {
+		// Fallback: use the Windows print command via file association
+		return exec.Command("cmd", "/C",
+			fmt.Sprintf(`rundll32 mshtml.dll,PrintHTML "%s"`, filePath),
+		).Run()
+	}
+	return nil
+}
+
+// findGhostscript looks for Ghostscript executable on the system.
+func findGhostscript() string {
+	// Check common Ghostscript locations
+	paths := []string{
+		`C:\Program Files\gs\gs10.0\bin\gswin64c.exe`,
+		`C:\Program Files\gs\gs9.56\bin\gswin64c.exe`,
+		`C:\Program Files (x86)\gs\gs10.0\bin\gswin32c.exe`,
+		`C:\Program Files (x86)\gs\gs9.56\bin\gswin32c.exe`,
+	}
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	// Try PATH
+	if p, err := exec.LookPath("gswin64c.exe"); err == nil {
+		return p
+	}
+	if p, err := exec.LookPath("gswin32c.exe"); err == nil {
+		return p
+	}
+	return ""
+}
+
+// findSumatraPDF looks for SumatraPDF executable on the system.
+func findSumatraPDF() string {
+	paths := []string{
+		`C:\Program Files\SumatraPDF\SumatraPDF.exe`,
+		`C:\Program Files (x86)\SumatraPDF\SumatraPDF.exe`,
+	}
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	if p, err := exec.LookPath("SumatraPDF.exe"); err == nil {
+		return p
+	}
+	return ""
+}
+
+// getJobOption extracts an option from the job's options map.
+func getJobOption(job PrintJob, key string) string {
+	if job.Options == nil {
+		return ""
+	}
+	return job.Options[key]
 }
 
 // updateJobStatus updates the status of a print job on the server.
