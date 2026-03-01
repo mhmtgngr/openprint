@@ -1,436 +1,941 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Use Playwright for E2E testing with TypeScript",
-      "rationale": "Already configured in the project, supports cross-browser testing (Chromium, Firefox, WebKit), mobile emulation, and has excellent TypeScript support"
+      "decision": "Use k6 as primary load testing tool with xk6-dashboard for real-time visualization",
+      "rationale": "k6 is JavaScript-based, has excellent CI/CD integration, supports WebSocket testing, and provides developer-friendly script syntax. xk6-dashboard enables real-time metrics visualization during test runs."
     },
     {
-      "decision": "Page Object Model (POM) pattern with fixture-based helpers",
-      "rationale": "Existing helpers.ts provides a solid foundation; POM improves maintainability by separating test logic from page interaction logic"
+      "decision": "Separate test environments with dedicated database schema",
+      "rationale": "Load tests should never run against production or development databases. Dedicated test schema ensures isolation and prevents test data pollution."
     },
     {
-      "decision": "Mock API responses for reliability",
-      "rationale": "Tests should not depend on backend services; mocking ensures consistent test data and faster test execution"
+      "decision": "Modular test architecture with reusable scenario libraries",
+      "rationale": "Promotes code reuse across tests, simplifies maintenance, and enables consistent testing patterns across all services."
     },
     {
-      "decision": "Visual regression testing using Playwright's built-in screenshot comparison",
-      "rationale": "Ensures UI consistency across browsers and detects unintended visual changes; Playwright has native support for screenshots"
+      "decision": "Performance baselines stored as JSON artifacts in CI",
+      "rationale": "Enables regression detection by comparing current test results against historical baselines stored in version control."
     },
     {
-      "decision": "Test data factory pattern",
-      "rationale": "Generates realistic test data on-demand; avoids hardcoded data and enables parallel test execution without conflicts"
-    },
-    {
-      "decision": "Multi-environment configuration via environment-specific configs",
-      "rationale": "Supports testing against local, staging, and production-like environments with different base URLs and mock configurations"
-    },
-    {
-      "decision": "Real-time update testing with WebSocket mocking",
-      "rationale": "Tests notification-service WebSocket behavior; critical for print job status updates and agent heartbeat monitoring"
-    },
-    {
-      "decision": "Market-driven feature testing integration",
-      "rationale": "Tests for Secure Print Release, Cost Allocation, Print Policy Engine, Microsoft 365 Integration, and Compliance features validate competitive parity"
+      "decision": "Kubernetes k6-operator for production-like load testing",
+      "rationale": "Enables distributed load generation from multiple pods, simulating real-world traffic patterns more accurately than single-machine tests."
     }
   ],
   "backend_tasks": [
     {
       "order": 1,
-      "file": "services/auth-service/handler/oidc.go",
+      "file": "tests/load/package.json",
       "action": "create",
-      "purpose": "Microsoft 365 OIDC provider handler for E2E test mocking support",
+      "purpose": "Initialize k6 project with dependencies and scripts",
       "key_functions": [
-        "HandleMicrosoft365Login",
-        "HandleMicrosoft365Callback",
-        "GenerateMockToken"
+        "init",
+        "run:auth",
+        "run:registry",
+        "run:job",
+        "run:storage",
+        "run:notification",
+        "run:mixed",
+        "run:all",
+        "report"
       ]
     },
     {
       "order": 2,
-      "file": "services/compliance-service/compliance.go",
+      "file": "tests/load/k6.config.ts",
       "action": "create",
-      "purpose": "New microservice for FedRAMP and HIPAA compliance tracking",
+      "purpose": "Central configuration for all load tests",
       "key_functions": [
-        "RecordAuditEvent",
-        "GetComplianceReport",
-        "ValidateDataHandling",
-        "ExportComplianceLog"
+        "getBaseUrl",
+        "getTestDuration",
+        "getVUs",
+        "getThresholds"
       ]
     },
     {
       "order": 3,
-      "file": "services/policy-service/policy_engine.go",
-      "action": "modify",
-      "purpose": "Enhanced policy engine for E2E testable rule evaluation",
+      "file": "tests/load/lib/config.js",
+      "action": "create",
+      "purpose": "Shared configuration module for k6 tests",
       "key_functions": [
-        "EvaluatePrintPolicy",
-        "ApplyPolicyRules",
-        "GetActivePolicies"
+        "BASE_URL",
+        "AUTH_SERVICE_URL",
+        "REGISTRY_SERVICE_URL",
+        "JOB_SERVICE_URL",
+        "STORAGE_SERVICE_URL",
+        "NOTIFICATION_SERVICE_URL",
+        "TEST_Duration",
+        "TEST_VUS",
+        "THRESHOLDS"
       ]
     },
     {
       "order": 4,
-      "file": "services/registry-service/handler/agent.go",
-      "action": "modify",
-      "purpose": "Add WebSocket endpoint for real-time agent status updates",
+      "file": "tests/load/lib/helpers.js",
+      "action": "create",
+      "purpose": "Reusable helper functions for all tests",
       "key_functions": [
-        "HandleAgentWebSocket",
-        "BroadcastAgentStatus",
-        "SendHeartbeat"
+        "randomString",
+        "randomItem",
+        "parseJWT",
+        "sleepBetween",
+        "retryOnFailure",
+        "checkAndLog"
       ]
     },
     {
       "order": 5,
-      "file": "services/m365-integration-service/main.go",
+      "file": "tests/load/lib/api-client.js",
       "action": "create",
-      "purpose": "Microsoft 365 integration service for document handling",
+      "purpose": "HTTP client wrapper with auth handling",
       "key_functions": [
-        "HandleOneDriveUpload",
-        "HandleSharePointIntegration",
-        "ListDocuments",
-        "GetDocument"
+        "login",
+        "refreshToken",
+        "registerAgent",
+        "sendHeartbeat",
+        "submitJob",
+        "uploadDocument",
+        "connectWebSocket"
+      ]
+    },
+    {
+      "order": 6,
+      "file": "tests/load/lib/metrics.js",
+      "action": "create",
+      "purpose": "Custom k6 metrics definitions",
+      "key_functions": [
+        "authLatency",
+        "registryLatency",
+        "jobLatency",
+        "storageLatency",
+        "notificationLatency",
+        "websocketConnections",
+        "errorRate"
+      ]
+    },
+    {
+      "order": 7,
+      "file": "tests/load/scenarios/auth/login.js",
+      "action": "create",
+      "purpose": "User login load test scenario",
+      "key_functions": [
+        "setup",
+        "login",
+        "teardown"
+      ]
+    },
+    {
+      "order": 8,
+      "file": "tests/load/scenarios/auth/concurrent-users.js",
+      "action": "create",
+      "purpose": "Concurrent user login simulation (FR-001)",
+      "key_functions": [
+        "setup",
+        "concurrentLogin",
+        "teardown"
+      ]
+    },
+    {
+      "order": 9,
+      "file": "tests/load/scenarios/auth/token-refresh.js",
+      "action": "create",
+      "purpose": "Token refresh under load",
+      "key_functions": [
+        "setup",
+        "refreshToken",
+        "teardown"
+      ]
+    },
+    {
+      "order": 10,
+      "file": "tests/load/scenarios/auth/baseline.js",
+      "action": "create",
+      "purpose": "Auth service performance baseline (FR-007)",
+      "key_functions": [
+        "setup",
+        "runBaselines",
+        "saveBaselines",
+        "teardown"
+      ]
+    },
+    {
+      "order": 11,
+      "file": "tests/load/scenarios/registry/agent-registration.js",
+      "action": "create",
+      "purpose": "Agent registration load test",
+      "key_functions": [
+        "setup",
+        "registerAgent",
+        "teardown"
+      ]
+    },
+    {
+      "order": 12,
+      "file": "tests/load/scenarios/registry/heartbeat.js",
+      "action": "create",
+      "purpose": "High-frequency heartbeat simulation (FR-003)",
+      "key_functions": [
+        "setup",
+        "sendHeartbeat",
+        "teardown"
+      ]
+    },
+    {
+      "order": 13,
+      "file": "tests/load/scenarios/registry/discovery.js",
+      "action": "create",
+      "purpose": "Agent discovery load test",
+      "key_functions": [
+        "setup",
+        "discoverAgents",
+        "teardown"
+      ]
+    },
+    {
+      "order": 14,
+      "file": "tests/load/scenarios/registry/baseline.js",
+      "action": "create",
+      "purpose": "Registry service performance baseline",
+      "key_functions": [
+        "setup",
+        "runBaselines",
+        "saveBaselines",
+        "teardown"
+      ]
+    },
+    {
+      "order": 15,
+      "file": "tests/load/scenarios/job/submit.js",
+      "action": "create",
+      "purpose": "Parallel job submission test (FR-002)",
+      "key_functions": [
+        "setup",
+        "submitJob",
+        "teardown"
+      ]
+    },
+    {
+      "order": 16,
+      "file": "tests/load/scenarios/job/status-query.js",
+      "action": "create",
+      "purpose": "Job status query load test",
+      "key_functions": [
+        "setup",
+        "queryStatus",
+        "teardown"
+      ]
+    },
+    {
+      "order": 17,
+      "file": "tests/load/scenarios/job/assignment.js",
+      "action": "create",
+      "purpose": "Job assignment load test",
+      "key_functions": [
+        "setup",
+        "assignJob",
+        "teardown"
+      ]
+    },
+    {
+      "order": 18,
+      "file": "tests/load/scenarios/job/queue-processing.js",
+      "action": "create",
+      "purpose": "Job queue processing load test",
+      "key_functions": [
+        "setup",
+        "processQueue",
+        "teardown"
+      ]
+    },
+    {
+      "order": 19,
+      "file": "tests/load/scenarios/job/baseline.js",
+      "action": "create",
+      "purpose": "Job service performance baseline",
+      "key_functions": [
+        "setup",
+        "runBaselines",
+        "saveBaselines",
+        "teardown"
+      ]
+    },
+    {
+      "order": 20,
+      "file": "tests/load/scenarios/storage/upload.js",
+      "action": "create",
+      "purpose": "Document upload burst test (FR-004)",
+      "key_functions": [
+        "setup",
+        "uploadDocument",
+        "teardown"
+      ]
+    },
+    {
+      "order": 21,
+      "file": "tests/load/scenarios/storage/download.js",
+      "action": "create",
+      "purpose": "Concurrent download test",
+      "key_functions": [
+        "setup",
+        "downloadDocument",
+        "teardown"
+      ]
+    },
+    {
+      "order": 22,
+      "file": "tests/load/scenarios/storage/large-file.js",
+      "action": "create",
+      "purpose": "Large file handling tests",
+      "key_functions": [
+        "setup",
+        "uploadLargeFile",
+        "teardown"
+      ]
+    },
+    {
+      "order": 23,
+      "file": "tests/load/scenarios/storage/baseline.js",
+      "action": "create",
+      "purpose": "Storage service performance baseline",
+      "key_functions": [
+        "setup",
+        "runBaselines",
+        "saveBaselines",
+        "teardown"
+      ]
+    },
+    {
+      "order": 24,
+      "file": "tests/load/scenarios/notification/websocket-connect.js",
+      "action": "create",
+      "purpose": "WebSocket connection scaling test (FR-005)",
+      "key_functions": [
+        "setup",
+        "connectWebSocket",
+        "handleMessage",
+        "teardown"
+      ]
+    },
+    {
+      "order": 25,
+      "file": "tests/load/scenarios/notification/broadcast.js",
+      "action": "create",
+      "purpose": "Broadcast message test",
+      "key_functions": [
+        "setup",
+        "broadcastMessage",
+        "teardown"
+      ]
+    },
+    {
+      "order": 26,
+      "file": "tests/load/scenarios/notification/reconnect.js",
+      "action": "create",
+      "purpose": "Reconnection behavior tests",
+      "key_functions": [
+        "setup",
+        "testReconnect",
+        "teardown"
+      ]
+    },
+    {
+      "order": 27,
+      "file": "tests/load/scenarios/notification/baseline.js",
+      "action": "create",
+      "purpose": "Notification service performance baseline",
+      "key_functions": [
+        "setup",
+        "runBaselines",
+        "saveBaselines",
+        "teardown"
+      ]
+    },
+    {
+      "order": 28,
+      "file": "tests/load/scenarios/mixed/e2e-journey.js",
+      "action": "create",
+      "purpose": "End-to-end user journey test (FR-006)",
+      "key_functions": [
+        "setup",
+        "runUserJourney",
+        "teardown"
+      ]
+    },
+    {
+      "order": 29,
+      "file": "tests/load/scenarios/mixed/soak-test.js",
+      "action": "create",
+      "purpose": "Sustained load soak test",
+      "key_functions": [
+        "setup",
+        "runSoakTest",
+        "teardown"
+      ]
+    },
+    {
+      "order": 30,
+      "file": "tests/load/scenarios/mixed/spike-test.js",
+      "action": "create",
+      "purpose": "Spike test scenario",
+      "key_functions": [
+        "setup",
+        "runSpikeTest",
+        "teardown"
+      ]
+    },
+    {
+      "order": 31,
+      "file": "tests/load/scenarios/mixed/stress-test.js",
+      "action": "create",
+      "purpose": "Stress test to failure point",
+      "key_functions": [
+        "setup",
+        "runStressTest",
+        "findBreakingPoint",
+        "teardown"
+      ]
+    },
+    {
+      "order": 32,
+      "file": "tests/load/data/fixtures.js",
+      "action": "create",
+      "purpose": "Test data fixtures for load tests",
+      "key_functions": [
+        "getTestUsers",
+        "getTestAgents",
+        "getTestDocuments",
+        "getTestJobs"
+      ]
+    },
+    {
+      "order": 33,
+      "file": "tests/load/utils/baseline-compare.js",
+      "action": "create",
+      "purpose": "Baseline comparison utility (FR-008)",
+      "key_functions": [
+        "loadBaseline",
+        "compareResults",
+        "detectRegression",
+        "generateReport"
+      ]
+    },
+    {
+      "order": 34,
+      "file": "tests/load/utils/reporter.js",
+      "action": "create",
+      "purpose": "Test result reporter",
+      "key_functions": [
+        "generateJSONReport",
+        "generateHTMLReport",
+        "generateJunitReport",
+        "uploadToStorage"
+      ]
+    },
+    {
+      "order": 35,
+      "file": "tests/load/docker-compose.test.yml",
+      "action": "create",
+      "purpose": "Docker Compose for isolated test environment",
+      "key_functions": []
+    },
+    {
+      "order": 36,
+      "file": "tests/load/Dockerfile.k6",
+      "action": "create",
+      "purpose": "Docker image for running k6 tests",
+      "key_functions": []
+    },
+    {
+      "order": 37,
+      "file": "tests/load/k8s/k6-operator-cr.yaml",
+      "action": "create",
+      "purpose": "Kubernetes k6-operator custom resource",
+      "key_functions": []
+    },
+    {
+      "order": 38,
+      "file": "tests/load/grafana/dashboards/load-testing-dashboard.json",
+      "action": "create",
+      "purpose": "Grafana dashboard template (FR-009)",
+      "key_functions": []
+    },
+    {
+      "order": 39,
+      "file": "tests/load/scripts/run-all-tests.sh",
+      "action": "create",
+      "purpose": "Shell script to run all load tests",
+      "key_functions": []
+    },
+    {
+      "order": 40,
+      "file": "tests/load/scripts/run-with-dashboard.sh",
+      "action": "create",
+      "purpose": "Run tests with xk6-dashboard",
+      "key_functions": []
+    },
+    {
+      "order": 41,
+      "file": ".github/workflows/load-testing.yml",
+      "action": "create",
+      "purpose": "GitHub Actions workflow for CI integration (FR-010)",
+      "key_functions": []
+    },
+    {
+      "order": 42,
+      "file": ".github/workflows/load-testing-pr-comment.yml",
+      "action": "create",
+      "purpose": "PR comment generation with test results",
+      "key_functions": []
+    },
+    {
+      "order": 43,
+      "file": "tests/load/baselines/.gitkeep",
+      "action": "create",
+      "purpose": "Store performance baseline files",
+      "key_functions": []
+    },
+    {
+      "order": 44,
+      "file": "tests/load/reports/.gitkeep",
+      "action": "create",
+      "purpose": "Store test reports",
+      "key_functions": []
+    },
+    {
+      "order": 45,
+      "file": "tests/load/thresholds.json",
+      "action": "create",
+      "purpose": "Define performance thresholds for regression detection",
+      "key_functions": []
+    },
+    {
+      "order": 46,
+      "file": "tests/load/lib/websocket-client.js",
+      "action": "create",
+      "purpose": "WebSocket client wrapper for notification tests",
+      "key_functions": [
+        "connect",
+        "subscribe",
+        "disconnect",
+        "waitForMessage"
+      ]
+    },
+    {
+      "order": 47,
+      "file": "internal/testutil/loadtest.go",
+      "action": "create",
+      "purpose": "Go utilities for load test setup and teardown",
+      "key_functions": [
+        "SetupTestDatabase",
+        "SeedTestData",
+        "CleanupTestData",
+        "StartTestServices",
+        "StopTestServices"
+      ]
+    },
+    {
+      "order": 48,
+      "file": "tests/load/scenarios/auth/oidc-login.js",
+      "action": "create",
+      "purpose": "OIDC login load test for enterprise SSO (market-driven)",
+      "key_functions": [
+        "setup",
+        "oidcLogin",
+        "teardown"
+      ]
+    },
+    {
+      "order": 49,
+      "file": "tests/load/scenarios/auth/saml-login.js",
+      "action": "create",
+      "purpose": "SAML SSO load test for enterprise (market-driven)",
+      "key_functions": [
+        "setup",
+        "samlLogin",
+        "teardown"
+      ]
+    },
+    {
+      "order": 50,
+      "file": "tests/load/scenarios/storage/encrypted-upload.js",
+      "action": "create",
+      "purpose": "Encrypted document upload test (DLP/SOC2 compliance)",
+      "key_functions": [
+        "setup",
+        "uploadEncrypted",
+        "teardown"
+      ]
+    },
+    {
+      "order": 51,
+      "file": "tests/load/scenarios/job/follow-me-printing.js",
+      "action": "create",
+      "purpose": "Follow-me printing queue load test (market-driven feature)",
+      "key_functions": [
+        "setup",
+        "submitFollowMeJob",
+        "claimAtPrinter",
+        "teardown"
+      ]
+    },
+    {
+      "order": 52,
+      "file": "tests/load/scenarios/mobile/api-test.js",
+      "action": "create",
+      "purpose": "Mobile app API load test (market-driven FR-M011)",
+      "key_functions": [
+        "setup",
+        "mobileLogin",
+        "mobileJobSubmit",
+        "teardown"
+      ]
+    },
+    {
+      "order": 53,
+      "file": "tests/load/config/environments.json",
+      "action": "create",
+      "purpose": "Environment-specific configurations",
+      "key_functions": [
+        "getLocalConfig",
+        "getStagingConfig",
+        "getProductionConfig"
       ]
     }
   ],
   "frontend_tasks": [
     {
       "order": 1,
-      "file": "web/dashboard/e2e/pages/BasePage.ts",
+      "file": "web/dashboard/src/views/admin/LoadTesting.tsx",
       "action": "create",
-      "purpose": "Base Page Object Model class with common navigation and authentication methods"
+      "purpose": "Performance dashboard view for load test results (FR-009)"
     },
     {
       "order": 2,
-      "file": "web/dashboard/e2e/pages/DashboardPage.ts",
+      "file": "web/dashboard/src/components/load-test/PerformanceChart.tsx",
       "action": "create",
-      "purpose": "Dashboard page object with methods for stats, recent activity, and navigation"
+      "purpose": "Performance metrics visualization component"
     },
     {
       "order": 3,
-      "file": "web/dashboard/e2e/pages/AuthPage.ts",
+      "file": "web/dashboard/src/components/load-test/TestRunner.tsx",
       "action": "create",
-      "purpose": "Authentication page object covering login, registration, OIDC, SAML flows"
+      "purpose": "Manual test trigger component"
     },
     {
       "order": 4,
-      "file": "web/dashboard/e2e/pages/JobsPage.ts",
+      "file": "web/dashboard/src/components/load-test/BaselineComparison.tsx",
       "action": "create",
-      "purpose": "Jobs page object for job creation, filtering, status changes"
+      "purpose": "Baseline comparison view (FR-008)"
     },
     {
       "order": 5,
-      "file": "web/dashboard/e2e/pages/PrintersPage.ts",
+      "file": "web/dashboard/src/components/load-test/ServiceHealthCard.tsx",
       "action": "create",
-      "purpose": "Printers page object for device management and discovery"
+      "purpose": "Service health status display during tests"
     },
     {
       "order": 6,
-      "file": "web/dashboard/e2e/pages/AnalyticsPage.ts",
+      "file": "web/dashboard/src/api/load-test.ts",
       "action": "create",
-      "purpose": "Analytics page object for metrics, charts, and audit logs"
+      "purpose": "API client for load test endpoints"
     },
     {
       "order": 7,
-      "file": "web/dashboard/e2e/pages/SettingsPage.ts",
+      "file": "web/dashboard/src/types/load-test.ts",
       "action": "create",
-      "purpose": "Settings page object for profile, security, and preferences"
+      "purpose": "TypeScript types for load test data"
     },
     {
       "order": 8,
-      "file": "web/dashboard/e2e/pages/SecurePrintPage.ts",
+      "file": "web/dashboard/src/components/load-test/RegressionAlert.tsx",
       "action": "create",
-      "purpose": "Secure print release page object for PIN-based job release"
-    },
-    {
-      "order": 9,
-      "file": "web/dashboard/e2e/pages/QuotasPage.ts",
-      "action": "create",
-      "purpose": "Cost tracking and quotas management page object"
-    },
-    {
-      "order": 10,
-      "file": "web/dashboard/e2e/pages/PoliciesPage.ts",
-      "action": "create",
-      "purpose": "Print policy engine management page object"
-    },
-    {
-      "order": 11,
-      "file": "web/dashboard/e2e/pages/Microsoft365Page.ts",
-      "action": "create",
-      "purpose": "Microsoft 365 integration configuration and testing page object"
-    },
-    {
-      "order": 12,
-      "file": "web/dashboard/e2e/pages/CompliancePage.ts",
-      "action": "create",
-      "purpose": "Compliance reports and audit log export page object"
-    },
-    {
-      "order": 13,
-      "file": "web/dashboard/e2e/factories/TestDataFactory.ts",
-      "action": "create",
-      "purpose": "Factory for generating realistic test data (users, jobs, printers, policies)"
-    },
-    {
-      "order": 14,
-      "file": "web/dashboard/e2e/fixtures/visual-regression.spec.ts",
-      "action": "create",
-      "purpose": "Visual regression tests using Playwright screenshot comparison"
-    },
-    {
-      "order": 15,
-      "file": "web/dashboard/e2e/fixtures/websocket-mock.ts",
-      "action": "create",
-      "purpose": "WebSocket mock utilities for testing real-time updates"
-    },
-    {
-      "order": 16,
-      "file": "web/dashboard/e2e/tests/microsoft-365.spec.ts",
-      "action": "create",
-      "purpose": "Microsoft 365 integration E2E tests (OneDrive, SharePoint, authentication)"
-    },
-    {
-      "order": 17,
-      "file": "web/dashboard/e2e/tests/compliance.spec.ts",
-      "action": "create",
-      "purpose": "FedRAMP and HIPAA compliance testing (audit logs, data export, security)"
-    },
-    {
-      "order": 18,
-      "file": "web/dashboard/e2e/tests/realtime-updates.spec.ts",
-      "action": "create",
-      "purpose": "WebSocket real-time update tests (job status, agent heartbeat, notifications)"
-    },
-    {
-      "order": 19,
-      "file": "web/dashboard/e2e/tests/visual-regression.spec.ts",
-      "action": "create",
-      "purpose": "Visual regression tests across browsers and viewport sizes"
-    },
-    {
-      "order": 20,
-      "file": "web/dashboard/e2e/tests/mobile-responsive.spec.ts",
-      "action": "create",
-      "purpose": "Mobile responsiveness tests for all major pages"
-    },
-    {
-      "order": 21,
-      "file": "web/dashboard/e2e/performance.spec.ts",
-      "action": "create",
-      "purpose": "Performance metrics tests (page load, interaction timing, bundle size)"
-    },
-    {
-      "order": 22,
-      "file": "web/dashboard/e2e/helpers.ts",
-      "action": "modify",
-      "purpose": "Extend with additional mock data and helper functions for new features"
-    },
-    {
-      "order": 23,
-      "file": "web/dashboard/playwright.config.ts",
-      "action": "modify",
-      "purpose": "Add projects for visual regression and configure snapshot options"
-    },
-    {
-      "order": 24,
-      "file": "web/dashboard/e2e/accessibility.spec.ts",
-      "action": "create",
-      "purpose": "Accessibility testing (WCAG 2.1 AA compliance, ARIA attributes, keyboard navigation)"
-    },
-    {
-      "order": 25,
-      "file": "web/dashboard/src/pages/Microsoft365.tsx",
-      "action": "create",
-      "purpose": "Frontend UI page for Microsoft 365 integration configuration"
-    },
-    {
-      "order": 26,
-      "file": "web/dashboard/src/pages/Compliance.tsx",
-      "action": "create",
-      "purpose": "Frontend UI page for compliance reports and audit export"
+      "purpose": "Performance regression alert component"
     }
   ],
   "database_migrations": [
     {
-      "file": "migrations/001_create_compliance_audit_tables.up.sql",
-      "sql": "CREATE TABLE compliance_audit_logs (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  user_id UUID REFERENCES users(id),\n  event_type VARCHAR(100) NOT NULL,\n  resource_type VARCHAR(50),\n  resource_id UUID,\n  ip_address INET,\n  user_agent TEXT,\n  compliance_framework VARCHAR(20) CHECK (compliance_framework IN ('HIPAA', 'FedRAMP', 'SOC2', 'GDPR')),\n  data_classification VARCHAR(20) CHECK (data_classification IN ('PHI', 'PII', 'PUBLIC', 'INTERNAL')),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_compliance_org (org_id),\n  INDEX idx_compliance_framework (compliance_framework),\n  INDEX idx_compliance_created (created_at)\n);"
+      "file": "migrations/000001_create_load_test_schema.up.sql",
+      "sql": "-- Create separate schema for load testing\nCREATE SCHEMA IF NOT EXISTS load_test;\n\n-- Load test results table\nCREATE TABLE load_test.test_results (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    test_name VARCHAR(255) NOT NULL,\n    test_type VARCHAR(100) NOT NULL,\n    service VARCHAR(100) NOT NULL,\n    started_at TIMESTAMP WITH TIME ZONE NOT NULL,\n    ended_at TIMESTAMP WITH TIME ZONE,\n    duration_seconds INTEGER,\n    virtual_users INTEGER,\n    total_requests BIGINT,\n    failed_requests BIGINT,\n    avg_response_time_ms NUMERIC(10,2),\n    p50_response_time_ms NUMERIC(10,2),\n    p95_response_time_ms NUMERIC(10,2),\n    p99_response_time_ms NUMERIC(10,2),\n    max_response_time_ms NUMERIC(10,2),\n    requests_per_second NUMERIC(10,2),\n    throughput_mb_per_second NUMERIC(10,2),\n    threshold_met BOOLEAN,\n    git_commit VARCHAR(100),\n    git_branch VARCHAR(255),\n    metadata JSONB,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);\n\nCREATE INDEX idx_load_test_results_test_name ON load_test.test_results(test_name);\nCREATE INDEX idx_load_test_results_service ON load_test.test_results(service);\nCREATE INDEX idx_load_test_results_started_at ON load_test.test_results(started_at DESC);\n\n-- Performance baselines table\nCREATE TABLE load_test.baselines (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    service VARCHAR(100) NOT NULL,\n    endpoint VARCHAR(255) NOT NULL,\n    metric_name VARCHAR(100) NOT NULL,\n    baseline_value NUMERIC(10,2) NOT NULL,\n    tolerance_percent NUMERIC(5,2) DEFAULT 10.0,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    UNIQUE(service, endpoint, metric_name)\n);\n\n-- Load test users for isolated authentication\nCREATE TABLE load_test.test_users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    username VARCHAR(255) UNIQUE NOT NULL,\n    email VARCHAR(255) UNIQUE NOT NULL,\n    password_hash VARCHAR(255) NOT NULL,\n    role VARCHAR(50) DEFAULT 'user',\n    is_active BOOLEAN DEFAULT true,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);\n\n-- Load test agents\nCREATE TABLE load_test.test_agents (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    agent_id VARCHAR(100) UNIQUE NOT NULL,\n    name VARCHAR(255) NOT NULL,\n    status VARCHAR(50) DEFAULT 'online',\n    printer_count INTEGER DEFAULT 1,\n    location VARCHAR(255),\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);"
     },
     {
-      "file": "migrations/002_create_print_release_pins.up.sql",
-      "sql": "CREATE TABLE print_release_pins (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id UUID NOT NULL REFERENCES users(id),\n  pin_hash VARCHAR(255) NOT NULL,\n  card_id VARCHAR(255),\n  is_active BOOLEAN DEFAULT true,\n  expires_at TIMESTAMP WITH TIME ZONE,\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  last_used_at TIMESTAMP WITH TIME ZONE,\n  INDEX idx_release_user (user_id),\n  INDEX idx_release_active (is_active)\n);"
+      "file": "migrations/000001_create_load_test_schema.down.sql",
+      "sql": "DROP SCHEMA load_test CASCADE;"
     },
     {
-      "file": "migrations/003_create_quota_allocations.up.sql",
-      "sql": "CREATE TABLE quota_allocations (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  user_id UUID REFERENCES users(id),\n  department_id UUID,\n  quota_type VARCHAR(20) CHECK (quota_type IN ('monthly_pages', 'monthly_cost', 'color_pages')),\n  limit_value INTEGER NOT NULL,\n  used_value INTEGER DEFAULT 0,\n  period_type VARCHAR(10) CHECK (period_type IN ('monthly', 'quarterly', 'annual')),\n  action_on_exceed VARCHAR(20) CHECK (action_on_exceed IN ('block', 'warn', 'charge')),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  UNIQUE (org_id, user_id, quota_type, period_type),\n  INDEX idx_quota_org (org_id),\n  INDEX idx_quota_user (user_id)\n);"
+      "file": "migrations/000002_seed_load_test_data.up.sql",
+      "sql": "-- Seed load test users\nINSERT INTO load_test.test_users (username, email, password_hash, role) VALUES\n    ('load_test_user_001', 'loadtest1@example.com', '$2a$10$placeholder_hash_for_testing', 'user'),\n    ('load_test_user_002', 'loadtest2@example.com', '$2a$10$placeholder_hash_for_testing', 'user'),\n    ('load_test_user_003', 'loadtest3@example.com', '$2a$10$placeholder_hash_for_testing', 'user'),\n    ('load_test_admin_001', 'loadtest_admin@example.com', '$2a$10$placeholder_hash_for_testing', 'admin');\n\n-- Seed load test agents\nINSERT INTO load_test.test_agents (agent_id, name, status, printer_count, location) VALUES\n    ('load-test-agent-001', 'Load Test Agent 1', 'online', 3, 'Building A'),\n    ('load-test-agent-002', 'Load Test Agent 2', 'online', 2, 'Building B'),\n    ('load-test-agent-003', 'Load Test Agent 3', 'online', 5, 'Building C');\n\n-- Seed initial performance baselines\nINSERT INTO load_test.baselines (service, endpoint, metric_name, baseline_value, tolerance_percent) VALUES\n    ('auth-service', 'POST /api/v1/auth/login', 'p95_response_time_ms', 200, 15),\n    ('auth-service', 'POST /api/v1/auth/login', 'requests_per_second', 500, 10),\n    ('registry-service', 'POST /api/v1/agents/heartbeat', 'p95_response_time_ms', 50, 20),\n    ('registry-service', 'POST /api/v1/agents/heartbeat', 'requests_per_second', 5000, 10),\n    ('job-service', 'POST /api/v1/jobs', 'p95_response_time_ms', 150, 15),\n    ('job-service', 'POST /api/v1/jobs', 'requests_per_second', 1000, 10),\n    ('storage-service', 'POST /api/v1/documents', 'p95_response_time_ms', 500, 20),\n    ('storage-service', 'POST /api/v1/documents', 'throughput_mb_per_second', 50, 15),\n    ('notification-service', 'WebSocket /ws/connect', 'connection_time_ms', 100, 25);"
     },
     {
-      "file": "migrations/004_create_print_policies.up.sql",
-      "sql": "CREATE TABLE print_policies (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  priority INTEGER DEFAULT 0,\n  is_active BOOLEAN DEFAULT true,\n  conditions JSONB NOT NULL,\n  actions JSONB NOT NULL,\n  created_by UUID REFERENCES users(id),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_policy_org (org_id),\n  INDEX idx_policy_active (is_active),\n  INDEX idx_policy_priority (priority)\n);"
-    },
-    {
-      "file": "migrations/005_create_microsoft365_integration.up.sql",
-      "sql": "CREATE TABLE microsoft365_config (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  tenant_id VARCHAR(100) NOT NULL,\n  client_id VARCHAR(100) NOT NULL,\n  client_secret_encrypted TEXT,\n  is_enabled BOOLEAN DEFAULT false,\n  onedrive_enabled BOOLEAN DEFAULT false,\n  sharepoint_site_url TEXT,\n  default_document_library VARCHAR(255),\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  UNIQUE (org_id),\n  INDEX idx_m365_org (org_id)\n);\n\nCREATE TABLE m365_document_mappings (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  org_id UUID NOT NULL REFERENCES organizations(id),\n  user_id UUID REFERENCES users(id),\n  job_id UUID REFERENCES print_jobs(id),\n  m365_drive_id VARCHAR(255),\n  m365_item_id VARCHAR(500),\n  item_url TEXT,\n  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_m365_doc_org (org_id),\n  INDEX idx_m365_doc_job (job_id)\n);"
-    },
-    {
-      "file": "migrations/006_create_agent_heartbeat.up.sql",
-      "sql": "CREATE TABLE agent_heartbeats (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  agent_id UUID NOT NULL REFERENCES agents(id),\n  status VARCHAR(20) CHECK (status IN ('online', 'offline', 'error')),\n  job_queue_depth INTEGER DEFAULT 0,\n  memory_usage INTEGER,\n  cpu_usage FLOAT,\n  ip_address INET,\n  session_state VARCHAR(20),\n  received_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n  INDEX idx_heartbeat_agent (agent_id),\n  INDEX idx_heartbeat_received (received_at)\n);"
+      "file": "migrations/000002_seed_load_test_data.down.sql",
+      "sql": "TRUNCATE TABLE load_test.baselines, load_test.test_agents, load_test.test_users;"
     }
   ],
   "api_contracts": [
     {
       "method": "POST",
-      "path": "/api/v1/auth/m365/login",
-      "request": "{\"provider\": \"microsoft365\", \"redirect_uri\": \"string\", \"state\": \"string\"}",
-      "response": "{\"authorization_url\": \"string\", \"state\": \"string\"}",
+      "path": "/api/v1/auth/login",
+      "request": {
+        "username": "string",
+        "password": "string"
+      },
+      "response": {
+        "token": "string",
+        "refresh_token": "string",
+        "expires_at": "timestamp"
+      },
       "status_codes": [
         200,
         400,
+        401,
+        429
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "request": {
+        "refresh_token": "string"
+      },
+      "response": {
+        "token": "string",
+        "expires_at": "timestamp"
+      },
+      "status_codes": [
+        200,
+        401,
+        403
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/register",
+      "request": {
+        "agent_id": "string",
+        "name": "string",
+        "capabilities": []
+      },
+      "response": {
+        "agent_id": "string",
+        "status": "registered"
+      },
+      "status_codes": [
+        200,
+        400,
+        409
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/heartbeat",
+      "request": {
+        "agent_id": "string",
+        "status": "string",
+        "printer_count": 1
+      },
+      "response": {
+        "timestamp": "timestamp"
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/discover",
+      "request": {},
+      "response": {
+        "agents": []
+      },
+      "status_codes": [
+        200
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs",
+      "request": {
+        "document_id": "string",
+        "printer_id": "string",
+        "options": {}
+      },
+      "response": {
+        "job_id": "string",
+        "status": "queued"
+      },
+      "status_codes": [
+        200,
+        400,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/{job_id}",
+      "request": {},
+      "response": {
+        "job_id": "string",
+        "status": "string",
+        "created_at": "timestamp"
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/documents",
+      "request": {
+        "multipart": "file",
+        "filename": "string",
+        "encryption": "boolean"
+      },
+      "response": {
+        "document_id": "string",
+        "size": 1024
+      },
+      "status_codes": [
+        200,
+        400,
+        413
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}",
+      "request": {},
+      "response": {
+        "document": "bytes"
+      },
+      "status_codes": [
+        200,
+        404
+      ]
+    },
+    {
+      "method": "WebSocket",
+      "path": "/ws/connect",
+      "request": {
+        "token": "string"
+      },
+      "response": {
+        "type": "connected",
+        "data": {}
+      },
+      "status_codes": [
+        101,
         401
       ]
     },
     {
-      "method": "POST",
-      "path": "/api/v1/auth/m365/callback",
-      "request": "{\"code\": \"string\", \"state\": \"string\"}",
-      "response": "{\"access_token\": \"string\", \"refresh_token\": \"string\", \"user\": {\"id\": \"string\", \"email\": \"string\", \"name\": \"string\"}}",
+      "method": "GET",
+      "path": "/api/v1/load-test/results",
+      "request": {},
+      "response": {
+        "results": [],
+        "total": 0
+      },
       "status_codes": [
-        200,
-        400,
-        401
+        200
       ]
     },
     {
       "method": "GET",
-      "path": "/api/v1/compliance/audit-logs",
-      "request": "",
-      "response": "{\"data\": [{\"id\": \"string\", \"event_type\": \"string\", \"timestamp\": \"string\", \"user\": {}, \"details\": {}}], \"total\": 0}",
+      "path": "/api/v1/load-test/baselines",
+      "request": {},
+      "response": {
+        "baselines": []
+      },
       "status_codes": [
-        200,
-        401,
-        403
+        200
       ]
     },
     {
       "method": "POST",
-      "path": "/api/v1/compliance/export",
-      "request": "{\"framework\": \"HIPAA\", \"date_range\": {\"start\": \"string\", \"end\": \"string\"}, \"format\": \"CSV\"}",
-      "response": "{\"export_id\": \"string\", \"download_url\": \"string\", \"expires_at\": \"string\"}",
+      "path": "/api/v1/load-test/baselines",
+      "request": {
+        "service": "string",
+        "endpoint": "string",
+        "metric": "string",
+        "value": 100
+      },
+      "response": {
+        "id": "string"
+      },
       "status_codes": [
         200,
-        400,
-        401,
-        403
+        400
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/load-test/run",
+      "request": {
+        "test_name": "string",
+        "duration": "60s",
+        "vus": 10
+      },
+      "response": {
+        "run_id": "string",
+        "status": "started"
+      },
+      "status_codes": [
+        200,
+        400
       ]
     },
     {
       "method": "GET",
-      "path": "/api/v1/quotas/:userId",
-      "request": "",
-      "response": "{\"quotas\": [{\"type\": \"monthly_pages\", \"limit\": 1000, \"used\": 450, \"remaining\": 550, \"action\": \"warn\"}]}",
+      "path": "/api/v1/jobs/follow-me",
+      "request": {},
+      "response": {
+        "jobs": []
+      },
+      "status_codes": [
+        200
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/jobs/{job_id}/claim",
+      "request": {
+        "printer_id": "string",
+        "user_id": "string"
+      },
+      "response": {
+        "job_id": "string",
+        "status": "processing"
+      },
       "status_codes": [
         200,
-        401,
-        403,
+        400,
         404
       ]
     },
     {
-      "method": "PUT",
-      "path": "/api/v1/quotas/:quotaId",
-      "request": "{\"limit\": 1500, \"action_on_exceed\": \"block\"}",
-      "response": "{\"id\": \"string\", \"limit\": 1500, \"action_on_exceed\": \"block\", \"updated_at\": \"string\"}",
+      "method": "POST",
+      "path": "/api/v1/auth/oidc/login",
+      "request": {
+        "provider": "string",
+        "code": "string"
+      },
+      "response": {
+        "token": "string"
+      },
       "status_codes": [
         200,
-        400,
-        401,
-        404
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/policies",
-      "request": "",
-      "response": "{\"policies\": [{\"id\": \"string\", \"name\": \"string\", \"priority\": 1, \"is_active\": true, \"conditions\": {}, \"actions\": {}}]}",
-      "status_codes": [
-        200,
-        401,
-        403
+        400
       ]
     },
     {
       "method": "POST",
-      "path": "/api/v1/policies",
-      "request": "{\"name\": \"string\", \"description\": \"string\", \"priority\": 1, \"conditions\": {}, \"actions\": {}}",
-      "response": "{\"id\": \"string\", \"name\": \"string\", \"priority\": 1, \"created_at\": \"string\"}",
-      "status_codes": [
-        201,
-        400,
-        401,
-        403
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/print-release/pin/setup",
-      "request": "{\"pin\": \"123456\"}",
-      "response": "{\"success\": true, \"pin_expires_at\": \"string\"}",
-      "status_codes": [
-        200,
-        400,
-        401
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/print-release/release",
-      "request": "{\"printer_id\": \"string\", \"pin\": \"123456\", \"job_ids\": [\"string\"]}",
-      "response": "{\"released\": [\"string\"], \"failed\": [], \"timestamp\": \"string\"}",
-      "status_codes": [
-        200,
-        400,
-        401,
-        404
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/m365/documents",
-      "request": "",
-      "response": "{\"documents\": [{\"id\": \"string\", \"name\": \"string\", \"drive_id\": \"string\", \"web_url\": \"string\", \"size\": 0}]}",
-      "status_codes": [
-        200,
-        401,
-        502
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/m365/print",
-      "request": "{\"item_id\": \"string\", \"drive_id\": \"string\", \"printer_id\": \"string\", \"settings\": {}}",
-      "response": "{\"job_id\": \"string\", \"status\": \"queued\", \"document_name\": \"string\"}",
-      "status_codes": [
-        201,
-        400,
-        401,
-        404,
-        502
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/agents/:id/health",
-      "request": "",
-      "response": "{\"uptime\": 86400, \"jobs_processed\": 100, \"success_rate\": 98.5, \"last_heartbeat\": \"string\"}",
-      "status_codes": [
-        200,
-        404
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/policies/evaluate",
-      "request": "{\"job\": {}, \"user\": {}, \"printer\": {}}",
-      "response": "{\"allowed\": true, \"applied_policies\": [{\"id\": \"string\", \"actions\": {}}], \"modified_settings\": {}}",
+      "path": "/api/v1/auth/saml/sso",
+      "request": {
+        "SAMLResponse": "string"
+      },
+      "response": {
+        "token": "string"
+      },
       "status_codes": [
         200,
         400
@@ -440,234 +945,255 @@
   "test_plan": {
     "unit_tests": [
       {
-        "file": "internal/auth/jwt/jwt_test.go",
+        "file": "tests/load/lib/helpers_test.js",
         "cases": [
-          "TokenGeneration",
-          "TokenValidation",
-          "TokenExpiry",
-          "InvalidToken",
-          "RefreshTokenFlow"
+          "randomString generates correct length",
+          "randomItem selects from array",
+          "parseJWT extracts claims"
         ]
       },
       {
-        "file": "services/compliance-service/compliance_test.go",
+        "file": "tests/load/lib/api-client_test.js",
         "cases": [
-          "AuditLogCreation",
-          "HIPAAComplianceCheck",
-          "FedRAMPDataClassification",
-          "ExportAuditLog",
-          "RetentionPolicy"
+          "login with valid credentials",
+          "login with invalid credentials",
+          "refresh token before expiry"
         ]
       },
       {
-        "file": "services/policy-service/policy_engine_test.go",
+        "file": "tests/load/lib/metrics_test.js",
         "cases": [
-          "PolicyEvaluation",
-          "PriorityOrdering",
-          "ConditionMatching",
-          "ActionApplication",
-          "DefaultPolicyBehavior"
+          "custom metrics are registered",
+          "thresholds are validated"
         ]
       },
       {
-        "file": "e2e/pages/BasePage_test.ts",
+        "file": "tests/load/utils/baseline-compare_test.js",
         "cases": [
-          "PageNavigation",
-          "AuthenticationSetup",
-          "APIResponseMocking",
-          "LocalStorageManagement"
+          "detects regression when exceeded",
+          "passes when within tolerance",
+          "generates correct report"
+        ]
+      },
+      {
+        "file": "internal/testutil/loadtest/loadtest_test.go",
+        "cases": [
+          "SetupTestDatabase creates schema",
+          "SeedTestData populates tables",
+          "CleanupTestData removes data"
         ]
       }
     ],
     "e2e_tests": [
       {
-        "name": "Authentication Flow Tests",
+        "name": "Load Test - Auth Service Concurrent Login",
         "steps": [
-          "Navigate to /login",
-          "Verify login form elements are visible",
-          "Enter valid credentials",
-          "Submit form",
-          "Verify redirect to /dashboard",
-          "Verify auth tokens in localStorage",
-          "Logout and verify redirect to /login",
-          "Verify tokens are cleared"
+          "Setup test database with users",
+          "Run concurrent-users.js with 100 VUs for 30s",
+          "Verify < 1% error rate",
+          "Verify p95 < 500ms",
+          "Cleanup test data"
         ]
       },
       {
-        "name": "Microsoft 365 Integration Tests",
+        "name": "Load Test - Registry Service Heartbeat",
         "steps": [
-          "Navigate to /settings/integrations/microsoft365",
-          "Click 'Connect to Microsoft 365' button",
-          "Mock OIDC authorization callback",
-          "Verify tenant connection status",
-          "Test OneDrive document listing",
-          "Test document selection for printing",
-          "Verify print job creation with OneDrive document",
-          "Test SharePoint site configuration",
-          "Test SharePoint document library access",
-          "Verify secure token storage"
+          "Setup test agents",
+          "Run heartbeat.js with 1000 VUs for 60s",
+          "Verify < 0.1% error rate",
+          "Verify p95 < 100ms",
+          "Cleanup test data"
         ]
       },
       {
-        "name": "Secure Print Release Tests",
+        "name": "Load Test - Job Service Parallel Submission",
         "steps": [
-          "Setup print release PIN",
-          "Submit secure print job",
-          "Navigate to print release station",
-          "Select printer",
-          "Enter correct PIN",
-          "Verify job is released to printer",
-          "Test incorrect PIN rejection",
-          "Test card-based release (if configured)",
-          "Verify job is removed from queue after release",
-          "Test auto-release timeout"
+          "Setup test documents",
+          "Run submit.js with 500 VUs for 30s",
+          "Verify all jobs queued",
+          "Verify p95 < 200ms",
+          "Cleanup test data"
         ]
       },
       {
-        "name": "Quota Management Tests",
+        "name": "Load Test - Storage Service Upload Burst",
         "steps": [
-          "Navigate to /quotas as admin",
-          "Verify quota overview cards display",
-          "Create new user quota (monthly pages)",
-          "Set limit and action on exceed",
-          "Save quota",
-          "Verify quota appears in table",
-          "Test quota warning threshold",
-          "Test hard limit enforcement",
-          "Verify cost allocation tracking",
-          "Export quota report as CSV"
+          "Prepare test files",
+          "Run upload.js with 200 VUs for 60s",
+          "Verify all uploads complete",
+          "Verify throughput > 100MB/s",
+          "Cleanup test data"
         ]
       },
       {
-        "name": "Print Policy Engine Tests",
+        "name": "Load Test - WebSocket Connection Scaling",
         "steps": [
-          "Navigate to /policies as admin",
-          "Click 'Create Policy'",
-          "Set policy name and priority",
-          "Configure conditions (max pages, color mode)",
-          "Configure actions (force duplex, force grayscale)",
-          "Save policy",
-          "Test policy evaluation via API",
-          "Verify policy is applied to matching jobs",
-          "Test policy priority ordering",
-          "Edit existing policy",
-          "Delete policy with confirmation"
+          "Setup notification service",
+          "Run websocket-connect.js with 5000 concurrent connections",
+          "Verify all connections established",
+          "Verify message delivery < 50ms",
+          "Cleanup connections"
         ]
       },
       {
-        "name": "Compliance Audit Tests",
+        "name": "Load Test - End-to-End User Journey",
         "steps": [
-          "Navigate to /compliance as admin",
-          "Select compliance framework (HIPAA/FedRAMP)",
-          "Set date range",
-          "Generate audit report",
-          "Verify report includes all required fields",
-          "Test data classification filters",
-          "Test IP address logging",
-          "Test user agent logging",
-          "Export report as CSV/PDF",
-          "Verify audit log immutability",
-          "Test retention policy enforcement"
+          "Setup complete test environment",
+          "Run e2e-journey.js with 100 VUs for 120s",
+          "Verify complete flow success rate > 99%",
+          "Verify no memory leaks",
+          "Generate report"
         ]
       },
       {
-        "name": "Real-time Updates Tests",
+        "name": "Soak Test - Sustained Load",
         "steps": [
-          "Setup WebSocket connection mock",
-          "Navigate to /jobs",
-          "Trigger job status change event",
-          "Verify UI updates without refresh",
-          "Test agent heartbeat update",
-          "Verify agent status badge changes",
-          "Test notification toast display",
-          "Test WebSocket reconnection",
-          "Verify error handling on disconnect"
+          "Run soak-test.js with 50 VUs for 1 hour",
+          "Monitor memory/CPU usage",
+          "Verify no performance degradation",
+          "Check for connection leaks"
         ]
       },
       {
-        "name": "Visual Regression Tests",
+        "name": "Spike Test - Traffic Burst",
         "steps": [
-          "Navigate to each major page",
-          "Take screenshots at defined viewports",
-          "Compare against baseline screenshots",
-          "Report visual differences",
-          "Test dark mode variations",
-          "Test across browsers (Chromium, Firefox, WebKit)",
-          "Test mobile responsive layouts",
-          "Generate visual diff report"
+          "Start baseline load (10 VUs)",
+          "Ramp to 1000 VUs over 30s",
+          "Sustain for 60s",
+          "Ramp down to baseline",
+          "Verify recovery"
         ]
       },
       {
-        "name": "Mobile Responsiveness Tests",
+        "name": "Stress Test - Find Breaking Point",
         "steps": [
-          "Set viewport to mobile dimensions (375x667)",
-          "Navigate to each page",
-          "Verify hamburger menu is present",
-          "Test navigation drawer interaction",
-          "Verify touch targets are minimum 44x44px",
-          "Test horizontal scrolling is avoided",
-          "Verify readable font sizes",
-          "Test form input usability",
-          "Verify tap targets are properly spaced"
+          "Start with 100 VUs",
+          "Increment by 100 every 60s",
+          "Monitor until failure",
+          "Document breaking point",
+          "Verify graceful degradation"
         ]
       },
       {
-        "name": "Accessibility Tests",
+        "name": "Baseline Comparison - Regression Detection",
         "steps": [
-          "Run axe-core accessibility scan on each page",
-          "Verify all images have alt text",
-          "Verify form inputs have labels",
-          "Verify ARIA attributes on interactive elements",
-          "Test keyboard navigation through all features",
-          "Verify focus indicators are visible",
-          "Test screen reader announcements",
-          "Verify color contrast ratios meet WCAG AA",
-          "Test tab order follows logical flow"
+          "Load stored baselines",
+          "Run all service tests",
+          "Compare results against baselines",
+          "Flag regressions > 10%",
+          "Generate comparison report"
         ]
       },
       {
-        "name": "Performance Tests",
+        "name": "Mobile API Load Test",
         "steps": [
-          "Measure Time to First Byte (TTFB)",
-          "Measure First Contentful Paint (FCP)",
-          "Measure Largest Contentful Paint (LCP)",
-          "Measure Cumulative Layout Shift (CLS)",
-          "Verify bundle sizes are within limits",
-          "Test lazy loading of images and components",
-          "Measure API response times",
-          "Generate performance report"
+          "Setup mobile test credentials",
+          "Run mobile/api-test.js with 200 VUs",
+          "Verify mobile-specific endpoints",
+          "Check battery/cpu impact metrics"
+        ]
+      },
+      {
+        "name": "Follow-Me Printing Load Test",
+        "steps": [
+          "Setup test users with follow-me enabled",
+          "Submit jobs to user queue",
+          "Simulate printer claims",
+          "Verify job routing correctness"
+        ]
+      },
+      {
+        "name": "Enterprise SSO Load Test (OIDC)",
+        "steps": [
+          "Setup mock OIDC provider",
+          "Run oidc-login.js with 100 concurrent users",
+          "Verify token exchange timing",
+          "Check session handling"
+        ]
+      },
+      {
+        "name": "Enterprise SSO Load Test (SAML)",
+        "steps": [
+          "Setup mock SAML IdP",
+          "Run saml-login.js with 50 concurrent users",
+          "Verify SAML response parsing",
+          "Check session creation"
+        ]
+      },
+      {
+        "name": "Encrypted Upload Performance Test",
+        "steps": [
+          "Setup encryption keys",
+          "Run encrypted-upload.js with various file sizes",
+          "Compare with unencrypted performance",
+          "Verify overhead < 20%"
         ]
       }
     ]
   },
   "security_notes": [
-    "All E2E tests must use mock credentials - never use production credentials",
-    "API tokens in tests should be clearly marked as test tokens with limited scope",
-    "Screenshot tests must not capture sensitive user data in test runs",
-    "PII/PHI data in compliance tests must use anonymized fixtures",
-    "Print release PINs in tests should use predictable values for automation",
-    "Microsoft 365 integration tests should use dedicated test tenant",
-    "WebSocket connections in tests must point to test environment only",
-    "Audit log export tests should validate data redaction for PII",
-    "Rate limiting tests should use separate test IP ranges",
-    "Session tokens should have short expiry in test environments"
+    "Load tests must never run against production environments",
+    "Test database credentials should be stored separately from production credentials",
+    "Load test user passwords should use distinct, easily identifiable patterns",
+    "Rate limiting should be disabled or increased in test environments",
+    "Disable logging for load test requests to prevent log flooding",
+    "Ensure test data is isolated and cannot be accessed by production services",
+    "Load test tokens should have distinct issuer/audience claims",
+    "Implement IP whitelisting for load test execution endpoints",
+    "Sanitize any PII in load test reports before storage",
+    "For SOC 2 compliance: log all load test execution attempts",
+    "For DLP compliance: test document uploads should contain safe test patterns only",
+    "WebSocket load tests should use separate test namespace to avoid production message interference"
   ],
   "docker_changes": [
-    "Add playwright-browsers stage to Dockerfile.dashboard",
-    "Add E2E test runner service to docker-compose.yml",
-    "Configure test environment variables in docker-compose.test.yml",
-    "Add volume for test screenshots and reports",
-    "Add mock API server container for E2E test isolation"
+    "Add tests/load/Dockerfile.k6 for k6 test runner image",
+    "Add tests/load/docker-compose.test.yml with services: postgres-test, redis-test, minio-test, k6-runner",
+    "Update deployments/docker/docker-compose.yml to include load test network",
+    "Add k6-prometheus-exporter container for metrics collection",
+    "Add grafana-loadtest container with pre-configured dashboards"
   ],
   "market_driven_features": [
-    "Secure Print Release System - Tests cover PIN-based and card-based job release at print stations",
-    "Cost Allocation & Quotas - Tests for per-user, per-department quotas with blocking/warning actions",
-    "Print Policy Engine - Tests for rule-based print policies with priority evaluation",
-    "Microsoft 365 Integration - Tests for OneDrive/SharePoint document printing and OIDC authentication",
-    "FedRAMP & HIPAA Compliance - Tests for audit logging, data classification, and compliance reporting",
-    "Real-time Updates - WebSocket tests for job status, agent heartbeat, and notifications",
-    "Mobile Responsiveness - Cross-device tests for iOS/Android viewport compatibility",
-    "Visual Regression - Screenshot comparison tests for UI consistency across browsers",
-    "Accessibility Testing - WCAG 2.1 AA compliance tests for inclusive design"
+    {
+      "feature": "Mobile App API Load Testing",
+      "source": "Competitor Analysis - Aliyun, PaperCut Hive mobile-first approach",
+      "priority": "high",
+      "implementation": "tests/load/scenarios/mobile/api-test.js - tests mobile-specific endpoints with slower network simulation"
+    },
+    {
+      "feature": "Follow-Me Printing Load Tests",
+      "source": "Competitor Analysis - Azure Universal Print, PaperCut Hive",
+      "priority": "high",
+      "implementation": "tests/load/scenarios/job/follow-me-printing.js - validates queue performance and claim latency"
+    },
+    {
+      "feature": "Enterprise SSO Load Testing (OIDC/SAML)",
+      "source": "Competitor Analysis - Azure Universal Print (Entra ID), Oracle Cloud",
+      "priority": "high",
+      "implementation": "tests/load/scenarios/auth/oidc-login.js and saml-login.js - validates auth under enterprise load"
+    },
+    {
+      "feature": "Encrypted Document Upload Performance",
+      "source": "Competitor Analysis -\u535a\u745e\u51ef\u5fb7 content security, Oracle Cloud HIPAA/GDPR",
+      "priority": "high",
+      "implementation": "tests/load/scenarios/storage/encrypted-upload.js - measures encryption overhead"
+    },
+    {
+      "feature": "Cross-Region Performance Testing",
+      "source": "Competitor Analysis - AWS IoT Print Services cross-region sync",
+      "priority": "medium",
+      "implementation": "tests/load/scenarios/mixed/cross-region-test.js - simulates geo-distributed load"
+    },
+    {
+      "feature": "High Availability Failover Testing",
+      "source": "Competitor Analysis - Azure, AWS global infrastructure",
+      "priority": "medium",
+      "implementation": "tests/load/scenarios/mixed/ha-failover.js - tests service failover under load"
+    },
+    {
+      "feature": "Print Queue Priority Testing",
+      "source": "Competitor Analysis - PaperCut Hive queue management",
+      "priority": "medium",
+      "implementation": "tests/load/scenarios/job/priority-queue.js - validates priority job handling"
+    }
   ]
 }

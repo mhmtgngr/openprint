@@ -1,0 +1,158 @@
+# Docker Compose for Load Testing Environment
+# Spins up a complete test environment with all services
+# Use: docker-compose -f docker-compose.test.yml up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL for testing
+  test-db:
+    image: postgres:16-alpine
+    container_name: openprint-test-db
+    environment:
+      POSTGRES_DB: openprint_test
+      POSTGRES_USER: openprint
+      POSTGRES_PASSWORD: openprint_test_password
+    ports:
+      - "15433:5432"
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openprint"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Redis for testing
+  test-redis:
+    image: redis:7-alpine
+    container_name: openprint-test-redis
+    ports:
+      - "16380:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # MinIO for S3-compatible storage testing
+  test-minio:
+    image: minio/minio:latest
+    container_name: openprint-test-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9001:9000"
+      - "9002:9001"
+    volumes:
+      - test_minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Jaeger for tracing (optional, for debugging)
+  test-jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: openprint-test-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14250:14250"  # OTLP gRPC
+    networks:
+      - test-network
+
+  # Grafana for visualizing metrics
+  test-grafana:
+    image: grafana/grafana:latest
+    container_name: openprint-test-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - "3001:3000"
+    volumes:
+      - test_grafana_data:/var/lib/grafana
+      - ./deployments/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deployments/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - test-influxdb
+    networks:
+      - test-network
+
+  # InfluxDB for storing k6 metrics
+  test-influxdb:
+    image: influxdb:2.7-alpine
+    container_name: openprint-test-influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: adminadmin
+      DOCKER_INFLUXDB_INIT_ORG: openprint
+      DOCKER_INFLUXDB_INIT_BUCKET: k6
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: k6-test-token
+    ports:
+      - "8086:8086"
+    volumes:
+      - test_influxdb_data:/var/lib/influxdb2
+    networks:
+      - test-network
+
+  # K6 Operator (for Kubernetes-style testing)
+  # This is a placeholder - actual k6-operator runs in K8s
+  # For local testing, use k6 directly
+
+  # Performance monitoring agent
+  test-prometheus:
+    image: prom/prometheus:latest
+    container_name: openprint-test-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - test_prometheus_data:/prometheus
+    networks:
+      - test-network
+
+  # cAdvisor for container metrics
+  test-cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: openprint-test-cadvisor
+    privileged: true
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - test-network
+
+volumes:
+  test_db_data:
+  test_minio_data:
+  test_grafana_data:
+  test_influxdb_data:
+  test_prometheus_data:
+
+networks:
+  test-network:
+    driver: bridge

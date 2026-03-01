@@ -1,0 +1,66 @@
+# ConfigMap containing k6 test scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-test-scripts
+  namespace: load-testing
+data:
+  # Baseline tests
+  baseline-auth.js: |
+    import http from 'k6/http';
+    import { check } from 'k6';
+    import { Rate } from 'k6/metrics';
+
+    export const options = {
+      stages: [
+        { duration: '30s', target: 10 },
+        { duration: '1m', target: 50 },
+        { duration: '30s', target: 10 },
+      ],
+      thresholds: {
+        'http_req_duration': ['p(95)<300'],
+      },
+    };
+
+    const BASE_URL = __ENV.BASE_URL || 'http://auth-service.openprint.svc.cluster.local:8001';
+
+    export default function () {
+      const response = http.post(`${BASE_URL}/auth/login`, JSON.stringify({
+        email: 'loadtest@example.com',
+        password: 'TestPassword123!',
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      check(response, {
+        'status is 200': (r) => r.status === 200,
+      });
+    }
+
+  baseline-registry.js: |
+    import http from 'k6/http';
+    import { check } from 'k6';
+
+    export const options = {
+      stages: [
+        { duration: '30s', target: 50 },
+        { duration: '1m', target: 200 },
+        { duration: '30s', target: 50 },
+      ],
+    };
+
+    const REGISTRY_URL = __ENV.REGISTRY_URL || 'http://registry-service.openprint.svc.cluster.local:8002';
+
+    export default function () {
+      const agentId = `k6-agent-${__VU}`;
+      const response = http.post(`${REGISTRY_URL}/agents/${agentId}/heartbeat`, JSON.stringify({
+        agent_id: agentId,
+        status: 'online',
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      check(response, {
+        'status is 200': (r) => r.status === 200,
+      });
+    }

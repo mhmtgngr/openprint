@@ -1,0 +1,8 @@
+# Namespace for load testing resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: load-testing
+  labels:
+    name: load-testing
+    project: openprint
