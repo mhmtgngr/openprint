@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-01T13:41:15.176138",
+  "generated_at": "2026-03-01T15:31:38.640870",
   "server": {
     "hostname": "cmit",
     "external_ip": "192.168.31.76",
@@ -7,11 +7,11 @@
   },
   "e2e_tests": {
     "framework": "playwright",
-    "status": "passed",
+    "status": "failed",
     "summary": {
       "total": 0,
-      "passed": 0,
-      "failed": 0,
+      "passed": 1,
+      "failed": 100,
       "skipped": 0
     },
     "success_rate": 0

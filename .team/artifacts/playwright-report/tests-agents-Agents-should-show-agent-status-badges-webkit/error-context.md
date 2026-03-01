@@ -1,0 +1,153 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Dashboard" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e50]:
+          - heading "Agents" [level=1] [ref=e51]
+          - paragraph [ref=e52]: Manage Windows print agents and monitor their status
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: 4 agents
+            - generic [ref=e56]: 2 online
+            - generic [ref=e58]: 1 offline
+            - generic [ref=e60]: 1 errors
+          - generic [ref=e62]:
+            - button "All" [ref=e63] [cursor=pointer]
+            - button "Online" [ref=e64] [cursor=pointer]
+            - button "Offline" [ref=e65] [cursor=pointer]
+            - button "Errors" [ref=e66] [cursor=pointer]
+          - list [ref=e68]:
+            - listitem [ref=e69] [cursor=pointer]:
+              - generic [ref=e70]:
+                - generic [ref=e71]:
+                  - generic [ref=e72]:
+                    - generic [ref=e73]:
+                      - img [ref=e74]
+                      - generic [ref=e76]: windows
+                    - paragraph [ref=e77]: WORKSTATION-001
+                    - generic [ref=e78]: Online
+                  - generic [ref=e80]:
+                    - generic [ref=e81]:
+                      - img [ref=e82]
+                      - text: John Doe
+                    - generic [ref=e84]:
+                      - img [ref=e85]
+                      - text: 2 printers
+                    - generic [ref=e87]:
+                      - img [ref=e88]
+                      - text: 1 minute ago
+                    - generic [ref=e90]: v1.0.0
+                - generic [ref=e91]:
+                  - button "Delete agent" [ref=e92]:
+                    - img [ref=e93]
+                  - img [ref=e95]
+            - listitem [ref=e97] [cursor=pointer]:
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - generic [ref=e100]:
+                    - generic [ref=e101]:
+                      - img [ref=e102]
+                      - generic [ref=e104]: windows
+                    - paragraph [ref=e105]: WORKSTATION-002
+                    - generic [ref=e106]: Online
+                  - generic [ref=e108]:
+                    - generic [ref=e109]:
+                      - img [ref=e110]
+                      - text: 1 printer
+                    - generic [ref=e112]:
+                      - img [ref=e113]
+                      - text: 3 queued
+                    - generic [ref=e115]:
+                      - img [ref=e116]
+                      - text: 2 minutes ago
+                    - generic [ref=e118]: v1.0.0
+                - generic [ref=e119]:
+                  - button "Delete agent" [ref=e120]:
+                    - img [ref=e121]
+                  - img [ref=e123]
+            - listitem [ref=e125] [cursor=pointer]:
+              - generic [ref=e126]:
+                - generic [ref=e127]:
+                  - generic [ref=e128]:
+                    - generic [ref=e129]:
+                      - img [ref=e130]
+                      - generic [ref=e132]: windows
+                    - paragraph [ref=e133]: FINANCE-PC
+                    - generic [ref=e134]: Offline
+                  - generic [ref=e136]:
+                    - generic [ref=e137]:
+                      - img [ref=e138]
+                      - text: 1 printer
+                    - generic [ref=e140]:
+                      - img [ref=e141]
+                      - text: 1 day ago
+                    - generic [ref=e143]: v0.9.5
+                - generic [ref=e144]:
+                  - button "Delete agent" [ref=e145]:
+                    - img [ref=e146]
+                  - img [ref=e148]
+            - listitem [ref=e150] [cursor=pointer]:
+              - generic [ref=e151]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]:
+                    - generic [ref=e154]:
+                      - img [ref=e155]
+                      - generic [ref=e157]: windows
+                    - paragraph [ref=e158]: RECEPTION-DESK
+                    - generic [ref=e159]: Error
+                  - generic [ref=e161]:
+                    - generic [ref=e162]:
+                      - img [ref=e163]
+                      - text: 1 printer
+                    - generic [ref=e165]:
+                      - img [ref=e166]
+                      - text: 5 minutes ago
+                    - generic [ref=e168]: v1.0.1
+                - generic [ref=e169]:
+                  - button "Restart agent" [ref=e170]:
+                    - img [ref=e171]
+                  - button "Delete agent" [ref=e173]:
+                    - img [ref=e174]
+                  - img [ref=e176]
+```
