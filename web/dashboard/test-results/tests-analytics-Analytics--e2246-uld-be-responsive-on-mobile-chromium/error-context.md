@@ -1,0 +1,135 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Dashboard" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - heading "Welcome back, Test!" [level=1] [ref=e50]
+          - paragraph [ref=e51]: Here's what's happening with your print environment today.
+        - generic [ref=e52]:
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - img
+            - generic [ref=e57]:
+              - paragraph [ref=e58]: "1"
+              - paragraph [ref=e59]: Active Printers
+          - generic [ref=e61]:
+            - img [ref=e63]
+            - generic [ref=e65]:
+              - paragraph [ref=e66]: "0"
+              - paragraph [ref=e67]: Jobs Today
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - generic [ref=e73]:
+              - paragraph [ref=e74]: 1,234
+              - paragraph [ref=e75]: Pages This Month
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - heading "Recent Print Jobs" [level=2] [ref=e79]
+              - link "View all" [ref=e80] [cursor=pointer]:
+                - /url: /jobs
+            - generic [ref=e81]:
+              - generic [ref=e83]:
+                - generic:
+                  - paragraph: Document.pdf
+                  - paragraph: 5 pages • HP LaserJet Pro
+                - generic [ref=e84]: Completed
+              - generic [ref=e87]:
+                - generic:
+                  - paragraph: Presentation.pptx
+                  - paragraph: 12 pages • HP LaserJet Pro
+                - generic [ref=e88]: Processing
+              - generic [ref=e91]:
+                - generic:
+                  - paragraph: Large_File.pdf
+                  - paragraph: 50 pages • Canon PIXMA
+                - generic [ref=e92]: Failed
+          - generic [ref=e94]:
+            - generic [ref=e95]:
+              - heading "Available Printers" [level=2] [ref=e96]
+              - link "Manage" [ref=e97] [cursor=pointer]:
+                - /url: /printers
+            - generic [ref=e98]:
+              - generic [ref=e100]:
+                - generic [ref=e101]:
+                  - img [ref=e103]
+                  - generic [ref=e105]:
+                    - paragraph [ref=e106]: HP LaserJet Pro
+                    - paragraph [ref=e107]: network
+                - generic [ref=e108]: Online
+              - generic [ref=e110]:
+                - generic [ref=e111]:
+                  - img [ref=e113]
+                  - generic [ref=e115]:
+                    - paragraph [ref=e116]: Canon PIXMA
+                    - paragraph [ref=e117]: usb
+                - generic [ref=e118]: Offline
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - img
+            - heading "Environmental Impact" [level=2] [ref=e122]
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - img [ref=e126]
+              - generic [ref=e128]:
+                - paragraph [ref=e129]: 1,234
+                - paragraph [ref=e130]: Pages Printed
+            - generic [ref=e131]:
+              - img [ref=e133]
+              - generic [ref=e135]:
+                - paragraph [ref=e136]: 245.6g
+                - paragraph [ref=e137]: CO₂ Saved
+            - generic [ref=e138]:
+              - img [ref=e140]
+              - generic [ref=e142]:
+                - paragraph [ref=e143]: "0.1"
+                - paragraph [ref=e144]: Trees Saved
+          - generic [ref=e145]:
+            - paragraph:
+              - text: By using cloud printing, you've saved approximately
+              - generic [ref=e146]: 0.1 trees
+              - text: and avoided
+              - generic [ref=e147]: 245.6g
+              - text: of CO₂ emissions this 30d.
+```

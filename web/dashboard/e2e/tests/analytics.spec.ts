@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, mockApiResponse, mockUsers, mockUsageStats, mockEnvironmentReport, mockAuditLogs } from '../helpers';
+import { login, mockApiResponse, mockUsers, mockUsageStats, mockEnvironmentReport, mockAuditLogs, mockPrinters, mockJobs } from '../helpers';
 
 const adminUser = mockUsers[1];
 
@@ -28,6 +28,15 @@ test.describe('Analytics Page (Admin)', () => {
         limit: 20,
         offset: 0,
       });
+    });
+
+    // Setup common API mocks needed for login flow
+    await page.route('**/api/v1/printers', async (route) => {
+      await mockApiResponse(route, { printers: mockPrinters });
+    });
+
+    await page.route('**/api/v1/jobs*', async (route) => {
+      await mockApiResponse(route, { data: mockJobs, total: mockJobs.length, limit: 50, offset: 0 });
     });
 
     await login(page, {

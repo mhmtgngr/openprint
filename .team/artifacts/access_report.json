@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-01T19:01:54.859765",
+  "generated_at": "2026-03-01T20:04:47.590988",
   "project": "openprint",
   "server": {
     "hostname": "cmit",
@@ -23,7 +23,14 @@
       8004
     ],
     "all_accessible_ports": [
-      3000
+      15432,
+      16379,
+      18001,
+      18005,
+      3000,
+      8002,
+      8003,
+      8004
     ]
   },
   "client_connection": {

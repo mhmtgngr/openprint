@@ -2078,3 +2078,35 @@ Success Rate: 0%
 [0;32m[19:54:49][0m   ✓ :8003
 [0;32m[19:54:49][0m   ✓ :8004
 [0;35m[19:54:52][0m [1;37m🐳 DevOps[0m Working...
+[0;35m[19:56:08][0m [1;37m🐳 DevOps[0m ✓ Committed
+[0;32m[19:56:08][0m   🐳 Building (1/6): auth-service
+[0;32m[19:57:36][0m   ✓ Built: auth-service (88s)
+[0;32m[19:57:36][0m   🐳 Building (2/6): dashboard
+[0;32m[19:58:40][0m   ✓ Built: dashboard (64s)
+[0;32m[19:58:40][0m   🐳 Building (3/6): job-service
+[0;32m[20:00:07][0m   ✓ Built: job-service (87s)
+[0;32m[20:00:07][0m   🐳 Building (4/6): notification-service
+[0;32m[20:01:00][0m   ✓ Built: notification-service (53s)
+[0;32m[20:01:00][0m   🐳 Building (5/6): registry-service
+[0;32m[20:01:53][0m   ✓ Built: registry-service (53s)
+[0;32m[20:01:53][0m   🐳 Building (6/6): storage-service
+[0;32m[20:03:15][0m   ✓ Built: storage-service (82s)
+[0;32m[20:03:15][0m   Docker: 6/6 built, 0 failed
+[0;32m[20:03:33][0m   🚀 Starting services...
+[0;32m[20:03:33][0m   🔧 Checking for stale containers...
+[1;33m[20:03:50][0m   ⚠️  Dependency errors detected, recreating containers...
+[1;33m[20:04:47][0m   ✗ :15432
+[1;33m[20:04:47][0m   ✗ :16379
+[0;32m[20:04:47][0m   ✓ :18001
+[0;32m[20:04:47][0m   ✓ :18005
+[0;32m[20:04:47][0m   ✓ :3000
+[0;32m[20:04:47][0m   ✓ :8002
+[0;32m[20:04:47][0m   ✓ :8003
+[0;32m[20:04:47][0m   ✓ :8004
+[0;32m[20:04:47][0m   Health: 6/8
+[0;32m[20:04:47][0m 
+[0;32m[20:04:47][0m   📡 Generating access report...
+[0;32m[20:04:47][0m   🌐 External Access URL: http://192.168.31.76:3000
+[0;32m[20:04:47][0m   📄 Full report: /home/cmit/openprint/.team/artifacts/access_report.json
+[0;35m[20:04:47][0m [1;37m🧪 Tester[0m Running Playwright...
+[1;33m[20:07:27][0m   ↻ Attempt 2/3

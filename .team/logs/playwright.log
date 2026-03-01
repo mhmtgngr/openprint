@@ -1,100 +1,141 @@
-SyntaxError: /home/cmit/openprint/frontend/e2e/tests/admin.spec.ts: Unexpected token, expected "," (171:53)
+Starting E2E test run...
 
-  169 |
-  170 |     const policyList = page.locator('[data-testid="policy-list"]');
-> 171 |     const emptyState = page.getByText(/no policies/i });
-      |                                                      ^
-  172 |
-  173 |     const listVisible = await policyList.isVisible();
-  174 |     const emptyVisible = await emptyState.isVisible();
+Running 1995 tests using 4 workers
 
-   at e2e/tests/admin.spec.ts:171
-
-  169 |
-  170 |     const policyList = page.locator('[data-testid="policy-list"]');
-> 171 |     const emptyState = page.getByText(/no policies/i });
-      |                                                     ^
-  172 |
-  173 |     const listVisible = await policyList.isVisible();
-  174 |     const emptyVisible = await emptyState.isVisible();
-Error: Playwright Test did not expect test.describe() to be called here.
-Most common reasons include:
-- You are calling test.describe() in a configuration file.
-- You are calling test.describe() in a file that is imported by the configuration file.
-- You have two different versions of @playwright/test. This usually happens
-  when one of the dependencies in your package.json depends on @playwright/test.
-
-   at e2e/tests/auth.spec.ts:5
-
-  3 | import { testUsers } from '../helpers/test-data';
-  4 |
-> 5 | test.describe('Authentication', () => {
-    |      ^
-  6 |   let loginPage: LoginPage;
-  7 |
-  8 |   test.beforeEach(async ({ page }) => {
-    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
-    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
-    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
-    at /home/cmit/openprint/frontend/e2e/tests/auth.spec.ts:5:6
-Error: Playwright Test did not expect test.describe() to be called here.
-Most common reasons include:
-- You are calling test.describe() in a configuration file.
-- You are calling test.describe() in a file that is imported by the configuration file.
-- You have two different versions of @playwright/test. This usually happens
-  when one of the dependencies in your package.json depends on @playwright/test.
-
-   at e2e/tests/dashboard.spec.ts:5
-
-  3 | import { testUsers } from '../helpers/test-data';
-  4 |
-> 5 | test.describe('Dashboard', () => {
-    |      ^
-  6 |   let dashboardPage: DashboardPage;
-  7 |
-  8 |   test.beforeEach(async ({ page }) => {
-    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
-    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
-    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
-    at /home/cmit/openprint/frontend/e2e/tests/dashboard.spec.ts:5:6
-SyntaxError: /home/cmit/openprint/frontend/e2e/tests/jobs.spec.ts: Unexpected token, expected "," (239:53)
-
-  237 |       await retryButton.click();
-  238 |
-> 239 |       await expect(page.getByText(/retrying|queued/i })).toBeVisible();
-      |                                                      ^
-  240 |     }
-  241 |   });
-  242 | });
-
-   at e2e/tests/jobs.spec.ts:239
-
-  237 |       await retryButton.click();
-  238 |
-> 239 |       await expect(page.getByText(/retrying|queued/i })).toBeVisible();
-      |                                                     ^
-  240 |     }
-  241 |   });
-  242 | });
-Error: Playwright Test did not expect test.describe() to be called here.
-Most common reasons include:
-- You are calling test.describe() in a configuration file.
-- You are calling test.describe() in a file that is imported by the configuration file.
-- You have two different versions of @playwright/test. This usually happens
-  when one of the dependencies in your package.json depends on @playwright/test.
-
-   at e2e/tests/printers.spec.ts:5
-
-  3 | import { testUsers, testPrinters } from '../helpers/test-data';
-  4 |
-> 5 | test.describe('Printers & Devices', () => {
-    |      ^
-  6 |   let printersPage: PrintersPage;
-  7 |
-  8 |   test.beforeEach(async ({ page }) => {
-    at TestTypeImpl._currentSuite (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:75:13)
-    at TestTypeImpl._describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/common/testType.js:115:24)
-    at Function.describe (/home/cmit/openprint/frontend/e2e/node_modules/playwright/lib/transform/transform.js:282:12)
-    at /home/cmit/openprint/frontend/e2e/tests/printers.spec.ts:5:6
-Error: No tests found
-
+  ✓     4 [chromium] › e2e/fixtures/visual-regression.spec.ts:55:3 › Visual Regression - Authentication › should match login page screenshot (1.8s)
+  ✓     2 [chromium] › e2e/fixtures/visual-regression.spec.ts:62:3 › Visual Regression - Authentication › should match registration form screenshot (2.3s)
+  ✘     3 [chromium] › e2e/fixtures/visual-regression.spec.ts:92:3 › Visual Regression - Dashboard › should match dashboard layout (2.2s)
+  ✓     1 [chromium] › e2e/fixtures/visual-regression.spec.ts:73:3 › Visual Regression - Authentication › should match form validation error states (2.6s)
+  ✓     7 [chromium] › e2e/fixtures/visual-regression.spec.ts:118:3 › Visual Regression - Dashboard › should match tablet responsive view (2.7s)
+  ✓     8 [chromium] › e2e/fixtures/visual-regression.spec.ts:125:3 › Visual Regression - Dashboard › should match empty state (3.2s)
+  ✓     9 [chromium] › e2e/fixtures/visual-regression.spec.ts:111:3 › Visual Regression - Dashboard › should match mobile responsive view (4.3s)
+  ✓    10 [chromium] › e2e/fixtures/visual-regression.spec.ts:146:3 › Visual Regression - Jobs Page › should match jobs list layout (3.1s)
+  ✘     5 [chromium] › e2e/fixtures/visual-regression.spec.ts:97:3 › Visual Regression - Dashboard › should match stats cards appearance (30.9s)
+  ✘     6 [chromium] › e2e/fixtures/visual-regression.spec.ts:104:3 › Visual Regression - Dashboard › should match environmental report section (30.6s)
+  ✓    14 [chromium] › e2e/fixtures/visual-regression.spec.ts:179:3 › Visual Regression - Printers Page › should match printers grid view (2.9s)
+  ✘    11 [chromium] › e2e/fixtures/visual-regression.spec.ts:151:3 › Visual Regression - Jobs Page › should match job status badges (30.5s)
+  ✘    12 [chromium] › e2e/fixtures/visual-regression.spec.ts:158:3 › Visual Regression - Jobs Page › should match job creation modal (30.5s)
+  ✓    17 [chromium] › e2e/fixtures/visual-regression.spec.ts:204:3 › Visual Regression - Analytics Page › should match analytics dashboard layout (3.0s)
+  ✘    13 [chromium] › e2e/fixtures/visual-regression.spec.ts:165:3 › Visual Regression - Jobs Page › should match job detail view (30.3s)
+  ✘    15 [chromium] › e2e/fixtures/visual-regression.spec.ts:184:3 › Visual Regression - Printers Page › should match printer status indicators (33.1s)
+  ✘    16 [chromium] › e2e/fixtures/visual-regression.spec.ts:191:3 › Visual Regression - Printers Page › should match printer discovery modal (33.1s)
+  ✘    18 [chromium] › e2e/fixtures/visual-regression.spec.ts:209:3 › Visual Regression - Analytics Page › should match metric cards design (32.6s)
+  ✘    21 [chromium] › e2e/fixtures/visual-regression.spec.ts:236:3 › Visual Regression - Settings Page › should match settings tabs layout (1.4s)
+  ✘    22 [chromium] › e2e/fixtures/visual-regression.spec.ts:241:3 › Visual Regression - Settings Page › should match profile form (1.8s)
+  ✘    23 [chromium] › e2e/fixtures/visual-regression.spec.ts:248:3 › Visual Regression - Settings Page › should match security section (1.8s)
+  ✘    24 [chromium] › e2e/fixtures/visual-regression.spec.ts:255:3 › Visual Regression - Settings Page › should match preferences form (2.0s)
+  ✘    25 [chromium] › e2e/fixtures/visual-regression.spec.ts:264:3 › Visual Regression - Dark Mode › should match dashboard in dark mode (1.3s)
+  ✘    26 [chromium] › e2e/fixtures/visual-regression.spec.ts:276:3 › Visual Regression - Dark Mode › should match jobs page in dark mode (1.3s)
+  ✘    27 [chromium] › e2e/fixtures/visual-regression.spec.ts:293:3 › Visual Regression - Component States › should match button states (2.1s)
+  ✘    28 [chromium] › e2e/fixtures/visual-regression.spec.ts:313:3 › Visual Regression - Component States › should match form input states (2.9s)
+  ✘    29 [chromium] › e2e/fixtures/visual-regression.spec.ts:340:3 › Visual Regression - Component States › should match loading states (2.3s)
+  ✘    19 [chromium] › e2e/fixtures/visual-regression.spec.ts:216:3 › Visual Regression - Analytics Page › should match charts appearance (32.1s)
+  ✘    31 [chromium] › e2e/fixtures/visual-regression.spec.ts:372:3 › Visual Regression - Notifications and Alerts › should match toast notification styles (1.8s)
+  ✘    30 [chromium] › e2e/fixtures/visual-regression.spec.ts:352:3 › Visual Regression - Component States › should match empty states across pages (2.8s)
+  ✘    34 [chromium] › e2e/fixtures/visual-regression.spec.ts:412:3 › Visual Regression - Accessibility › should maintain focus indicators (2.1s)
+  ✘    20 [chromium] › e2e/fixtures/visual-regression.spec.ts:223:3 › Visual Regression - Analytics Page › should match audit logs table (32.4s)
+  ✘    35 [chromium] › e2e/fixtures/visual-regression.spec.ts:426:3 › Visual Regression - Accessibility › should have proper color contrast (1.6s)
+  ✘    36 [chromium] › e2e/fixtures/visual-regression.spec.ts:438:3 › Visual Regression - Cross-Browser › should have consistent layout across browsers (1.6s)
+  ✓    37 [chromium] › e2e/tests/agents.spec.ts:19:3 › Agents › should display agents list page (1.6s)
+  ✓    38 [chromium] › e2e/tests/agents.spec.ts:26:3 › Agents › should display all agents (1.5s)
+  ✘    39 [chromium] › e2e/tests/agents.spec.ts:33:3 › Agents › should show agent status badges (1.5s)
+  ✓    40 [chromium] › e2e/tests/agents.spec.ts:39:3 › Agents › should filter agents by status (1.4s)
+  ✓    41 [chromium] › e2e/tests/agents.spec.ts:66:3 › Agents › should display agent actions (1.3s)
+  ✘    42 [chromium] › e2e/tests/agents.spec.ts:73:3 › Agents › should show empty state when no agents (6.8s)
+  ✘    43 [chromium] › e2e/tests/agents.spec.ts:48:3 › Agents › should navigate to agent detail page (6.9s)
+  ✘    32 [chromium] › e2e/fixtures/visual-regression.spec.ts:389:3 › Visual Regression - Notifications and Alerts › should match modal appearance (30.2s)
+  ✘    33 [chromium] › e2e/fixtures/visual-regression.spec.ts:399:3 › Visual Regression - Notifications and Alerts › should match dropdown menus (30.2s)
+  ✘    44 [chromium] › e2e/tests/agents.spec.ts:128:3 › Agent Detail › should display agent detail page (6.8s)
+  ✘    45 [chromium] › e2e/tests/agents.spec.ts:133:3 › Agent Detail › should display agent tabs (6.8s)
+  ✘    49 [chromium] › e2e/tests/agents.spec.ts:184:3 › Discovered Printers › should display discovered printers page (1.4s)
+  ✘    47 [chromium] › e2e/tests/agents.spec.ts:154:3 › Agent Detail › should show discover printers button (6.7s)
+  ✘    50 [chromium] › e2e/tests/agents.spec.ts:190:3 › Discovered Printers › should display printer count summary (1.5s)
+  ✘    48 [chromium] › e2e/tests/agents.spec.ts:158:3 › Agent Detail › should display agent information cards (6.6s)
+  ✓    51 [chromium] › e2e/tests/agents.spec.ts:196:3 › Discovered Printers › should display printers table (2.5s)
+  ✓    52 [chromium] › e2e/tests/agents.spec.ts:201:3 › Discovered Printers › should filter printers by type (2.3s)
+  ✓    53 [chromium] › e2e/tests/agents.spec.ts:209:3 › Discovered Printers › should search printers (2.3s)
+  ✓    54 [chromium] › e2e/tests/agents.spec.ts:217:3 › Discovered Printers › should show empty state when no printers (1.9s)
+  ✘    55 [chromium] › e2e/tests/agents.spec.ts:285:3 › Job Assignments › should display job assignments page (7.0s)
+  ✘    56 [chromium] › e2e/tests/agents.spec.ts:294:3 › Job Assignments › should display new assignment button (6.8s)
+  ✘    59 [chromium] › e2e/tests/analytics.spec.ts:41:3 › Analytics Page (Admin) › should display analytics page header (3.1s)
+  ✘    58 [chromium] › e2e/tests/agents.spec.ts:304:3 › Job Assignments › should display assignments list (7.8s)
+  ✘    46 [chromium] › e2e/tests/agents.spec.ts:140:3 › Agent Detail › should switch between tabs (33.8s)
+  ✘    60 [chromium] › e2e/tests/analytics.spec.ts:46:3 › Analytics Page (Admin) › should display period selector buttons (7.9s)
+  ✘    61 [chromium] › e2e/tests/analytics.spec.ts:53:3 › Analytics Page (Admin) › should change period selector (7.6s)
+  ✘    57 [chromium] › e2e/tests/agents.spec.ts:298:3 › Job Assignments › should open assignment modal (30.5s)
+  ✘    62 [chromium] › e2e/tests/analytics.spec.ts:66:3 › Analytics Page (Admin) › should display metric cards (7.3s)
+  ✘    63 [chromium] › e2e/tests/analytics.spec.ts:73:3 › Analytics Page (Admin) › should show metric values (7.5s)
+  ✓    65 [chromium] › e2e/tests/analytics.spec.ts:91:3 › Analytics Page (Admin) › should display environmental impact report (3.4s)
+  ✘    64 [chromium] › e2e/tests/analytics.spec.ts:81:3 › Analytics Page (Admin) › should show success rate percentage (8.2s)
+  ✘    66 [chromium] › e2e/tests/analytics.spec.ts:98:3 › Analytics Page (Admin) › should show environmental values (7.9s)
+  ✘    67 [chromium] › e2e/tests/analytics.spec.ts:109:3 › Analytics Page (Admin) › should display job status distribution chart (7.1s)
+  ✘    68 [chromium] › e2e/tests/analytics.spec.ts:104:3 › Analytics Page (Admin) › should display print volume chart (7.2s)
+  ✘    69 [chromium] › e2e/tests/analytics.spec.ts:114:3 › Analytics Page (Admin) › should display CO2 trend chart (7.2s)
+  ✘    70 [chromium] › e2e/tests/analytics.spec.ts:119:3 › Analytics Page (Admin) › should display audit logs section (7.2s)
+  ✘    72 [chromium] › e2e/tests/analytics.spec.ts:133:3 › Analytics Page (Admin) › should navigate to dashboard via sidebar (2.4s)
+  ✘    71 [chromium] › e2e/tests/analytics.spec.ts:123:3 › Analytics Page (Admin) › should show audit log entries (7.5s)
+  ✘    73 [chromium] › e2e/tests/analytics.spec.ts:140:3 › Analytics Page (Admin) › should highlight Analytics in navigation (7.3s)
+  ✘    76 [chromium] › e2e/tests/analytics.spec.ts:163:3 › Analytics Access Control › should redirect non-admin users to dashboard (2.5s)
+  ✘    74 [chromium] › e2e/tests/analytics.spec.ts:145:3 › Analytics Page (Admin) › should be responsive on mobile (8.0s)
+  ✘    75 [chromium] › e2e/tests/analytics.spec.ts:156:3 › Analytics Page (Admin) › should display cost in dollars (7.0s)
+  ✘    77 [chromium] › e2e/tests/analytics.spec.ts:177:3 › Analytics Access Control › should allow admin access (2.5s)
+  ✘    78 [chromium] › e2e/tests/audit-logs.spec.ts:8:3 › Advanced Audit Logs › should display audit logs page header (6.1s)
+  ✘    79 [chromium] › e2e/tests/audit-logs.spec.ts:12:3 › Advanced Audit Logs › should display search input (5.9s)
+  ✘    80 [chromium] › e2e/tests/audit-logs.spec.ts:16:3 › Advanced Audit Logs › should display filter buttons (5.9s)
+  ✓    84 [chromium] › e2e/tests/audit-logs.spec.ts:55:3 › Advanced Audit Logs › should display action badges with colors (493ms)
+  ✘    83 [chromium] › e2e/tests/audit-logs.spec.ts:45:3 › Advanced Audit Logs › should display audit log table (5.7s)
+  ✓    86 [chromium] › e2e/tests/audit-logs.spec.ts:79:3 › Advanced Audit Logs › should paginate logs (480ms)
+  ✓    87 [chromium] › e2e/tests/audit-logs.spec.ts:97:3 › Advanced Audit Logs › should display log entries with timestamps (419ms)
+  ✘    88 [chromium] › e2e/tests/audit-logs.spec.ts:108:3 › Advanced Audit Logs › should show IP addresses in logs (424ms)
+  ✓    89 [chromium] › e2e/tests/audit-logs.spec.ts:117:3 › Advanced Audit Logs › should display resource type and ID (465ms)
+  ✘    81 [chromium] › e2e/tests/audit-logs.spec.ts:24:3 › Advanced Audit Logs › should filter logs by type (32.1s)
+  ✓    91 [chromium] › e2e/tests/audit-logs.spec.ts:139:3 › Advanced Audit Logs › should display loading state (541ms)
+  ✘    82 [chromium] › e2e/tests/audit-logs.spec.ts:35:3 › Advanced Audit Logs › should search audit logs (32.3s)
+  ✘    85 [chromium] › e2e/tests/audit-logs.spec.ts:66:3 › Advanced Audit Logs › should export logs to CSV (30.1s)
+  ✘    90 [chromium] › e2e/tests/audit-logs.spec.ts:126:3 › Advanced Audit Logs › should handle empty results gracefully (32.0s)
+  ✘    92 [chromium] › e2e/tests/audit-logs.spec.ts:164:5 › Audit Log Actions › should display create actions with green color (32.1s)
+  ✓    96 [chromium] › e2e/tests/auth.spec.ts:9:3 › Authentication - Login › should display login form (621ms)
+  ✓    97 [chromium] › e2e/tests/auth.spec.ts:19:3 › Authentication - Login › should toggle between login and register forms (623ms)
+  ✘    93 [chromium] › e2e/tests/audit-logs.spec.ts:164:5 › Audit Log Actions › should display delete actions with red color (32.4s)
+  ✓    98 [chromium] › e2e/tests/auth.spec.ts:37:3 › Authentication - Login › should show validation errors for empty fields (540ms)
+  ✓    99 [chromium] › e2e/tests/auth.spec.ts:54:3 › Authentication - Login › should enforce minimum password length (608ms)
+  ✘    94 [chromium] › e2e/tests/audit-logs.spec.ts:164:5 › Audit Log Actions › should display update actions with amber color (32.6s)
+  ✓   100 [chromium] › e2e/tests/auth.spec.ts:63:3 › Authentication - Login › should show error message on failed login (565ms)
+  ✓   101 [chromium] › e2e/tests/auth.spec.ts:105:3 › Authentication - Login › should successfully register and redirect to dashboard (613ms)
+  ✓   102 [chromium] › e2e/tests/auth.spec.ts:133:3 › Authentication - Login › should store auth tokens after successful login (561ms)
+  ✓   103 [chromium] › e2e/tests/auth.spec.ts:45:3 › Authentication - Login › should show error for invalid email format (634ms)
+  ✓   104 [chromium] › e2e/tests/auth.spec.ts:165:3 › Authentication - Login › should have accessible form controls (468ms)
+  ✘   106 [chromium] › e2e/tests/auth.spec.ts:189:3 › Authentication - Protected Routes › should redirect to login when accessing admin routes without admin role (0ms)
+  ✓   105 [chromium] › e2e/tests/auth.spec.ts:180:3 › Authentication - Protected Routes › should redirect to login when accessing protected routes unauthenticated (471ms)
+  ✓   107 [chromium] › e2e/tests/code-splitting.spec.ts:5:3 › Code Splitting › should load vendor chunks separately from app code (1.0s)
+  ✓   108 [chromium] › e2e/tests/auth.spec.ts:80:3 › Authentication - Login › should successfully login and redirect to dashboard (800ms)
+  ✓   109 [chromium] › e2e/tests/code-splitting.spec.ts:23:3 › Code Splitting › should load chunks on demand when navigating to different routes (1.0s)
+  ✓   112 [chromium] › e2e/tests/auth.spec.ts:204:3 › Authentication - Protected Routes › should allow access to admin routes with admin role (772ms)
+  ✓   111 [chromium] › e2e/tests/code-splitting.spec.ts:82:3 › Code Splitting › should load chart libraries in separate chunk (1.0s)
+  ✓   113 [chromium] › e2e/tests/code-splitting.spec.ts:102:3 › Code Splitting › should load state management libraries in separate chunk (976ms)
+  ✓   110 [chromium] › e2e/tests/code-splitting.spec.ts:50:3 › Code Splitting › should have separate chunks for different route groups (3.3s)
+  ✓   114 [chromium] › e2e/tests/code-splitting.spec.ts:119:3 › Code Splitting › should minimize initial bundle size by lazy loading routes (1.6s)
+  ✓   115 [chromium] › e2e/tests/code-splitting.spec.ts:149:3 › Code Splitting › should have CSS code splitting enabled (968ms)
+  ✓   116 [chromium] › e2e/tests/code-splitting.spec.ts:162:3 › Code Splitting › should load React and ReactDOM from vendor chunk (966ms)
+  ✘   117 [chromium] › e2e/tests/compliance.spec.ts:11:3 › Compliance - Overview › should display compliance dashboard (1.1s)
+  ✘    95 [chromium] › e2e/tests/audit-logs.spec.ts:164:5 › Audit Log Actions › should display login actions with blue color (32.7s)
+  ✘   119 [chromium] › e2e/tests/compliance.spec.ts:29:3 › Compliance - Overview › should display audit dates (6.0s)
+  ✘   121 [chromium] › e2e/tests/compliance.spec.ts:48:3 › Compliance - Reports › should display reports list (1.2s)
+  ✘   120 [chromium] › e2e/tests/compliance.spec.ts:38:3 › Compliance - Overview › should show overview cards (6.2s)
+  ✘   118 [chromium] › e2e/tests/compliance.spec.ts:20:3 › Compliance - Overview › should show overall compliance status (30.3s)
+  ✘   122 [chromium] › e2e/tests/compliance.spec.ts:57:3 › Compliance - Reports › should filter reports by type (30.3s)
+  ✘   123 [chromium] › e2e/tests/compliance.spec.ts:69:3 › Compliance - Reports › should search reports (30.2s)
+  ✘   124 [chromium] › e2e/tests/compliance.spec.ts:78:3 › Compliance - Reports › should generate new report (30.3s)
+  ✘   125 [chromium] › e2e/tests/compliance.spec.ts:87:3 › Compliance - Reports › should view report details (30.3s)
+  ✘   129 [chromium] › e2e/tests/compliance.spec.ts:124:3 › Compliance - Checks › should display compliance checks (1.3s)
+  ✘   126 [chromium] › e2e/tests/compliance.spec.ts:96:3 › Compliance - Reports › should download report (30.1s)
+  ✘   127 [chromium] › e2e/tests/compliance.spec.ts:106:3 › Compliance - Reports › should share report via email (30.2s)
+  ✘   128 [chromium] › e2e/tests/compliance.spec.ts:114:3 › Compliance - Reports › should schedule report generation (30.3s)
+  ✘   130 [chromium] › e2e/tests/compliance.spec.ts:133:3 › Compliance - Checks › should filter checks by category (30.3s)
+  ✘   131 [chromium] › e2e/tests/compliance.spec.ts:142:3 › Compliance - Checks › should run compliance checks (30.2s)
+  ✘   132 [chromium] › e2e/tests/compliance.spec.ts:151:3 › Compliance - Checks › should view check details (30.6s)
+  ✘   133 [chromium] › e2e/tests/compliance.spec.ts:160:3 › Compliance - Checks › should show check status (30.5s)
+  ✘   134 [chromium] › e2e/tests/compliance.spec.ts:169:3 › Compliance - Checks › should mark check as resolved (30.4s)
+  ✘   135 [chromium] › e2e/tests/compliance.spec.ts:201:3 › Compliance - Checks › should display check evidence (30.2s)
+  ✘   136 [chromium] › e2e/tests/compliance.spec.ts:231:3 › Compliance - Audit Log Export › should open export modal (30.3s)
+  ✘   137 [chromium] › e2e/tests/compliance.spec.ts:240:3 › Compliance - Audit Log Export › should export audit logs with date range (30.2s)

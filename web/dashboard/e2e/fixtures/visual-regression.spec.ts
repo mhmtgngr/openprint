@@ -3,12 +3,7 @@
  * Tests for UI consistency and visual appearance
  */
 import { test, expect } from '@playwright/test';
-import { setupAuthAndNavigate, mockUsers, mockPrinters, mockJobs } from '../helpers';
-import { DashboardPage } from '../pages/DashboardPage';
-import { JobsPage } from '../pages/JobsPage';
-import { PrintersPage } from '../pages/PrintersPage';
-import { AnalyticsPage } from '../pages/AnalyticsPage';
-import { SettingsPage } from '../pages/SettingsPage';
+import { setupAuthAndNavigate, mockUsers, mockPrinters, mockJobs, mockEnvironmentReport } from '../helpers';
 
 // Visual regression configuration
 const SNAPSHOT_BASE_DIR = 'screenshots/baseline';
