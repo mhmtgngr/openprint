@@ -1,48 +1,64 @@
 {
-  "overall_score": 78,
+  "overall_score": 72,
   "verdict": "NEEDS_FIXES",
   "code_issues": [
     {
       "severity": "major",
-      "file": "tests/integration/api_test.go",
-      "issue": "Integration tests not using build tags, run during 'go test -short' and fail when services aren't running",
-      "fix": "Add '// +build integration' build tag or use -tags=integration flag properly. Integration tests should be skipped during unit test runs"
+      "file": "services/auth-service/repository/enrollment_token_test.go",
+      "issue": "Tests use inline SQL instead of migration system. Lines 65-92 create enrollment_tokens table directly instead of using testutil.RunMigrations or CreateSchema",
+      "fix": "Replace inline table creation (lines 67-92) with call to testutil.CreateSchema(ctx, db.pool) to properly use the migration system"
     },
     {
       "severity": "major",
-      "file": "tests/integration/api_test.go:355",
-      "issue": "Nil pointer dereference panic in cleanup when database connection fails - error from pgx.Connect is ignored with _",
-      "fix": "Check error from pgx.Connect before using conn: 'conn, err := pgx.Connect(ctx, databaseURL); if err != nil { return }'"
+      "file": "services/job-service/handlers/cost.go",
+      "issue": "Potential nil pointer dereference at line 189: checks `*req.EffectiveTo != \"\"` before confirming `req.EffectiveTo != nil`",
+      "fix": "Change to `if req.EffectiveTo != nil && *req.EffectiveTo != \"\"` or validate separately"
     },
     {
       "severity": "minor",
-      "file": "internal/testutil/s3.go:539-553",
-      "issue": "Custom contains() implementation has logic issues - inefficient and doesn't properly check for substring",
-      "fix": "Use strings.Contains() instead of custom implementation"
+      "file": "services/job-service/handlers/cost.go",
+      "issue": "Silent error handling at line 670: table creation error ignored",
+      "fix": "Check and return error from h.db.Exec(ctx, initQuery)"
     },
     {
       "severity": "minor",
-      "file": "internal/testutil",
-      "issue": "Test coverage is 58%, below recommended 80% for test utilities",
-      "fix": "Add more tests for edge cases and error paths in testutil package"
+      "file": "services/storage-service/handlers/watermark.go",
+      "issue": "Error ignored at line 288: base64 decode error silently discarded",
+      "fix": "Handle error from base64.StdEncoding.DecodeString instead of using _"
     },
     {
       "severity": "minor",
-      "file": ".",
-      "issue": "No test documentation (TESTING.md, tests/README.md) explaining how to run tests",
-      "fix": "Create TEST.md or docs/testing.md documenting test setup, running unit vs integration tests, and test environment requirements"
+      "file": "services/storage-service/handlers/watermark.go",
+      "issue": "Unused variable at line 606: opacityStr declared but not used",
+      "fix": "Remove unused variable or use it in the ghostscript command"
+    },
+    {
+      "severity": "minor",
+      "file": "services/storage-service/handlers/watermark.go",
+      "issue": "Manual PDF generation (lines 644-666) produces minimal invalid PDFs",
+      "fix": "Use proper PDF library like github.com/jung-kurt/gofpdf or github.com/signintech/gopdf"
+    },
+    {
+      "severity": "minor",
+      "file": "services/api-gateway/main.go",
+      "issue": "URL parsing errors ignored (line ~157). url.Parse errors not checked",
+      "fix": "Handle errors from url.Parse for all service URLs"
+    },
+    {
+      "severity": "minor",
+      "file": "services/job-service/handlers/cost.go",
+      "issue": "Custom parsePath function (lines 850-867) instead of using path.Split or strings.Split",
+      "fix": "Use strings.Split(strings.Trim(path, \"/\"), \"/\") for clarity"
     }
   ],
   "missing_items": [
-    "No TEST.md or testing documentation file explaining test infrastructure",
-    "No integration test build tag enforcement",
-    "No test coverage reporting in CI/CD configuration",
-    "Missing testdata directory with sample fixtures",
-    "No test environment validation in Makefile (make test-env doesn't verify migrations exist)"
+    "Tests should call testutil.CreateSchema() instead of inline table creation",
+    "Migration system in testutil is not actually used by the tests it was meant to fix",
+    "No integration test verifying the migration system works end-to-end"
   ],
   "blocking_issues": [
-    "Integration tests panic with nil pointer dereference in cleanup code",
-    "Integration tests run during 'go test -short' and fail because services aren't running"
+    "The core requirement to 'fix testutil migration execution' is incomplete - testutil.RunMigrations was implemented but tests bypass it with inline SQL",
+    "If migration file 000020_create_enrollment_tokens.up.sql changes, tests will be inconsistent with actual schema"
   ],
-  "fix_instructions": "1. Add '//go:build integration' build tag to tests/integration/api_test.go\n2. Fix nil pointer panic in api_test.go:355 - check pgx.Connect error before using conn\n3. Create docs/testing.md documenting the test infrastructure\n4. Add more tests to testutil package to increase coverage above 70%\n5. Ensure make test-integration properly uses -tags=integration flag\n6. Add migration validation to make test-env target"
+  "fix_instructions": "1. Modify services/auth-service/repository/enrollment_token_test.go: Remove inline table creation (lines 65-92) and replace with `if err := testutil.CreateSchema(ctx, db.pool); err != nil { t.Fatalf(\"schema setup: %v\", err) }`. 2. Verify tests still pass after using real migrations. 3. Address nil pointer check in cost.go line 189. 4. Add error handling where errors are ignored."
 }

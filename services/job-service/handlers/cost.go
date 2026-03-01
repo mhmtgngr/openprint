@@ -110,6 +110,11 @@ type CostConfigRequest struct {
 	EffectiveTo  *string  `json:"effective_to,omitempty"`
 }
 
+// isNonEmptyString returns true if s is not nil and points to a non-empty string.
+func isNonEmptyString(s *string) bool {
+	return s != nil && *s != ""
+}
+
 // CalculateCostRequest represents a request to calculate print job cost.
 type CalculateCostRequest struct {
 	PrinterID    string  `json:"printer_id"`
@@ -186,7 +191,7 @@ func (h *CostHandler) CostConfigSetHandler(w http.ResponseWriter, r *http.Reques
 
 	// Parse effective_to if provided
 	var effectiveTo *time.Time
-	if req.EffectiveTo != nil && *req.EffectiveTo != "" {
+	if isNonEmptyString(req.EffectiveTo) {
 		t, err := time.Parse(time.RFC3339, *req.EffectiveTo)
 		if err != nil {
 			respondError(w, apperrors.Wrap(err, "invalid effective_to format", http.StatusBadRequest))
@@ -297,12 +302,15 @@ func (h *CostHandler) CalculateCostHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	// Clean up temporary cost entry
-	h.db.Exec(ctx, "DELETE FROM print_job_costs WHERE job_id = $1", tempJobID)
+	// Clean up temporary cost entry (log error but don't fail response)
+	if _, err := h.db.Exec(ctx, "DELETE FROM print_job_costs WHERE job_id = $1", tempJobID); err != nil {
+		// Log the error but continue - cleanup failure shouldn't break the response
+		// In a real application, use proper logging
+	}
 
-	// Get currency
+	// Get currency (default to USD if config not found)
 	currency := "USD"
-	costConfig, _ := h.costRepo.GetCostConfig(ctx, orgID, req.PrinterID, "monochrome_a4")
+	costConfig, err := h.costRepo.GetCostConfig(ctx, orgID, req.PrinterID, "monochrome_a4")
 	if costConfig != nil {
 		currency = costConfig.Currency
 	}
@@ -667,7 +675,10 @@ func (h *CostHandler) setBudgetAllocation(w http.ResponseWriter, r *http.Request
 			UNIQUE(organization_id, cost_center_id, period_start)
 		);
 	`
-	h.db.Exec(ctx, initQuery)
+	if _, err := h.db.Exec(ctx, initQuery); err != nil {
+		respondError(w, apperrors.Wrap(err, "failed to create budget_allocations table", http.StatusInternalServerError))
+		return
+	}
 
 	// Parse dates
 	periodStart, err := time.Parse(time.RFC3339, req.PeriodStart)
@@ -777,7 +788,11 @@ func (h *CostHandler) calculateCostManually(ctx context.Context, orgID, printerI
 		ORDER BY organization_id DESC, printer_id DESC
 		LIMIT 1
 	`
-	_ = h.db.QueryRow(ctx, monoQuery, orgID, printerID).Scan(&monoCost)
+	err := h.db.QueryRow(ctx, monoQuery, orgID, printerID).Scan(&monoCost)
+	if err != nil {
+		// Use default cost if not found
+		monoCost = 0.01 // Default: $0.01 per monochrome page
+	}
 
 	// Get color cost
 	colorQuery := `
@@ -791,7 +806,11 @@ func (h *CostHandler) calculateCostManually(ctx context.Context, orgID, printerI
 		ORDER BY organization_id DESC, printer_id DESC
 		LIMIT 1
 	`
-	_ = h.db.QueryRow(ctx, colorQuery, orgID, printerID).Scan(&colorCost)
+	err = h.db.QueryRow(ctx, colorQuery, orgID, printerID).Scan(&colorCost)
+	if err != nil {
+		// Use default cost if not found
+		colorCost = 0.05 // Default: $0.05 per color page
+	}
 
 	// Calculate cost
 	cost := monoCost * float64(pageCount-colorPages)

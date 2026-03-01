@@ -1,5 +1,4 @@
-REQUIREMENTS (enriched with market research):
-{
+REQUIREMENTS: {
  "project_name": "auth-service-enrollment-token-tests",
  "summary": "Fix 4 failing tests in auth-service enrollment_token_test.go by ensuring database migrations run properly to create the enrollment_tokens table before tests execute",
  "functional_requirements": [
@@ -80,254 +79,444 @@ REQUIREMENTS (enriched with market research):
     "Verify all 4 tests now pass",
     "Run full auth-service test suite to ensure no regressions"
    ]
-  },
-  {
-   "phase": 4,
-   "name": "Documentation",
-   "tasks": [
-    "Update CLAUDE.md with test database setup notes if needed",
-    "Comment the migration logic in testutil for future maintainers"
-   ]
-  }
- ]
+ 
+CHANGES:  .../test-failed-1.png                              |   Bin 0 -> 121586 bytes
+ .../video.webm                                     |   Bin 0 -> 109751 bytes
+ .../error-context.md                               |    74 +
+ .../test-failed-1.png                              |   Bin 0 -> 121586 bytes
+ .../video.webm                                     |   Bin 0 -> 433723 bytes
+ .../error-context.md                               |    74 +
+ .../test-failed-1.png                              |   Bin 0 -> 121586 bytes
+ .../video.webm                                     |   Bin 0 -> 169223 bytes
+ .../error-context.md                               |    74 +
+ .../test-failed-1.png                              |   Bin 0 -> 121586 bytes
+ .../video.webm                                     |   Bin 0 -> 175308 bytes
+ .../error-context.md                               |    74 +
+ .../test-failed-1.png                              |   Bin 0 -> 121586 bytes
+ .../video.webm                                     |   Bin 0 -> 430883 bytes
+ 1601 files changed, 255732 insertions(+), 8299 deletions(-)
+FILES: internal/middleware/cookie_auth.go
+services/api-gateway/handlers/developer.go
+services/api-gateway/main.go
+services/api-gateway/middleware/audit.go
+services/api-gateway/middleware/rate_limit.go
+services/auth-service/handlers/sessions.go
+services/auth-service/repository/enrollment_token_test.go
+services/job-service/handler/job_test.go
+services/job-service/handlers/cost.go
+services/job-service/handlers/cost_repository.go
+services/job-service/handlers/quota.go
+services/job-service/handlers/quota_repository.go
+services/job-service/handlers/reports.go
+services/job-service/handlers/reports_repository.go
+services/job-service/handlers/secure_release.go
+services/job-service/handlers/secure_release_repository.go
+services/storage-service/handlers/watermark.go
+services/storage-service/handlers/watermark_repository.go
+CODE: 
+--- internal/middleware/cookie_auth.go ---
+// Package middleware provides HTTP middleware for cookie-based authentication.
+package middleware
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"strings"
+
+	"github.com/openprint/openprint/internal/auth/jwt"
+)
+
+const (
+	// SessionCookieName is the name of the session cookie
+	SessionCookieName = "openprint_session"
+	// RefreshCookieName is the name of the refresh token cookie
+	RefreshCookieName = "openprint_refresh"
+
+	UserIDKey  contextKey = "user_id"
+	EmailKey   contextKey = "email"
+	OrgIDKey   contextKey = "org_id"
+	RoleKey    contextKey = "role"
+	ScopesKey  contextKey = "scopes"
+	TokenKey   contextKey = "token"
+)
+
+// CookieAuthConfig holds cookie authentication configuration.
+type CookieAuthConfig struct {
+	SecretKey  string
+	SkipPaths  []string
+	JWTManager *jwt.Manager
 }
 
-MARKET ANALYSIS:
-{
- "competitor_summary": [
-  {
-   "name": "PaperCut",
-   "strengths": [
-    "100M+ users across 70K organizations",
-    "Print monitoring and tracking",
-    "User quota management",
-    "Secure print release",
-    "Mobile printing",
-    "Cost allocation and chargeback",
-    "Sustainability reporting",
-    "15%+ cost savings",
-    "Multi-platform support"
-   ],
-   "weaknesses": [
-    "Traditional on-premise deployment for MF version",
-    "Complex enterprise pricing"
-   ],
-   "pricing_model": "Per-user/per-printer licensing, MF (on-premise), Hive (cloud), Mobility Print (free)"
-  },
-  {
-   "name": "Printix",
-   "strengths": [
-    "Cloud-native architecture",
-    "GDPR compliant",
-    "Serverless design"
-   ],
-   "weaknesses": [
-    "Smaller market presence than PaperCut",
-    "Limited offline capabilities"
-   ],
-   "pricing_model": "Subscription-based cloud SaaS"
-  },
-  {
-   "name": "PrinterLogic",
-   "strengths": [
-    "Serverless enterprise print management",
-    "Centralized printer driver management",
-    "Direct IP printing"
-   ],
-   "weaknesses": [
-    "Enterprise-focused, complex for SMB",
-    "Windows-centric"
-   ],
-   "pricing_model": "Enterprise perpetual license + maintenance"
-  },
-  {
-   "name": "Print Manager Plus",
-   "strengths": [
-    "Real-time tracking",
-    "Cost control features"
-   ],
-   "weaknesses": [
-    "Limited cloud features",
-    "Traditional architecture"
-   ],
-   "pricing_model": "Per-seat licensing"
-  },
-  {
-   "name": "YSoft SafeQ",
-   "strengths": [
-    "Integrated document capture",
-    "Workflow automation",
-    "3D print management"
-   ],
-   "weaknesses": [
-    "Complex deployment",
-    "Higher cost"
-   ],
-   "pricing_model": "Enterprise tiered pricing"
-  },
-  {
-   "name": "Canon uniFLOW",
-   "strengths": [
-    "Hardware integration",
-    "Card reader support",
-    "Advanced reporting"
-   ],
-   "weaknesses": [
-    "Canon-ecosystem lock-in",
-    "Expensive"
-   ],
-   "pricing_model": "Hardware-bundled licensing"
-  }
- ],
- "feature_com
+// CookieAuthMiddleware creates middleware that authenticates using httpOnly cookies.
+// This is an alternative to AuthMiddleware for production environments with cookie-based auth.
+func CookieAuthMiddleware(cfg CookieAuthConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if path should be skipped
+			for _, skipPath := range cfg.SkipPaths {
+				if strings.HasPrefix(r.URL.Path, skipPath) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
 
-PROJECT CONTEXT (from CLAUDE.md):
-# OpenPrint Cloud
+			// Try to get token from cookie first
+			sessionCookie, err := r.Cookie(SessionCookieName)
+			tokenString := ""
 
-OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.
+			if err == nil {
+				tokenString = sessionCookie.Value
+			} else {
+				// Fall back to Authorization header
+				authHeader := r.Header.Get("Authorization")
+				if authHeader != "" {
+					tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+				}
+			}
 
-## Project Overview
+			if tokenString == "" {
+				respondAuthError(w, "missing authentication")
+				return
+			}
 
-- **Module**: `github.com/openprint/openprint`
-- **Go Version**: 1.24.0
-- **Architecture**: Microservices with shared internal packages
-- **Frontend**: React + TypeScript + Vite dashboard
+			// Validate token
+			var claims *jwt.Claims
 
-## Architecture
+			if cfg.JWTManager != nil {
+				claims, err = cfg.JWTManager.ValidateAccessToken(tokenString)
+			} else {
+				// Fallback: create a temporary manager if none provided
+				jwtCfg, jwtCfgErr := jwt.DefaultConfig(cfg.SecretKey)
+				if jwtCfgErr != nil {
+					respondAuthError(w, "server configuration error")
+					return
+				}
+				tmpManager, mgrErr := jwt.NewManager(jwtCfg)
+				if mgrErr != nil {
+					respondAuthError(w, "server configuration error")
+--- services/api-gateway/handlers/developer.go ---
+// Package handler provides HTTP handlers for the developer portal.
+package handler
 
-### Services
+import (
+	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `auth-service` | 8001 | User authentication, sessions, OIDC/SAML identity providers |
-| `registry-service` | 8002 | Printer and agent registration, heartbeat monitoring |
-| `job-service` | 8003 | Print job queuing, routing, and processing |
-| `storage-service` | 8004 | Document storage (S3 or local), encryption support |
-| `notification-service` | 8005 | WebSocket notifications for real-time updates |
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
 
-### Internal Packages
+// DeveloperHandler handles developer portal HTTP endpoints.
+type DeveloperHandler struct {
+	db         *pgxpool.Pool
+	jwtSecret  string
+}
 
-```
-internal/
-├── auth/              # Authentication utilities
-│   ├── jwt/          # JWT token generation/validation
-│   ├── oidc/         # OpenID Connect provider support
-│   ├── saml/         # SAML SSO support
-│   └── password/     # Password hashing (bcrypt)
-└── shared/           # Shared service components
-    ├── errors/       # Common error types
-    ├── middleware/   # HTTP middleware (auth, CORS, logging, recovery)
-    └── telemetry/    # OpenTelemetry tracing
-```
+// NewDeveloperHandler creates a new developer handler instance.
+func NewDeveloperHandler(db *pgxpool.Pool, jwtSecret string) *DeveloperHandler {
+	return &DeveloperHandler{
+		db:        db,
+		jwtSecret: jwtSecret,
+	}
+}
 
-### Infrastructure
+// APIKey represents an API key for developer access.
+type APIKey struct {
+	ID           string
+	OrganizationID string
+	Name         string
+	Key          string // SHA256 hashed
+	KeyPrefix    string // First 8 characters for identification
+	Scopes       []string
+	IsActive     bool
+	ExpiresAt    *time.Time
+	RateLimit    int // requests per minute
+	CreatedBy    string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	LastUsedAt   *time.Time
+}
 
-- **PostgreSQL 16**: Primary database (ports 5432/15432)
-- **Redis 7**: Job queue and session storage (ports 6379/16379)
-- **S3/MinIO**: Optional document storage backend
+// Webhook represents a webhook configuration.
+type Webhook struct {
+	ID              string
+	OrganizationID  string
+	Name            string
+	URL             string
+	Secret          string
+	Events          []string
+	IsActive        bool
+	Headers         map[string]string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
 
-## Development Commands
+// UsageStats represents API usage statistics.
+type UsageStats struct {
+	APIKeyID    string
+	Date        string
+	RequestCount int
+	ErrorCount   int
+	AvgLatency  int // milliseconds
+}
 
-### Go Services
+// CreateAPIKeyRequest represents a request to create an API key.
+type CreateAPIKeyRequest struct {
+	OrganizationID string   `json:"organization_id"`
+	Name           string   `json:"name"`
+	Scopes         []string `json:"scopes"`
+	ExpiresInDays  int      `json:"expires_in_days,omitempty"`
+	RateLimit      int      `json:"rate_limit,omitempty"`
+--- services/api-gateway/main.go ---
+// Package main provides the API Gateway service for OpenPrint.
+// This service acts as a unified entry point for all API requests and provides
+// rate limiting, request routing, and developer portal functionality.
+package main
 
-```bash
-# Run tests
-go test ./...
+import (
+	"context"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-# Run tests with coverage
-go test -cover ./...
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/shared/middleware"
+	"github.com/openprint/openprint/internal/shared/telemetry"
+	"github.com/openprint/openprint/services/api-gateway/handlers"
+	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
+)
 
-# Run tests for specific package
-go test ./services/auth-service/...
+// Config holds service configuration.
+type Config struct {
+	ServerAddr          string
+	DatabaseURL         string
+	JWTSecret           string
+	JaegerEndpoint      string
+	ServiceName         string
+	AuthServiceURL      string
+	JobServiceURL       string
+	RegistryServiceURL  string
+	StorageServiceURL   string
+	NotificationServiceURL string
+	AnalyticsServiceURL string
+	OrganizationServiceURL string
+}
 
-# Build all services
-go build ./...
+func main() {
+	cfg := loadConfig()
 
-# Build specific service
-go build ./services/auth-service
-```
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-### Dashboard (TypeScript/React)
+	// Initialize telemetry
+	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
+	if err != nil {
+		log.Printf("Warning: failed to initialize tracer: %v", err)
+	}
+	if shutdown != nil {
+		defer shutdown(ctx)
+	}
 
-```bash
-cd web/dashboard
+	// Connect to PostgreSQL
+	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
 
-# Install dependencies
-npm install
+	// Create service URLs
+	authServiceURL, _ := url.Parse(cfg.AuthServiceURL)
+	jobServiceURL, _ := url.Parse(cfg.JobServiceURL)
+	registryServiceURL, _ := url.Parse(cfg.RegistryServiceURL)
+	storageServiceURL, _ := url.Parse(cfg.StorageServiceURL)
+	notificationServiceURL, _ := url.Parse(cfg.NotificationServiceURL)
+	analyticsServiceURL, _ := url.Parse(cfg.AnalyticsServiceURL)
+	organizationServiceURL, _ := url.Parse(cfg.OrganizationServiceURL)
 
-# Development server
-npm run dev
+	// Create reverse proxies
+	authProxy := createReverseProxy(authServiceURL, "auth-service")
+	jobProxy := createReverseProxy(jobServiceURL, "job-service")
+	registryProxy := createReverseProxy(registryServiceURL, "registry-service")
+	storageProxy := createReverseProxy(storageServiceURL, "storage-service")
+	notificationProxy := createReverseProxy(notificationServiceURL, "notification-service")
+	analyticsProxy := createReverseProxy(analyticsServiceURL, "analytics-service")
+	organizationProxy := createReverseProxy(organizationServiceURL, "organization-service")
+--- services/api-gateway/middleware/audit.go ---
+// Package middleware provides audit logging middleware for the API gateway.
+package middleware
 
-# Type checking
-npm run type-check    # or: npx tsc --noEmit
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"time"
 
-# Run tests
-npm run test
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
-# Build for production
-npm run build
+// AuditLogger provides audit logging functionality.
+type AuditLogger struct {
+	db *pgxpool.Pool
+}
 
-# Lint
-npm run lint
-```
+// NewAuditLogger creates a new audit logger.
+func NewAuditLogger(db *pgxpool.Pool) *AuditLogger {
+	return &AuditLogger{db: db}
+}
 
-## Docker Deployment
+// AuditEntry represents an audit log entry.
+type AuditEntry struct {
+	ID           string
+	OrganizationID string
+	UserID       string
+	APIKeyID     string
+	Action       string
+	Resource     string
+	Method       string
+	Path         string
+	StatusCode   int
+	IPAddress    string
+	UserAgent    string
+	RequestID    string
+	LatencyMs    int
+	CreatedAt    time.Time
+}
 
-### Quick Start
+// AuditMiddleware creates middleware that logs all API requests for audit purposes.
+func AuditMiddleware(db *pgxpool.Pool) func(http.Handler) http.Handler {
+	auditor := NewAuditLogger(db)
 
-```bash
-cd deployments/docker
-docker-compose up -d
-```
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
 
-### Environment Variables
+			// Generate request ID
+			requestID := r.Header.Get("X-Request-ID")
+			if requestID == "" {
+				requestID = generateRequestID()
+			}
 
-Create a `.env` file (see `.env.example`):
+			// Wrap response writer to capture status code
+			rw := &auditResponseWriter{
+				ResponseWriter: w,
+				status:         http.StatusOK,
+			}
 
-```bash
-JWT_SECRET=your-secret-key-min-32-chars
-S3_ENDPOINT=          # Optional, falls back to local storage
-S3_BUCKET=openprint-documents
-ENCRYPTION_KEY=       # Optional AES-256 key
-JAEGER_ENDPOINT=      # Optional tracing
-```
+			// Read and restore body for logging
+			var bodyBytes []byte
+			if r.Body != nil && r.Method != http.MethodGet && r.Method != http.MethodHead {
+				bodyBytes, _ = io.ReadAll(r.Body)
+				r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			}
 
-### Service Ports (Docker)
+			// Call next handler
+			next.ServeHTTP(rw, r)
 
-| Service | Internal | External |
-|---------|----------|----------|
-| PostgreSQL | 5432 | 15432 |
-| Redis | 6379 | 16379 |
-| auth-service | 8001 | 18001 |
-| registry-service | 8002 | 8002 |
-| job-service | 8003 | 8003 |
-| storage-service | 8004 | 8004 |
-| notification-service | 8005 | 18005 |
-| dashboard | 3000 | 30
+			// Log audit entry asynchronously
+			latency := time.Since(start)
+			go auditor.logEntry(context.Background(), &AuditEntry{
+				RequestID:  requestID,
+				Method:     r.Method,
+				Path:      r.URL.Path,
+--- services/api-gateway/middleware/rate_limit.go ---
+// Package middleware provides rate limiting middleware for the API gateway.
+package middleware
 
-EXISTING FILES:
-internal/agent/types.go
-internal/auth/jwt/jwt.go
-internal/auth/oidc/oidc.go
-internal/auth/password/password.go
-internal/auth/saml/saml.go
-internal/middleware/cookie_auth.go
-internal/middleware/validation.go
-internal/shared/errors/errors.go
-internal/shared/middleware/agent_auth.go
-internal/shared/middleware/auth.go
-internal/shared/middleware/validation.go
-internal/shared/telemetry/middleware.go
-internal/testutil/assertions.go
-internal/testutil/config.go
-internal/testutil/context.go
-internal/testutil/db.go
-internal/testutil/fixtures.go
-internal/testutil/http.go
-internal/testutil/jwt.go
-internal/testutil/metrics.go
-internal/testutil/migrate.go
-internal/testutil/redis.go
-internal/testutil/s3.go
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"sync"
+	"time"
 
-Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// RateLimiter interface defines rate limiting behavior.
+type RateLimiter interface {
+	Allow(key string, limit int, window time.Duration) bool
+}
+
+// InMemoryRateLimiter provides an in-memory rate limiter.
+type InMemoryRateLimiter struct {
+	mu    sync.RWMutex
+	limiters map[string]*tokenBucketLimiter
+}
+
+// tokenBucketLimiter implements token bucket rate limiting.
+type tokenBucketLimiter struct {
+	tokens    int
+	maxTokens int
+	refillRate time.Duration
+	lastRefill time.Time
+	mu        sync.Mutex
+}
+
+// NewInMemoryRateLimiter creates a new in-memory rate limiter.
+func NewInMemoryRateLimiter() *InMemoryRateLimiter {
+	return &InMemoryRateLimiter{
+		limiters: make(map[string]*tokenBucketLimiter),
+	}
+}
+
+// Allow checks if a request should be allowed based on rate limit.
+func (r *InMemoryRateLimiter) Allow(key string, limit int, window time.Duration) bool {
+	r.mu.RLock()
+	limiter, exists := r.limiters[key]
+	r.mu.RUnlock()
+
+	if !exists {
+		r.mu.Lock()
+		limiter = &tokenBucketLimiter{
+			tokens:     limit - 1,
+			maxTokens:  limit,
+			refillRate: window / time.Duration(limit),
+			lastRefill: time.Now(),
+		}
+		r.limiters[key] = limiter
+		r.mu.Unlock()
+		return true
+	}
+
+	limiter.mu.Lock()
+	defer limiter.mu.Unlock()
+
+	// Refill tokens based on elapsed time
+	now := time.Now()
+	elapsed := now.Sub(limiter.lastRefill)
+	tokensToAdd := int(elapsed / limiter.refillRate)
+
+	if tokensToAdd > 0 {
+		limiter.tokens += tokensToAdd
+		if limiter.tokens > limiter.maxTokens {
+			limiter.tokens = limiter.maxTokens
+		}
+		limiter.lastRefill = now
+	}
+
+	// Check if request is allowed
+	if limiter.tokens > 0 {
+		limiter.tokens--
+		return true
+	}
+Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.
