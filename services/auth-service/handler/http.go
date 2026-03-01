@@ -15,6 +15,7 @@ import (
 	"github.com/openprint/openprint/internal/auth/password"
 	"github.com/openprint/openprint/internal/auth/saml"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/auth-service/repository"
 )
 
@@ -26,6 +27,8 @@ type Config struct {
 	PasswordHasher *password.Hasher
 	OIDCRegistry   *oidc.Registry
 	SAMLManager    *saml.Manager
+	Metrics        *prometheus.Metrics
+	ServiceName    string
 }
 
 // Handler provides auth service HTTP handlers.
@@ -36,6 +39,8 @@ type Handler struct {
 	passwordHasher *password.Hasher
 	oidcRegistry   *oidc.Registry
 	samlManager    *saml.Manager
+	metrics        *prometheus.Metrics
+	serviceName    string
 }
 
 // New creates a new handler instance.
@@ -47,6 +52,8 @@ func New(cfg Config) *Handler {
 		passwordHasher: cfg.PasswordHasher,
 		oidcRegistry:   cfg.OIDCRegistry,
 		samlManager:    cfg.SAMLManager,
+		metrics:        cfg.Metrics,
+		serviceName:    cfg.ServiceName,
 	}
 }
 
@@ -87,50 +94,60 @@ type LoginResponse struct {
 // OIDCHandler handles OIDC OAuth flows.
 func (h *Handler) OIDCHandler(w http.ResponseWriter, r *http.Request) {
 	if h.oidcRegistry == nil {
-		respondError(w, apperrors.New("OIDC not configured", http.StatusServiceUnavailable))
+		respondError(w, apperrors.New("OIDC not configured", 503))
 		return
 	}
 
 	// Extract provider type from path
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) < 4 {
-		respondError(w, apperrors.New("invalid provider", http.StatusBadRequest))
+		respondError(w, apperrors.New("invalid provider", 400))
 		return
 	}
 
 	providerType := oidc.ProviderType(parts[3])
 	manager, ok := h.oidcRegistry.Get(providerType)
 	if !ok {
-		respondError(w, apperrors.New("unknown provider", http.StatusBadRequest))
+		respondError(w, apperrors.New("unknown provider", 400))
 		return
 	}
 
 	ctx := r.Context()
+	authMethod := "oidc_" + string(providerType)
 
 	// Handle redirect to provider
-	if r.Method == http.MethodGet && r.URL.Query().Get("code") == "" {
+	if r.Method == "GET" && r.URL.Query().Get("code") == "" {
 		state := uuid.New().String()
 		authURL, err := manager.AuthURL(ctx, state)
 		if err != nil {
-			respondError(w, apperrors.Wrap(err, "failed to generate auth URL", http.StatusInternalServerError))
+			if h.metrics != nil {
+				prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+			}
+			respondError(w, apperrors.Wrap(err, "failed to generate auth URL", 500))
 			return
 		}
-		http.Redirect(w, r, authURL, http.StatusFound)
+		http.Redirect(w, r, authURL, 302)
 		return
 	}
 
 	// Handle callback from provider
-	if r.Method == http.MethodGet && r.URL.Query().Get("code") != "" {
+	if r.Method == "GET" && r.URL.Query().Get("code") != "" {
 		manager.Handler(func(w http.ResponseWriter, r *http.Request, info *oidc.UserInfo, err error) {
 			if err != nil {
-				respondError(w, apperrors.Wrap(err, "oauth failed", http.StatusBadRequest))
+				if h.metrics != nil {
+					prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+				}
+				respondError(w, apperrors.Wrap(err, "oauth failed", 400))
 				return
 			}
 
 			// Find or create user based on OIDC info
 			user, err := h.findOrCreateUserByOIDC(ctx, info)
 			if err != nil {
-				respondError(w, apperrors.Wrap(err, "failed to process user", http.StatusInternalServerError))
+				if h.metrics != nil {
+					prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+				}
+				respondError(w, apperrors.Wrap(err, "failed to process user", 500))
 				return
 			}
 
@@ -143,18 +160,29 @@ func (h *Handler) OIDCHandler(w http.ResponseWriter, r *http.Request) {
 				jwt.DefaultScopes(),
 			)
 			if err != nil {
-				respondError(w, apperrors.Wrap(err, "failed to generate tokens", http.StatusInternalServerError))
+				if h.metrics != nil {
+					prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+				}
+				respondError(w, apperrors.Wrap(err, "failed to generate tokens", 500))
 				return
 			}
 
 			// Store session
 			if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, jwt.MaxRefreshDuration); err != nil {
-				respondError(w, apperrors.Wrap(err, "failed to store session", http.StatusInternalServerError))
+				if h.metrics != nil {
+					prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+				}
+				respondError(w, apperrors.Wrap(err, "failed to store session", 500))
 				return
 			}
 
+			// Record successful auth
+			if h.metrics != nil {
+				prometheus.RecordAuthSuccess(h.metrics, h.serviceName, authMethod, user.Role)
+			}
+
 			// Return tokens to client
-			respondJSON(w, http.StatusOK, map[string]interface{}{
+			respondJSON(w, 200, map[string]interface{}{
 				"user_id":       user.ID,
 				"email":         user.Email,
 				"access_token":  accessToken,
@@ -164,18 +192,18 @@ func (h *Handler) OIDCHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	http.Error(w, "method not allowed", 405)
 }
 
 // SAMLMetadataHandler serves SAML metadata.
 func (h *Handler) SAMLMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	if h.samlManager == nil {
-		respondError(w, apperrors.New("SAML not configured", http.StatusServiceUnavailable))
+		respondError(w, apperrors.New("SAML not configured", 503))
 		return
 	}
 
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", 405)
 		return
 	}
 
@@ -185,28 +213,35 @@ func (h *Handler) SAMLMetadataHandler(w http.ResponseWriter, r *http.Request) {
 // SAMLACSHandler handles SAML Assertion Consumer Service.
 func (h *Handler) SAMLACSHandler(w http.ResponseWriter, r *http.Request) {
 	if h.samlManager == nil {
-		respondError(w, apperrors.New("SAML not configured", http.StatusServiceUnavailable))
+		respondError(w, apperrors.New("SAML not configured", 503))
 		return
 	}
 
 	ctx := r.Context()
+	authMethod := "saml"
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", 405)
 		return
 	}
 
 	// Handle SAML response
 	assertion, err := h.samlManager.HandleResponse(r)
 	if err != nil {
-		respondError(w, apperrors.Wrap(err, "SAML error", http.StatusBadRequest))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "SAML error", 400))
 		return
 	}
 
 	// Find or create user
 	user, err := h.findOrCreateUserBySAML(ctx, assertion)
 	if err != nil {
-		respondError(w, apperrors.Wrap(err, "failed to process user", http.StatusInternalServerError))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "failed to process user", 500))
 		return
 	}
 
@@ -219,17 +254,28 @@ func (h *Handler) SAMLACSHandler(w http.ResponseWriter, r *http.Request) {
 		jwt.DefaultScopes(),
 	)
 	if err != nil {
-		respondError(w, apperrors.Wrap(err, "failed to generate tokens", http.StatusInternalServerError))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "failed to generate tokens", 500))
 		return
 	}
 
 	// Store session
 	if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, jwt.MaxRefreshDuration); err != nil {
-		respondError(w, apperrors.Wrap(err, "failed to store session", http.StatusInternalServerError))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "failed to store session", 500))
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	// Record successful auth
+	if h.metrics != nil {
+		prometheus.RecordAuthSuccess(h.metrics, h.serviceName, authMethod, user.Role)
+	}
+
+	respondJSON(w, 200, map[string]interface{}{
 		"user_id":       user.ID,
 		"email":         user.Email,
 		"access_token":  accessToken,

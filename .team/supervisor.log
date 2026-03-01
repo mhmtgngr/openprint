@@ -465,3 +465,7 @@ Total: 7 errors
 [0;32m[SUP 21:33:50][0m ╔═══════════════════════════════════════╗
 [0;32m[SUP 21:33:50][0m ║  ROUND 5/8: Performance and Load Testing
 [0;32m[SUP 21:33:50][0m ╚═══════════════════════════════════════╝
+[0;32m[SUP 23:18:41][0m ✅ Round 5 complete: Performance and Load Testing
+[0;32m[SUP 23:18:46][0m ╔═══════════════════════════════════════╗
+[0;32m[SUP 23:18:46][0m ║  ROUND 6/8: Observability with Prometheus/Grafana
+[0;32m[SUP 23:18:46][0m ╚═══════════════════════════════════════╝

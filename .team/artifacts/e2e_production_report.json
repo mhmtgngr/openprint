@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-03-01T22:13:16.107359",
+  "timestamp": "2026-03-01T23:18:40.558570",
   "framework": "playwright",
   "summary": {
     "total": 0,
-    "passed": 2,
+    "passed": 1,
     "failed": 100,
     "skipped": 0
   },

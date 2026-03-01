@@ -243,6 +243,83 @@ services:
       - openprint-network
     restart: unless-stopped
 
+  # ============================================
+  # Monitoring Stack
+  # ============================================
+
+  # Prometheus (Port 9090)
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: openprint-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=http://localhost:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # AlertManager (Port 9093)
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: openprint-alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    volumes:
+      - ./alertmanager/config.yml:/etc/alertmanager/config.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Grafana (Port 3001)
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: openprint-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: ""
+      GF_SERVER_ROOT_URL: http://localhost:3001
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Jaeger (Port 16686)
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    container_name: openprint-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+      - "14250:14250"  # Jaeger collector gRPC
+      - "6831:6831/udp" # Jaeger agent compact
+      - "6832:6832/udp" # Jaeger agent binary
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
 # Networks
 networks:
   openprint-network:
@@ -257,3 +334,9 @@ volumes:
     name: openprint-redis-data
   storage_data:
     name: openprint-storage-data
+  prometheus_data:
+    name: openprint-prometheus-data
+  alertmanager_data:
+    name: openprint-alertmanager-data
+  grafana_data:
+    name: openprint-grafana-data

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/gorilla/websocket"
 )
 
@@ -45,6 +46,8 @@ type Client struct {
 type Config struct {
 	PingInterval time.Duration
 	PongTimeout  time.Duration
+	Metrics      *prometheus.Metrics
+	ServiceName  string
 }
 
 // Hub maintains the set of active clients and broadcasts messages.
@@ -74,6 +77,10 @@ type Hub struct {
 	// Configuration
 	cfg Config
 
+	// Metrics
+	metrics     *prometheus.Metrics
+	serviceName string
+
 	mu sync.RWMutex
 }
 
@@ -91,6 +98,11 @@ type OrgMessage struct {
 
 // NewHub creates a new WebSocket hub.
 func NewHub(cfg Config) *Hub {
+	serviceName := cfg.ServiceName
+	if serviceName == "" {
+		serviceName = "notification-service"
+	}
+
 	return &Hub{
 		clients:        make(map[*Client]bool),
 		clientsByUserID: make(map[string][]*Client),
@@ -101,6 +113,8 @@ func NewHub(cfg Config) *Hub {
 		sendToUser:      make(chan *UserMessage, 256),
 		broadcastToOrg:  make(chan *OrgMessage, 256),
 		cfg:            cfg,
+		metrics:        cfg.Metrics,
+		serviceName:    serviceName,
 	}
 }
 
@@ -168,6 +182,15 @@ func (h *Hub) registerClient(client *Client) {
 		h.clientsByOrgID[client.OrgID] = append(h.clientsByOrgID[client.OrgID], client)
 	}
 
+	// Record connection metric
+	if h.metrics != nil {
+		h.metrics.Business.WebSocketConnections.WithLabelValues(
+			h.serviceName,
+			client.OrgID,
+			"connected",
+		).Inc()
+	}
+
 	log.Printf("Client registered: %s (user: %s, org: %s)", client.ID, client.UserID, client.OrgID)
 }
 
@@ -188,6 +211,15 @@ func (h *Hub) unregisterClient(client *Client) {
 	// Remove from org index
 	if client.OrgID != "" {
 		h.clientsByOrgID[client.OrgID] = removeClient(h.clientsByOrgID[client.OrgID], client)
+	}
+
+	// Record disconnection metric
+	if h.metrics != nil {
+		h.metrics.Business.WebSocketConnections.WithLabelValues(
+			h.serviceName,
+			client.OrgID,
+			"disconnected",
+		).Inc()
 	}
 
 	close(client.Send)

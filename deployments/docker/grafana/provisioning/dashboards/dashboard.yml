@@ -1,0 +1,16 @@
+# Grafana dashboard provisioning configuration.
+# This automatically loads dashboards from the configured directory.
+
+apiVersion: 1
+
+providers:
+  - name: 'OpenPrint'
+    orgId: 1
+    folder: 'OpenPrint'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/openprint
+      foldersFromFilesStructure: true

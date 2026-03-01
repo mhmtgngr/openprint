@@ -1,703 +1,381 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Use k6 as primary load testing tool with xk6-dashboard for real-time visualization",
-      "rationale": "k6 is JavaScript-based, has excellent CI/CD integration, supports WebSocket testing, and provides developer-friendly script syntax. xk6-dashboard enables real-time metrics visualization during test runs."
+      "decision": "Use prometheus/client_golang for metrics collection with custom registry per service",
+      "rationale": "Standard Go Prometheus client, provides histogram/counter/gauge primitives, enables efficient scraping on separate metrics port"
     },
     {
-      "decision": "Separate test environments with dedicated database schema",
-      "rationale": "Load tests should never run against production or development databases. Dedicated test schema ensures isolation and prevents test data pollution."
+      "decision": "Expose /metrics endpoint on port 9090 separate from service HTTP port",
+      "rationale": "Isolates metrics traffic from application traffic, allows security rules specifically for metrics endpoints, prevents port conflicts"
     },
     {
-      "decision": "Modular test architecture with reusable scenario libraries",
-      "rationale": "Promotes code reuse across tests, simplifies maintenance, and enables consistent testing patterns across all services."
+      "decision": "Implement middleware-based HTTP metrics collection",
+      "rationale": "Non-invasive pattern, automatically captures all HTTP endpoints, consistent across all microservices"
     },
     {
-      "decision": "Performance baselines stored as JSON artifacts in CI",
-      "rationale": "Enables regression detection by comparing current test results against historical baselines stored in version control."
+      "decision": "Use OpenTelemetry for distributed tracing with Jaeger backend",
+      "rationale": "Vendor-neutral standard, already exists in internal/shared/telemetry, provides trace context propagation across services"
     },
     {
-      "decision": "Kubernetes k6-operator for production-like load testing",
-      "rationale": "Enables distributed load generation from multiple pods, simulating real-world traffic patterns more accurately than single-machine tests."
+      "decision": "Grafana dashboard provisioning via filesystem",
+      "rationale": "Infrastructure-as-code approach, dashboards version controlled, automatic loading on container start"
+    },
+    {
+      "decision": "Redis metrics via go-redis/redis/extra/redisotel",
+      "rationale": "Native integration with go-redis v8+, provides command duration, connection pool metrics, and error tracking"
+    },
+    {
+      "decision": "Database metrics via sqlstats wrapper",
+      "rationale": "Standard database/sql instrumentation, tracks connection pool, query latency, and row counts without code changes"
     }
   ],
   "backend_tasks": [
     {
       "order": 1,
-      "file": "tests/load/package.json",
-      "action": "create",
-      "purpose": "Initialize k6 project with dependencies and scripts",
+      "file": "go.mod",
+      "action": "modify",
+      "purpose": "Add Prometheus and instrumentation dependencies",
       "key_functions": [
-        "init",
-        "run:auth",
-        "run:registry",
-        "run:job",
-        "run:storage",
-        "run:notification",
-        "run:mixed",
-        "run:all",
-        "report"
+        "require"
       ]
     },
     {
       "order": 2,
-      "file": "tests/load/k6.config.ts",
+      "file": "internal/shared/telemetry/prometheus/registry.go",
       "action": "create",
-      "purpose": "Central configuration for all load tests",
+      "purpose": "Create Prometheus metric registry with custom labels",
       "key_functions": [
-        "getBaseUrl",
-        "getTestDuration",
-        "getVUs",
-        "getThresholds"
+        "NewRegistry",
+        "GetRegistry",
+        "MustRegister"
       ]
     },
     {
       "order": 3,
-      "file": "tests/load/lib/config.js",
+      "file": "internal/shared/telemetry/prometheus/metrics.go",
       "action": "create",
-      "purpose": "Shared configuration module for k6 tests",
+      "purpose": "Define standard metric types (HTTP, DB, Redis, Business)",
       "key_functions": [
-        "BASE_URL",
-        "AUTH_SERVICE_URL",
-        "REGISTRY_SERVICE_URL",
-        "JOB_SERVICE_URL",
-        "STORAGE_SERVICE_URL",
-        "NOTIFICATION_SERVICE_URL",
-        "TEST_Duration",
-        "TEST_VUS",
-        "THRESHOLDS"
+        "NewHTTPMetrics",
+        "NewDBMetrics",
+        "NewRedisMetrics",
+        "NewBusinessMetrics"
       ]
     },
     {
       "order": 4,
-      "file": "tests/load/lib/helpers.js",
+      "file": "internal/shared/telemetry/prometheus/labels.go",
       "action": "create",
-      "purpose": "Reusable helper functions for all tests",
+      "purpose": "Define standard label names and values",
       "key_functions": [
-        "randomString",
-        "randomItem",
-        "parseJWT",
-        "sleepBetween",
-        "retryOnFailure",
-        "checkAndLog"
+        "LabelNames",
+        "LabelValues"
       ]
     },
     {
       "order": 5,
-      "file": "tests/load/lib/api-client.js",
+      "file": "internal/shared/middleware/metrics.go",
       "action": "create",
-      "purpose": "HTTP client wrapper with auth handling",
+      "purpose": "HTTP middleware for request/response metrics collection",
       "key_functions": [
-        "login",
-        "refreshToken",
-        "registerAgent",
-        "sendHeartbeat",
-        "submitJob",
-        "uploadDocument",
-        "connectWebSocket"
+        "MetricsMiddleware",
+        "trackRequest"
       ]
     },
     {
       "order": 6,
-      "file": "tests/load/lib/metrics.js",
+      "file": "internal/shared/telemetry/prometheus/db.go",
       "action": "create",
-      "purpose": "Custom k6 metrics definitions",
+      "purpose": "Database metrics collector wrapper",
       "key_functions": [
-        "authLatency",
-        "registryLatency",
-        "jobLatency",
-        "storageLatency",
-        "notificationLatency",
-        "websocketConnections",
-        "errorRate"
+        "WrapDB",
+        "RecordDBStats"
       ]
     },
     {
       "order": 7,
-      "file": "tests/load/scenarios/auth/login.js",
+      "file": "internal/shared/telemetry/prometheus/redis.go",
       "action": "create",
-      "purpose": "User login load test scenario",
+      "purpose": "Redis metrics collector integration",
       "key_functions": [
-        "setup",
-        "login",
-        "teardown"
+        "WrapRedisClient",
+        "RecordRedisStats"
       ]
     },
     {
       "order": 8,
-      "file": "tests/load/scenarios/auth/concurrent-users.js",
+      "file": "internal/shared/telemetry/prometheus/business.go",
       "action": "create",
-      "purpose": "Concurrent user login simulation (FR-001)",
+      "purpose": "Business-specific metric definitions",
       "key_functions": [
-        "setup",
-        "concurrentLogin",
-        "teardown"
+        "RecordJobCreated",
+        "RecordJobCompleted",
+        "RecordAuthSuccess",
+        "RecordPrinterHeartbeat",
+        "RecordDocumentStored"
       ]
     },
     {
       "order": 9,
-      "file": "tests/load/scenarios/auth/token-refresh.js",
+      "file": "internal/shared/telemetry/prometheus/server.go",
       "action": "create",
-      "purpose": "Token refresh under load",
+      "purpose": "Dedicated metrics HTTP server",
       "key_functions": [
-        "setup",
-        "refreshToken",
-        "teardown"
+        "StartMetricsServer",
+        "Shutdown"
       ]
     },
     {
       "order": 10,
-      "file": "tests/load/scenarios/auth/baseline.js",
-      "action": "create",
-      "purpose": "Auth service performance baseline (FR-007)",
+      "file": "services/auth-service/main.go",
+      "action": "modify",
+      "purpose": "Integrate Prometheus metrics server and middleware",
       "key_functions": [
-        "setup",
-        "runBaselines",
-        "saveBaselines",
-        "teardown"
+        "initMetrics",
+        "main"
       ]
     },
     {
       "order": 11,
-      "file": "tests/load/scenarios/registry/agent-registration.js",
-      "action": "create",
-      "purpose": "Agent registration load test",
+      "file": "services/auth-service/internal/handler/auth.go",
+      "action": "modify",
+      "purpose": "Add auth-specific business metrics",
       "key_functions": [
-        "setup",
-        "registerAgent",
-        "teardown"
+        "Login",
+        "Logout",
+        "RecordAuthMetrics"
       ]
     },
     {
       "order": 12,
-      "file": "tests/load/scenarios/registry/heartbeat.js",
-      "action": "create",
-      "purpose": "High-frequency heartbeat simulation (FR-003)",
+      "file": "services/registry-service/main.go",
+      "action": "modify",
+      "purpose": "Integrate Prometheus metrics server and middleware",
       "key_functions": [
-        "setup",
-        "sendHeartbeat",
-        "teardown"
+        "initMetrics",
+        "main"
       ]
     },
     {
       "order": 13,
-      "file": "tests/load/scenarios/registry/discovery.js",
-      "action": "create",
-      "purpose": "Agent discovery load test",
+      "file": "services/registry-service/internal/handler/printer.go",
+      "action": "modify",
+      "purpose": "Add printer registry business metrics",
       "key_functions": [
-        "setup",
-        "discoverAgents",
-        "teardown"
+        "RegisterPrinter",
+        "Heartbeat",
+        "RecordRegistryMetrics"
       ]
     },
     {
       "order": 14,
-      "file": "tests/load/scenarios/registry/baseline.js",
-      "action": "create",
-      "purpose": "Registry service performance baseline",
+      "file": "services/job-service/main.go",
+      "action": "modify",
+      "purpose": "Integrate Prometheus metrics server and middleware",
       "key_functions": [
-        "setup",
-        "runBaselines",
-        "saveBaselines",
-        "teardown"
+        "initMetrics",
+        "main"
       ]
     },
     {
       "order": 15,
-      "file": "tests/load/scenarios/job/submit.js",
-      "action": "create",
-      "purpose": "Parallel job submission test (FR-002)",
+      "file": "services/job-service/internal/processor/queue.go",
+      "action": "modify",
+      "purpose": "Add job queue metrics (pending, processing, failed)",
       "key_functions": [
-        "setup",
-        "submitJob",
-        "teardown"
+        "Enqueue",
+        "Dequeue",
+        "RecordQueueMetrics"
       ]
     },
     {
       "order": 16,
-      "file": "tests/load/scenarios/job/status-query.js",
-      "action": "create",
-      "purpose": "Job status query load test",
+      "file": "services/storage-service/main.go",
+      "action": "modify",
+      "purpose": "Integrate Prometheus metrics server and middleware",
       "key_functions": [
-        "setup",
-        "queryStatus",
-        "teardown"
+        "initMetrics",
+        "main"
       ]
     },
     {
       "order": 17,
-      "file": "tests/load/scenarios/job/assignment.js",
-      "action": "create",
-      "purpose": "Job assignment load test",
+      "file": "services/storage-service/internal/handler/document.go",
+      "action": "modify",
+      "purpose": "Add storage business metrics",
       "key_functions": [
-        "setup",
-        "assignJob",
-        "teardown"
+        "StoreDocument",
+        "RetrieveDocument",
+        "RecordStorageMetrics"
       ]
     },
     {
       "order": 18,
-      "file": "tests/load/scenarios/job/queue-processing.js",
-      "action": "create",
-      "purpose": "Job queue processing load test",
+      "file": "services/notification-service/main.go",
+      "action": "modify",
+      "purpose": "Integrate Prometheus metrics server and middleware",
       "key_functions": [
-        "setup",
-        "processQueue",
-        "teardown"
+        "initMetrics",
+        "main"
       ]
     },
     {
       "order": 19,
-      "file": "tests/load/scenarios/job/baseline.js",
-      "action": "create",
-      "purpose": "Job service performance baseline",
+      "file": "services/notification-service/internal/hub/websocket.go",
+      "action": "modify",
+      "purpose": "Add WebSocket connection metrics",
       "key_functions": [
-        "setup",
-        "runBaselines",
-        "saveBaselines",
-        "teardown"
+        "Connect",
+        "Disconnect",
+        "Broadcast",
+        "RecordWebSocketMetrics"
       ]
     },
     {
       "order": 20,
-      "file": "tests/load/scenarios/storage/upload.js",
+      "file": "internal/shared/telemetry/jaeger/config.go",
       "action": "create",
-      "purpose": "Document upload burst test (FR-004)",
+      "purpose": "Jaeger tracing configuration and initialization",
       "key_functions": [
-        "setup",
-        "uploadDocument",
-        "teardown"
+        "InitTracer",
+        "Shutdown",
+        "ConfigureExporter"
       ]
     },
     {
       "order": 21,
-      "file": "tests/load/scenarios/storage/download.js",
+      "file": "deployments/docker/prometheus/prometheus.yml",
       "action": "create",
-      "purpose": "Concurrent download test",
-      "key_functions": [
-        "setup",
-        "downloadDocument",
-        "teardown"
-      ]
+      "purpose": "Prometheus configuration with service discovery",
+      "key_functions": []
     },
     {
       "order": 22,
-      "file": "tests/load/scenarios/storage/large-file.js",
+      "file": "deployments/docker/prometheus/alerts.yml",
       "action": "create",
-      "purpose": "Large file handling tests",
-      "key_functions": [
-        "setup",
-        "uploadLargeFile",
-        "teardown"
-      ]
+      "purpose": "Alerting rules for all services",
+      "key_functions": []
     },
     {
       "order": 23,
-      "file": "tests/load/scenarios/storage/baseline.js",
+      "file": "deployments/docker/alertmanager/config.yml",
       "action": "create",
-      "purpose": "Storage service performance baseline",
-      "key_functions": [
-        "setup",
-        "runBaselines",
-        "saveBaselines",
-        "teardown"
-      ]
+      "purpose": "AlertManager routing and receiver configuration",
+      "key_functions": []
     },
     {
       "order": 24,
-      "file": "tests/load/scenarios/notification/websocket-connect.js",
+      "file": "deployments/docker/grafana/provisioning/datasources/prometheus.yml",
       "action": "create",
-      "purpose": "WebSocket connection scaling test (FR-005)",
-      "key_functions": [
-        "setup",
-        "connectWebSocket",
-        "handleMessage",
-        "teardown"
-      ]
+      "purpose": "Grafana Prometheus datasource provisioning",
+      "key_functions": []
     },
     {
       "order": 25,
-      "file": "tests/load/scenarios/notification/broadcast.js",
+      "file": "deployments/docker/grafana/provisioning/dashboards/dashboard.yml",
       "action": "create",
-      "purpose": "Broadcast message test",
-      "key_functions": [
-        "setup",
-        "broadcastMessage",
-        "teardown"
-      ]
+      "purpose": "Grafana dashboard provisioning configuration",
+      "key_functions": []
     },
     {
       "order": 26,
-      "file": "tests/load/scenarios/notification/reconnect.js",
+      "file": "deployments/docker/grafana/provisioning/dashboards/service-health.json",
       "action": "create",
-      "purpose": "Reconnection behavior tests",
-      "key_functions": [
-        "setup",
-        "testReconnect",
-        "teardown"
-      ]
+      "purpose": "Service health dashboard JSON",
+      "key_functions": []
     },
     {
       "order": 27,
-      "file": "tests/load/scenarios/notification/baseline.js",
+      "file": "deployments/docker/grafana/provisioning/dashboards/request-throughput.json",
       "action": "create",
-      "purpose": "Notification service performance baseline",
-      "key_functions": [
-        "setup",
-        "runBaselines",
-        "saveBaselines",
-        "teardown"
-      ]
+      "purpose": "Request throughput and latency dashboard",
+      "key_functions": []
     },
     {
       "order": 28,
-      "file": "tests/load/scenarios/mixed/e2e-journey.js",
+      "file": "deployments/docker/grafana/provisioning/dashboards/database-performance.json",
       "action": "create",
-      "purpose": "End-to-end user journey test (FR-006)",
-      "key_functions": [
-        "setup",
-        "runUserJourney",
-        "teardown"
-      ]
+      "purpose": "Database connection and query performance dashboard",
+      "key_functions": []
     },
     {
       "order": 29,
-      "file": "tests/load/scenarios/mixed/soak-test.js",
+      "file": "deployments/docker/grafana/provisioning/dashboards/business-kpis.json",
       "action": "create",
-      "purpose": "Sustained load soak test",
-      "key_functions": [
-        "setup",
-        "runSoakTest",
-        "teardown"
-      ]
+      "purpose": "Business metrics (jobs, auth, storage) dashboard",
+      "key_functions": []
     },
     {
       "order": 30,
-      "file": "tests/load/scenarios/mixed/spike-test.js",
-      "action": "create",
-      "purpose": "Spike test scenario",
-      "key_functions": [
-        "setup",
-        "runSpikeTest",
-        "teardown"
-      ]
-    },
-    {
-      "order": 31,
-      "file": "tests/load/scenarios/mixed/stress-test.js",
-      "action": "create",
-      "purpose": "Stress test to failure point",
-      "key_functions": [
-        "setup",
-        "runStressTest",
-        "findBreakingPoint",
-        "teardown"
-      ]
-    },
-    {
-      "order": 32,
-      "file": "tests/load/data/fixtures.js",
-      "action": "create",
-      "purpose": "Test data fixtures for load tests",
-      "key_functions": [
-        "getTestUsers",
-        "getTestAgents",
-        "getTestDocuments",
-        "getTestJobs"
-      ]
-    },
-    {
-      "order": 33,
-      "file": "tests/load/utils/baseline-compare.js",
-      "action": "create",
-      "purpose": "Baseline comparison utility (FR-008)",
-      "key_functions": [
-        "loadBaseline",
-        "compareResults",
-        "detectRegression",
-        "generateReport"
-      ]
-    },
-    {
-      "order": 34,
-      "file": "tests/load/utils/reporter.js",
-      "action": "create",
-      "purpose": "Test result reporter",
-      "key_functions": [
-        "generateJSONReport",
-        "generateHTMLReport",
-        "generateJunitReport",
-        "uploadToStorage"
-      ]
-    },
-    {
-      "order": 35,
-      "file": "tests/load/docker-compose.test.yml",
-      "action": "create",
-      "purpose": "Docker Compose for isolated test environment",
+      "file": "deployments/docker/docker-compose.yml",
+      "action": "modify",
+      "purpose": "Add monitoring stack services",
       "key_functions": []
-    },
-    {
-      "order": 36,
-      "file": "tests/load/Dockerfile.k6",
-      "action": "create",
-      "purpose": "Docker image for running k6 tests",
-      "key_functions": []
-    },
-    {
-      "order": 37,
-      "file": "tests/load/k8s/k6-operator-cr.yaml",
-      "action": "create",
-      "purpose": "Kubernetes k6-operator custom resource",
-      "key_functions": []
-    },
-    {
-      "order": 38,
-      "file": "tests/load/grafana/dashboards/load-testing-dashboard.json",
-      "action": "create",
-      "purpose": "Grafana dashboard template (FR-009)",
-      "key_functions": []
-    },
-    {
-      "order": 39,
-      "file": "tests/load/scripts/run-all-tests.sh",
-      "action": "create",
-      "purpose": "Shell script to run all load tests",
-      "key_functions": []
-    },
-    {
-      "order": 40,
-      "file": "tests/load/scripts/run-with-dashboard.sh",
-      "action": "create",
-      "purpose": "Run tests with xk6-dashboard",
-      "key_functions": []
-    },
-    {
-      "order": 41,
-      "file": ".github/workflows/load-testing.yml",
-      "action": "create",
-      "purpose": "GitHub Actions workflow for CI integration (FR-010)",
-      "key_functions": []
-    },
-    {
-      "order": 42,
-      "file": ".github/workflows/load-testing-pr-comment.yml",
-      "action": "create",
-      "purpose": "PR comment generation with test results",
-      "key_functions": []
-    },
-    {
-      "order": 43,
-      "file": "tests/load/baselines/.gitkeep",
-      "action": "create",
-      "purpose": "Store performance baseline files",
-      "key_functions": []
-    },
-    {
-      "order": 44,
-      "file": "tests/load/reports/.gitkeep",
-      "action": "create",
-      "purpose": "Store test reports",
-      "key_functions": []
-    },
-    {
-      "order": 45,
-      "file": "tests/load/thresholds.json",
-      "action": "create",
-      "purpose": "Define performance thresholds for regression detection",
-      "key_functions": []
-    },
-    {
-      "order": 46,
-      "file": "tests/load/lib/websocket-client.js",
-      "action": "create",
-      "purpose": "WebSocket client wrapper for notification tests",
-      "key_functions": [
-        "connect",
-        "subscribe",
-        "disconnect",
-        "waitForMessage"
-      ]
-    },
-    {
-      "order": 47,
-      "file": "internal/testutil/loadtest.go",
-      "action": "create",
-      "purpose": "Go utilities for load test setup and teardown",
-      "key_functions": [
-        "SetupTestDatabase",
-        "SeedTestData",
-        "CleanupTestData",
-        "StartTestServices",
-        "StopTestServices"
-      ]
-    },
-    {
-      "order": 48,
-      "file": "tests/load/scenarios/auth/oidc-login.js",
-      "action": "create",
-      "purpose": "OIDC login load test for enterprise SSO (market-driven)",
-      "key_functions": [
-        "setup",
-        "oidcLogin",
-        "teardown"
-      ]
-    },
-    {
-      "order": 49,
-      "file": "tests/load/scenarios/auth/saml-login.js",
-      "action": "create",
-      "purpose": "SAML SSO load test for enterprise (market-driven)",
-      "key_functions": [
-        "setup",
-        "samlLogin",
-        "teardown"
-      ]
-    },
-    {
-      "order": 50,
-      "file": "tests/load/scenarios/storage/encrypted-upload.js",
-      "action": "create",
-      "purpose": "Encrypted document upload test (DLP/SOC2 compliance)",
-      "key_functions": [
-        "setup",
-        "uploadEncrypted",
-        "teardown"
-      ]
-    },
-    {
-      "order": 51,
-      "file": "tests/load/scenarios/job/follow-me-printing.js",
-      "action": "create",
-      "purpose": "Follow-me printing queue load test (market-driven feature)",
-      "key_functions": [
-        "setup",
-        "submitFollowMeJob",
-        "claimAtPrinter",
-        "teardown"
-      ]
-    },
-    {
-      "order": 52,
-      "file": "tests/load/scenarios/mobile/api-test.js",
-      "action": "create",
-      "purpose": "Mobile app API load test (market-driven FR-M011)",
-      "key_functions": [
-        "setup",
-        "mobileLogin",
-        "mobileJobSubmit",
-        "teardown"
-      ]
-    },
-    {
-      "order": 53,
-      "file": "tests/load/config/environments.json",
-      "action": "create",
-      "purpose": "Environment-specific configurations",
-      "key_functions": [
-        "getLocalConfig",
-        "getStagingConfig",
-        "getProductionConfig"
-      ]
     }
   ],
   "frontend_tasks": [
     {
       "order": 1,
-      "file": "web/dashboard/src/views/admin/LoadTesting.tsx",
+      "file": "web/dashboard/src/components/observability/MetricsPanel.tsx",
       "action": "create",
-      "purpose": "Performance dashboard view for load test results (FR-009)"
+      "purpose": "React component for displaying live metrics"
     },
     {
       "order": 2,
-      "file": "web/dashboard/src/components/load-test/PerformanceChart.tsx",
+      "file": "web/dashboard/src/components/observability/GrafanaEmbed.tsx",
       "action": "create",
-      "purpose": "Performance metrics visualization component"
+      "purpose": "Grafana dashboard iframe embed component"
     },
     {
       "order": 3,
-      "file": "web/dashboard/src/components/load-test/TestRunner.tsx",
+      "file": "web/dashboard/src/pages/observability/ObservabilityPage.tsx",
       "action": "create",
-      "purpose": "Manual test trigger component"
+      "purpose": "Main observability page with metric tabs"
     },
     {
       "order": 4,
-      "file": "web/dashboard/src/components/load-test/BaselineComparison.tsx",
+      "file": "web/dashboard/src/pages/observability/SystemHealthPage.tsx",
       "action": "create",
-      "purpose": "Baseline comparison view (FR-008)"
+      "purpose": "Service health status page with real-time indicators"
     },
     {
       "order": 5,
-      "file": "web/dashboard/src/components/load-test/ServiceHealthCard.tsx",
+      "file": "web/dashboard/src/services/observability.ts",
       "action": "create",
-      "purpose": "Service health status display during tests"
+      "purpose": "API client for metrics and health data"
     },
     {
       "order": 6,
-      "file": "web/dashboard/src/api/load-test.ts",
+      "file": "web/dashboard/src/types/observability.ts",
       "action": "create",
-      "purpose": "API client for load test endpoints"
+      "purpose": "TypeScript types for observability data"
     },
     {
       "order": 7,
-      "file": "web/dashboard/src/types/load-test.ts",
-      "action": "create",
-      "purpose": "TypeScript types for load test data"
-    },
-    {
-      "order": 8,
-      "file": "web/dashboard/src/components/load-test/RegressionAlert.tsx",
-      "action": "create",
-      "purpose": "Performance regression alert component"
+      "file": "web/dashboard/src/routes.tsx",
+      "action": "modify",
+      "purpose": "Add observability routes"
     }
   ],
   "database_migrations": [
     {
-      "file": "migrations/000001_create_load_test_schema.up.sql",
-      "sql": "-- Create separate schema for load testing\nCREATE SCHEMA IF NOT EXISTS load_test;\n\n-- Load test results table\nCREATE TABLE load_test.test_results (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    test_name VARCHAR(255) NOT NULL,\n    test_type VARCHAR(100) NOT NULL,\n    service VARCHAR(100) NOT NULL,\n    started_at TIMESTAMP WITH TIME ZONE NOT NULL,\n    ended_at TIMESTAMP WITH TIME ZONE,\n    duration_seconds INTEGER,\n    virtual_users INTEGER,\n    total_requests BIGINT,\n    failed_requests BIGINT,\n    avg_response_time_ms NUMERIC(10,2),\n    p50_response_time_ms NUMERIC(10,2),\n    p95_response_time_ms NUMERIC(10,2),\n    p99_response_time_ms NUMERIC(10,2),\n    max_response_time_ms NUMERIC(10,2),\n    requests_per_second NUMERIC(10,2),\n    throughput_mb_per_second NUMERIC(10,2),\n    threshold_met BOOLEAN,\n    git_commit VARCHAR(100),\n    git_branch VARCHAR(255),\n    metadata JSONB,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);\n\nCREATE INDEX idx_load_test_results_test_name ON load_test.test_results(test_name);\nCREATE INDEX idx_load_test_results_service ON load_test.test_results(service);\nCREATE INDEX idx_load_test_results_started_at ON load_test.test_results(started_at DESC);\n\n-- Performance baselines table\nCREATE TABLE load_test.baselines (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    service VARCHAR(100) NOT NULL,\n    endpoint VARCHAR(255) NOT NULL,\n    metric_name VARCHAR(100) NOT NULL,\n    baseline_value NUMERIC(10,2) NOT NULL,\n    tolerance_percent NUMERIC(5,2) DEFAULT 10.0,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    UNIQUE(service, endpoint, metric_name)\n);\n\n-- Load test users for isolated authentication\nCREATE TABLE load_test.test_users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    username VARCHAR(255) UNIQUE NOT NULL,\n    email VARCHAR(255) UNIQUE NOT NULL,\n    password_hash VARCHAR(255) NOT NULL,\n    role VARCHAR(50) DEFAULT 'user',\n    is_active BOOLEAN DEFAULT true,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);\n\n-- Load test agents\nCREATE TABLE load_test.test_agents (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    agent_id VARCHAR(100) UNIQUE NOT NULL,\n    name VARCHAR(255) NOT NULL,\n    status VARCHAR(50) DEFAULT 'online',\n    printer_count INTEGER DEFAULT 1,\n    location VARCHAR(255),\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);"
-    },
-    {
-      "file": "migrations/000001_create_load_test_schema.down.sql",
-      "sql": "DROP SCHEMA load_test CASCADE;"
-    },
-    {
-      "file": "migrations/000002_seed_load_test_data.up.sql",
-      "sql": "-- Seed load test users\nINSERT INTO load_test.test_users (username, email, password_hash, role) VALUES\n    ('load_test_user_001', 'loadtest1@example.com', '$2a$10$placeholder_hash_for_testing', 'user'),\n    ('load_test_user_002', 'loadtest2@example.com', '$2a$10$placeholder_hash_for_testing', 'user'),\n    ('load_test_user_003', 'loadtest3@example.com', '$2a$10$placeholder_hash_for_testing', 'user'),\n    ('load_test_admin_001', 'loadtest_admin@example.com', '$2a$10$placeholder_hash_for_testing', 'admin');\n\n-- Seed load test agents\nINSERT INTO load_test.test_agents (agent_id, name, status, printer_count, location) VALUES\n    ('load-test-agent-001', 'Load Test Agent 1', 'online', 3, 'Building A'),\n    ('load-test-agent-002', 'Load Test Agent 2', 'online', 2, 'Building B'),\n    ('load-test-agent-003', 'Load Test Agent 3', 'online', 5, 'Building C');\n\n-- Seed initial performance baselines\nINSERT INTO load_test.baselines (service, endpoint, metric_name, baseline_value, tolerance_percent) VALUES\n    ('auth-service', 'POST /api/v1/auth/login', 'p95_response_time_ms', 200, 15),\n    ('auth-service', 'POST /api/v1/auth/login', 'requests_per_second', 500, 10),\n    ('registry-service', 'POST /api/v1/agents/heartbeat', 'p95_response_time_ms', 50, 20),\n    ('registry-service', 'POST /api/v1/agents/heartbeat', 'requests_per_second', 5000, 10),\n    ('job-service', 'POST /api/v1/jobs', 'p95_response_time_ms', 150, 15),\n    ('job-service', 'POST /api/v1/jobs', 'requests_per_second', 1000, 10),\n    ('storage-service', 'POST /api/v1/documents', 'p95_response_time_ms', 500, 20),\n    ('storage-service', 'POST /api/v1/documents', 'throughput_mb_per_second', 50, 15),\n    ('notification-service', 'WebSocket /ws/connect', 'connection_time_ms', 100, 25);"
-    },
-    {
-      "file": "migrations/000002_seed_load_test_data.down.sql",
-      "sql": "TRUNCATE TABLE load_test.baselines, load_test.test_agents, load_test.test_users;"
+      "file": "migrations/001_create_observability_tables.up.sql",
+      "sql": "CREATE TABLE observability_metrics (\n    id BIGSERIAL PRIMARY KEY,\n    service_name VARCHAR(100) NOT NULL,\n    metric_name VARCHAR(255) NOT NULL,\n    metric_value DECIMAL(20,6) NOT NULL,\n    labels JSONB,\n    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\nCREATE INDEX idx_observability_metrics_service ON observability_metrics(service_name, recorded_at);\nCREATE INDEX idx_observability_metrics_name ON observability_metrics(metric_name, recorded_at);\n\nCREATE TABLE alert_history (\n    id BIGSERIAL PRIMARY KEY,\n    alert_name VARCHAR(255) NOT NULL,\n    alert_severity VARCHAR(50) NOT NULL,\n    service_name VARCHAR(100) NOT NULL,\n    message TEXT,\n    fired_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    resolved_at TIMESTAMPTZ,\n    status VARCHAR(50) NOT NULL DEFAULT 'firing'\n);\nCREATE INDEX idx_alert_history_fired ON alert_history(fired_at DESC);\n\nCREATE TABLE quota_usage (\n    id BIGSERIAL PRIMARY KEY,\n    user_id UUID NOT NULL,\n    organization_id UUID NOT NULL,\n    quota_type VARCHAR(50) NOT NULL,\n    usage_count BIGINT NOT NULL DEFAULT 0,\n    quota_limit BIGINT NOT NULL,\n    period_start TIMESTAMPTZ NOT NULL,\n    period_end TIMESTAMPTZ NOT NULL,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(user_id, quota_type, period_start)\n);\nCREATE INDEX idx_quota_usage_user ON quota_usage(user_id, period_start);\nCREATE INDEX idx_quota_usage_org ON quota_usage(organization_id, period_start);"
     }
   ],
   "api_contracts": [
     {
-      "method": "POST",
-      "path": "/api/v1/auth/login",
-      "request": {
-        "username": "string",
-        "password": "string"
-      },
+      "method": "GET",
+      "path": "/api/v1/observability/metrics",
+      "request": {},
       "response": {
-        "token": "string",
-        "refresh_token": "string",
-        "expires_at": "timestamp"
-      },
-      "status_codes": [
-        200,
-        400,
-        401,
-        429
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/auth/refresh",
-      "request": {
-        "refresh_token": "string"
-      },
-      "response": {
-        "token": "string",
-        "expires_at": "timestamp"
+        "metrics": {
+          "service_name": "string",
+          "http_requests_total": "number",
+          "http_request_duration_seconds": "number",
+          "db_connections_active": "number",
+          "redis_commands_total": "number"
+        }
       },
       "status_codes": [
         200,
@@ -706,235 +384,78 @@
       ]
     },
     {
-      "method": "POST",
-      "path": "/api/v1/agents/register",
-      "request": {
-        "agent_id": "string",
-        "name": "string",
-        "capabilities": []
-      },
+      "method": "GET",
+      "path": "/api/v1/observability/health",
+      "request": {},
       "response": {
-        "agent_id": "string",
-        "status": "registered"
+        "services": [
+          {
+            "name": "auth-service",
+            "status": "healthy",
+            "uptime": "10m30s"
+          },
+          {
+            "name": "registry-service",
+            "status": "healthy",
+            "uptime": "10m28s"
+          }
+        ]
       },
       "status_codes": [
         200,
-        400,
-        409
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/agents/heartbeat",
-      "request": {
-        "agent_id": "string",
-        "status": "string",
-        "printer_count": 1
-      },
-      "response": {
-        "timestamp": "timestamp"
-      },
-      "status_codes": [
-        200,
-        404
+        503
       ]
     },
     {
       "method": "GET",
-      "path": "/api/v1/agents/discover",
+      "path": "/api/v1/observability/alerts",
       "request": {},
       "response": {
-        "agents": []
-      },
-      "status_codes": [
-        200
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/jobs",
-      "request": {
-        "document_id": "string",
-        "printer_id": "string",
-        "options": {}
-      },
-      "response": {
-        "job_id": "string",
-        "status": "queued"
+        "alerts": [
+          {
+            "id": "string",
+            "name": "string",
+            "severity": "critical|warning|info",
+            "status": "firing|resolved",
+            "fired_at": "timestamp"
+          }
+        ]
       },
       "status_codes": [
         200,
-        400,
-        404
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/{job_id}",
-      "request": {},
-      "response": {
-        "job_id": "string",
-        "status": "string",
-        "created_at": "timestamp"
-      },
-      "status_codes": [
-        200,
-        404
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/documents",
-      "request": {
-        "multipart": "file",
-        "filename": "string",
-        "encryption": "boolean"
-      },
-      "response": {
-        "document_id": "string",
-        "size": 1024
-      },
-      "status_codes": [
-        200,
-        400,
-        413
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/documents/{document_id}",
-      "request": {},
-      "response": {
-        "document": "bytes"
-      },
-      "status_codes": [
-        200,
-        404
-      ]
-    },
-    {
-      "method": "WebSocket",
-      "path": "/ws/connect",
-      "request": {
-        "token": "string"
-      },
-      "response": {
-        "type": "connected",
-        "data": {}
-      },
-      "status_codes": [
-        101,
         401
       ]
     },
     {
       "method": "GET",
-      "path": "/api/v1/load-test/results",
+      "path": "/api/v1/quota/:userId",
       "request": {},
       "response": {
-        "results": [],
-        "total": 0
-      },
-      "status_codes": [
-        200
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/load-test/baselines",
-      "request": {},
-      "response": {
-        "baselines": []
-      },
-      "status_codes": [
-        200
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/load-test/baselines",
-      "request": {
-        "service": "string",
-        "endpoint": "string",
-        "metric": "string",
-        "value": 100
-      },
-      "response": {
-        "id": "string"
+        "user_id": "string",
+        "quotas": [
+          {
+            "type": "prints_per_month",
+            "used": 1250,
+            "limit": 5000,
+            "reset_date": "2026-04-01"
+          }
+        ]
       },
       "status_codes": [
         200,
-        400
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/load-test/run",
-      "request": {
-        "test_name": "string",
-        "duration": "60s",
-        "vus": 10
-      },
-      "response": {
-        "run_id": "string",
-        "status": "started"
-      },
-      "status_codes": [
-        200,
-        400
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/follow-me",
-      "request": {},
-      "response": {
-        "jobs": []
-      },
-      "status_codes": [
-        200
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/jobs/{job_id}/claim",
-      "request": {
-        "printer_id": "string",
-        "user_id": "string"
-      },
-      "response": {
-        "job_id": "string",
-        "status": "processing"
-      },
-      "status_codes": [
-        200,
-        400,
         404
       ]
     },
     {
       "method": "POST",
-      "path": "/api/v1/auth/oidc/login",
+      "path": "/api/v1/quota/:userId/check",
       "request": {
-        "provider": "string",
-        "code": "string"
+        "quota_type": "string",
+        "amount": 1
       },
       "response": {
-        "token": "string"
-      },
-      "status_codes": [
-        200,
-        400
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/auth/saml/sso",
-      "request": {
-        "SAMLResponse": "string"
-      },
-      "response": {
-        "token": "string"
+        "allowed": true,
+        "remaining": 3750
       },
       "status_codes": [
         200,
@@ -945,255 +466,196 @@
   "test_plan": {
     "unit_tests": [
       {
-        "file": "tests/load/lib/helpers_test.js",
+        "file": "internal/shared/telemetry/prometheus/registry_test.go",
         "cases": [
-          "randomString generates correct length",
-          "randomItem selects from array",
-          "parseJWT extracts claims"
+          "NewRegistry creates valid registry",
+          "GetRegistry returns same instance",
+          "MustRegister panics on duplicate",
+          "Concurrent registration is safe"
         ]
       },
       {
-        "file": "tests/load/lib/api-client_test.js",
+        "file": "internal/shared/middleware/metrics_test.go",
         "cases": [
-          "login with valid credentials",
-          "login with invalid credentials",
-          "refresh token before expiry"
+          "Middleware records successful requests",
+          "Middleware records failed requests",
+          "Middleware tracks request duration",
+          "Middleware records response codes"
         ]
       },
       {
-        "file": "tests/load/lib/metrics_test.js",
+        "file": "internal/shared/telemetry/prometheus/db_test.go",
         "cases": [
-          "custom metrics are registered",
-          "thresholds are validated"
+          "WrapDB adds metrics collector",
+          "DB stats are recorded",
+          "Connection pool metrics are accurate"
         ]
       },
       {
-        "file": "tests/load/utils/baseline-compare_test.js",
+        "file": "internal/shared/telemetry/prometheus/business_test.go",
         "cases": [
-          "detects regression when exceeded",
-          "passes when within tolerance",
-          "generates correct report"
+          "RecordJobCreated increments counter",
+          "RecordAuthSuccess records auth method",
+          "RecordPrinterHeartbeat includes labels"
         ]
       },
       {
-        "file": "internal/testutil/loadtest/loadtest_test.go",
+        "file": "services/job-service/internal/processor/queue_test.go",
         "cases": [
-          "SetupTestDatabase creates schema",
-          "SeedTestData populates tables",
-          "CleanupTestData removes data"
+          "Enqueue increments queue metric",
+          "Dequeue decrements queue metric",
+          "Failed job increments error metric"
+        ]
+      },
+      {
+        "file": "internal/shared/telemetry/jaeger/config_test.go",
+        "cases": [
+          "InitTracer creates valid tracer",
+          "Shutdown flushes spans",
+          "ConfigureExporter sets endpoint"
         ]
       }
     ],
     "e2e_tests": [
       {
-        "name": "Load Test - Auth Service Concurrent Login",
+        "name": "Prometheus metrics endpoint accessible",
         "steps": [
-          "Setup test database with users",
-          "Run concurrent-users.js with 100 VUs for 30s",
-          "Verify < 1% error rate",
-          "Verify p95 < 500ms",
-          "Cleanup test data"
+          "Start all services with metrics enabled",
+          "curl http://localhost:9091/metrics",
+          "Verify response contains go_memstats_*",
+          "Verify response contains http_requests_total"
         ]
       },
       {
-        "name": "Load Test - Registry Service Heartbeat",
+        "name": "Service metrics scraping",
         "steps": [
-          "Setup test agents",
-          "Run heartbeat.js with 1000 VUs for 60s",
-          "Verify < 0.1% error rate",
-          "Verify p95 < 100ms",
-          "Cleanup test data"
+          "Start Prometheus service",
+          "Wait 30 seconds",
+          "Query Prometheus for up{job='auth-service'}",
+          "Verify metric exists with value 1"
         ]
       },
       {
-        "name": "Load Test - Job Service Parallel Submission",
+        "name": "Grafana dashboard loads",
         "steps": [
-          "Setup test documents",
-          "Run submit.js with 500 VUs for 30s",
-          "Verify all jobs queued",
-          "Verify p95 < 200ms",
-          "Cleanup test data"
+          "Start Grafana service",
+          "Open http://localhost:3001",
+          "Login with admin credentials",
+          "Navigate to Service Health dashboard",
+          "Verify panels display data"
         ]
       },
       {
-        "name": "Load Test - Storage Service Upload Burst",
+        "name": "Alert firing test",
         "steps": [
-          "Prepare test files",
-          "Run upload.js with 200 VUs for 60s",
-          "Verify all uploads complete",
-          "Verify throughput > 100MB/s",
-          "Cleanup test data"
+          "Inject high error rate in auth-service",
+          "Wait 5 minutes",
+          "Check AlertManager UI for alert",
+          "Verify alert notification in logs"
         ]
       },
       {
-        "name": "Load Test - WebSocket Connection Scaling",
+        "name": "Distributed tracing test",
         "steps": [
-          "Setup notification service",
-          "Run websocket-connect.js with 5000 concurrent connections",
-          "Verify all connections established",
-          "Verify message delivery < 50ms",
-          "Cleanup connections"
+          "Enable Jaeger tracing",
+          "Make authenticated request to job-service",
+          "Make request that calls storage-service",
+          "Query Jaeger UI for trace",
+          "Verify trace spans across services"
         ]
       },
       {
-        "name": "Load Test - End-to-End User Journey",
+        "name": "Quota enforcement test",
         "steps": [
-          "Setup complete test environment",
-          "Run e2e-journey.js with 100 VUs for 120s",
-          "Verify complete flow success rate > 99%",
-          "Verify no memory leaks",
-          "Generate report"
-        ]
-      },
-      {
-        "name": "Soak Test - Sustained Load",
-        "steps": [
-          "Run soak-test.js with 50 VUs for 1 hour",
-          "Monitor memory/CPU usage",
-          "Verify no performance degradation",
-          "Check for connection leaks"
-        ]
-      },
-      {
-        "name": "Spike Test - Traffic Burst",
-        "steps": [
-          "Start baseline load (10 VUs)",
-          "Ramp to 1000 VUs over 30s",
-          "Sustain for 60s",
-          "Ramp down to baseline",
-          "Verify recovery"
-        ]
-      },
-      {
-        "name": "Stress Test - Find Breaking Point",
-        "steps": [
-          "Start with 100 VUs",
-          "Increment by 100 every 60s",
-          "Monitor until failure",
-          "Document breaking point",
-          "Verify graceful degradation"
-        ]
-      },
-      {
-        "name": "Baseline Comparison - Regression Detection",
-        "steps": [
-          "Load stored baselines",
-          "Run all service tests",
-          "Compare results against baselines",
-          "Flag regressions > 10%",
-          "Generate comparison report"
-        ]
-      },
-      {
-        "name": "Mobile API Load Test",
-        "steps": [
-          "Setup mobile test credentials",
-          "Run mobile/api-test.js with 200 VUs",
-          "Verify mobile-specific endpoints",
-          "Check battery/cpu impact metrics"
-        ]
-      },
-      {
-        "name": "Follow-Me Printing Load Test",
-        "steps": [
-          "Setup test users with follow-me enabled",
-          "Submit jobs to user queue",
-          "Simulate printer claims",
-          "Verify job routing correctness"
-        ]
-      },
-      {
-        "name": "Enterprise SSO Load Test (OIDC)",
-        "steps": [
-          "Setup mock OIDC provider",
-          "Run oidc-login.js with 100 concurrent users",
-          "Verify token exchange timing",
-          "Check session handling"
-        ]
-      },
-      {
-        "name": "Enterprise SSO Load Test (SAML)",
-        "steps": [
-          "Setup mock SAML IdP",
-          "Run saml-login.js with 50 concurrent users",
-          "Verify SAML response parsing",
-          "Check session creation"
-        ]
-      },
-      {
-        "name": "Encrypted Upload Performance Test",
-        "steps": [
-          "Setup encryption keys",
-          "Run encrypted-upload.js with various file sizes",
-          "Compare with unencrypted performance",
-          "Verify overhead < 20%"
+          "Set user quota to 100 prints/month",
+          "Submit 100 print jobs",
+          "Submit 101st print job",
+          "Verify request rejected with 429",
+          "Verify quota_exceeded metric emitted"
         ]
       }
     ]
   },
   "security_notes": [
-    "Load tests must never run against production environments",
-    "Test database credentials should be stored separately from production credentials",
-    "Load test user passwords should use distinct, easily identifiable patterns",
-    "Rate limiting should be disabled or increased in test environments",
-    "Disable logging for load test requests to prevent log flooding",
-    "Ensure test data is isolated and cannot be accessed by production services",
-    "Load test tokens should have distinct issuer/audience claims",
-    "Implement IP whitelisting for load test execution endpoints",
-    "Sanitize any PII in load test reports before storage",
-    "For SOC 2 compliance: log all load test execution attempts",
-    "For DLP compliance: test document uploads should contain safe test patterns only",
-    "WebSocket load tests should use separate test namespace to avoid production message interference"
+    "/metrics endpoint should not require authentication within trusted network but should be firewalled from public internet",
+    "Consider adding basic auth or bearer token for metrics endpoint in multi-tenant deployments",
+    "Prometheus data contains sensitive information about request patterns - secure appropriately",
+    "Jaeger traces may contain user data - implement trace sampling and data retention policies",
+    "AlertManager webhooks should use TLS and HMAC signature verification",
+    "Grafana should use strong admin passwords and integrate with auth-service for SSO",
+    "Business metrics should exclude PII in labels to avoid storing personal data in Prometheus"
   ],
   "docker_changes": [
-    "Add tests/load/Dockerfile.k6 for k6 test runner image",
-    "Add tests/load/docker-compose.test.yml with services: postgres-test, redis-test, minio-test, k6-runner",
-    "Update deployments/docker/docker-compose.yml to include load test network",
-    "Add k6-prometheus-exporter container for metrics collection",
-    "Add grafana-loadtest container with pre-configured dashboards"
+    "Add prometheus service on port 9090 with volumes for config and data",
+    "Add alertmanager service on port 9093 with volume for config",
+    "Add grafana service on port 3001 with volumes for config, dashboards, and data",
+    "Add network 'monitoring' to isolate monitoring stack",
+    "Add environment variables for PROMETHEUS_RETENTION_TIME, ALERTMANAGER_TIMEOUT, GRAFANA_ADMIN_PASSWORD",
+    "Update all service health checks to include metrics endpoint",
+    "Add loki service for log aggregation (optional)",
+    "Add tempo service for trace storage (optional)"
   ],
   "market_driven_features": [
     {
-      "feature": "Mobile App API Load Testing",
-      "source": "Competitor Analysis - Aliyun, PaperCut Hive mobile-first approach",
-      "priority": "high",
-      "implementation": "tests/load/scenarios/mobile/api-test.js - tests mobile-specific endpoints with slower network simulation"
+      "feature": "Secure Print Release Stations",
+      "priority": "critical",
+      "implementation": "FR-M013: Add print_release_service microservice with QR code generation, NFC authentication, and station management endpoints",
+      "metrics": [
+        "print_release_requests_total",
+        "print_release_duration_seconds",
+        "print_release_auth_failures_total"
+      ]
     },
     {
-      "feature": "Follow-Me Printing Load Tests",
-      "source": "Competitor Analysis - Azure Universal Print, PaperCut Hive",
+      "feature": "Mobile Apps (iOS/Android)",
       "priority": "high",
-      "implementation": "tests/load/scenarios/job/follow-me-printing.js - validates queue performance and claim latency"
+      "implementation": "FR-M014: Create mobile-specific GraphQL API with push notifications, add mobile_app_analytics dashboard",
+      "metrics": [
+        "mobile_active_users",
+        "mobile_push_notifications_sent",
+        "mobile_api_requests_total"
+      ]
     },
     {
-      "feature": "Enterprise SSO Load Testing (OIDC/SAML)",
-      "source": "Competitor Analysis - Azure Universal Print (Entra ID), Oracle Cloud",
+      "feature": "Cost Allocation & Quota Management",
       "priority": "high",
-      "implementation": "tests/load/scenarios/auth/oidc-login.js and saml-login.js - validates auth under enterprise load"
+      "implementation": "FR-M015: Implement quota-engine microservice with PostgreSQL backing, add quota_check middleware to job-service",
+      "metrics": [
+        "quota_enforcement_total",
+        "quota_exceeded_total",
+        "cost_per_page_by_department"
+      ]
     },
     {
-      "feature": "Encrypted Document Upload Performance",
-      "source": "Competitor Analysis -\u535a\u745e\u51ef\u5fb7 content security, Oracle Cloud HIPAA/GDPR",
+      "feature": "Print Policies Engine",
       "priority": "high",
-      "implementation": "tests/load/scenarios/storage/encrypted-upload.js - measures encryption overhead"
+      "implementation": "FR-M016: Create policy-engine with rule evaluation (ACL, time-based, color restrictions), integrate with job-service",
+      "metrics": [
+        "policy_evaluations_total",
+        "policy_denials_total",
+        "policy_rules_active"
+      ]
     },
     {
-      "feature": "Cross-Region Performance Testing",
-      "source": "Competitor Analysis - AWS IoT Print Services cross-region sync",
+      "feature": "Environmental Impact Reporting",
       "priority": "medium",
-      "implementation": "tests/load/scenarios/mixed/cross-region-test.js - simulates geo-distributed load"
+      "implementation": "Add carbon footprint metrics, paper usage tracking, trees saved calculation",
+      "metrics": [
+        "total_pages_printed",
+        "estimated_co2_saved",
+        "paper_equivalent_trees",
+        "energy_consumption_kwh"
+      ]
     },
     {
-      "feature": "High Availability Failover Testing",
-      "source": "Competitor Analysis - Azure, AWS global infrastructure",
-      "priority": "medium",
-      "implementation": "tests/load/scenarios/mixed/ha-failover.js - tests service failover under load"
-    },
-    {
-      "feature": "Print Queue Priority Testing",
-      "source": "Competitor Analysis - PaperCut Hive queue management",
-      "priority": "medium",
-      "implementation": "tests/load/scenarios/job/priority-queue.js - validates priority job handling"
+      "feature": "Real-time Job Status Updates",
+      "priority": "high",
+      "implementation": "Enhanced WebSocket notifications with progress percentages, eta calculation",
+      "metrics": [
+        "websocket_active_connections",
+        "job_status_update_latency",
+        "notification_delivery_success_rate"
+      ]
     }
   ]
 }

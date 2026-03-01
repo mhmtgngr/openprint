@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/redis/go-redis/v9"
 	"github.com/openprint/openprint/services/job-service/repository"
 )
@@ -51,6 +52,8 @@ type Config struct {
 	Redis        *redis.Client
 	Workers      int
 	PollInterval time.Duration
+	Metrics      *prometheus.Metrics
+	ServiceName  string
 }
 
 // Stats represents processor statistics.
@@ -59,7 +62,9 @@ type Stats struct {
 	Processing  int64 `json:"processing"`
 	Completed   int64 `json:"completed"`
 	Failed      int64 `json:"failed"`
+	Pending     int64 `json:"pending_agent"`
 	Workers     int   `json:"workers"`
+	WorkersBusy int   `json:"workers_busy"`
 }
 
 // Processor handles background job processing.
@@ -69,6 +74,8 @@ type Processor struct {
 	redis       *redis.Client
 	workers     int
 	pollInterval time.Duration
+	metrics     *prometheus.Metrics
+	serviceName string
 
 	// Channels for job distribution
 	jobQueue    chan *repository.PrintJob
@@ -83,16 +90,31 @@ type Processor struct {
 
 // New creates a new job processor.
 func New(cfg Config) *Processor {
+	serviceName := cfg.ServiceName
+	if serviceName == "" {
+		serviceName = "job-service"
+	}
+
 	p := &Processor{
 		jobRepo:      cfg.JobRepo,
 		historyRepo:  cfg.HistoryRepo,
 		redis:        cfg.Redis,
 		workers:      cfg.Workers,
 		pollInterval: cfg.PollInterval,
+		metrics:      cfg.Metrics,
+		serviceName:  serviceName,
 		jobQueue:     make(chan *repository.PrintJob, 1000),
 		workerStop:   make(chan struct{}),
 		processing:   make(map[string]*repository.PrintJob),
 		cancelled:    make(map[string]struct{}),
+	}
+
+	// Initialize job queue gauge
+	if p.metrics != nil {
+		p.metrics.Business.JobsCreatedTotal.WithLabelValues(
+			p.serviceName,
+			"",
+		)
 	}
 
 	return p
@@ -283,9 +305,15 @@ func (p *Processor) GetStats(ctx context.Context) (*Stats, error) {
 	failed, _ := p.jobRepo.CountByStatus(ctx, "failed")
 
 	stats.Queued = queued
-	stats.Processing = processing + pendingAgent
+	stats.Processing = processing
+	stats.Pending = pendingAgent
 	stats.Completed = completed
 	stats.Failed = failed
+
+	// Get currently processing count from memory
+	p.mu.Lock()
+	stats.WorkersBusy = len(p.processing)
+	p.mu.Unlock()
 
 	return stats, nil
 }
@@ -324,11 +352,40 @@ func (p *Processor) CompleteJob(ctx context.Context, jobID string, success bool,
 	job.CompletedAt = &now
 	job.UpdatedAt = now
 
+	orgID := "" // Extract from job if available
+	duration := 0.0
+	if !job.StartedAt.IsZero() {
+		duration = now.Sub(job.StartedAt).Seconds()
+	}
+
 	if success {
 		job.Status = "completed"
+
+		// Record completion metric
+		if p.metrics != nil {
+			p.metrics.Business.JobsCompletedTotal.WithLabelValues(
+				p.serviceName,
+				orgID,
+			).Inc()
+			if duration > 0 {
+				p.metrics.Business.JobProcessingDuration.WithLabelValues(
+					p.serviceName,
+					orgID,
+				).Observe(duration)
+			}
+		}
 	} else {
 		job.Status = "failed"
 		job.Retries++
+
+		// Record failure metric
+		if p.metrics != nil {
+			p.metrics.Business.JobsFailedTotal.WithLabelValues(
+				p.serviceName,
+				orgID,
+				"",
+			).Inc()
+		}
 	}
 
 	if err := p.jobRepo.Update(ctx, job); err != nil {

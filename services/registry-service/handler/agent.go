@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/registry-service/repository"
 )
 
@@ -22,6 +23,8 @@ type Config struct {
 	AgentRepo        *repository.AgentRepository
 	PrinterRepo      *repository.PrinterRepository
 	HeartbeatTimeout time.Duration
+	Metrics          *prometheus.Metrics
+	ServiceName      string
 }
 
 // Handler provides registry service HTTP handlers.
@@ -29,14 +32,22 @@ type Handler struct {
 	agentRepo        *repository.AgentRepository
 	printerRepo      *repository.PrinterRepository
 	heartbeatTimeout time.Duration
+	metrics          *prometheus.Metrics
+	serviceName      string
 }
 
 // New creates a new handler instance.
 func New(cfg Config) *Handler {
+	serviceName := cfg.ServiceName
+	if serviceName == "" {
+		serviceName = "registry-service"
+	}
 	return &Handler{
 		agentRepo:        cfg.AgentRepo,
 		printerRepo:      cfg.PrinterRepo,
 		heartbeatTimeout: cfg.HeartbeatTimeout,
+		metrics:          cfg.Metrics,
+		serviceName:      serviceName,
 	}
 }
 
@@ -92,8 +103,16 @@ func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
 	if err := h.agentRepo.Create(ctx, agent); err != nil {
 		// Log the underlying error for debugging
 		fmt.Printf("[ERROR] Failed to register agent: %v\n", err)
+		if h.metrics != nil {
+			prometheus.RecordPrinterMetric(h.metrics, h.serviceName, agent.OrganizationID, agent.ID, "register_failed")
+		}
 		respondError(w, apperrors.Wrap(err, "failed to register agent", http.StatusInternalServerError))
 		return
+	}
+
+	// Record agent registration metric
+	if h.metrics != nil {
+		prometheus.RecordPrinterMetric(h.metrics, h.serviceName, agent.OrganizationID, agent.ID, "register")
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]string{
@@ -192,6 +211,11 @@ func (h *Handler) heartbeat(w http.ResponseWriter, r *http.Request, ctx context.
 		return
 	}
 
+	// Record heartbeat metric
+	if h.metrics != nil {
+		prometheus.RecordPrinterMetric(h.metrics, h.serviceName, "", agentID, "heartbeat")
+	}
+
 	// Return 200 OK with status confirmation
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"agent_id": agentID,
@@ -258,6 +282,11 @@ func (h *Handler) registerDiscoveredPrinters(w http.ResponseWriter, r *http.Requ
 		if err := h.printerRepo.Create(ctx, printer); err != nil {
 			fmt.Printf("[WARN] Failed to register printer %s: %v\n", p.Name, err)
 			continue
+		}
+
+		// Record printer registration metric
+		if h.metrics != nil {
+			prometheus.RecordPrinterMetric(h.metrics, h.serviceName, agent.OrganizationID, printerID, "register")
 		}
 
 		printerIDs[p.Name] = printerID
@@ -430,8 +459,16 @@ func (h *Handler) RegisterPrinter(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.printerRepo.Create(ctx, printer); err != nil {
 		fmt.Printf("[ERROR] Failed to create printer: %v\n", err)
+		if h.metrics != nil {
+			prometheus.RecordPrinterMetric(h.metrics, h.serviceName, printer.OrganizationID, printerID, "register_failed")
+		}
 		respondError(w, apperrors.Wrap(err, "failed to register printer", http.StatusInternalServerError))
 		return
+	}
+
+	// Record printer registration metric
+	if h.metrics != nil {
+		prometheus.RecordPrinterMetric(h.metrics, h.serviceName, printer.OrganizationID, printerID, "register")
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{

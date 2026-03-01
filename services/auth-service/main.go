@@ -22,6 +22,7 @@ import (
 	_ "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/auth-service/handler"
 	"github.com/openprint/openprint/services/auth-service/repository"
 )
@@ -29,6 +30,7 @@ import (
 // Config holds service configuration.
 type Config struct {
 	ServerAddr       string
+	MetricsPort      int
 	DatabaseURL      string
 	RedisURL         string
 	JWTSecret        string
@@ -42,23 +44,43 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Initialize telemetry
-	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
+	// Initialize Prometheus metrics registry
+	registry, err := prometheus.NewRegistry(prometheus.DefaultConfig(cfg.ServiceName))
 	if err != nil {
-		log.Printf("Warning: failed to initialize tracer: %v", err)
+		log.Fatalf("Failed to create Prometheus registry: %v", err)
 	}
-	if shutdown != nil {
-		defer shutdown(ctx)
-	}
+	prometheus.SetRegistry(registry)
+	metrics := prometheus.NewMetrics(registry)
 
-	// Connect to PostgreSQL
+	// Start metrics server on dedicated port
+	metricsPort := cfg.MetricsPort
+	if metricsPort == 0 {
+		metricsPort = prometheus.GetDefaultMetricsPort(cfg.ServiceName)
+	}
+	metricsServer, err := prometheus.StartMetricsServer(registry, metricsPort)
+	if err != nil {
+		log.Fatalf("Failed to start metrics server: %v", err)
+	}
+	defer func() {
+		if err := metricsServer.Shutdown(ctx); err != nil {
+			log.Printf("Metrics server shutdown error: %v", err)
+		}
+	}()
+
+	// Wrap database with metrics collector
+	// This will track connection pool stats and query metrics
 	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
+	prometheus.WrapPgxPool(db, registry, prometheus.DBConfig{
+		ServiceName: cfg.ServiceName,
+		DBName:      "openprint",
+		DBSystem:    prometheus.DBSystemPostgreSQL,
+	})
 
-	// Connect to Redis
+	// Connect to Redis with metrics
 	redisOpts, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("Failed to parse Redis URL: %v", err)
@@ -69,6 +91,21 @@ func main() {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 	defer redisClient.Close()
+
+	// Wrap Redis with metrics collector
+	prometheus.WrapRedisClient(redisClient, registry, prometheus.RedisConfig{
+		ServiceName: cfg.ServiceName,
+		DBName:      "0",
+	})
+
+	// Initialize telemetry (tracing)
+	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
+	if err != nil {
+		log.Printf("Warning: failed to initialize tracer: %v", err)
+	}
+	if shutdown != nil {
+		defer shutdown(ctx)
+	}
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
@@ -93,7 +130,7 @@ func main() {
 	var samlManager *saml.Manager
 	// SAML would be initialized here based on configuration
 
-	// Create handlers
+	// Create handlers with metrics
 	h := handler.New(handler.Config{
 		UserRepo:       userRepo,
 		SessionRepo:    sessionRepo,
@@ -101,6 +138,8 @@ func main() {
 		PasswordHasher: passwordHasher,
 		OIDCRegistry:   oidcRegistry,
 		SAMLManager:    samlManager,
+		Metrics:        metrics,
+		ServiceName:    cfg.ServiceName,
 	})
 
 	// Setup HTTP server with middleware
@@ -150,7 +189,15 @@ func main() {
 	// Wrap the mux with middleware
 	wrappedMux := corsMiddleware(securityHeaders(generalRateLimiter(protectedMux)))
 
-	// Apply telemetry middleware
+	// Apply Prometheus metrics middleware
+	wrappedMux = middleware.MetricsMiddleware(middleware.MetricsMiddlewareConfig{
+		Registry:           registry,
+		ServiceName:        cfg.ServiceName,
+		SkipPaths:          []string{"/health"},
+		ExcludeStaticFiles: true,
+	})(wrappedMux)
+
+	// Apply telemetry middleware (tracing)
 	wrappedMux = telemetry.HTTPMiddleware(cfg.ServiceName)(wrappedMux)
 
 	server := &http.Server{
@@ -166,7 +213,7 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("%s listening on %s", cfg.ServiceName, cfg.ServerAddr)
+		log.Printf("%s listening on %s (metrics on :%d)", cfg.ServiceName, cfg.ServerAddr, metricsPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -201,6 +248,7 @@ func loadConfig() *Config {
 
 	return &Config{
 		ServerAddr:     getEnv("SERVER_ADDR", ":8001"),
+		MetricsPort:    getEnvInt("METRICS_PORT", 0), // 0 = use default
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
 		JWTSecret:      jwtSecret,
@@ -216,15 +264,25 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		var intVal int
+		if _, err := fmt.Sscanf(value, "%d", &intVal); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
+}
+
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if r.Method != "GET" && r.Method != "HEAD" {
+		http.Error(w, "method not allowed", 405)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if r.Method == http.MethodGet {
+	w.WriteHeader(200)
+	if r.Method == "GET" {
 		fmt.Fprintf(w, `{"status":"healthy","service":"%s"}`, "auth-service")
 	}
 }
