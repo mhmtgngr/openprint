@@ -1,4 +1,4 @@
-# Guacamole Printer Configuration Guide
+# Guacamole + OpenPrint Native Printer Configuration Guide
 
 ## Important: Guacamole Printing Limitations
 
@@ -6,155 +6,217 @@ Apache Guacamole does **NOT** support native RAW printer passthrough. When you s
 `enable-printing=true` on a Guacamole RDP connection, it creates a **virtual PDF printer**
 inside the RDP session. Print output is converted to PDF and offered as a browser download.
 
-There is no mechanism in Guacamole to redirect a client's physical printer into the RDP
-session for direct RAW printing.
-
-For native printing through OpenPrint, use the **Agent-based architecture** described below.
+OpenPrint solves this with an **agent-based architecture** that captures print jobs on the
+RDP session host and routes them to the user's local printer via the cloud.
 
 ---
 
-## Architecture Overview
+## Architecture: How It Works
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     WINDOWS SERVER (RDP Host)                   │
-│                                                                 │
-│  ┌──────────────┐    ┌──────────────────┐    ┌───────────────┐  │
-│  │  Windows App  │───▶│  Windows Print   │───▶│  OpenPrint    │  │
-│  │  (.exe)       │    │  Spooler         │    │  Agent        │  │
-│  └──────────────┘    └──────────────────┘    └──────┬────────┘  │
-│                                                      │          │
-│  ┌──────────────────────────────────────────┐        │          │
-│  │  Guacamole (guacd) - browser RDP access  │        │          │
-│  │  (optional, for remote desktop only)     │        │          │
-│  └──────────────────────────────────────────┘        │          │
-└──────────────────────────────────────────────────────┼──────────┘
-                                                       │
-                                              HTTPS / REST API
-                                                       │
-                                                       ▼
-                                          ┌────────────────────┐
-                                          │  OpenPrint Cloud   │
-                                          │  (Job Routing)     │
-                                          └────────┬───────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                 WINDOWS SERVER (RDP Session Host)                        │
+│                                                                          │
+│  ┌──────────────┐    ┌──────────────┐    ┌────────────────────────────┐  │
+│  │ Windows App  │    │ Windows      │    │ OpenPrint Agent            │  │
+│  │ (.exe)       │───▶│ Print        │───▶│ (role: server)             │  │
+│  └──────────────┘    │ Spooler      │    │                            │  │
+│                      └──────────────┘    │ 1. Creates virtual printer │  │
+│  ┌──────────────────────────┐            │    "OpenPrint"             │  │
+│  │ Guacamole (guacd)        │            │ 2. TCP listener :9100     │  │
+│  │ Browser-based RDP access │            │ 3. Captures spool data    │  │
+│  └──────────────────────────┘            │ 4. Identifies RDP user    │  │
+│                                          │ 5. Uploads to cloud       │  │
+│                                          └─────────┬──────────────────┘  │
+└────────────────────────────────────────────────────┼─────────────────────┘
+                                                     │
+                                            HTTPS / REST API
+                                                     │
+                                                     ▼
+                                        ┌──────────────────────┐
+                                        │  OpenPrint Cloud     │
+                                        │                      │
+                                        │  - storage-service   │
+                                        │    (stores document) │
+                                        │  - job-service       │
+                                        │    (routes by user)  │
+                                        │  - registry-service  │
+                                        │    (user→printer     │
+                                        │     mappings)        │
+                                        └──────────┬───────────┘
                                                    │
-                                          ┌────────┴───────────┐
-                                          ▼                    ▼
-                                  ┌──────────────┐    ┌──────────────┐
-                                  │ Network      │    │ Client PC    │
-                                  │ Printer (IP) │    │ + Agent      │
-                                  │              │    │ + USB Printer│
-                                  └──────────────┘    └──────────────┘
+                                          Job routed via
+                                          user_printer_mappings
+                                                   │
+                                                   ▼
+                                        ┌──────────────────────┐
+                                        │ CLIENT WORKSTATION   │
+                                        │                      │
+                                        │ OpenPrint Agent      │
+                                        │ (role: client)       │
+                                        │                      │
+                                        │ 1. Polls for jobs    │
+                                        │ 2. Downloads document│
+                                        │ 3. Prints to local   │
+                                        │    USB/IP printer    │
+                                        └──────────────────────┘
 ```
+
+### Step-by-step flow:
+
+1. User opens browser, connects to Windows Server via **Guacamole** (RDP)
+2. User runs Windows application, clicks **Print**
+3. In the print dialog, user selects **"OpenPrint"** virtual printer
+4. Windows Spooler sends print data to the OpenPrint Agent's TCP listener (localhost:9100)
+5. **Server Agent** captures the raw data, identifies the user (via spooler metadata + RDP session)
+6. Server Agent uploads the document to **storage-service** and creates a job in **job-service**
+7. Job is tagged with `printer_id: __user_default__` and the user's email
+8. **Client Agent** (on user's workstation) polls job-service for new jobs
+9. Job-service matches the job to the client agent via **user_printer_mappings** table
+10. Client Agent downloads the document and prints to the user's local physical printer
 
 ---
 
-## Windows Server Components (RDP Host)
+## Setup Guide
 
-The Windows Server is where users run applications via RDP (optionally through Guacamole).
+### Step 1: Deploy OpenPrint Cloud Services
 
-### Required Components
+Ensure all OpenPrint cloud services are running (see main README):
 
-| # | Component | Version | How to Install | Purpose |
-|---|-----------|---------|----------------|---------|
-| 1 | Windows Server | 2016+ | OS install | Base operating system |
-| 2 | Remote Desktop Services | Built-in | Server Manager → Add Roles | Allows RDP connections |
-| 3 | Print and Document Services | Built-in | Server Manager → Add Roles | Windows print subsystem |
-| 4 | PowerShell | 5.1+ (built-in) | Pre-installed | `Get-Printer` cmdlet for discovery |
-| 5 | .NET Framework | 4.7.2+ (built-in) | Pre-installed | `System.Drawing.Printing` for print execution |
-| 6 | **OpenPrint Agent** | Latest | MSI installer / manual | Printer discovery, job polling, print execution |
-| 7 | Printer Drivers | Per-printer | Vendor installer or Windows Update | Drivers for all target printers |
-
-### Installation Steps
-
-#### 1. Enable Print and Document Services Role
-
-```powershell
-# PowerShell (Run as Administrator)
-Install-WindowsFeature Print-Services -IncludeManagementTools
-Install-WindowsFeature Print-Server
+```bash
+cd deployments/docker
+docker-compose up -d
 ```
 
-#### 2. Enable Remote Desktop Services
+Run the database migration for user-printer mappings:
 
-```powershell
-Install-WindowsFeature RDS-RD-Server
-# Allow RDP connections
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+```bash
+migrate -path migrations -database "postgres://openprint:openprint@localhost:5432/openprint?sslmode=disable" up
 ```
 
-#### 3. Configure Printer Redirection Policy (for RDP clients)
+### Step 2: Install Server Agent (RDP Session Host)
 
-```powershell
-# Allow client printer redirection (for non-Guacamole RDP clients)
-Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' `
-    -Name "fDisableCpm" -Value 0 -Type DWord
-
-# Auto-install printer drivers for redirected printers
-Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' `
-    -Name "fForceClientLptDef" -Value 1 -Type DWord
-```
-
-#### 4. Install Printer Drivers
-
-```powershell
-# List installed printer drivers
-Get-PrinterDriver | Select-Object Name, Manufacturer
-
-# Add a printer driver (example: HP Universal)
-Add-PrinterDriver -Name "HP Universal Printing PCL 6"
-
-# Add a network printer
-Add-Printer -ConnectionName "\\printserver\SharedPrinter"
-
-# Add an IP printer
-Add-PrinterPort -Name "IP_192.168.1.100" -PrinterHostAddress "192.168.1.100"
-Add-Printer -Name "Office-HP-LaserJet" -DriverName "HP Universal Printing PCL 6" -PortName "IP_192.168.1.100"
-```
-
-#### 5. Install OpenPrint Agent
+On the Windows Server where users connect via Guacamole RDP:
 
 ```powershell
 # Create config directory
-New-Item -ItemType Directory -Force -Path "C:\ProgramData\OpenPrint"
+New-Item -ItemType Directory -Force -Path "C:\ProgramData\OpenPrint\agent"
 
-# Create agent configuration
+# Create server agent configuration
 @{
     server_url = "https://your-openprint-cloud.example.com"
-    agent_name = "PrintServer-01"
+    agent_name = "RDP-Server-01"
+    agent_role = "server"
+    virtual_printer_name = "OpenPrint"
+    print_listen_port = 9100
+    storage_service_url = "https://your-openprint-cloud.example.com"
     enrollment_token = "your-enrollment-token"
     organization_id = "your-org-id"
     heartbeat_interval_seconds = 30
     job_poll_interval_seconds = 10
     log_level = "info"
-} | ConvertTo-Json | Set-Content "C:\ProgramData\OpenPrint\config.json"
+} | ConvertTo-Json | Set-Content "C:\ProgramData\OpenPrint\agent\config.json"
 
 # Install as Windows service
 sc.exe create OpenPrintAgent binPath= "C:\Program Files\OpenPrint\openprint-agent.exe" start= auto
-sc.exe description OpenPrintAgent "OpenPrint Cloud Print Management Agent"
+sc.exe description OpenPrintAgent "OpenPrint Cloud Print Agent (Server Mode)"
 sc.exe start OpenPrintAgent
 ```
 
-#### 6. Verify Agent Printer Discovery
+The server agent will automatically:
+- Create a virtual printer called "OpenPrint" using the "Generic / Text Only" driver
+- Create a TCP/IP port pointing to localhost:9100
+- Start listening for print data on port 9100
+- Discover existing printers on the server
+
+#### Required Windows Components (Server)
+
+| Component | How to Install |
+|-----------|----------------|
+| Print and Document Services | `Install-WindowsFeature Print-Services -IncludeManagementTools` |
+| Remote Desktop Services | `Install-WindowsFeature RDS-RD-Server` |
+| PowerShell 5.1+ | Pre-installed |
+| .NET Framework 4.7.2+ | Pre-installed |
+| "Generic / Text Only" printer driver | Pre-installed (Windows built-in) |
+
+### Step 3: Install Client Agent (User Workstation)
+
+On each user's Windows workstation where the physical printer is connected:
 
 ```powershell
-# Check what the agent will discover
-Get-Printer | Select-Object Name, DriverName, PortName, PrinterStatus, Shared | Format-Table
+# Create config directory
+New-Item -ItemType Directory -Force -Path "C:\ProgramData\OpenPrint\agent"
 
-# Expected output:
-# Name                  DriverName                    PortName         PrinterStatus Shared
-# ----                  ----------                    --------         ------------- ------
-# HP LaserJet 4200      HP Universal Printing PCL 6   IP_192.168.1.10  Normal        True
-# Canon iR-ADV C5535    Canon Generic Plus UFR II      IP_192.168.1.20  Normal        False
+# Create client agent configuration
+@{
+    server_url = "https://your-openprint-cloud.example.com"
+    agent_name = "Workstation-User01"
+    agent_role = "client"
+    enrollment_token = "your-enrollment-token"
+    organization_id = "your-org-id"
+    heartbeat_interval_seconds = 30
+    job_poll_interval_seconds = 10
+    log_level = "info"
+} | ConvertTo-Json | Set-Content "C:\ProgramData\OpenPrint\agent\config.json"
+
+# Install as Windows service
+sc.exe create OpenPrintAgent binPath= "C:\Program Files\OpenPrint\openprint-agent.exe" start= auto
+sc.exe description OpenPrintAgent "OpenPrint Cloud Print Agent (Client Mode)"
+sc.exe start OpenPrintAgent
 ```
 
-### Optional: Guacamole (for browser-based RDP access only)
+The client agent will automatically:
+- Discover local printers (USB, network, shared)
+- Register them with OpenPrint Cloud
+- Poll for print jobs targeted at this agent
+- Execute print jobs on local printers
 
-If you need browser-based remote desktop access (not for printing):
+#### Required Windows Components (Client)
+
+| Component | How to Install |
+|-----------|----------------|
+| PowerShell 5.1+ | Pre-installed |
+| .NET Framework 4.7.2+ | Pre-installed |
+| Printer drivers | Vendor installer for each connected printer |
+
+### Step 4: Create User-Printer Mapping
+
+Map each user to their local printer/agent. This tells the system where to route
+captured print jobs.
+
+```bash
+# Create mapping via API
+curl -X POST https://your-openprint-cloud.example.com/user-printer-mappings \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "user_email": "john@example.com",
+    "user_name": "DOMAIN\\john",
+    "client_agent_id": "<client-agent-uuid>",
+    "target_printer_name": "HP LaserJet 4200",
+    "server_agent_id": "<server-agent-uuid>",
+    "organization_id": "<org-uuid>",
+    "is_default": true
+  }'
+```
+
+You can also manage mappings via the dashboard or use the API to list agents and printers:
+
+```bash
+# List agents to find agent IDs
+curl https://your-openprint-cloud.example.com/agents \
+  -H "Authorization: Bearer $TOKEN"
+
+# List discovered printers for a client agent
+curl https://your-openprint-cloud.example.com/agents/<client-agent-id>/printers \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Step 5: Configure Guacamole (RDP Access)
+
+Configure your Guacamole connection to the RDP server:
 
 ```xml
-<!-- Guacamole connection config (user-mapping.xml or database) -->
 <connection name="PrintServer">
     <protocol>rdp</protocol>
     <param name="hostname">192.168.x.x</param>
@@ -162,197 +224,113 @@ If you need browser-based remote desktop access (not for printing):
     <param name="username">user</param>
     <param name="password">password</param>
     <param name="security">nla</param>
-
-    <!-- PDF virtual printer only - NOT native printing -->
-    <param name="enable-printing">true</param>
-    <param name="printer-name">Guacamole-PDF</param>
+    <!-- Guacamole PDF printing is optional; OpenPrint handles native printing -->
 </connection>
 ```
 
-> **Note**: The `enable-printing` parameter only creates a virtual PDF printer.
-> Users will see "Guacamole-PDF" in the print dialog. Output is PDF download only.
-> For native printing, use the OpenPrint Agent (installed above).
+### Step 6: Test the Flow
+
+1. Open browser, connect to RDP server via Guacamole
+2. Open any Windows application (Word, Notepad, etc.)
+3. Click **File > Print**
+4. Select **"OpenPrint"** from the printer list
+5. Click **Print**
+6. The document should print on the user's local physical printer within seconds
 
 ---
 
-## Windows Client Components (Print Endpoint)
+## Agent Configuration Reference
 
-The Windows Client is where the physical printer is connected. There are three scenarios:
+### Server Mode (`agent_role: "server"`)
 
-### Scenario A: Network Printers (most common)
+| Config Field | Default | Description |
+|-------------|---------|-------------|
+| `agent_role` | `"standard"` | Set to `"server"` for RDP session host |
+| `virtual_printer_name` | `"OpenPrint"` | Name shown in Windows print dialog |
+| `print_listen_port` | `9100` | TCP port for capturing print data |
+| `storage_service_url` | Same as `server_url` | URL of storage-service for uploads |
 
-No client-side software needed. The OpenPrint Agent on the server sends print jobs
-directly to the network printer via IP.
+### Client Mode (`agent_role: "client"`)
 
-| # | Component | Purpose |
-|---|-----------|---------|
-| 1 | Network printer with static IP | Direct IP printing |
-| 2 | Printer driver on **server** | Server renders and sends data |
-| 3 | Network connectivity (server ↔ printer) | TCP/IP communication (port 9100/IPP) |
+| Config Field | Default | Description |
+|-------------|---------|-------------|
+| `agent_role` | `"standard"` | Set to `"client"` for user workstation |
+| `job_poll_interval_seconds` | `10` | How often to check for new jobs |
 
-### Scenario B: Local/USB Printers on Client PCs
+### Standard Mode (`agent_role: "standard"`)
 
-When printers are physically connected to user workstations (USB, parallel, etc.),
-install a second OpenPrint Agent on the client to receive routed jobs.
-
-| # | Component | Version | How to Install | Purpose |
-|---|-----------|---------|----------------|---------|
-| 1 | Windows | 10/11 or Server | OS install | Client OS |
-| 2 | **OpenPrint Agent** | Latest | MSI installer | Receives jobs, manages local printers |
-| 3 | Printer Drivers | Per-printer | Vendor installer | Drivers for USB/local printers |
-| 4 | PowerShell | 5.1+ (built-in) | Pre-installed | Printer discovery |
-| 5 | .NET Framework | 4.7.2+ (built-in) | Pre-installed | Print execution |
-
-```powershell
-# Install OpenPrint Agent on client
-@{
-    server_url = "https://your-openprint-cloud.example.com"
-    agent_name = "Client-Workstation-01"
-    enrollment_token = "your-enrollment-token"
-    organization_id = "your-org-id"
-    heartbeat_interval_seconds = 30
-    job_poll_interval_seconds = 10
-    log_level = "info"
-} | ConvertTo-Json | Set-Content "C:\ProgramData\OpenPrint\config.json"
-
-sc.exe create OpenPrintAgent binPath= "C:\Program Files\OpenPrint\openprint-agent.exe" start= auto
-sc.exe start OpenPrintAgent
-```
-
-### Scenario C: Thin Clients / Chromebooks (Guacamole PDF fallback)
-
-When users access via browser through Guacamole and have no agent installed:
-
-| # | Component | Purpose |
-|---|-----------|---------|
-| 1 | Web browser (Chrome, Firefox, Edge) | Access Guacamole web UI |
-| 2 | PDF viewer | Open downloaded PDF |
-| 3 | Local printer + driver | Manual "print PDF" step |
-
-> **Limitation**: This requires the user to manually print the downloaded PDF.
-> It is not automated native printing.
+Legacy mode that combines both behaviors. Discovers local printers and polls for jobs.
+Does not create a virtual printer or capture spool data.
 
 ---
 
-## Print Flow Comparison
+## API Endpoints
 
-### OpenPrint Agent (Recommended - Native RAW)
+### User-Printer Mappings (registry-service :8002)
 
-```
-User clicks Print in App
-        │
-        ▼
-Windows Print Spooler on Server
-        │
-        ▼
-OpenPrint Agent detects job (polls every 10s)
-        │
-        ▼
-Agent sends job status to OpenPrint Cloud
-        │
-        ▼
-Cloud routes job to target agent/printer
-        │
-        ▼
-Target Agent executes print via PowerShell
-        │
-        ▼
-Physical printer outputs document ✓
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/user-printer-mappings` | Create a new mapping |
+| GET | `/user-printer-mappings?user_email=...` | List mappings for a user |
+| GET | `/user-printer-mappings?client_agent_id=...` | List mappings for a client agent |
+| GET | `/user-printer-mappings?organization_id=...` | List mappings for an org |
+| GET | `/user-printer-mappings/{id}` | Get a specific mapping |
+| PUT | `/user-printer-mappings/{id}` | Update a mapping |
+| DELETE | `/user-printer-mappings/{id}` | Delete a mapping |
+| GET | `/user-printer-mappings/resolve?username=...` | Resolve Windows username to email |
 
-### Guacamole Built-in (PDF Only)
+### Job Routing (job-service :8003)
 
-```
-User clicks Print in App
-        │
-        ▼
-Selects "Guacamole-PDF" virtual printer
-        │
-        ▼
-Guacamole converts to PDF
-        │
-        ▼
-PDF downloaded in browser
-        │
-        ▼
-User manually opens PDF and prints locally ✗ (not automated)
-```
-
-### True RDP Redirect (Requires native RDP client, NOT Guacamole)
-
-```
-User connects via mstsc.exe / FreeRDP (with printer redirect enabled)
-        │
-        ▼
-Local printers appear as "PrinterName (Redirected N)"
-        │
-        ▼
-User prints to redirected printer
-        │
-        ▼
-RDP virtual channel sends data to client
-        │
-        ▼
-Client's local spooler prints to physical printer ✓
-```
-
----
-
-## Guacamole Parameters Reference
-
-Valid Guacamole RDP printing parameters (for PDF virtual printer only):
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `enable-printing` | boolean | Enable/disable virtual PDF printer |
-| `printer-name` | string | Name of virtual printer shown in print dialog |
-
-**Invalid / Non-existent parameters:**
-
-| Parameter | Status |
-|-----------|--------|
-| `disable-printing` | Does NOT exist |
-| `printer-driver` | Does NOT exist for RDP connections |
+Jobs with `printer_id: "__user_default__"` are routed automatically via user-printer mappings.
+When a client agent polls (`POST /agents/jobs/poll`), the server joins `user_printer_mappings`
+to find jobs that should be routed to that agent.
 
 ---
 
 ## Troubleshooting
 
-### Agent not discovering printers
+### Virtual printer not appearing on RDP server
 
 ```powershell
-# Verify Print Spooler service is running
-Get-Service Spooler | Select-Object Status, StartType
+# Check if OpenPrint printer exists
+Get-Printer -Name "OpenPrint"
 
-# Verify PowerShell can see printers
-Get-Printer | Format-Table Name, DriverName, PortName, PrinterStatus
+# Check if the TCP port is listening
+Test-NetConnection -ComputerName 127.0.0.1 -Port 9100
 
-# Check agent logs
+# Check agent service status
+Get-Service OpenPrintAgent
+
+# View agent logs
 Get-Content "C:\ProgramData\OpenPrint\agent.log" -Tail 50
 ```
 
-### Printer shows as offline
-
-```powershell
-# Check printer port connectivity (network printers)
-Test-NetConnection -ComputerName 192.168.1.100 -Port 9100
-
-# Check printer status
-Get-Printer -Name "PrinterName" | Select-Object PrinterStatus
-
-# Restart Print Spooler
-Restart-Service Spooler
-```
-
-### Guacamole PDF printer not appearing
+### Print jobs not reaching client
 
 ```bash
-# Check guacd is running
-systemctl status guacd
+# Check if the job was created in the cloud
+curl https://your-openprint-cloud.example.com/jobs?user_email=john@example.com \
+  -H "Authorization: Bearer $TOKEN"
 
-# Verify connection config includes enable-printing
-grep -r "enable-printing" /etc/guacamole/
+# Check if user-printer mapping exists
+curl https://your-openprint-cloud.example.com/user-printer-mappings?user_email=john@example.com \
+  -H "Authorization: Bearer $TOKEN"
 
-# Check guacd logs
-journalctl -u guacd -f
+# Check client agent status
+curl https://your-openprint-cloud.example.com/agents/<client-agent-id> \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### User not identified from RDP session
+
+The server agent identifies users in this order:
+1. Windows Print Spooler job metadata (`Get-PrintJob`)
+2. RDP session query (`qwinsta`)
+3. Active Directory email lookup (`Get-ADUser`)
+4. OpenPrint username-to-email mapping (`/user-printer-mappings/resolve`)
+
+If the user is not identified, create a mapping with the Windows username:
+```bash
+curl -X POST .../user-printer-mappings \
+  -d '{"user_email": "john@example.com", "user_name": "DOMAIN\\john", ...}'
 ```

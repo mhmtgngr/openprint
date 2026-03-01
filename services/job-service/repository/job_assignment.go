@@ -563,6 +563,8 @@ func scanJob(row interface{ Scan(...interface{}) error }) (*PrintJob, error) {
 // GetJobsForAgentPolling retrieves jobs for an agent to poll.
 // This is an optimized query that joins print_jobs with discovered_printers
 // to match jobs with the agent's available printers.
+// It also supports user-based routing: jobs with printer_id='__user_default__'
+// are routed via user_printer_mappings to the correct client agent.
 func (r *JobAssignmentRepository) GetJobsForAgentPolling(ctx context.Context, agentID, userEmail string, limit int) ([]*PrintJob, error) {
 	if limit == 0 {
 		limit = 50
@@ -571,18 +573,23 @@ func (r *JobAssignmentRepository) GetJobsForAgentPolling(ctx context.Context, ag
 	// This query finds jobs that:
 	// 1. Are in 'queued' status
 	// 2. Match the user email (if provided)
-	// 3. Have printers available to this agent
+	// 3. Have printers available to this agent (direct match via discovered_printers)
+	// 4. OR are user-routed jobs (__user_default__) mapped to this agent via user_printer_mappings
 	query := `
 		SELECT DISTINCT j.id, j.document_id, j.printer_id, j.user_name, j.user_email, j.title,
 		       j.copies, j.color_mode, j.duplex, j.media_type, j.quality, j.pages,
 		       j.status, j.priority, j.retries, j.options, j.agent_id,
 		       j.started_at, j.completed_at, j.created_at, j.updated_at
 		FROM print_jobs j
-		INNER JOIN discovered_printers dp ON dp.name = j.printer_id OR dp.id = j.printer_id
+		LEFT JOIN discovered_printers dp ON (dp.name = j.printer_id OR dp.id::text = j.printer_id) AND dp.agent_id = $1
+		LEFT JOIN user_printer_mappings upm ON upm.user_email = j.user_email AND upm.client_agent_id = $1 AND upm.is_active = true
 		WHERE j.status = 'queued'
-			AND dp.agent_id = $1
-			AND ($2 = '' OR j.user_email = $2)
 			AND (j.agent_id IS NULL OR j.agent_id = $1)
+			AND ($2 = '' OR j.user_email = $2)
+			AND (
+				dp.id IS NOT NULL
+				OR (j.printer_id = '__user_default__' AND upm.id IS NOT NULL)
+			)
 		ORDER BY j.priority DESC, j.created_at ASC
 		LIMIT $3
 	`
@@ -603,6 +610,29 @@ func (r *JobAssignmentRepository) GetJobsForAgentPolling(ctx context.Context, ag
 	}
 
 	return jobs, rows.Err()
+}
+
+// ResolveUserDefaultPrinter resolves __user_default__ printer_id to the actual target printer
+// using user_printer_mappings.
+func (r *JobAssignmentRepository) ResolveUserDefaultPrinter(ctx context.Context, userEmail, clientAgentID string) (string, string, error) {
+	query := `
+		SELECT COALESCE(upm.target_printer_name, dp.name, ''), COALESCE(upm.target_printer_id::text, dp.id::text, '')
+		FROM user_printer_mappings upm
+		LEFT JOIN discovered_printers dp ON dp.id = upm.target_printer_id
+		WHERE upm.user_email = $1
+			AND upm.client_agent_id = $2
+			AND upm.is_active = true
+		ORDER BY upm.is_default DESC
+		LIMIT 1
+	`
+
+	var printerName, printerID string
+	err := r.db.QueryRow(ctx, query, userEmail, clientAgentID).Scan(&printerName, &printerID)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve user default printer: %w", err)
+	}
+
+	return printerName, printerID, nil
 }
 
 // GetJobWithPrinter retrieves a job with its associated printer information.

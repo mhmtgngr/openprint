@@ -24,6 +24,7 @@ type AssignmentRepository interface {
 	FindByJobAndAgent(ctx context.Context, jobID, agentID string) (*repository.JobAssignment, error)
 	UpdateHeartbeat(ctx context.Context, assignmentID string, heartbeat time.Time) error
 	GetJobWithPrinter(ctx context.Context, jobID string) (*repository.PrintJob, map[string]interface{}, error)
+	ResolveUserDefaultPrinter(ctx context.Context, userEmail, clientAgentID string) (string, string, error)
 }
 
 // AgentPollConfig holds agent poll handler dependencies.
@@ -121,6 +122,19 @@ func (h *AgentPollHandler) PollJobs(w http.ResponseWriter, r *http.Request) {
 			documentURL += fmt.Sprintf("?user_email=%s", req.UserEmail)
 		}
 
+		// Resolve __user_default__ printer to actual target printer
+		printerID := job.PrinterID
+		printerName := job.PrinterID
+		if job.PrinterID == "__user_default__" {
+			resolvedName, resolvedID, err := h.assignmentRepo.ResolveUserDefaultPrinter(ctx, job.UserEmail, req.AgentID)
+			if err == nil && resolvedName != "" {
+				printerName = resolvedName
+				if resolvedID != "" {
+					printerID = resolvedID
+				}
+			}
+		}
+
 		assignedJob := agent.AssignedJob{
 			JobID:               job.ID,
 			DocumentID:          job.DocumentID,
@@ -128,8 +142,8 @@ func (h *AgentPollHandler) PollJobs(w http.ResponseWriter, r *http.Request) {
 			DocumentChecksum:    "", // Would be populated from documents table
 			DocumentSize:        0,  // Would be populated from documents table
 			DocumentContentType: "application/pdf", // Default
-			PrinterID:           job.PrinterID,
-			PrinterName:         job.PrinterID, // Would be resolved from printers table
+			PrinterID:           printerID,
+			PrinterName:         printerName,
 			UserName:            job.UserName,
 			UserEmail:           job.UserEmail,
 			Title:               job.Title,
