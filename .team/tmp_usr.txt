@@ -1,521 +1,714 @@
-REQUIREMENTS: {
- "project_name": "OpenPrint Dashboard E2E Testing with Playwright",
- "summary": "Implement comprehensive end-to-end testing infrastructure using Playwright for the OpenPrint dashboard frontend, covering authentication, job management, device registry, document handling, navigation, and settings with visual regression capabilities and CI/CD integration.",
- "functional_requirements": [
-  {
-   "id": "FR-001",
-   "title": "Playwright Test Framework Setup"
-  },
-  {
-   "id": "FR-002",
-   "title": "Authentication Test Suite"
-  },
-  {
-   "id": "FR-003",
-   "title": "Job Management Test Suite"
-  },
-  {
-   "id": "FR-004",
-   "title": "Device/Printer Registry Test Suite"
-  },
-  {
-   "id": "FR-005",
-   "title": "Document Storage Test Suite"
-  },
-  {
-   "id": "FR-006",
-   "title": "Dashboard Navigation Test Suite"
-  },
-  {
-   "id": "FR-007",
-   "title": "Settings Management Test Suite"
-  },
-  {
-   "id": "FR-008",
-   "title": "Visual Regression Testing"
-  },
-  {
-   "id": "FR-009",
-   "title": "Test Data Management"
-  },
-  {
-   "id": "FR-010",
-   "title": "Multi-Environment Configuration"
-  },
-  {
-   "id": "FR-011",
-   "title": "CI/CD Integration"
-  },
-  {
-   "id": "FR-012",
-   "title": "Real-time Updates Test Suite"
-  },
-  {
-   "id": "FR-M013",
-   "title": "Secure Print Release System"
-  },
-  {
-   "id": "FR-M014",
-   "title": "Microsoft 365 Integration"
-  },
-  {
-   "id": "FR-M015",
-   "title": "Mobile Apps (iOS/Android)"
-  },
-  {
-   "id": "FR-M016",
-   "title": "Cost Allocation & Quotas"
-  },
-  {
-   "id": "FR-M017",
-   "title": "Print Policy Engine"
-  },
-  {
-   "id": "FR-M018",
-   "title": "FedRAMP & HIPAA Compliance"
-  }
- ],
- "affected_services": [
-  "auth-service",
-  "registry-service",
-  "job-service",
-  "storage-service",
-  "notification-service",
-  "dashboard"
- ],
- "implementation_phases": [
-  {
-   "phase": 1,
-   "name": "Framework Setup and Configuration",
-   "tasks": [
-    "Initialize Playwright project in web/dashboard/e2e/",
-    "Configure TypeScript and test runner se
-CHANGES:  .../test-failed-1.png                              |   Bin 0 -> 17878 bytes
- .../video.webm                                     |   Bin 0 -> 1924 bytes
- .../test-failed-1.png                              |   Bin 0 -> 10629 bytes
- .../video.webm                                     |   Bin 0 -> 5386 bytes
- .../test-failed-1.png                              |   Bin 0 -> 13466 bytes
- .../video.webm                                     |   Bin 0 -> 3683 bytes
- .../error-context.md                               |    74 +
- .../test-failed-1.png                              |   Bin 0 -> 61582 bytes
- .../video.webm                                     |   Bin 0 -> 392446 bytes
- .../error-context.md                               |    74 +
- .../test-failed-1.png                              |   Bin 0 -> 86696 bytes
- .../video.webm                                     |   Bin 0 -> 410377 bytes
- .../test-failed-1.png                              |   Bin 0 -> 17878 bytes
- .../video.webm                                     |   Bin 0 -> 1924 bytes
- 3389 files changed, 63165 insertions(+), 43287 deletions(-)
-FILES: services/api-gateway/main.go
-services/auth-service/handler/oidc.go
-services/compliance-service/compliance.go
-services/compliance-service/main.go
-services/m365-integration-service/main.go
-services/policy-service/main.go
-services/policy-service/policy_engine.go
-services/registry-service/handler/agent.go
-CODE: 
---- services/api-gateway/main.go ---
-// Package main provides the API Gateway service for OpenPrint.
-// This service acts as a unified entry point for all API requests and provides
-// rate limiting, request routing, and developer portal functionality.
-package main
-
-import (
-	"context"
-	"fmt"
-	"log"
-	"net"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/openprint/openprint/internal/shared/middleware"
-	"github.com/openprint/openprint/internal/shared/telemetry"
-	gatewayhandlers "github.com/openprint/openprint/services/api-gateway/handlers"
-	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
-)
-
-// Config holds service configuration.
-type Config struct {
-	ServerAddr          string
-	DatabaseURL         string
-	JWTSecret           string
-	JaegerEndpoint      string
-	ServiceName         string
-	AuthServiceURL      string
-	JobServiceURL       string
-	RegistryServiceURL  string
-	StorageServiceURL   string
-	NotificationServiceURL string
-	AnalyticsServiceURL string
-	OrganizationServiceURL string
-}
-
-func main() {
-	cfg := loadConfig()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Initialize telemetry
-	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
-	if err != nil {
-		log.Printf("Warning: failed to initialize tracer: %v", err)
-	}
-	if shutdown != nil {
-		defer shutdown(ctx)
-	}
-
-	// Connect to PostgreSQL
-	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
-	// Create service URLs
-	authServiceURL, _ := url.Parse(cfg.AuthServiceURL)
-	jobServiceURL, _ := url.Parse(cfg.JobServiceURL)
-	registryServiceURL, _ := url.Parse(cfg.RegistryServiceURL)
-	storageServiceURL, _ := url.Parse(cfg.StorageServiceURL)
-	notificationServiceURL, _ := url.Parse(cfg.NotificationServiceURL)
-	analyticsServiceURL, _ := url.Parse(cfg.AnalyticsServiceURL)
-	organizationServiceURL, _ := url.Parse(cfg.OrganizationServiceURL)
-
-	// Create reverse proxies
-	authProxy := createReverseProxy(authServiceURL, "auth-service")
-	jobProxy := createReverseProxy(jobServiceURL, "job-service")
-	registryProxy := createReverseProxy(registryServiceURL, "registry-service")
-	storageProxy := createReverseProxy(storageServiceURL, "storage-service")
-	notificationProxy := createReverseProxy(notificationServiceURL, "notification-service")
-	analyticsProxy := createReverseProxy(analyticsServiceURL, "analytics-service")
-	organizationProxy := createReverseProxy(organizationServiceURL, "organization-service")
---- services/auth-service/handler/oidc.go ---
-// Package handler provides HTTP handlers for Microsoft 365 OIDC authentication.
-// This handler includes E2E test mocking support for automated testing.
-package handler
+AUTH CODE: 
+--- internal/middleware/cookie_auth.go ---
+// Package middleware provides HTTP middleware for cookie-based authentication.
+//
+// SECURITY CONSIDERATIONS FOR COOKIES:
+//
+// This package provides secure cookie helpers that enforce the following security attributes:
+//
+// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
+//    interception on the network. Always use Secure=true in production.
+//
+// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
+//    protecting against XSS attacks that attempt to steal session tokens.
+//
+// 3. SameSite Attribute - Controls cross-site cookie behavior:
+//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
+//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
+//    - SameSiteNone: Allows cross-site requests; requires Secure=true
+//
+// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
+//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
+//
+// USAGE EXAMPLE:
+//
+//	security := middleware.DefaultCookieSecurity() // Use DevelopmentCookieSecurity() for local dev
+//	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
+//
+//	// On logout:
+//	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
+package middleware
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
-	"os"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/openprint/openprint/internal/auth/jwt"
-	"github.com/openprint/openprint/internal/auth/oidc"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
-	"github.com/openprint/openprint/services/auth-service/repository"
 )
 
-// Microsoft365Config holds Microsoft 365 OIDC configuration.
-type Microsoft365Config struct {
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	RedirectURL    string
-	IsTestMode     bool
-	TestUsers      []TestUser
-}
+const (
+	// SessionCookieName is the name of the session cookie
+	SessionCookieName = "openprint_session"
+	// RefreshCookieName is the name of the refresh token cookie
+	RefreshCookieName = "openprint_refresh"
 
-// TestUser represents a mock user for E2E testing.
-type TestUser struct {
-	Email         string   `json:"email"`
-	ID            string   `json:"id"`
-	DisplayName   string   `json:"display_name"`
-	GivenName     string   `json:"given_name"`
-	FamilyName    string   `json:"family_name"`
-	Groups        []string `json:"groups"`
-	RefreshToken  string   `json:"refresh_token"`
-}
+	UserIDKey  contextKey = "user_id"
+	EmailKey   contextKey = "email"
+	OrgIDKey   contextKey = "org_id"
+	RoleKey    contextKey = "role"
+	ScopesKey  contextKey = "scopes"
+	TokenKey   contextKey = "token"
+)
 
-// OIDCHandler provides Microsoft 365 OIDC authentication with test mocking.
-type OIDCHandler struct {
-	userRepo       *repository.UserRepository
-	sessionRepo    *repository.SessionRepository
-	jwtManager     *jwt.Manager
-	config         *Microsoft365Config
-	oidcManager    *oidc.Manager
-	mockServer     *httptest.Server
-	testModeTokens map[string]string // state -> mock user email
-	mu             sync.RWMutex
-}
-
-// NewOIDCHandler creates a new Microsoft 365 OIDC handler.
-func NewOIDCHandler(
-	userRepo *repository.UserRepository,
-	sessionRepo *repository.SessionRepository,
-	jwtManager *jwt.Manager,
-	config *Microsoft365Config,
-) *OIDCHandler {
-	h := &OIDCHandler{
-		userRepo:       userRepo,
-		sessionRepo:    sessionRepo,
-		jwtManager:     jwtManager,
-		config:         config,
-		testModeTokens: make(map[string]string),
-	}
-
-	// Initialize test mode if enabled
-	if config.IsTestMode {
-		h.initTestMode()
-	} else {
-		h.initOIDCManager()
-	}
-
-	return h
-}
-
-// initTestMode sets up the mock OIDC server for E2E testing.
-func (h *OIDCHandler) initTestMode() {
-	// Create a mock server that simulates Microsoft 365 OAuth endpoints
---- services/compliance-service/compliance.go ---
-// Package main is the entry point for the OpenPrint Compliance Service.
-// This service handles FedRAMP, HIPAA, GDPR, and SOC2 compliance tracking and reporting.
-package main
+// CookieSecurityConfig defines security attributes for session cookies.
+// These settings help prevent XSS and CSRF attacks.
+type CookieSecurityConfig struct {
+	// Secure ensures the cookie is only sent over HTTPS.
+	// Should always be true in production.
+	Secure bool
+--- internal/agent/types.go ---
+// Package agent provides shared types for Windows Print Agent communication.
+package agent
 
 import (
-	"context"
 	"encoding/json"
+	"time"
+)
+
+// PrinterConnectionType represents how a printer is connected.
+type PrinterConnectionType string
+
+const (
+	// ConnectionLocal indicates a locally connected printer (USB, LPT, etc.)
+	ConnectionLocal PrinterConnectionType = "local"
+	// ConnectionNetwork indicates a network-connected printer
+	ConnectionNetwork PrinterConnectionType = "network"
+	// ConnectionShared indicates a shared printer from another machine
+	ConnectionShared PrinterConnectionType = "shared"
+	// ConnectionWSD indicates a Web Services for Devices printer
+	ConnectionWSD PrinterConnectionType = "wsd"
+	// ConnectionLPD indicates a Line Printer Daemon printer
+	ConnectionLPD PrinterConnectionType = "lpd"
+)
+
+// PrinterStatus represents the current status of a printer.
+type PrinterStatus string
+
+const (
+	// PrinterStatusIdle indicates the printer is ready and idle
+	PrinterStatusIdle PrinterStatus = "idle"
+	// PrinterStatusPrinting indicates the printer is currently printing
+	PrinterStatusPrinting PrinterStatus = "printing"
+	// PrinterStatusBusy indicates the printer is busy
+	PrinterStatusBusy PrinterStatus = "busy"
+	// PrinterStatusOffline indicates the printer is offline
+	PrinterStatusOffline PrinterStatus = "offline"
+	// PrinterStatusError indicates the printer has an error
+	PrinterStatusError PrinterStatus = "error"
+	// PrinterStatusOutOfPaper indicates the printer is out of paper
+	PrinterStatusOutOfPaper PrinterStatus = "out_of_paper"
+	// PrinterStatusLowToner indicates the printer has low toner
+	PrinterStatusLowToner PrinterStatus = "low_toner"
+	// PrinterStatusDoorOpen indicates the printer door is open
+	PrinterStatusDoorOpen PrinterStatus = "door_open"
+)
+
+// AgentStatus represents the current status of an agent.
+type AgentStatus string
+
+const (
+	// AgentStatusOnline indicates the agent is online and operational
+	AgentStatusOnline AgentStatus = "online"
+	// AgentStatusOffline indicates the agent is offline
+	AgentStatusOffline AgentStatus = "offline"
+	// AgentStatusError indicates the agent has encountered an error
+	AgentStatusError AgentStatus = "error"
+	// AgentStatusMaintenance indicates the agent is under maintenance
+	AgentStatusMaintenance AgentStatus = "maintenance"
+	// AgentStatusInitializing indicates the agent is initializing
+	AgentStatusInitializing AgentStatus = "initializing"
+--- internal/auth/password/password.go ---
+// Package password provides secure password hashing using Argon2id.
+package password
+
+import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
+	"errors"
 	"fmt"
-	"net/http"
-	"time"
+	"strings"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"golang.org/x/crypto/argon2"
 )
 
-// ComplianceFramework represents the compliance framework type.
-type ComplianceFramework string
-
-const (
-	FrameworkFedRAMP ComplianceFramework = "fedramp"
-	FrameworkHIPAA  ComplianceFramework = "hipaa"
-	FrameworkGDPR   ComplianceFramework = "gdpr"
-	FrameworkSOC2   ComplianceFramework = "soc2"
+var (
+	// ErrMismatchedHashAndPassword is returned when a password doesn't match its hash.
+	ErrMismatchedHashAndPassword = errors.New("password does not match")
+	// ErrInvalidHashFormat is returned when the hash format is invalid.
+	ErrInvalidHashFormat = errors.New("invalid hash format")
+	// ErrInvalidHashVersion is returned when the hash version is not supported.
+	ErrInvalidHashVersion = errors.New("invalid hash version")
 )
 
-// ComplianceStatus represents the status of compliance requirements.
-type ComplianceStatus string
-
-const (
-	StatusCompliant     ComplianceStatus = "compliant"
-	StatusNonCompliant  ComplianceStatus = "non_compliant"
-	StatusPending       ComplianceStatus = "pending"
-	StatusNotApplicable ComplianceStatus = "not_applicable"
-	StatusUnknown       ComplianceStatus = "unknown"
-)
-
-// Control represents a compliance control requirement.
-type Control struct {
-	ID               string               `json:"id"`
-	Framework        ComplianceFramework  `json:"framework"`
-	Family           string               `json:"family"`
-	Title            string               `json:"title"`
-	Description      string               `json:"description"`
-	Implementation   string               `json:"implementation"`
-	Status           ComplianceStatus     `json:"status"`
-	LastAssessed     *time.Time           `json:"last_assessed"`
-	NextReview       *time.Time           `json:"next_review"`
-	EvidenceCount    int                  `json:"evidence_count"`
-	Policies         []string             `json:"policies"`
-	ResponsibleTeam  string               `json:"responsible_team"`
-	RiskLevel        string               `json:"risk_level"`
-	Remediation      *RemediationPlan     `json:"remediation,omitempty"`
+// Hash represents a password hash with its parameters.
+type Hash struct {
+	Version  int
+	Memory   uint32
+	Time     uint32
+	Threads  uint8
+	KeyLen   uint32
+	SaltLen  uint32
+	Salt     []byte
+	Hash     []byte
 }
 
-// RemediationPlan represents a plan to address compliance gaps.
-type RemediationPlan struct {
-	ID          string    `json:"id"`
-	ControlID   string    `json:"control_id"`
-	Description string    `json:"description"`
-	Priority    string    `json:"priority"`
-	TargetDate  time.Time `json:"target_date"`
-	Assignee    string    `json:"assignee"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+// String returns the string representation of the hash.
+func (h *Hash) String() string {
+	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
+		h.Version,
+		h.Memory,
+		h.Time,
+		h.Threads,
+		base64.RawStdEncoding.EncodeToString(h.Salt),
+		base64.RawStdEncoding.EncodeToString(h.Hash),
+	)
 }
 
-// AuditEvent represents a compliance-related audit event.
-type AuditEvent struct {
-	ID            string            `json:"id"`
-	Timestamp     time.Time         `json:"timestamp"`
-	EventType     string            `json:"event_type"`
-	Category      string            `json:"category"`
-	UserID        string            `json:"user_id"`
-	UserName      string            `json:"user_name"`
-	ResourceID    string            `json:"resource_id"`
-	ResourceType  string            `json:"resource_type"`
-	Action        string            `json:"action"`
---- services/compliance-service/main.go ---
-// Package main is the entry point for the OpenPrint Compliance Service.
-// This service handles FedRAMP, HIPAA, GDPR, and SOC2 compliance tracking and reporting.
-package main
+// Default parameters for Argon2id (OWASP recommendations as of 2024).
+var (
+	// DefaultMemory is the default memory cost in KiB (64 MiB).
+	DefaultMemory = uint32(64 * 1024)
+	// DefaultIterations is the default number of iterations.
+	DefaultIterations = uint32(3)
+	// DefaultThreads is the default parallelism degree.
+	DefaultThreads = uint8(4)
+	// DefaultKeyLen is the default derived key length in bytes.
+	DefaultKeyLen = uint32(32)
+	// DefaultSaltLen is the default salt length in bytes.
+	DefaultSaltLen = uint32(16)
+)
+--- internal/auth/password/password_test.go ---
+// Package password provides tests for secure password hashing using Argon2id.
+package password
 
 import (
-	"context"
-	"encoding/json"
-	"log"
-	"net"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"strings"
+	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/openprint/openprint/internal/auth/jwt"
-	"github.com/openprint/openprint/internal/shared/middleware"
-	"github.com/openprint/openprint/internal/shared/telemetry"
+	"golang.org/x/crypto/argon2"
 )
 
-// ServerConfig holds service configuration.
-type ServerConfig struct {
-	ServerAddr     string
-	DatabaseURL    string
-	JWTSecret      string
-	JaegerEndpoint string
-	ServiceName    string
+func TestDefaultParameters(t *testing.T) {
+	if DefaultMemory != 64*1024 {
+		t.Errorf("DefaultMemory = %d, want %d", DefaultMemory, 64*1024)
+	}
+	if DefaultIterations != 3 {
+		t.Errorf("DefaultIterations = %d, want %d", DefaultIterations, 3)
+	}
+	if DefaultThreads != 4 {
+		t.Errorf("DefaultThreads = %d, want %d", DefaultThreads, 4)
+	}
+	if DefaultKeyLen != 32 {
+		t.Errorf("DefaultKeyLen = %d, want %d", DefaultKeyLen, 32)
+	}
+	if DefaultSaltLen != 16 {
+		t.Errorf("DefaultSaltLen = %d, want %d", DefaultSaltLen, 16)
+	}
 }
 
-func main() {
-	cfg := loadServerConfig()
+func TestNewHasher(t *testing.T) {
+	memory := uint32(32 * 1024)
+	time := uint32(2)
+	threads := uint8(2)
+	keyLen := uint32(24)
+	saltLen := uint32(12)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	hasher := NewHasher(memory, time, threads, keyLen, saltLen)
 
-	// Initialize telemetry
-	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
-	if err != nil {
-		log.Printf("Warning: failed to initialize tracer: %v", err)
+	if hasher.memory != memory {
+		t.Errorf("NewHasher() memory = %d, want %d", hasher.memory, memory)
 	}
-	if shutdown != nil {
-		defer shutdown(ctx)
+	if hasher.time != time {
+		t.Errorf("NewHasher() time = %d, want %d", hasher.time, time)
 	}
-
-	// Connect to PostgreSQL
-	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+	if hasher.threads != threads {
+		t.Errorf("NewHasher() threads = %d, want %d", hasher.threads, threads)
 	}
-	defer db.Close()
-
-	// Initialize compliance service
-	compSvc := New(Config{
-		DB: db,
-	})
-
-	// Create JWT manager for authentication
-	jwtCfg, err := jwt.DefaultConfig(cfg.JWTSecret)
-	if err != nil {
-		log.Fatalf("Failed to create JWT config: %v", err)
+	if hasher.keyLen != keyLen {
+		t.Errorf("NewHasher() keyLen = %d, want %d", hasher.keyLen, keyLen)
 	}
-	jwtManager, err := jwt.NewManager(jwtCfg)
-	if err != nil {
-		log.Fatalf("Failed to create JWT manager: %v", err)
+	if hasher.saltLen != saltLen {
+		t.Errorf("NewHasher() saltLen = %d, want %d", hasher.saltLen, saltLen)
 	}
+}
 
-	// Setup HTTP server with middleware
-	mux := http.NewServeMux()
+func TestDefaultHasher(t *testing.T) {
+	hasher := DefaultHasher()
 
-	// Health check
-	mux.HandleFunc("/health", healthHandler)
-
-	// Compliance endpoints
-	mux.HandleFunc("/api/v1/controls/", controlsHandler(compSvc))
-	mux.HandleFunc("/api/v1/controls", listControlsHandler(compSvc))
-	mux.HandleFunc("/api/v1/controls/", updateControlStatusHandler(compSvc))
-	mux.HandleFunc("/api/v1/audit", auditLogHandler(compSvc))
-	mux.HandleFunc("/api/v1/audit/export", exportAuditLogsHandler(compSvc))
-	mux.HandleFunc("/api/v1/reports/generate", generateReportHandler(compSvc))
---- services/m365-integration-service/main.go ---
-// Package main is the entry point for the OpenPrint Microsoft 365 Integration Service.
-// This service handles Microsoft 365 integration for OneDrive, SharePoint, and document handling.
-package main
+	if hasher.memory != DefaultMemory {
+		t.Errorf("DefaultHasher() memory = %d, want %d", hasher.memory, DefaultMemory)
+	}
+--- internal/auth/saml/saml.go ---
+// Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
+// This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
+//
+// SECURITY: SHA-1 signature support has been removed due to cryptographic vulnerabilities.
+// Only SHA-256 and stronger signature algorithms are supported.
+// IdPs using SHA-1 must be upgraded to use SHA-256 or stronger algorithms.
+package saml
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	cryptoRand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/sha512"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
-	"log"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+var (
+	// ErrInvalidResponse is returned when the SAML response is invalid.
+	ErrInvalidResponse = errors.New("invalid SAML response")
+	// ErrMissingAttribute is returned when a required attribute is missing.
+	ErrMissingAttribute = errors.New("missing required SAML attribute")
+	// ErrInvalidSignature is returned when the signature is invalid.
+	ErrInvalidSignature = errors.New("invalid SAML signature")
+	ErrNotConfigured  = errors.New("SAML not configured")
+)
+
+// Config holds SAML configuration.
+type Config struct {
+	// EntityID is the unique identifier for this service provider.
+	EntityID string
+	// MetadataURL is the URL to the IdP metadata.
+	MetadataURL string
+	// SSOURL is the IdP SSO URL (can be derived from metadata).
+	SSOURL string
+	// SLOURL is the IdP Single Logout URL.
+	SLOURL string
+	// Certificate is the service provider certificate.
+	Certificate *x509.Certificate
+	// Key is the service provider private key.
+	Key *rsa.PrivateKey
+	// IdPCertificate is the identity provider certificate.
+	IdPCertificate *x509.Certificate
+	// IDPName is a friendly name for the identity provider.
+	IDPName string
+	// ACSURL is the Assertion Consumer Service URL.
+	ACSURL string
+	// SLOResponseURL is the Single Logout response URL.
+	SLOResponseURL string
+}
+--- internal/auth/saml/saml_test.go ---
+// Package saml provides tests for SAML 2.0 SSO integration.
+package saml
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+)
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &Config{
+			EntityID: "https://sp.example.com",
+			SSOURL:   "https://idp.example.com/sso",
+			ACSURL:   "https://sp.example.com/acs",
+			SLOURL:   "https://idp.example.com/slo",
+		}
+
+		mgr, err := NewManager(cfg)
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+		}
+	})
+
+	t.Run("nil config", func(t *testing.T) {
+		_, err := NewManager(nil)
+		if err == nil {
+			t.Error("NewManager(nil) should return error")
+		}
+	})
+}
+
+func TestManager_Metadata(t *testing.T) {
+	cfg := &Config{
+		EntityID:     "https://sp.example.com",
+		SSOURL:       "https://idp.example.com/sso",
+		ACSURL:       "https://sp.example.com/acs",
+		SLOResponseURL: "https://sp.example.com/slo",
+	}
+
+	mgr, err := NewManager(cfg)
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+
+	metadata, err := mgr.Metadata()
+	if err != nil {
+		t.Fatalf("Metadata() error = %v", err)
+	}
+
+	if len(metadata) == 0 {
+		t.Fatal("Metadata() returned empty bytes")
+--- internal/auth/jwt/jwt_test.go ---
+// Package jwt provides tests for JWT token generation and validation.
+package jwt
+
+import (
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+func TestDefaultConfig(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		secret := "this-is-a-secure-secret-key-32-chars-long"
+		cfg, err := DefaultConfig(secret)
+
+		if err != nil {
+			t.Fatalf("DefaultConfig() error = %v", err)
+		}
+		if cfg.SecretKey != secret {
+			t.Errorf("DefaultConfig() SecretKey = %v, want %v", cfg.SecretKey, secret)
+		}
+		if cfg.AccessDuration != 15*time.Minute {
+			t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
+		}
+		if cfg.RefreshDuration != MaxRefreshDuration {
+			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, MaxRefreshDuration)
+		}
+		if cfg.Issuer != "openprint.cloud" {
+			t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)
+		}
+	})
+
+	t.Run("secret key too short", func(t *testing.T) {
+		shortSecret := "short"
+		_, err := DefaultConfig(shortSecret)
+
+		if err == nil {
+			t.Error("DefaultConfig() with short secret should return error")
+		}
+		if !errors.Is(err, ErrSecretKeyTooShort) {
+			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
+	})
+}
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+		mgr, err := NewManager(cfg)
+
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+--- internal/auth/jwt/jwt.go ---
+// Package jwt provides JWT token generation and validation for OpenPrint authentication.
+package jwt
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+const (
+	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
+	MinSecretKeyLength = 32
+	// MaxRefreshDuration is the maximum allowed refresh token duration (48 hours for security).
+	MaxRefreshDuration = 48 * time.Hour
+)
+
+var (
+	// ErrInvalidToken is returned when a token is invalid.
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrExpiredToken is returned when a token has expired.
+	ErrExpiredToken = errors.New("token expired")
+	// ErrInvalidSigningMethod is returned when the signing method is invalid.
+	ErrInvalidSigningMethod = errors.New("invalid signing method")
+	// ErrSecretKeyTooShort is returned when the secret key is too short.
+	ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
+)
+
+// Claims represents the JWT claims structure.
+type Claims struct {
+	UserID    string   `json:"user_id"`
+	Email     string   `json:"email"`
+	OrgID     string   `json:"org_id,omitempty"`
+	Role      string   `json:"role"`
+	TokenType string   `json:"token_type"` // "access" or "refresh"
+	Scopes    []string `json:"scopes,omitempty"`
+	jwt.RegisteredClaims
+}
+
+// TokenType represents the type of JWT token.
+type TokenType string
+
+const (
+	// AccessTokenType is for short-lived access tokens.
+	AccessTokenType TokenType = "access"
+	// RefreshTokenType is for long-lived refresh tokens.
+	RefreshTokenType TokenType = "refresh"
+)
+
+// Config holds JWT configuration.
+type Config struct {
+	SecretKey       string
+	AccessDuration  time.Duration
+	RefreshDuration time.Duration
+	Issuer          string
+	AllowedAudiences []string // Allowed audiences for JWT validation
+	// RequireAudienceValidation forces audience validation even if no allowed audiences are set
+	RequireAudienceValidation bool
+--- internal/auth/oidc/oidc_test.go ---
+// Package oidc provides tests for OpenID Connect (OIDC) and OAuth2 integration.
+package oidc
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+
+	"golang.org/x/oauth2"
+)
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &Config{
+			ProviderType: ProviderGoogle,
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			RedirectURL:  "https://example.com/callback",
+		}
+
+		mgr, err := NewManager(context.Background(), cfg)
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+		}
+	})
+
+	t.Run("nil config", func(t *testing.T) {
+		_, err := NewManager(context.Background(), nil)
+		if err == nil {
+			t.Error("NewManager(nil) should return error")
+		}
+	})
+
+	t.Run("missing client ID", func(t *testing.T) {
+		cfg := &Config{
+			ProviderType: ProviderGoogle,
+			RedirectURL:  "https://example.com/callback",
+		}
+
+		_, err := NewManager(context.Background(), cfg)
+		if err == nil {
+			t.Error("NewManager() without ClientID should return error")
+		}
+	})
+
+	t.Run("default scopes", func(t *testing.T) {
+		cfg := &Config{
+			ProviderType: ProviderGoogle,
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			RedirectURL:  "https://example.com/callback",
+--- internal/auth/oidc/oidc.go ---
+// Package oidc provides OpenID Connect (OIDC) and OAuth2 integration for OpenPrint.
+// This enables authentication with providers like Azure AD, Google Workspace, Okta, etc.
+package oidc
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+	"golang.org/x/oauth2"
+)
+
+var (
+	// ErrInvalidState is returned when the OAuth state parameter doesn't match.
+	ErrInvalidState = errors.New("invalid OAuth state")
+	// ErrInvalidCode is returned when the authorization code is invalid.
+	ErrInvalidCode = errors.New("invalid authorization code")
+	// ErrNoEmail is returned when the provider doesn't return an email.
+	ErrNoEmail = errors.New("provider did not return email address")
+	// ErrUnverifiedEmail is returned when the email is not verified.
+	ErrUnverifiedEmail = errors.New("email is not verified")
+)
+
+// ProviderType represents the type of OIDC provider.
+type ProviderType string
+
+const (
+	ProviderAzureAD     ProviderType = "azure_ad"
+	ProviderGoogle      ProviderType = "google"
+	ProviderOkta        ProviderType = "okta"
+	ProviderAuth0       ProviderType = "auth0"
+	ProviderGenericOIDC ProviderType = "generic_oidc"
+)
+
+// Config holds OIDC provider configuration.
+type Config struct {
+	// ProviderType is the type of identity provider.
+	ProviderType ProviderType
+	// IssuerURL is the OIDC issuer URL (e.g., https://accounts.google.com).
+	IssuerURL string
+	// ClientID is the OAuth2 client ID.
+	ClientID string
+	// ClientSecret is the OAuth2 client secret.
+	ClientSecret string
+	// Scopes to request from the provider.
+	Scopes []string
+	// RedirectURL is the OAuth redirect URL.
+	RedirectURL string
+HANDLERS: 
+--- internal/shared/telemetry/middleware_test.go ---
+// Package telemetry provides tests for OpenTelemetry tracing and instrumentation.
+package telemetry
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"go.opentelemetry.io/otel/trace"
+)
+
+func TestInitTracer(t *testing.T) {
+	t.Run("no jaeger endpoint returns noop tracer", func(t *testing.T) {
+		shutdown, err := InitTracer("test-service", "1.0.0", "")
+
+		if err != nil {
+			t.Errorf("InitTracer() error = %v", err)
+		}
+		if shutdown == nil {
+			t.Error("InitTracer() shutdown should not be nil")
+		}
+
+		// Call shutdown to clean up
+		ctx := context.Background()
+		if err := shutdown(ctx); err != nil {
+			t.Errorf("shutdown() error = %v", err)
+		}
+	})
+
+	t.Run("with jaeger endpoint creates stdout tracer", func(t *testing.T) {
+		// Note: This test may fail if the environment doesn't support stdout tracer properly
+		// In a CI environment, this might need adjustment
+		shutdown, err := InitTracer("test-service", "1.0.0", "stdout")
+
+		if err != nil {
+			t.Logf("InitTracer() with stdout produced error (may be expected in some environments): %v", err)
+		}
+		if shutdown != nil {
+			ctx := context.Background()
+			shutdown(ctx)
+		}
+	})
+}
+
+func TestMiddleware(t *testing.T) {
+	t.Run("middleware creates span", func(t *testing.T) {
+--- internal/shared/telemetry/middleware.go ---
+// Package telemetry provides OpenTelemetry tracing and instrumentation for all services.
+package telemetry
+
+import (
+	"bufio"
+	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
-	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/openprint/openprint/internal/auth/jwt"
-	"github.com/openprint/openprint/internal/shared/middleware"
-	"github.com/openprint/openprint/internal/shared/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.31.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
-// Config holds service configuration.
-type Config struct {
-	ServerAddr       string
-	DatabaseURL      string
-	JWTSecret        string
-	JaegerEndpoint   string
-	ServiceName      string
-	M365ClientID     string
-	M365ClientSecret string
-	M365TenantID     string
-	StoragePath      string
-}
+const (
+	// ServiceNameKey is the attribute key for service name.
+	ServiceNameKey = attribute.Key("service.name")
+	// ServiceVersionKey is the attribute key for service version.
+	ServiceVersionKey = attribute.Key("service.version")
+	// ServiceInstanceIDKey is the attribute key for service instance ID.
+	ServiceInstanceIDKey = attribute.Key("service.instance.id")
+)
 
-// Service provides Microsoft 365 integration functionality.
-type Service struct {
-	db              *pgxpool.Pool
-	config          *Config
-	graphAPIBaseURL string
-}
+// Tracer is a global tracer instance.
+var Tracer trace.Tracer
 
-// M365Document represents a document from Microsoft 365.
-type M365Document struct {
-	ID              string                 `json:"id"`
-	Name            string                 `json:"name"`
-	DriveID         string                 `json:"drive_id"`
-	ItemID          string                 `json:"item_id"`
-	DownloadURL     string                 `json:"download_url"`
-	Size            int64                  `json:"size"`
-	MimeType        string                 `json:"mime_type"`
-	CreatedBy       string                 `json:"created_by"`
-	CreatedAt       time.Time              `json:"created_at"`
-	ModifiedAt      time.Time              `json:"modified_at"`
-	SharePointURL   string                 `json:"sharepoint_url,omitempty"`
-	OneDriveURL     string                 `json:"onedrive_url,omitempty"`
-	Path            string                 `json:"path"`
-	WebURL          string                 `json:"web_url"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-}
+// InitTracer initializes the OpenTelemetry tracer with OTLP/Jaeger exporter.
+// In production, configure OTEL_EXPORTER_OTLP_ENDPOINT or JAEGER_ENDPOINT.
+// For development without a collector, tracing is disabled (noop tracer).
+func InitTracer(serviceName, serviceVersion, jaegerEndpoint string) (func(context.Context) error, error) {
+	ctx := context.Background()
 
-// PrintJobSource represents the source of a print job from Microsoft 365.
-type PrintJobSource struct {
-	SourceID    string                 `json:"source_id"`
-	SourceType  string                 `json:"source_type"` // onedrive, sharepoint, outlook
-	DocumentID  string                 `json:"document_id"`
-	DocumentURL string                 `json:"document_url"`
-	UserID      string                 `json:"user_id"`
-	UserEmail   string                 `json:"user_email"`
-	FileName    string                 `json:"file_name"`
-	FileSize    int64                  `json:"file_size"`
-	AccessToken string                 `json:"access_token"`
-	RefreshToken string                 `json:"refresh_token"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-}
-Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.
+	// Check for OTLP endpoint environment variable
+	otlpEndpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if otlpEndpoint == "" {
+		otlpEndpoint = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+	}
+
+	var exporter tracesdk.SpanExporter
+	var err error
+Check: SQL injection, XSS, CSRF, insecure JWT, weak crypto, missing auth, IDOR, data exposure. Be thorough.
