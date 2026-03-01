@@ -620,14 +620,20 @@ func calculateThumbprint(cert *x509.Certificate) string {
 // Helper functions
 
 // validateAgentTokenString validates an agent JWT token string and returns the claims.
+// SECURITY: Explicitly restricts to HS256 algorithm to prevent algorithm confusion attacks.
+// The 'none' algorithm and other unexpected signing methods are rejected.
 func validateAgentTokenString(tokenString, secret string) (*middleware.AgentClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &middleware.AgentClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
+		// SECURITY: Validate signing method - MUST be HMAC
+		// This check prevents algorithm confusion attacks where an attacker
+		// could attempt to use the 'none' algorithm or a different algorithm.
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v (only HMAC is allowed)", token.Header["alg"])
 		}
 		return []byte(secret), nil
-	})
+	// SECURITY: Explicit algorithm whitelist - only HS256 is accepted
+	// This prevents the 'none' algorithm attack and other algorithm confusion attacks
+	}, jwt.WithValidMethods([]string{"HS256"}))
 
 	if err != nil {
 		return nil, err
