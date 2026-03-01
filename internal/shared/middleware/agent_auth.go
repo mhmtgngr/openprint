@@ -249,22 +249,27 @@ type AgentClaims struct {
 // validateAgentToken validates an agent JWT token.
 func validateAgentToken(tokenString string, cfg AgentJWTConfig) (*AgentClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &AgentClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			if cfg.PublicKey != nil {
-				return cfg.PublicKey, nil
+		// Explicitly verify the signing method to prevent algorithm confusion attacks.
+		// Only RSA or HMAC signing methods are accepted.
+		// This prevents the "none" algorithm attack.
+		switch method := token.Method.(type) {
+		case *jwt.SigningMethodRSA:
+			// RSA signature - use public key for verification
+			if cfg.PublicKey == nil {
+				return nil, errors.New("RSA signing requires public key configuration")
 			}
-			// Fall back to HMAC if no public key
-			return []byte(cfg.SecretKey), nil
-		}
-
-		// For RSA, use public key
-		if cfg.PublicKey != nil {
 			return cfg.PublicKey, nil
+		case *jwt.SigningMethodHMAC:
+			// HMAC signature - use secret key
+			if cfg.SecretKey == "" {
+				return nil, errors.New("HMAC signing requires secret key configuration")
+			}
+			return []byte(cfg.SecretKey), nil
+		default:
+			// Reject any other signing method (including "none")
+			return nil, fmt.Errorf("unexpected signing method: %v (only RSA and HMAC are supported)", method.Alg())
 		}
-
-		return nil, fmt.Errorf("unexpected signing method")
-	})
+	}, jwt.WithValidMethods([]string{"RS256", "HS256"}))
 
 	if err != nil {
 		return nil, err

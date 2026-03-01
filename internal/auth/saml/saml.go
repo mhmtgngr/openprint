@@ -1,5 +1,15 @@
 // Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
 // This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
+//
+// SECURITY NOTE - SHA-1 USAGE:
+// This package includes support for SHA-1 signature verification for backward compatibility
+// with legacy SAML identity providers. SHA-1 is cryptographically deprecated due to known
+// collision vulnerabilities.
+//
+// The package prefers SHA-256 for signature verification and will reject SHA-1 signatures
+// when AllowSHA1Signatures is set to false (recommended for production).
+//
+// For new deployments, ensure your IdP uses SHA-256 or stronger signature algorithms.
 package saml
 
 import (
@@ -9,6 +19,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
@@ -53,6 +64,11 @@ type Config struct {
 	ACSURL string
 	// SLOResponseURL is the Single Logout response URL.
 	SLOResponseURL string
+	// AllowSHA1Signatures controls whether SHA-1 signatures are accepted.
+	// SHA-1 is deprecated due to cryptographic weaknesses. Set to false
+	// to reject SHA-1 signatures and require SHA-256 or stronger.
+	// Default: false (reject SHA-1)
+	AllowSHA1Signatures bool
 }
 
 // Manager handles SAML authentication operations.
@@ -439,12 +455,26 @@ func (m *Manager) verifySignature(response []byte) error {
 	var hash []byte
 	alg := strings.ToLower(samlResp.Signature.SignedInfo.SignatureMethod.Algorithm)
 	switch {
-	case strings.Contains(alg, "sha256"):
+	case strings.Contains(alg, "sha256") || strings.Contains(alg, "sha-256"):
 		h := sha256.New()
 		h.Write(signedInfo)
 		hash = h.Sum(nil)
-	case strings.Contains(alg, "sha1"):
+	case strings.Contains(alg, "sha1") || strings.Contains(alg, "sha-1"):
+		// SHA-1 is deprecated due to cryptographic vulnerabilities
+		if !m.config.AllowSHA1Signatures {
+			return fmt.Errorf("SHA-1 signatures are not allowed (configure AllowSHA1Signatures to enable for legacy compatibility): %s", alg)
+		}
+		// Log warning when accepting SHA-1
+		// In production, this should trigger an alert to upgrade the IdP
 		h := sha1.New()
+		h.Write(signedInfo)
+		hash = h.Sum(nil)
+	case strings.Contains(alg, "sha384") || strings.Contains(alg, "sha-384"):
+		h := sha512.New384()
+		h.Write(signedInfo)
+		hash = h.Sum(nil)
+	case strings.Contains(alg, "sha512") || strings.Contains(alg, "sha-512"):
+		h := sha512.New()
 		h.Write(signedInfo)
 		hash = h.Sum(nil)
 	default:
