@@ -533,10 +533,10 @@ func (h *Handler) ListPrinters(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"printers": response,
-		"total":    total,
-		"limit":    limit,
-		"offset":   offset,
+		"data":   response,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
 	})
 }
 

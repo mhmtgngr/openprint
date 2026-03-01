@@ -206,7 +206,8 @@ export const authApi = {
 export const printersApi = {
   async list(): Promise<Printer[]> {
     const response = await fetchWithAuth(`${API_BASE_URL}/printers`);
-    return handleResponse<Printer[]>(response);
+    const result = await handleResponse<PaginatedResponse<Printer>>(response);
+    return result.data || [];
   },
 
   async get(id: string): Promise<Printer> {
