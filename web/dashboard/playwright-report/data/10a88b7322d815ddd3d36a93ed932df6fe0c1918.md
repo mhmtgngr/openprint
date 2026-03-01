@@ -1,0 +1,88 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Jobs" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - heading "Print Jobs" [level=1] [ref=e51]
+            - paragraph [ref=e52]: View and manage your print job history
+          - button "Refresh" [ref=e54] [cursor=pointer]:
+            - img [ref=e55]
+        - generic [ref=e57]:
+          - button "0 All Jobs" [ref=e58] [cursor=pointer]:
+            - paragraph: "0"
+            - paragraph: All Jobs
+          - button "0 Queued" [ref=e59] [cursor=pointer]:
+            - paragraph: "0"
+            - paragraph: Queued
+          - button "0 Processing" [ref=e60] [cursor=pointer]:
+            - paragraph: "0"
+            - paragraph: Processing
+          - button "0 Completed" [ref=e61] [cursor=pointer]:
+            - paragraph: "0"
+            - paragraph: Completed
+          - button "0 Failed" [ref=e62] [cursor=pointer]:
+            - paragraph: "0"
+            - paragraph: Failed
+          - button "0 Cancelled" [ref=e63] [cursor=pointer]:
+            - paragraph: "0"
+            - paragraph: Cancelled
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - img [ref=e66]
+            - textbox "Search jobs by name or printer..." [ref=e68]
+          - generic [ref=e69]:
+            - img
+            - combobox [ref=e71]:
+              - option "All Jobs" [selected]
+              - option "Queued"
+              - option "Processing"
+              - option "Completed"
+              - option "Failed"
+              - option "Cancelled"
+        - generic [ref=e73]:
+          - img [ref=e74]
+          - heading "No print jobs" [level=3] [ref=e76]
+          - paragraph [ref=e77]: Get started by submitting a new print job.
+```
