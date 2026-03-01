@@ -19,8 +19,8 @@ RUN npm run build
 # Final stage - use nginx to serve static files and proxy API
 FROM nginx:alpine
 
-# Install dumb-init and tools for DNS fix
-RUN apk add --no-cache dumb-init tzdata bind-tools
+# Install dumb-init, wget for health checks, and tools for DNS fix
+RUN apk add --no-cache dumb-init tzdata bind-tools wget
 
 # Copy nginx config
 COPY deployments/docker/nginx-dashboard.conf /etc/nginx/conf.d/default.conf
