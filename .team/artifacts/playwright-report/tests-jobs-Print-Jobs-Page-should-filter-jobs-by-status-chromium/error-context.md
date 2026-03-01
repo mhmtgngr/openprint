@@ -1,0 +1,156 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "OpenPrint" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e10]: OpenPrint
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e15]: Dashboard
+        - link "Devices" [ref=e16] [cursor=pointer]:
+          - /url: /printers
+          - img [ref=e17]
+          - generic [ref=e19]: Devices
+        - link "Jobs" [ref=e20] [cursor=pointer]:
+          - /url: /jobs
+          - img [ref=e21]
+          - generic [ref=e23]: Jobs
+        - link "Documents" [ref=e24] [cursor=pointer]:
+          - /url: /documents
+          - img [ref=e25]
+          - generic [ref=e27]: Documents
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: T
+          - generic [ref=e36]:
+            - paragraph [ref=e37]: Test User
+            - paragraph [ref=e38]: test@example.com
+        - button "Logout" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e42]: Logout
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - heading "Jobs" [level=1] [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - heading "Print Jobs" [level=1] [ref=e51]
+            - paragraph [ref=e52]: View and manage your print job history
+          - button "Refresh" [ref=e54] [cursor=pointer]:
+            - img [ref=e55]
+        - generic [ref=e57]:
+          - button "3 All Jobs" [ref=e58] [cursor=pointer]:
+            - paragraph [ref=e59]: "3"
+            - paragraph [ref=e60]: All Jobs
+          - button "0 Queued" [ref=e61] [cursor=pointer]:
+            - paragraph [ref=e62]: "0"
+            - paragraph [ref=e63]: Queued
+          - button "1 Processing" [ref=e64] [cursor=pointer]:
+            - paragraph [ref=e65]: "1"
+            - paragraph [ref=e66]: Processing
+          - button "1 Completed" [active] [ref=e67] [cursor=pointer]:
+            - paragraph [ref=e68]: "1"
+            - paragraph [ref=e69]: Completed
+          - button "1 Failed" [ref=e70] [cursor=pointer]:
+            - paragraph [ref=e71]: "1"
+            - paragraph [ref=e72]: Failed
+          - button "0 Cancelled" [ref=e73] [cursor=pointer]:
+            - paragraph [ref=e74]: "0"
+            - paragraph [ref=e75]: Cancelled
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - img [ref=e78]
+            - textbox "Search jobs by name or printer..." [ref=e80]
+          - generic [ref=e81]:
+            - img [ref=e82]
+            - combobox [ref=e84]:
+              - option "All Jobs"
+              - option "Queued"
+              - option "Processing"
+              - option "Completed" [selected]
+              - option "Failed"
+              - option "Cancelled"
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - checkbox [ref=e87]
+            - generic [ref=e88]: 3 total jobs
+          - list [ref=e90]:
+            - listitem [ref=e91]:
+              - generic [ref=e92]:
+                - checkbox [ref=e93]
+                - generic [ref=e94]:
+                  - generic [ref=e95]:
+                    - paragraph [ref=e96]: Document.pdf
+                    - generic [ref=e97]: Completed
+                  - generic [ref=e99]:
+                    - generic [ref=e100]:
+                      - img [ref=e101]
+                      - text: HP LaserJet Pro
+                    - generic [ref=e103]:
+                      - img [ref=e104]
+                      - text: 5 pages
+                    - generic [ref=e106]:
+                      - img [ref=e107]
+                      - text: 1000 KB
+                    - generic [ref=e109]:
+                      - img [ref=e110]
+                      - text: about 2 years ago
+                - img [ref=e113]
+            - listitem [ref=e115]:
+              - generic [ref=e116]:
+                - checkbox [ref=e117]
+                - generic [ref=e118]:
+                  - generic [ref=e119]:
+                    - paragraph [ref=e120]: Presentation.pptx
+                    - generic [ref=e121]: Processing
+                  - generic [ref=e123]:
+                    - generic [ref=e124]:
+                      - img [ref=e125]
+                      - text: HP LaserJet Pro
+                    - generic [ref=e127]:
+                      - img [ref=e128]
+                      - text: 12 pages
+                    - generic [ref=e130]:
+                      - img [ref=e131]
+                      - text: 4.88 MB
+                    - generic [ref=e133]:
+                      - img [ref=e134]
+                      - text: about 2 years ago
+                - img [ref=e137]
+            - listitem [ref=e139]:
+              - generic [ref=e140]:
+                - checkbox [ref=e141]
+                - generic [ref=e142]:
+                  - generic [ref=e143]:
+                    - paragraph [ref=e144]: Large_File.pdf
+                    - generic [ref=e145]: Failed
+                  - generic [ref=e147]:
+                    - generic [ref=e148]:
+                      - img [ref=e149]
+                      - text: Canon PIXMA
+                    - generic [ref=e151]:
+                      - img [ref=e152]
+                      - text: 50 pages
+                    - generic [ref=e154]:
+                      - img [ref=e155]
+                      - text: 10 MB
+                    - generic [ref=e157]:
+                      - img [ref=e158]
+                      - text: about 2 years ago
+                  - paragraph [ref=e160]: Printer offline
+                - generic [ref=e161]:
+                  - button "Retry job" [ref=e162] [cursor=pointer]:
+                    - img [ref=e163]
+                  - img [ref=e165]
+```

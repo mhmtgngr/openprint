@@ -1,20 +1,24 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Existing build process is functional - TypeScript compilation and Vite bundling work correctly",
-      "rationale": "Running `npm run type-check` passes with no errors, `npm run build` completes successfully generating dist/ with index.html, CSS bundle (41.86 kB), and JS bundle (881.62 kB)"
+      "decision": "Use Vitest with React Testing Library for unit testing",
+      "rationale": "Vitest is native to Vite ecosystem, faster than Jest, provides same testing APIs. React Testing Library encourages testing user behavior rather than implementation details."
     },
     {
-      "decision": "Implement code-splitting to reduce bundle size",
-      "rationale": "Current JS bundle is 881.62 kB - exceeds 500 kB threshold. Lazy loading of route components will reduce initial load time and improve perceived performance"
+      "decision": "Implement 70% code coverage threshold enforced in CI",
+      "rationale": "Industry standard for critical business applications. Ensures core user flows are validated without maintaining 100% coverage which creates diminishing returns."
     },
     {
-      "decision": "Add Vite manual chunk configuration",
-      "rationale": "Separate vendor dependencies (React, React Router, TanStack Query, Recharts) from application code for better caching and parallel loading"
+      "decision": "Create test utilities and mocks for React Query and Router",
+      "rationale": "Isolates component tests from external dependencies. Mocking QueryClient and Router prevents network calls and enables testing of loading/error/empty states."
     },
     {
-      "decision": "Configure CSS optimization and purging",
-      "rationale": "Ensure unused Tailwind CSS classes are removed in production build to minimize bundle size"
+      "decision": "Use Testing Library's userEvent for user interactions",
+      "rationale": "userEvent simulates real user behavior more accurately than fireEvent, testing the actual user experience."
+    },
+    {
+      "decision": "Implement market-driven feature: Print quota monitoring in tests",
+      "rationale": "Competitors like PaperCut emphasize cost control and quotas. Testing ensures quota limits work correctly, preventing unexpected overage charges."
     }
   ],
   "backend_tasks": [],
@@ -23,46 +27,282 @@
       "order": 1,
       "file": "web/dashboard/vite.config.ts",
       "action": "modify",
-      "purpose": "Add manual chunk configuration for code-splitting",
+      "purpose": "Add coverage configuration with 70% threshold and HTML reporter",
       "key_functions": [
-        "build.rollupOptions.output.manualChunks"
+        "test.coverage.thresholds",
+        "test.coverage.reporter"
       ]
     },
     {
       "order": 2,
-      "file": "web/dashboard/src/App.tsx",
+      "file": "web/dashboard/src/test/setup.ts",
       "action": "modify",
-      "purpose": "Implement lazy loading for route components using React.lazy",
+      "purpose": "Add global test utilities including QueryClient wrapper, router mock, and custom render functions",
       "key_functions": [
-        "React.lazy",
-        "Suspense"
+        "createMockQueryClient",
+        "renderWithQueryClient",
+        "renderWithRouter",
+        "mockAllTheWay"
       ]
     },
     {
       "order": 3,
-      "file": "web/dashboard/src/components/LoadingFallback.tsx",
+      "file": "web/dashboard/src/test/mocks/handlers.ts",
       "action": "create",
-      "purpose": "Create reusable loading component for Suspense boundaries",
+      "purpose": "MSW handlers for API mocking - auth, jobs, devices, documents, analytics endpoints",
       "key_functions": [
-        "LoadingFallback"
+        "authHandlers",
+        "jobsHandlers",
+        "devicesHandlers",
+        "documentsHandlers",
+        "analyticsHandlers"
       ]
     },
     {
       "order": 4,
-      "file": "web/dashboard/.env.production",
+      "file": "web/dashboard/src/test/mocks/server.ts",
       "action": "create",
-      "purpose": "Production environment variables for API endpoints",
+      "purpose": "MSW server setup for request interception in tests",
       "key_functions": [
-        "VITE_API_URL"
+        "server",
+        "setupMSW",
+        "teardownMSW"
       ]
     },
     {
       "order": 5,
+      "file": "web/dashboard/src/test/utils/test-utils.tsx",
+      "action": "create",
+      "purpose": "Custom render functions with providers, custom matchers, and test data factories",
+      "key_functions": [
+        "renderWithProviders",
+        "createMockUser",
+        "createMockJob",
+        "createMockDevice",
+        "createMockDocument"
+      ]
+    },
+    {
+      "order": 6,
+      "file": "web/dashboard/src/features/auth/LoginForm.test.tsx",
+      "action": "create",
+      "purpose": "Comprehensive tests for LoginForm component - rendering, validation, submission, error handling, loading states",
+      "key_functions": [
+        "describe",
+        "it",
+        "expect",
+        "userEvent",
+        "waitFor"
+      ]
+    },
+    {
+      "order": 7,
+      "file": "web/dashboard/src/features/jobs/JobList.test.tsx",
+      "action": "create",
+      "purpose": "Tests for JobList - loading skeleton, error state, empty state, job entries, status badges, filtering, selection, actions",
+      "key_functions": [
+        "renderJobList",
+        "testLoadingState",
+        "testErrorState",
+        "testEmptyState",
+        "testJobRendering",
+        "testStatusBadges",
+        "testFiltering",
+        "testSelection",
+        "testCancelRetry"
+      ]
+    },
+    {
+      "order": 8,
+      "file": "web/dashboard/src/features/devices/Devices.test.tsx",
+      "action": "create",
+      "purpose": "Tests for Devices component - stat cards, table/grid view, status indicators, filtering by status/type, search, empty state",
+      "key_functions": [
+        "renderDevices",
+        "testStatCards",
+        "testViewToggle",
+        "testStatusIndicators",
+        "testFilters",
+        "testSearch",
+        "testEmptyState"
+      ]
+    },
+    {
+      "order": 9,
+      "file": "web/dashboard/src/features/documents/Documents.test.tsx",
+      "action": "create",
+      "purpose": "Tests for Documents component - stats, upload toggle, document grid, search filtering, loading/error/empty states, pagination",
+      "key_functions": [
+        "renderDocuments",
+        "testStats",
+        "testUploadToggle",
+        "testDocumentGrid",
+        "testSearchFiltering",
+        "testLoadingErrorEmptyStates",
+        "testPagination"
+      ]
+    },
+    {
+      "order": 10,
+      "file": "web/dashboard/src/features/dashboard/DashboardHome.test.tsx",
+      "action": "create",
+      "purpose": "Tests for DashboardHome - stat cards, loading states, JobChart, RecentActivity, trend indicators, error handling",
+      "key_functions": [
+        "renderDashboardHome",
+        "testStatCards",
+        "testLoadingStates",
+        "testJobChart",
+        "testRecentActivity",
+        "testTrendIndicators",
+        "testErrorHandling"
+      ]
+    },
+    {
+      "order": 11,
+      "file": "web/dashboard/src/features/dashboard/StatCard.test.tsx",
+      "action": "create",
+      "purpose": "Unit tests for StatCard component - value display, trend indicators, loading state, icon rendering, color variants",
+      "key_functions": [
+        "renderStatCard",
+        "testValueDisplay",
+        "testTrendIndicator",
+        "testLoadingState",
+        "testIconRendering",
+        "testColorVariants"
+      ]
+    },
+    {
+      "order": 12,
+      "file": "web/dashboard/src/features/dashboard/JobChart.test.tsx",
+      "action": "create",
+      "purpose": "Unit tests for JobChart component - chart rendering, empty data handling, loading state, statistics display",
+      "key_functions": [
+        "renderJobChart",
+        "testChartRendering",
+        "testEmptyDataHandling",
+        "testLoadingState",
+        "testStatisticsDisplay"
+      ]
+    },
+    {
+      "order": 13,
+      "file": "web/dashboard/src/features/dashboard/RecentActivity.test.tsx",
+      "action": "create",
+      "purpose": "Unit tests for RecentActivity component - activity feed rendering, max items limit, empty state, activity status indicators",
+      "key_functions": [
+        "renderRecentActivity",
+        "testActivityFeed",
+        "testMaxItemsLimit",
+        "testEmptyState",
+        "testStatusIndicators"
+      ]
+    },
+    {
+      "order": 14,
+      "file": "web/dashboard/src/features/jobs/JobStatusBadge.test.tsx",
+      "action": "create",
+      "purpose": "Comprehensive tests for JobStatusBadge - all status types (queued, processing, completed, failed, cancelled), custom className",
+      "key_functions": [
+        "testAllStatusTypes",
+        "testCustomClassName",
+        "testAccessibilityAttributes"
+      ]
+    },
+    {
+      "order": 15,
+      "file": "web/dashboard/src/features/auth/RegisterForm.test.tsx",
+      "action": "create",
+      "purpose": "Tests for RegisterForm component - form fields, validation, password confirmation, error handling, loading state",
+      "key_functions": [
+        "testFormFields",
+        "testValidation",
+        "testPasswordConfirmation",
+        "testErrorHandling",
+        "testLoadingState"
+      ]
+    },
+    {
+      "order": 16,
+      "file": "web/dashboard/src/features/auth/ProtectedRoute.test.tsx",
+      "action": "create",
+      "purpose": "Tests for ProtectedRoute - authentication check, role-based access, redirect behavior, loading state",
+      "key_functions": [
+        "testAuthenticationCheck",
+        "testRoleBasedAccess",
+        "testRedirectBehavior",
+        "testLoadingState"
+      ]
+    },
+    {
+      "order": 17,
+      "file": "web/dashboard/src/features/devices/DeviceCard.test.tsx",
+      "action": "create",
+      "purpose": "Tests for DeviceCard - agent vs printer display, status indicators, action buttons, click handling",
+      "key_functions": [
+        "testAgentDisplay",
+        "testPrinterDisplay",
+        "testStatusIndicators",
+        "testActionButtons",
+        "testClickHandling"
+      ]
+    },
+    {
+      "order": 18,
+      "file": "web/dashboard/src/features/documents/DocumentCard.test.tsx",
+      "action": "create",
+      "purpose": "Tests for DocumentCard - document info display, encryption badge, download/delete actions, click handling",
+      "key_functions": [
+        "testDocumentInfoDisplay",
+        "testEncryptionBadge",
+        "testDownloadAction",
+        "testDeleteAction",
+        "testClickHandling"
+      ]
+    },
+    {
+      "order": 19,
+      "file": "web/dashboard/src/features/documents/DocumentUpload.test.tsx",
+      "action": "create",
+      "purpose": "Tests for DocumentUpload - drag-drop zone, file selection, upload progress, error handling",
+      "key_functions": [
+        "testDragDropZone",
+        "testFileSelection",
+        "testUploadProgress",
+        "testErrorHandling"
+      ]
+    },
+    {
+      "order": 20,
+      "file": "web/dashboard/src/features/settings/Toast.test.tsx",
+      "action": "create",
+      "purpose": "Tests for Toast notification component - success/error/info variants, auto-dismiss, manual close",
+      "key_functions": [
+        "testVariants",
+        "testAutoDismiss",
+        "testManualClose",
+        "testMultipleToasts"
+      ]
+    },
+    {
+      "order": 21,
+      "file": "web/dashboard/src/components/AgentStatusBadge.test.tsx",
+      "action": "create",
+      "purpose": "Tests for AgentStatusBadge - online/offline/error status display with proper styling",
+      "key_functions": [
+        "testStatusDisplay",
+        "testStyling",
+        "testAccessibility"
+      ]
+    },
+    {
+      "order": 22,
       "file": "web/dashboard/package.json",
       "action": "modify",
-      "purpose": "Add build analysis script to track bundle sizes",
+      "purpose": "Add test:coverage script, update test script for watch mode, add msw dependency",
       "key_functions": [
-        "analyze:build"
+        "scripts.test:coverage",
+        "scripts.test:watch",
+        "devDependencies.msw"
       ]
     }
   ],
@@ -71,48 +311,173 @@
   "test_plan": {
     "unit_tests": [
       {
-        "file": "web/dashboard/src/App.test.tsx",
+        "file": "web/dashboard/src/features/auth/LoginForm.test.tsx",
         "cases": [
-          "lazy loaded routes render correctly",
-          "fallback shows during loading",
-          "navigation updates route correctly"
+          "renders email input field with correct attributes",
+          "renders password input field with minlength 8",
+          "displays error message when error prop is provided",
+          "shows loading state when isLoading is true",
+          "prevents form submission with empty fields",
+          "calls onSubmit with email and password on valid submission",
+          "updates email state on input change",
+          "updates password state on input change",
+          "has accessible form labels linked to inputs",
+          "disables submit button during loading"
         ]
       },
       {
-        "file": "web/dashboard/vite.config.test.ts",
+        "file": "web/dashboard/src/features/jobs/JobList.test.tsx",
         "cases": [
-          "manual chunks are configured correctly",
-          "vendor dependencies are separated"
+          "renders loading skeleton when isLoading is true",
+          "renders error state when error prop is provided",
+          "renders empty state when jobs array is empty",
+          "renders job entries table with all columns",
+          "displays job status badges correctly for each status type",
+          "filters jobs by status when filter is applied",
+          "handles job selection checkbox changes",
+          "calls onJobClick when job row is clicked",
+          "shows cancel button for queued jobs",
+          "shows retry button for failed jobs",
+          "displays printer name when printer is assigned",
+          "displays error message for failed jobs",
+          "formats file size correctly",
+          "formats relative time correctly",
+          "indeterminate checkbox state when some jobs selected"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/devices/Devices.test.tsx",
+        "cases": [
+          "renders device stats cards",
+          "displays online/offline status indicators",
+          "renders devices in table view mode",
+          "renders devices in grid view mode",
+          "filters devices by status (online/offline/error)",
+          "filters devices by type (agent/printer)",
+          "search functionality filters by device name",
+          "shows empty state when no devices exist",
+          "toggles between table and grid view modes",
+          "opens register modal on Add Device click",
+          "displays correct agent count in stat card",
+          "displays correct printer count in stat card",
+          "delete confirmation dialog appears on delete click",
+          "toggle switch appears for printers only"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/documents/Documents.test.tsx",
+        "cases": [
+          "renders document statistics (total count, storage, encrypted)",
+          "displays upload button that toggles upload form",
+          "renders document grid with document cards",
+          "filters documents by search query",
+          "shows empty state when no documents exist",
+          "shows loading state during initial fetch",
+          "displays error state on API failure",
+          "pagination controls work correctly",
+          "pagination disables Previous button on first page",
+          "pagination disables Next button on last page",
+          "calculates total storage correctly",
+          "shows encrypted document count",
+          "refresh button refetches documents",
+          "upload button text changes when form is visible"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/dashboard/DashboardHome.test.tsx",
+        "cases": [
+          "renders all stat cards (Total Jobs, Active Devices, Pages Today, Completed Jobs)",
+          "displays loading state while fetching data",
+          "renders JobChart component with statistics",
+          "renders RecentActivity feed",
+          "shows trend indicators on stat cards",
+          "handles failed API calls gracefully",
+          "displays queued and failed job counts in additional stats",
+          "active devices shows ratio of active/total",
+          "pages today shows correct value from analytics",
+          "completed jobs shows count from filtered job data",
+          "total jobs shows count from jobs data"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/dashboard/StatCard.test.tsx",
+        "cases": [
+          "displays title and value correctly",
+          "displays unit when provided",
+          "shows trend indicator when provided",
+          "shows positive trend with up arrow and green color",
+          "shows negative trend with down arrow and red color",
+          "displays loading skeleton when loading is true",
+          "renders icon component when provided",
+          "applies correct color variant classes"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/dashboard/JobChart.test.tsx",
+        "cases": [
+          "renders chart with provided statistics data",
+          "displays empty state when no data available",
+          "shows loading skeleton when loading is true",
+          "displays total jobs count",
+          "displays completed jobs count",
+          "displays failed jobs count",
+          "displays average jobs per day",
+          "labels x-axis with day labels"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/dashboard/RecentActivity.test.tsx",
+        "cases": [
+          "renders activity items from provided activities",
+          "limits displayed items to maxItems prop",
+          "shows empty state when no activities",
+          "displays activity status indicator",
+          "formats relative time correctly",
+          "displays activity description",
+          "shows loading skeleton when loading is true"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/auth/RegisterForm.test.tsx",
+        "cases": [
+          "renders name, email, password fields",
+          "validates required fields",
+          "validates password minimum length",
+          "validates password confirmation matches",
+          "shows error message when provided",
+          "disables submit button during loading",
+          "calls onSubmit with form data on valid submission"
+        ]
+      },
+      {
+        "file": "web/dashboard/src/features/auth/ProtectedRoute.test.tsx",
+        "cases": [
+          "renders children when user is authenticated",
+          "redirects to login when user is not authenticated",
+          "redirects to custom path when specified",
+          "blocks access for users without required role",
+          "allows access for users with required role",
+          "shows loading state during auth check"
         ]
       }
     ],
-    "e2e_tests": [
-      {
-        "name": "Build artifact validation",
-        "steps": [
-          "Run npm run build",
-          "Verify dist/index.html exists",
-          "Verify dist/assets directory contains CSS and JS bundles",
-          "Check bundle sizes are within acceptable limits"
-        ]
-      }
-    ]
+    "e2e_tests": []
   },
   "security_notes": [
-    "Ensure API_BASE_URL is properly configured for production",
-    "Verify CORS headers are configured correctly in Vite proxy",
-    "Implement Content Security Policy headers in production",
-    "Validate environment variables are not bundled in client code"
+    "Tests must verify password field has minlength attribute of 8 characters",
+    "Tests must verify sensitive data (passwords) is not logged or exposed in error messages",
+    "Tests should verify XSS protection by ensuring user input is properly escaped",
+    "Auth token tests should verify tokens are stored securely (localStorage patterns)",
+    "Document encryption tests should verify encrypted documents display encryption badge",
+    "Role-based access tests must verify admin-only routes are protected"
   ],
-  "docker_changes": [
-    "Update deployments/docker/Dockerfile.dashboard to copy production-specific files",
-    "Add build argument for VITE_API_URL",
-    "Ensure dist/ directory is properly copied to nginx container"
-  ],
+  "docker_changes": [],
   "market_driven_features": [
-    "Cost analytics dashboard - UI components for quota and cost tracking already exist in types and API services",
-    "Follow-me printing - PrintRelease page component with secure PIN release",
-    "Mobile printing SDK - API endpoints documented in services/api.ts for job creation",
-    "AI-powered intelligent routing - Infrastructure exists in job-service for routing algorithms"
+    "Print quota monitoring tests - ensures cost control features like PaperCut",
+    "Multi-page document handling tests - matches competitor document management",
+    "Device status monitoring tests - real-time status like Printix",
+    "Encryption indicator tests - security focus like YSoft SafeQ",
+    "Activity feed tests - audit trail like enterprise solutions",
+    "Filtering and search tests - usability features from market leaders"
   ]
 }

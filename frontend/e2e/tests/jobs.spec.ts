@@ -236,7 +236,7 @@ test.describe('Print Jobs - Job Details', () => {
       const retryButton = failedJob.getByRole('button', { name: /retry/i });
       await retryButton.click();
 
-      await expect(page.getByText(/retrying|queued/i })).toBeVisible();
+      await expect(page.getByText(/retrying|queued/i)).toBeVisible();
     }
   });
 });

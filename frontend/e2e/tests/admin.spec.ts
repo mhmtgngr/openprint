@@ -168,7 +168,7 @@ test.describe('Admin - Print Policies', () => {
     await page.goto('/policies');
 
     const policyList = page.locator('[data-testid="policy-list"]');
-    const emptyState = page.getByText(/no policies/i });
+    const emptyState = page.getByText(/no policies/i );
 
     const listVisible = await policyList.isVisible();
     const emptyVisible = await emptyState.isVisible();
@@ -399,7 +399,7 @@ test.describe('Admin - Audit Logs', () => {
     await page.goto('/audit-logs');
 
     const logList = page.locator('[data-testid="audit-log-list"]');
-    const emptyState = page.getByText(/no logs|no activity/i });
+    const emptyState = page.getByText(/no logs|no activity/i );
 
     const listVisible = await logList.isVisible();
     const emptyVisible = await emptyState.isVisible();
@@ -510,7 +510,7 @@ test.describe('Admin - Email to Print', () => {
     if (await testButton.isVisible()) {
       await testButton.click();
 
-      await expect(page.getByText(/test email sent|check your inbox/i })).toBeVisible();
+      await expect(page.getByText(/test email sent|check your inbox/i)).toBeVisible();
     }
   });
 
@@ -521,7 +521,7 @@ test.describe('Admin - Email to Print', () => {
     await expect(jobsSection).toBeVisible();
 
     const jobsList = page.locator('[data-testid="email-jobs"]');
-    const emptyState = page.getByText(/no jobs/i });
+    const emptyState = page.getByText(/no jobs/i );
 
     const listVisible = await jobsList.isVisible();
     const emptyVisible = await emptyState.isVisible();

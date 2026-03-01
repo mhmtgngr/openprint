@@ -76,6 +76,28 @@ export default defineConfig(({ mode }) => ({
     setupFiles: './src/test/setup.ts',
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     tsconfig: './tsconfig.test.json',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/mockData.ts',
+        '**/dist/**',
+        '**/e2e/**',
+        '**/types/**',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
+    },
   },
   ...(mode === 'analyze' && {
     build: {
