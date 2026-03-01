@@ -2191,3 +2191,30 @@ Success Rate: 0%
 [0;32m[20:32:00][0m   🌐 External Access URL: http://192.168.31.76:3000
 [0;32m[20:32:00][0m   📄 Full report: /home/cmit/openprint/.team/artifacts/access_report.json
 [0;35m[20:32:00][0m [1;37m🧪 Tester[0m Running Playwright...
+[0;32m[20:33:54][0m   ✓ Merged → main
+[0;32m[20:33:54][0m   🟢 Services running. Stop: ./dev.sh stop-services
+[0;32m[20:33:54][0m ✅ Deploy done
+[0;32m[20:33:54][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:33:54][0m PHASE 9: E2E PRODUCTION — 🧪 Full System Test
+[0;32m[20:33:54][0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[20:33:55][0m   🌐 Testing against: http://192.168.31.76:3000
+[0;32m[20:33:55][0m   📡 Server IP: 192.168.31.76
+[0;32m[20:33:55][0m   🐳 Services should be running from deploy phase
+[1;33m[20:33:55][0m   Service on port 15432 not accessible
+[1;33m[20:33:55][0m   Service on port 16379 not accessible
+[1;33m[20:33:55][0m   Some services not accessible - attempting restart...
+[0;32m[20:33:55][0m   🚀 Starting services...
+[0;32m[20:33:55][0m   🔧 Checking for stale containers...
+[1;33m[20:34:18][0m   ⚠️  Dependency errors detected, recreating containers...
+[1;33m[20:35:14][0m   ✗ :15432
+[1;33m[20:35:14][0m   ✗ :16379
+[0;32m[20:35:14][0m   ✓ :18001
+[0;32m[20:35:14][0m   ✓ :18005
+[0;32m[20:35:14][0m   ✓ :3000
+[0;32m[20:35:14][0m   ✓ :8002
+[0;32m[20:35:14][0m   ✓ :8003
+[0;32m[20:35:14][0m   ✓ :8004
+[0;32m[20:35:14][0m   Health: 6/8
+[0;32m[20:35:24][0m   🧪 Running E2E tests against: http://192.168.31.76:3000
+[0;32m[20:35:24][0m   🎭 Using Playwright at: web/dashboard
+[0;32m[20:35:26][0m   Running tests with BASE_URL=http://192.168.31.76:3000 (set via global-setup.ts)
