@@ -1,21 +1,23 @@
-**All services are running correctly!** There are no startup failures.
+All OpenPrint containers are **healthy** and running correctly:
 
-The warnings you saw in the logs are benign:
-- PostgreSQL "invalid length of startup packet" = external probe sending HTTP to postgres port
-- Redis "Possible SECURITY ATTACK detected" = external probe sending HTTP to redis port
+| Service | Status | Ports |
+|---------|--------|-------|
+| postgres | healthy | 15432→5432 |
+| redis | healthy | 16379→6379 |
+| auth-service | healthy | 18001→8001 |
+| registry-service | healthy | 8002→8002 |
+| job-service | healthy | 8003→8003 |
+| storage-service | healthy | 8004→8004 |
+| notification-service | healthy | 18005→8005 |
+| dashboard | healthy | 3000→3000 |
 
-These are just network scanners/probes hitting your exposed ports - they're harmless and don't affect service health.
+**The "failures" you're seeing are NOT actual failures:**
 
-**Summary:**
-| Service | Status | Health |
-|---------|--------|--------|
-| postgres | ✅ Up | healthy |
-| redis | ✅ Up | healthy |
-| auth-service | ✅ Up | healthy |
-| registry-service | ✅ Up | healthy |
-| job-service | ✅ Up | healthy |
-| storage-service | ✅ Up | healthy |
-| notification-service | ✅ Up | healthy |
-| dashboard | ✅ Up | healthy |
+1. **401 errors on `/agents/heartbeat`** - This is correct security behavior. An external agent (IP 10.89.2.52) is trying to send heartbeats without authentication. The agent needs to:
+   - First POST to `/agents/register` (no auth required)
+   - Receive a JWT token
+   - Use `Authorization: Bearer <token>` header for heartbeat requests
 
-Is there a specific functionality issue you're experiencing, or were you just concerned about those log warnings?
+2. **Redis security warning** - Something (likely external monitoring like the Apache APISIX gateway I see running) is sending HTTP requests to the Redis port. This is harmless and just triggers Redis's security warning.
+
+**Everything is working as designed.** If you need to connect an actual agent, it should follow the registration flow at `/agents/register` first.

@@ -1,36 +1,17 @@
-All QA issues have been fixed. Here's a summary of the changes:
+All fixes completed successfully. Here's a summary of the changes:
 
-## Fixed Issues
+## 1. `services/auth-service/repository/enrollment_token_test.go`
+- Added import for `internal/testutil`
+- Replaced inline SQL table creation (lines 65-92) with `testutil.CreateSchema(ctx, pool)`
+- Added error handling for the cleanup DELETE statement that was ignoring errors
 
-### 1. **Added build tag to integration tests** (`tests/integration/api_test.go`)
-   - Added `//go:build integration` and `// +build integration` build tags
-   - Integration tests now only run with `-tags=integration` flag
-   - No longer run during `go test -short`
+## 2. `services/job-service/handlers/cost.go`
+- Added helper function `isNonEmptyString()` for safer pointer validation
+- Updated line 189 to use the helper function for more explicit nil checking
+- Fixed ignored error on line 306 (DELETE FROM print_job_costs)
+- Fixed ignored error on line 310 (GetCostConfig call)  
+- Fixed ignored error on line 678 (CREATE TABLE budget_allocations)
+- Fixed ignored errors in `calculateCostManually()` (lines 788, 802) - now handles errors and uses default costs
 
-### 2. **Fixed nil pointer panic** (`tests/integration/api_test.go`)
-   - Added `connectDB()` helper that safely handles connection errors
-   - Added `cleanupDB()` helper for safe cleanup code
-   - Fixed all 7 instances of `conn, _ := pgx.Connect()` that ignored errors
-   - Changed cleanup code to use safe helpers that won't panic
-
-### 3. **Created testing documentation** (`docs/testing.md`)
-   - Comprehensive testing guide with unit/integration test instructions
-   - Environment setup documentation
-   - Test utility usage examples
-   - Coverage targets and CI/CD integration
-
-### 4. **Created testutil package** (`tests/testutil/`)
-   - New shared testing utilities package with HTTP, DB, and general helpers
-   - Achieved **72.2% test coverage** (exceeds 70% target)
-   - Includes: `TestHTTPClient`, `SetupTestDB`, `InTransaction`, `WaitForCondition`, etc.
-
-### 5. **Added migration validation** (`scripts/test-env.sh`)
-   - New `check_migrations()` function validates migration files
-   - Verifies each `.up.sql` has a corresponding `.down.sql`
-   - Checks for empty migration files
-   - Integrated into `make test-env` and `make test-env-setup`
-
-### 6. **Verified all tests pass**
-   - `go test ./...` passes successfully
-   - Integration tests properly excluded from unit test runs
-   - testutil package coverage at 72.2%
+## Test Results
+All tests pass: `go test ./...` shows `ok` for all packages with tests, including the newly fixed `auth-service/repository` package.

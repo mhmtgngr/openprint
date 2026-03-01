@@ -17,9 +17,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
-	"github.com/openprint/openprint/services/api-gateway/handler"
-	"github.com/openprint/openprint/services/api-gateway/middleware"
+	"github.com/openprint/openprint/services/api-gateway/handlers"
+	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
 )
 
 // Config holds service configuration.
@@ -130,7 +131,7 @@ func main() {
 		middleware.RateLimitMiddleware(60, 1*time.Minute),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
 		middleware.SecurityHeadersMiddleware(),
-		middleware.APIKeyMiddleware(db, []string{"/health", "/api/v1/docs"}),
+		gatewaymiddleware.APIKeyMiddleware(db, []string{"/health", "/api/v1/docs"}),
 	)
 
 	wrappedMux := middlewareChain(mux)

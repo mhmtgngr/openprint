@@ -2,44 +2,113 @@
   "phases": [
     {
       "order": 1,
-      "name": "Complete Frontend Build",
+      "name": "Fix Failing Enrollment Token Tests",
+      "priority": "critical",
+      "category": "test",
+      "description": "Fix 4 failing tests in services/auth-service/repository/enrollment_token_test.go. Tests fail with 'relation enrollment_tokens does not exist (SQLSTATE 42P01)'. The migration file 000006_create_enrollment_tokens_table.up.sql exists but tests aren't running migrations properly. Fix internal/testutil/migrate.go to ensure enrollment_tokens table is created before tests run. Verify testutil setup calls all migration files, not just users table. Run tests with full migration suite to confirm fix: go test -v ./services/auth-service/repository/...",
+      "success_criteria": [
+        "All enrollment_token_test.go tests pass",
+        "enrollment_tokens table created during test setup",
+        "Test suite run: go test ./services/auth-service/repository/... passes"
+      ],
+      "estimated_minutes": 45
+    },
+    {
+      "order": 2,
+      "name": "Build and Verify Frontend Dashboard",
       "priority": "high",
       "category": "feature",
-      "description": "Verify and complete the React dashboard. The diagnosis shows tsx_files: 0 despite rounds 11-17 creating components. Check web/dashboard/src/ for actual component files. If missing, create: LoginForm.tsx, JobList.tsx, Devices.tsx, Documents.tsx, Dashboard.tsx, Settings.tsx. Ensure web/dashboard/package.json has all dependencies (react, react-router-dom, @tanstack/react-query, axios). Run npm install and npm run build. Fix any TypeScript errors. Verify dashboard starts on port 3000 and connects to API gateway on port 8000.",
+      "description": "Dashboard components exist but frontend shows 'no' build status. Navigate to web/dashboard, run npm install if needed, then execute npm run build. Verify TypeScript compilation with npm run type-check. Fix any TS errors that prevent build. Ensure Vite can bundle the React application. Verify build artifacts are generated in web/dashboard/dist/. This phase validates the frontend is production-ready after the component creation rounds.",
       "success_criteria": [
-        "web/dashboard/src/features/ contains .tsx files",
         "npm run build completes without errors",
-        "npm run type-check passes",
-        "Dashboard serves at http://localhost:3000"
+        "npm run type-check passes with no TS errors",
+        "dist/ directory contains build artifacts",
+        "Dashboard can be served and loads in browser"
       ],
       "estimated_minutes": 60
     },
     {
-      "order": 2,
-      "name": "End-to-End Testing & Production Readiness",
-      "priority": "high",
+      "order": 3,
+      "name": "Frontend Testing Suite",
+      "priority": "medium",
       "category": "test",
-      "description": "Add comprehensive E2E test coverage. Create tests/e2e/ directory with Playwright or Cypress tests covering: user registration/login flow, device registration, print job submission (upload document \u2192 select printer \u2192 job created), job status tracking, and WebSocket notifications. Add docker-compose.e2e.yml for isolated test environment. Create E2E test script that: 1) Starts all services, 2) Runs health checks, 3) Executes E2E scenarios, 4) Generates coverage report. Add makefile target 'make test-e2e'. Ensure all 7 services (auth, registry, job, storage, notification, gateway, analytics) pass.",
+      "description": "Dashboard has no test files. Create test suite for React components using React Testing Library and Vitest. Add tests for: LoginForm (submit with valid/invalid credentials), JobList (render jobs, filter functionality), DeviceList (display devices, status indicators), DocumentList (upload, delete actions), Dashboard home (stats display). Create web/dashboard/src/__tests__/ directory. Add test setup in web/dashboard/vitest.config.ts. Ensure npm run test passes with at least 70% coverage.",
       "success_criteria": [
-        "E2E tests cover all user workflows",
-        "All services pass health checks in sequence",
-        "test-e2e make target executes successfully",
-        "Coverage report generated"
+        "At least 10 component tests created",
+        "npm run test passes all tests",
+        "Coverage > 70% for feature components",
+        "Tests run in CI/CD pipeline"
+      ],
+      "estimated_minutes": 120
+    },
+    {
+      "order": 4,
+      "name": "E2E Testing with Playwright",
+      "priority": "medium",
+      "category": "test",
+      "description": "Add end-to-end tests using Playwright. Test critical user flows: login \u2192 dashboard \u2192 view jobs \u2192 submit print job \u2192 view devices. Create web/dashboard/e2e/ directory with tests for authentication flow, job submission, device registration. Configure Playwright to run against local dev server. Ensure tests can run headlessly in CI. This validates the entire user journey works end-to-end.",
+      "success_criteria": [
+        "5 E2E test scenarios covering main flows",
+        "npx playwright test passes all scenarios",
+        "Tests run in headless mode",
+        "E2E tests integrated with CI pipeline"
       ],
       "estimated_minutes": 90
     },
     {
-      "order": 3,
-      "name": "Security Hardening & Production Deployment",
-      "priority": "critical",
-      "category": "security",
-      "description": "Implement production security measures. Add: 1) Rate limiting middleware (5 req/sec for auth, 100 req/sec for others) using internal/middleware/ratelimit.go with Redis backend, 2) Request validation using internal/middleware/validation.go with schemas for all POST/PUT endpoints, 3) Secure headers middleware (CSP, X-Frame-Options, HSTS) in internal/middleware/security.go, 4) Environment-based config (dev/staging/prod) in services/*/config/, 5) Secrets management via environment variables only (no hardcoded secrets), 6) Docker security scan in CI (trivy or snyk). Update docker-compose.prod.yml with: non-root containers, read-only root filesystem where possible, resource limits, health checks with retries.",
+      "order": 5,
+      "name": "API Documentation with OpenAPI/Swagger",
+      "priority": "medium",
+      "category": "devops",
+      "description": "Generate API documentation using swagger annotations. Add swagger docs to all service handlers: auth, registry, job, storage, notification, gateway, analytics, organization. Install swaggo/swag for Go. Create main.go annotations for each service. Run swag init to generate docs. Expose /swagger endpoint on API gateway. This enables interactive API exploration for developers and external consumers.",
       "success_criteria": [
-        "Rate limiting prevents >5 auth requests/sec",
-        "All POST endpoints validate input schemas",
-        "Security headers present on all responses",
-        "docker-compose.prod.yml includes resource limits",
-        "No secrets in codebase"
+        "Swagger annotations added to all handlers",
+        "swagger.json generated for each service",
+        "/swagger UI accessible at gateway:8000/swagger",
+        "API docs cover all endpoints with request/response schemas"
+      ],
+      "estimated_minutes": 90
+    },
+    {
+      "order": 6,
+      "name": "Metrics and Observability",
+      "priority": "medium",
+      "category": "devops",
+      "description": "Add Prometheus metrics export to all services. Create internal/shared/metrics/prometheus.go with metrics for: HTTP request duration, error rate, active connections, queue depth. Expose /metrics endpoint on each service. Add Grafana dashboard in deployments/docker/grafana/dashboards/. Configure Prometheus scrape configs. This enables production monitoring and alerting on system health.",
+      "success_criteria": [
+        "All services expose /metrics endpoint",
+        "Prometheus scrapes all service metrics",
+        "Grafana dashboard displays key metrics",
+        "Alert rules configured for critical failures"
+      ],
+      "estimated_minutes": 75
+    },
+    {
+      "order": 7,
+      "name": "Production Readiness Checklist",
+      "priority": "high",
+      "category": "devops",
+      "description": "Complete production readiness tasks: 1) Add health check grace periods for container startup. 2) Implement graceful shutdown with context timeout. 3) Add structured logging with JSON format option. 4) Configure CORS properly for production domains. 5) Add rate limiting middleware with Redis backend. 6) Validate all secrets are externalized via environment variables. 7) Create production docker-compose.yml with resource limits. 8) Add backup/restore scripts for PostgreSQL.",
+      "success_criteria": [
+        "All services handle SIGTERM gracefully",
+        "Rate limiting enabled on public endpoints",
+        "No hardcoded secrets in code",
+        "Production docker-compose includes resource limits",
+        "Database backup script tested and documented"
+      ],
+      "estimated_minutes": 90
+    },
+    {
+      "order": 8,
+      "name": "Performance Optimization",
+      "priority": "low",
+      "category": "performance",
+      "description": "Profile and optimize performance bottlenecks. Add pprof HTTP endpoints to services. Run load tests using k6 or vegeta on critical paths: login, job submission, device registration. Identify slow queries and add database indexes. Optimize JSON marshaling, implement response caching where appropriate. Add connection pooling configuration validation. Benchmark before/after to validate improvements.",
+      "success_criteria": [
+        "pprof profiles identify bottlenecks",
+        "Load tests pass 1000 RPS target",
+        "Database queries < 10ms p95",
+        "Response caching reduces redundant load"
       ],
       "estimated_minutes": 120
     }
@@ -47,18 +116,21 @@
   "project_health": {
     "score": 72,
     "critical_issues": [
-      "Frontend TSX files count is 0 - dashboard may not exist",
-      "No E2E test coverage for critical workflows",
-      "Rate limiting not implemented",
-      "Production deployment config incomplete"
+      "10 out of 24 tests failing (42% failure rate)",
+      "enrollment_tokens table not created during test migrations",
+      "Frontend not built or verified",
+      "No frontend test coverage"
     ],
     "strengths": [
-      "All 7 microservices compile successfully",
-      "Unit tests pass (16/16)",
-      "Testcontainers integration for database tests",
-      "Docker Compose configuration exists",
-      "Security middleware foundation in place"
+      "All Go services compile successfully",
+      "Complete microservice architecture implemented (8 services)",
+      "Docker deployment ready with docker-compose",
+      "Full React dashboard with all feature components created",
+      "Database migrations complete (12 migration files)",
+      "Integration test suite exists",
+      "Security middleware implemented",
+      "API gateway routing configured"
     ]
   },
-  "rationale": "Phase 1 addresses the critical frontend gap\u2014diagnosis shows 0 TSX files despite prior rounds creating components. Without a functional UI, the system is incomplete for users. Phase 2 validates the entire system works end-to-end before production. Phase 3 hardens security and deployment, essential for a cloud print platform handling sensitive documents. This order prioritizes: 1) Completeness, 2) Correctness, 3) Security."
+  "rationale": "Phases ordered following strict rules: (1) Fix failing tests first\u2014enrollment_token tests fail due to missing table, blocking CI. (2) Build frontend\u2014components exist but unverified build. (3) Frontend tests\u2014no test coverage exists for React components. (4) E2E tests\u2014validate complete user flows. (5-8) DevOps and hardening\u2014API docs, metrics, production readiness, performance once core functionality works. Skipping TODOs (2 documentation comments) as they're non-blocking. Project score 72 reflects strong architecture but critical test failures blocking deployment readiness."
 }

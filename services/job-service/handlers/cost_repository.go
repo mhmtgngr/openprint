@@ -146,7 +146,7 @@ func (r *costRepository) CalculateJobCost(ctx context.Context, jobID string) (*J
 
 	// Get costs
 	monoCost, _ := r.GetCostConfig(ctx, organizationID, printerID, "monochrome_a4")
-	colorCost, _ := r.GetCostConfig(ctx, organizationID, printerID, "color_a4")
+	_, _ = r.GetCostConfig(ctx, organizationID, printerID, "color_a4")
 
 	// For simplicity, assume all pages are monochrome
 	costPerPage := 0.0

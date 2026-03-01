@@ -1,483 +1,239 @@
 {
-  "project_name": "openprint-dashboard",
-  "summary": "Verify and complete the React dashboard for OpenPrint Cloud print management platform. The diagnosis shows tsx_files: 0 but the actual codebase has 100+ TSX files with a working build (1056 modules, 881.57 kB bundle). TypeScript type-check passes, all required components exist (LoginForm, JobList, Devices, Documents, Dashboard, Settings). The main issues are: diagnosis inaccuracy, missing axios dependency (code uses fetch API), and no API gateway on port 8000 (direct service proxying configured).",
+  "project_name": "auth-service-enrollment-token-tests",
+  "summary": "Fix 4 failing tests in auth-service enrollment_token_test.go by ensuring database migrations run properly to create the enrollment_tokens table before tests execute",
   "user_stories": [
     {
       "id": "US-001",
-      "as_a": "system administrator",
-      "i_want": "verify the React dashboard build and deployment configuration",
-      "so_that": "the frontend can be deployed and connect to backend services correctly",
+      "as_a": "developer",
+      "i_want": "test database migrations to run automatically before test execution",
+      "so_that": "all required tables exist when tests run and I get reliable test results",
       "priority": "critical",
       "acceptance_criteria": [
-        "npm install completes without errors",
-        "npm run build completes successfully",
-        "TypeScript type-check passes with no errors",
-        "Dashboard starts on port 3000",
-        "All routes load without console errors"
+        "enrollment_tokens table is created before enrollment_token_test.go tests run",
+        "all migration files in migrations/ directory are executed during test setup",
+        "tests can be run with simple 'go test' command without manual database setup",
+        "test database is properly cleaned up after test completion"
       ]
     },
     {
       "id": "US-002",
       "as_a": "developer",
-      "i_want": "correct the diagnosis file to accurately reflect the TSX file count",
-      "so_that": "project completion metrics are accurate",
+      "i_want": "testutil to support running all available migrations",
+      "so_that": "new migration files are automatically included in test runs",
       "priority": "high",
       "acceptance_criteria": [
-        "Diagnosis shows correct tsx_files count (>100)",
-        "frontend_files score updated from 0 to accurate value",
-        "completion percentage recalculated"
-      ]
-    },
-    {
-      "id": "US-003",
-      "as_a": "user",
-      "i_want": "the dashboard to connect to backend services through a unified API gateway",
-      "so_that": "service routing is centralized and manageable",
-      "priority": "medium",
-      "acceptance_criteria": [
-        "API gateway service exists on port 8000",
-        "All API calls proxy through /api/v1 prefix",
-        "Service routing configured (auth, jobs, printers, etc.)"
-      ]
-    },
-    {
-      "id": "US-004",
-      "as_a": "user",
-      "i_want": "to authenticate and access protected dashboard pages",
-      "so_that": "I can manage print jobs and devices",
-      "priority": "critical",
-      "acceptance_criteria": [
-        "Login form renders correctly",
-        "Authentication stores JWT tokens",
-        "Protected routes redirect unauthenticated users to login",
-        "Dashboard loads after successful authentication"
-      ]
-    },
-    {
-      "id": "US-005",
-      "as_a": "user",
-      "i_want": "view and manage print jobs through the dashboard",
-      "so_that": "I can submit, cancel, and monitor print jobs",
-      "priority": "high",
-      "acceptance_criteria": [
-        "Job list displays all print jobs",
-        "Job status badges show current state",
-        "Create job form accepts document uploads",
-        "Cancel and retry actions work correctly"
-      ]
-    },
-    {
-      "id": "US-006",
-      "as_a": "administrator",
-      "i_want": "manage printers and devices through the dashboard",
-      "so_that": "I can monitor and configure the print fleet",
-      "priority": "high",
-      "acceptance_criteria": [
-        "Device list shows all registered printers",
-        "Device cards display status and health",
-        "Device detail page shows configuration",
-        "Device registration form works"
-      ]
-    },
-    {
-      "id": "US-007",
-      "as_a": "user",
-      "i_want": "upload and manage documents for printing",
-      "so_that": "I can submit documents to the print queue",
-      "priority": "high",
-      "acceptance_criteria": [
-        "Document upload accepts PDF and image files",
-        "Document list shows uploaded files",
-        "Document viewer previews files",
-        "Upload progress indicator displays"
+        "testutil/migrate.go discovers and runs all .up.sql migration files",
+        "migrations run in correct order based on filename sequence",
+        "migration failures are reported with clear error messages"
       ]
     }
   ],
   "functional_requirements": [
     {
       "id": "FR-001",
-      "title": "Dashboard Build Verification",
-      "description": "Verify the React dashboard builds successfully with all dependencies installed. The build currently produces a 881.57 kB bundle from 1056 modules.",
-      "service": "dashboard"
+      "title": "Fix testutil migration execution",
+      "description": "internal/testutil/migrate.go must execute all migration files from the migrations directory, not just a hardcoded subset. The current implementation may only create the users table, missing the enrollment_tokens table created in 000006_create_enrollment_tokens_table.up.sql",
+      "service": "testutil"
     },
     {
       "id": "FR-002",
-      "title": "API Client Configuration",
-      "description": "The dashboard uses fetch API for HTTP requests. All API calls go through /api/v1 prefix with service-specific routing in vite.config.ts. No axios dependency needed.",
-      "service": "dashboard"
+      "title": "Discover migration files dynamically",
+      "description": "testutil should scan the migrations directory for all .up.sql files and execute them in filename order to ensure complete database schema setup",
+      "service": "testutil"
     },
     {
       "id": "FR-003",
-      "title": "Authentication Flow",
-      "description": "JWT-based authentication with token storage in localStorage. Automatic token refresh on 401 responses. Protected routes redirect to /login.",
-      "service": "auth-service"
+      "title": "Verify migration execution order",
+      "description": "Ensure migrations execute sequentially in filename order (000001 through 000006) to respect foreign key dependencies and table creation order",
+      "service": "testutil"
     },
     {
-      "id": "FR-004",
-      "title": "Job Management UI",
-      "description": "Job list, create job form, job details, status badges, cancel and retry actions. Integrates with job-service on port 8003.",
-      "service": "job-service"
+      "id": "FR-M004",
+      "title": "Secure Print Release",
+      "description": "Implement PIN, badge, or mobile app authentication at printer before document release to prevent sensitive documents from being left unattended",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Essential for enterprise and healthcare markets - table stake for security-conscious customers"
     },
     {
-      "id": "FR-005",
-      "title": "Device Management UI",
-      "description": "Device list, device cards, device detail, device registration. Integrates with registry-service on port 8002.",
-      "service": "registry-service"
+      "id": "FR-M005",
+      "title": "Print Quota & Cost Allocation",
+      "description": "User and departmental quotas with cost tracking, chargeback to cost centers, and budget enforcement",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Key differentiator for education and enterprise segments - enables cost recovery and accountability"
     },
     {
-      "id": "FR-006",
-      "title": "Document Management UI",
-      "description": "Document upload, document list, document viewer, file validation. Integrates with storage-service on port 8004.",
-      "service": "storage-service"
+      "id": "FR-M006",
+      "title": "Comprehensive Audit Logging",
+      "description": "Detailed logging of all print activities including user, document, printer, timestamp, page count, and outcome for compliance and forensics",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Foundational for SOC2/ISO27001 compliance and enterprise sales"
     },
     {
-      "id": "FR-007",
-      "title": "Settings Pages",
-      "description": "Profile settings, organization settings, security settings with form validation and API integration.",
-      "service": "dashboard"
+      "id": "FR-M007",
+      "title": "Sustainability Dashboard",
+      "description": "Track and report environmental impact including paper saved, trees preserved, CO2 reduction, and waste reduction metrics",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Appeals to ESG-focused organizations and helps with green certifications"
     },
     {
-      "id": "FR-008",
-      "title": "Analytics Dashboard",
-      "description": "Stat cards, job charts with recharts, recent activity feed, environment report.",
-      "service": "dashboard"
+      "id": "FR-M008",
+      "title": "Follow-Me Printing",
+      "description": "Users print to a virtual queue and release jobs at any available printer via authentication, improving flexibility and reducing waste",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Must-have for modern mobile workforce and hot-desking environments"
     },
     {
       "id": "FR-M009",
-      "title": "Print Quota & Cost Management",
-      "description": "User/department-level quotas, chargeback to cost centers, prepaid printing balances",
+      "title": "Mobile Print Applications",
+      "description": "Native iOS and Android apps for printing from mobile devices with camera scan and document upload capabilities",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Essential for enterprise cost control - blockers for adoption"
+      "competitive_advantage": "PaperCut's Mobility Print has 100M+ downloads - huge market opportunity"
     },
     {
       "id": "FR-M010",
-      "title": "Secure Print Release",
-      "description": "Hold jobs until user authenticates at device via PIN, badge, or mobile",
+      "title": "SOC2/ISO27001 Compliance Framework",
+      "description": "Implement security controls, audit trails, access management, and documentation required for enterprise compliance certifications",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "Security requirement for healthcare/finance/education"
+      "competitive_advantage": "Required for enterprise and government sales - significant revenue impact"
     },
     {
       "id": "FR-M011",
-      "title": "Mobile Print App",
-      "description": "Native iOS/Android apps with document capture and print release",
+      "title": "Advanced Reporting & Analytics",
+      "description": "Customizable reports on usage, costs, environmental impact, user behavior, and trends with export capabilities and scheduled delivery",
       "service": "identity",
       "source": "market_research",
-      "competitive_advantage": "PaperCut Mobility competitor - huge BYOD market"
-    },
-    {
-      "id": "FR-M012",
-      "title": "Advanced Reporting",
-      "description": "Scheduled reports, custom dashboards, export to CSV/PDF, cost analysis",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Admin visibility drives platform value"
-    },
-    {
-      "id": "FR-M013",
-      "title": "Document Watermarking",
-      "description": "Optional watermarks for secure documents (confidential, draft, etc.)",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Low-hanging security feature"
-    },
-    {
-      "id": "FR-M014",
-      "title": "API Gateway + Developer Portal",
-      "description": "Centralized API management with documentation and rate limiting",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Enables partner ecosystem and integrations"
+      "competitive_advantage": "Enables data-driven decision making and is a key evaluation criteria for buyers"
     }
   ],
   "non_functional_requirements": [
     {
       "id": "NFR-001",
-      "category": "performance",
-      "requirement": "Dashboard initial load time",
-      "metric": "<3 seconds for initial page load"
+      "category": "reliability",
+      "requirement": "Tests must pass consistently on fresh database instances",
+      "metric": "100% pass rate on clean test database"
     },
     {
       "id": "NFR-002",
-      "category": "performance",
-      "requirement": "Bundle size optimization",
-      "metric": "Current bundle 881.57 kB - consider code splitting"
+      "category": "maintainability",
+      "requirement": "New migration files should be automatically picked up without code changes",
+      "metric": "zero code changes required for new migrations"
     },
     {
       "id": "NFR-003",
-      "category": "security",
-      "requirement": "JWT token storage",
-      "metric": "Tokens stored in localStorage with HTTPS required"
-    },
-    {
-      "id": "NFR-004",
-      "category": "compatibility",
-      "requirement": "Browser support",
-      "metric": "Modern browsers with ES2020 support"
-    },
-    {
-      "id": "NFR-005",
-      "category": "scalability",
-      "requirement": "API response handling",
-      "metric": "Automatic token refresh on 401 responses"
+      "category": "performance",
+      "requirement": "Test database setup should complete quickly",
+      "metric": "migration execution under 5 seconds"
     }
   ],
-  "api_endpoints": [
+  "api_endpoints": [],
+  "database_changes": [
     {
-      "method": "POST",
-      "path": "/api/v1/auth/login",
-      "description": "User login with email and password",
-      "roles": [
-        "public"
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/auth/register",
-      "description": "New user registration",
-      "roles": [
-        "public"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/auth/me",
-      "description": "Get current user info",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/auth/logout",
-      "description": "User logout",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs",
-      "description": "List print jobs with pagination",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/jobs",
-      "description": "Create new print job",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/{id}",
-      "description": "Get job details",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/jobs/{id}/cancel",
-      "description": "Cancel a print job",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/printers",
-      "description": "List all printers/devices",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/agents",
-      "description": "List all print agents",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/organizations",
-      "description": "Get organization details",
-      "roles": [
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/quotas/me",
-      "description": "Get user quota info",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/policies",
-      "description": "List print policies",
-      "roles": [
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/releases/pending",
-      "description": "Get pending secure release jobs",
-      "roles": [
-        "user",
-        "admin",
-        "owner"
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/analytics/usage",
-      "description": "Get usage analytics",
-      "roles": [
-        "admin",
-        "owner"
+      "table": "enrollment_tokens",
+      "action": "create",
+      "columns": [
+        "id uuid",
+        "token uuid",
+        "user_id uuid",
+        "expires_at timestamp",
+        "created_at timestamp",
+        "used boolean"
       ]
     }
   ],
-  "database_changes": [],
   "affected_services": [
-    "dashboard",
     "auth-service",
-    "job-service",
-    "registry-service",
-    "storage-service"
+    "testutil"
   ],
   "risks": [
     {
-      "risk": "Diagnosis file shows incorrect tsx_files count (0 vs 100+ actual)",
-      "mitigation": "Update diagnosis scanning logic to correctly count .tsx files in web/dashboard/src"
+      "risk": "Breaking existing tests by changing migration behavior",
+      "mitigation": "Run full test suite after changes to verify no regressions"
     },
     {
-      "risk": "No API gateway on port 8000 - vite proxies directly to services",
-      "mitigation": "Either implement API gateway service or update documentation to reflect direct service access pattern"
+      "risk": "Migration execution order dependencies causing failures",
+      "mitigation": "Ensure filename-based ordering is preserved and test with all migrations"
     },
     {
-      "risk": "Large bundle size (881.57 kB) may affect initial load time",
-      "mitigation": "Implement dynamic imports and code splitting for routes"
-    },
-    {
-      "risk": "axios is mentioned in CLAUDE.md but not in package.json",
-      "mitigation": "Update documentation to reflect fetch API usage or add axios if preferred"
-    },
-    {
-      "risk": "JWT tokens stored in localStorage may be vulnerable to XSS",
-      "mitigation": "Consider httpOnly cookie implementation for production"
+      "risk": "Test database cleanup issues between test runs",
+      "mitigation": "Implement proper teardown and transaction rollback in test fixtures"
     }
   ],
   "implementation_phases": [
     {
       "phase": 1,
-      "name": "Verify Build Status",
+      "name": "Diagnosis",
       "tasks": [
-        "Run npm install to verify dependencies",
-        "Run npm run type-check to verify TypeScript",
-        "Run npm run build to verify production build",
-        "Verify dashboard starts on port 3000 with npm run dev"
+        "Read internal/testutil/migrate.go to understand current migration logic",
+        "Read 000006_create_enrollment_tokens_table.up.sql to verify table definition",
+        "Read enrollment_token_test.go to understand test requirements",
+        "List all migration files to confirm complete set"
       ]
     },
     {
       "phase": 2,
-      "name": "Correct Diagnosis",
+      "name": "Fix Implementation",
       "tasks": [
-        "Update diagnosis.json with correct tsx_files count",
-        "Update frontend_files dimension score",
-        "Recalculate project completion percentage"
+        "Modify internal/testutil/migrate.go to execute all migration files",
+        "Add dynamic migration file discovery if not present",
+        "Ensure migrations execute in filename order"
       ]
     },
     {
       "phase": 3,
-      "name": "API Integration Verification",
+      "name": "Verification",
       "tasks": [
-        "Verify auth-service endpoint connectivity",
-        "Verify job-service endpoint connectivity",
-        "Verify registry-service endpoint connectivity",
-        "Test authentication flow end-to-end"
+        "Run failing tests: go test -v ./services/auth-service/repository/...",
+        "Verify all 4 tests now pass",
+        "Run full auth-service test suite to ensure no regressions"
       ]
     },
     {
       "phase": 4,
-      "name": "Documentation Updates",
+      "name": "Documentation",
       "tasks": [
-        "Update CLAUDE.md to remove axios reference or add it",
-        "Document API gateway vs direct proxy architecture",
-        "Update deployment documentation"
-      ]
-    },
-    {
-      "phase": 5,
-      "name": "Optional Optimizations",
-      "tasks": [
-        "Implement code splitting with dynamic imports",
-        "Add route-based lazy loading",
-        "Optimize bundle size",
-        "Consider httpOnly cookies for JWT storage"
+        "Update CLAUDE.md with test database setup notes if needed",
+        "Comment the migration logic in testutil for future maintainers"
       ]
     }
   ],
   "market_context": {
     "competitors_analyzed": [
       "PaperCut",
-      "uniFLOW Online",
-      "HP Web Jetadmin",
-      "Canon uniFLOW",
-      "Lexmark Markvision Enterprise"
+      "Printix",
+      "PrinterLogic",
+      "Print Manager Plus",
+      "YSoft SafeQ",
+      "Canon uniFLOW"
     ],
     "key_gaps": [
-      "Print quota and cost allocation management",
-      "Mobile/BYOD printing with native apps",
-      "Advanced reporting with export and scheduling",
-      "Secure print release with card/biometric authentication",
-      "Environmental impact and sustainability reporting"
+      "Secure print release with authentication at device (PIN/badge/card) to prevent document theft and ensure confidentiality",
+      "Print quota management with departmental cost allocation and chargeback for accurate cost tracking and budget control",
+      "Comprehensive print job auditing and reporting for compliance, cost analysis, and usage optimization",
+      "Mobile printing application for iOS/Android to enable bring-your-own-device printing",
+      "Sustainability and environmental impact reporting (paper saved, trees saved, CO2 reduction)"
     ],
     "trends": [
-      "AI/ML Integration",
-      "Hybrid Cloud Deployment",
-      "Mobile-First BYOD",
-      "ESG/Sustainability Reporting",
-      "Zero Trust Security"
+      "Serverless Print Management",
+      "AI-powered Print Optimization",
+      "Sustainability Reporting",
+      "Zero Trust Print Security",
+      "Hybrid Cloud Deployment"
     ],
     "unique_selling_points": [
-      "Open-source microservices architecture with no vendor lock-in",
-      "True cloud-native design (not migrated on-prem software)",
-      "Pluggable storage backends (S3, MinIO, local) for flexible deployment",
-      "Modern tech stack (Go 1.24, React, TypeScript, Vite) vs legacy competitors",
-      "OpenTelemetry tracing built-in for observability",
-      "Self-hostable with minimal infrastructure compared to enterprise competitors",
-      "OIDC/SAML support for modern identity providers out of the box"
+      "Modern microservices architecture with horizontal scalability, unlike legacy competitors",
+      "Open-source core enabling transparency and community contributions",
+      "Cloud-native design supporting hybrid and multi-cloud deployments from day one",
+      "Extensive identity provider support (OIDC/SAML) for enterprise integration",
+      "Go-based implementation offering better performance and resource efficiency than Java-based competitors",
+      "Built-in observability with OpenTelemetry tracing for operations excellence",
+      "Agent-based architecture supporting heterogeneous device ecosystems without vendor lock-in"
     ]
   }
 }

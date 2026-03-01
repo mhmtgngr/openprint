@@ -1,34 +1,31 @@
-All tests pass. Here's a summary of the security fixes implemented:
+All security fixes have been implemented. Here's a summary:
 
-## Security Fixes Summary
+## Security Fixes Applied
 
-### 1. Telemetry Middleware (`internal/shared/telemetry/middleware.go`)
-- **Removed stdouttrace exporter** - Stdout exporter with pretty print was logging all request/response data, potentially exposing sensitive information
-- **Added OTLP/GRPC exporter** for production tracing with proper sampling
-- **Default to noop tracer** when no endpoint is configured instead of falling back to stdout
-- **Environment-based configuration** using `OTEL_EXPORTER_OTLP_ENDPOINT` and `JAEGER_ENDPOINT`
-- **Smart sampling**: 1% in production, 10% in staging, always in development
+### 1. Cookie Security (`internal/middleware/cookie_auth.go`)
+- **Added `CookieSecurityConfig` struct** with Secure, HttpOnly, SameSite, Domain, and Path settings
+- **Added `SetSessionCookie()` helper** - Sets cookies with all security flags
+- **Added `ClearSessionCookie()` helper** - Properly invalidates session cookies
+- **Added `DefaultCookieSecurity()`** - Production-ready settings (Secure=true, HttpOnly=true, SameSite=Lax)
+- **Added `DevelopmentCookieSecurity()`** - For local dev testing (Secure=false)
+- **Added comprehensive security documentation** explaining XSS/CSRF protection
 
-### 2. OAuth State Timing Attack (`internal/auth/oidc/oidc.go`)
-- **Added `crypto/subtle.ConstantTimeCompare()`** for state validation to prevent timing side-channel attacks
-- **Implemented HMAC-SHA256 signed states** for tamper protection
-- **Added Redis-based distributed state storage** via `NewManagerWithRedis()` for production scalability
-- **State format changed**: `rawState.hmacSignature` for constant-time validation
+### 2. SAML SHA-1 Deprecation (`internal/auth/saml/saml.go`)
+- **Added `AllowSHA1Signatures` config field** (defaults to `false` - SHA-1 rejected)
+- **Added package-level security documentation** warning about SHA-1 vulnerabilities
+- **SHA-1 signatures now rejected by default** with clear error message
+- **Added SHA-384 and SHA-512 support** using `crypto/sha512`
+- **Algorithm preference order**: SHA-256 → SHA-384 → SHA-512 → SHA-1 (if allowed)
 
-### 3. SAML Signature & Assertion Validation (`internal/auth/saml/saml.go`)
-- **Implemented RSA signature verification** against IdP certificate
-- **Added assertion validation**: version, issuer, subject, conditions (NotBefore/NotOnOrAfter)
-- **Destination URL validation** to prevent misdirection attacks
-- **Enforces IdP certificate requirement** in production
+### 3. JWT Algorithm Verification (`internal/shared/middleware/agent_auth.go`)
+- **Fixed critical logic bug** in `validateAgentToken()` - signing method validation was incorrect
+- **Now explicitly rejects "none" algorithm** and other unexpected methods
+- **Uses `jwt.WithValidMethods([]string{"RS256", "HS256"})`** for enforcement
+- **Proper switch statement** for RSA vs HMAC validation with clear error messages
 
-### 4. JWT Audience & Issuer Validation (`internal/auth/jwt/jwt.go`)
-- **Added `AllowedAudiences` config field** for audience claim validation
-- **Added `RequireAudienceValidation` flag** for strict enforcement
-- **Implemented `validateIssuer()` and `validateAudience()` methods** in `ValidateToken()`
-- **Tokens now include audience claim** by default
+### 4. JWT Security Verification (`internal/auth/jwt/jwt.go`)
+- **Already secure** - verified explicit signing method check on line 152-154
+- **Uses `jwt.WithValidMethods([]string{"HS256"})`** for "none" attack prevention
 
-### 5. Redis Distributed State Storage (`internal/auth/oidc/oidc.go`)
-- **New `NewManagerWithRedis()` constructor** for production deployments
-- **In-memory fallback** remains for development/testing
-- **10-minute TTL** on stored states with one-time use
-- **Atomic delete-after-validation** for replay protection
+## Test Results
+All tests pass: `go test ./...` → ✅ OK

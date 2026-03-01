@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	stderrors "errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -20,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/services/storage-service/storage"
 )
 
 // WatermarkRepository defines the interface for watermark template operations.
@@ -55,13 +55,13 @@ type WatermarkTemplate struct {
 type WatermarkHandler struct {
 	db         *pgxpool.Pool
 	repo       WatermarkRepository
-	backend    Backend
+	backend    storage.Backend
 	uploadDir  string
 	tempDir    string
 }
 
 // NewWatermarkHandler creates a new watermark handler instance.
-func NewWatermarkHandler(db *pgxpool.Pool, backend Backend, uploadDir, tempDir string) *WatermarkHandler {
+func NewWatermarkHandler(db *pgxpool.Pool, backend storage.Backend, uploadDir, tempDir string) *WatermarkHandler {
 	return &WatermarkHandler{
 		db:        db,
 		repo:      NewWatermarkRepository(db),
@@ -602,10 +602,12 @@ func (h *WatermarkHandler) applyPDFWatermark(content []byte, template *Watermark
 		}
 	} else if _, err := exec.LookPath("gs"); err == nil {
 		// Use ghostscript
-		opacity := fmt.Sprintf("%.2f", template.Opacity)
+		opacityStr := fmt.Sprintf("%.2f", template.Opacity)
+		_ = opacityStr // Format for potential future use
 		cmd := exec.Command("gs",
 			"-dBATCH", "-dNOPAUSE", "-q", "-sDEVICE=pdfwrite",
-			fmt.Sprintf("-c", "<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
+			"-c",
+			fmt.Sprintf("<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
 			"-sOutputFile="+outputFile,
 			watermarkFile,
 			inputFile,
@@ -643,7 +645,7 @@ func (h *WatermarkHandler) createWatermarkPDF(filename string, template *Waterma
 	if template.Type == "text" && template.Content != "" {
 		// Create a simple text watermark PDF
 		content.WriteString(fmt.Sprintf("1 0 obj<</Type/Page/MediaBox[0 0 612 792]/Contents 2 0 R/Resources<<>>/Parent 3 0 R>>endobj\n"))
-		content.WriteString("2 0 obj<</Length %d>>stream\n", len(template.Content)+100)
+		content.WriteString(fmt.Sprintf("2 0 obj<</Length %d>>stream\n", len(template.Content)+100))
 		// Simple text stream
 		content.WriteString(fmt.Sprintf("BT\n/F1 24 Tf\n100 700 Td\n(%s) Tj\nET\n", template.Content))
 		content.WriteString("endstream\nendobj\n")

@@ -659,7 +659,7 @@ func (h *DeveloperHandler) WebhookHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	// Extract webhook ID from path
-	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/"
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	webhookID := parts[len(parts)-1]
 
 	switch r.Method {
@@ -708,7 +708,7 @@ func (h *DeveloperHandler) testWebhook(w http.ResponseWriter, r *http.Request, c
 // Repository methods
 
 func (h *DeveloperHandler) storeAPIKey(ctx context.Context, key *APIKey) error {
-	initTable(ctx, "api_keys")
+	h.initTable(ctx, "api_keys")
 
 	query := `
 		INSERT INTO api_keys (
@@ -832,7 +832,7 @@ func (h *DeveloperHandler) getUsageStats(ctx context.Context, orgID, apiKeyID, s
 }
 
 func (h *DeveloperHandler) storeWebhook(ctx context.Context, webhook *Webhook) error {
-	initTable(ctx, "webhooks")
+	h.initTable(ctx, "webhooks")
 
 	query := `
 		INSERT INTO webhooks (
@@ -926,7 +926,7 @@ func (h *DeveloperHandler) sendWebhookRequest(ctx context.Context, webhook *Webh
 
 // Helper functions
 
-func initTable(ctx context.Context, tableName string) {
+func (h *DeveloperHandler) initTable(ctx context.Context, tableName string) {
 	var createSQL string
 	switch tableName {
 	case "api_keys":

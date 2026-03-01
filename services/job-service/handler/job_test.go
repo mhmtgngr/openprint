@@ -461,8 +461,8 @@ func TestHandler_ListJobs(t *testing.T) {
 	var response map[string]interface{}
 	json.NewDecoder(w.Body).Decode(&response)
 
-	if response["jobs"] == nil {
-		t.Error("Response should include jobs array")
+	if response["data"] == nil {
+		t.Error("Response should include data array")
 	}
 	if response["total"] == nil {
 		t.Error("Response should include total count")

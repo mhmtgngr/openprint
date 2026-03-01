@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
@@ -544,7 +545,7 @@ func (h *ReportsHandler) ExportReportHandler(w http.ResponseWriter, r *http.Requ
 }
 
 // CustomReportHandler handles generating custom reports with user-defined parameters.
-func (h *CustomReportHandler) CustomReportHandler(w http.ResponseWriter, r *http.Request) {
+func (h *ReportsHandler) CustomReportHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method != http.MethodPost {
