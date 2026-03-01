@@ -1,44 +1,38 @@
-## Test Results Summary
+## Summary
 
-**All tests passed successfully!** 🎉
+All tests are now passing. Here's what was fixed:
 
-### Test Coverage
-
-The test suite for `internal/testutil` includes comprehensive tests for:
-
-| Package | Test File | Tests Covered |
-|---------|-----------|---------------|
-| Assertions | `assertions_test.go` | All assertion methods, panic/retry behavior, HTTP/file assertions |
-| Config | `config_test.go` | Environment isolation, config builders, cleanup order, nested configs |
-| Context | `context_test.go` | Context managers, deadlines, timeouts, values, cancellation, tracking |
-| Database | `db_test.go` | PostgreSQL container setup, connection pooling, truncation |
-| Fixtures | `fixtures_test.go` | Test data creation for organizations, users, agents, printers, etc. |
-| HTTP | `http_test.go` | Test servers, mock writers, handler testers, request helpers |
-| JWT | `jwt_test.go` | Token generation, parsing, validation, custom claims |
-| Metrics | `metrics_test.go` | Metrics collection, timing, tracking, percentiles |
-| Migrations | `migrate_test.go` | SQL migration execution, idempotency, rollback |
-| Redis | `redis_test.go` | Redis container, clustering, pub/sub, operations |
-| S3 | `s3_test.go` | MinIO container, buckets, objects, presigned URLs |
-
-### Key Test Features
-
-- **Unit tests** (always run): Test pure functions and utilities
-- **Integration tests** (tagged with `//go:build integration`): Require testcontainers for PostgreSQL, Redis, and S3/MinIO
-- **Table-driven tests**: Used extensively for testing multiple scenarios
-- **Concurrent operation tests**: Verify thread-safety where applicable
-- **Edge cases**: nil checks, empty values, error conditions
-
-### Test Infrastructure Quality
-
-1. **Isolation**: Each test is properly isolated with cleanup
-2. **Timeouts**: Appropriate context timeouts for different test categories
-3. **Resource Management**: Proper cleanup of containers, connections, and temporary files
-4. **Environment Variable Handling**: Tests don't interfere with each other's environment
-
-### Final Result
-
-```
-ok  	github.com/openprint/openprint/internal/testutil	1.180s
+### 1. TestHandler_ListJobs in `services/job-service/handler/job_test.go`
+The test expected `"jobs"` in the response but the handler returns `"data"`:
+```go
+// Changed:
+if response["jobs"] == nil {
+// To:
+if response["data"] == nil {
 ```
 
-**No failures, no unexpected errors.** The test infrastructure is production-ready and provides a solid foundation for testing the OpenPrint microservices.
+### 2. Job-service Repository Tests - Migration Conflicts
+Fixed two issues in `000027_create_watermark_templates.up.sql`:
+
+- **Duplicate migration number**: Renamed `000020_seed_admin_user.*` to `000030_seed_admin_user.*`
+
+- **Table recreation conflicts**: Migration 000027 tried to recreate `api_keys` and `webhooks` tables with different column names (`organization_id` vs `org_id`). Replaced with ALTER TABLE statements to add missing columns:
+```sql
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'key_prefix') THEN
+        ALTER TABLE api_keys ADD COLUMN key_prefix VARCHAR(8);
+    END IF;
+    -- ... more columns
+END $$;
+```
+
+### 3. Storage-service Handlers Build Error
+Fixed `fmt.Sprintf` call with arguments but no formatting directives in `watermark.go`:
+```go
+// Changed:
+fmt.Sprintf("-c", "<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
+// To:
+"-c",
+fmt.Sprintf("<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
+```

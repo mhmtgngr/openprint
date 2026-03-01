@@ -602,10 +602,12 @@ func (h *WatermarkHandler) applyPDFWatermark(content []byte, template *Watermark
 		}
 	} else if _, err := exec.LookPath("gs"); err == nil {
 		// Use ghostscript
-		_ = fmt.Sprintf("%.2f", template.Opacity) // Format for potential future use
+		opacityStr := fmt.Sprintf("%.2f", template.Opacity)
+		_ = opacityStr // Format for potential future use
 		cmd := exec.Command("gs",
 			"-dBATCH", "-dNOPAUSE", "-q", "-sDEVICE=pdfwrite",
-			fmt.Sprintf("-c", "<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
+			"-c",
+			fmt.Sprintf("<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
 			"-sOutputFile="+outputFile,
 			watermarkFile,
 			inputFile,
