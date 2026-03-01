@@ -80,7 +80,7 @@
                 - columnheader "Last Seen" [ref=e93]
                 - columnheader "Actions" [ref=e94]
             - rowgroup [ref=e95]:
-              - row "HP LaserJet Pro M404n Default HP Universal Printing PCL 6 network Duplex 600 x 600 dpi Available 6 minutes ago Remove" [ref=e96]:
+              - row "HP LaserJet Pro M404n Default HP Universal Printing PCL 6 network Duplex 600 x 600 dpi Available 5 minutes ago Remove" [ref=e96]:
                 - cell "HP LaserJet Pro M404n Default HP Universal Printing PCL 6" [ref=e97]:
                   - generic [ref=e98]:
                     - img [ref=e101]
@@ -96,10 +96,10 @@
                     - generic [ref=e111]: 600 x 600 dpi
                 - cell "Available" [ref=e112]:
                   - generic [ref=e113]: Available
-                - cell "6 minutes ago" [ref=e115]
+                - cell "5 minutes ago" [ref=e115]
                 - cell "Remove" [ref=e116]:
                   - button "Remove" [ref=e118] [cursor=pointer]
-              - row "Canon PIXMA G6020 Canon G6020 series local Color Duplex 4800 x 1200 dpi Available 11 minutes ago Set Default Remove" [ref=e119]:
+              - row "Canon PIXMA G6020 Canon G6020 series local Color Duplex 4800 x 1200 dpi Available 10 minutes ago Set Default Remove" [ref=e119]:
                 - cell "Canon PIXMA G6020 Canon G6020 series" [ref=e120]:
                   - generic [ref=e121]:
                     - img [ref=e124]
@@ -114,12 +114,12 @@
                     - generic [ref=e134]: 4800 x 1200 dpi
                 - cell "Available" [ref=e135]:
                   - generic [ref=e136]: Available
-                - cell "11 minutes ago" [ref=e138]
+                - cell "10 minutes ago" [ref=e138]
                 - cell "Set Default Remove" [ref=e139]:
                   - generic [ref=e140]:
                     - button "Set Default" [ref=e141] [cursor=pointer]
                     - button "Remove" [ref=e142] [cursor=pointer]
-              - row "Brother HL-L5100DN Default Brother HL-L5100DN series network Duplex 2400 x 600 dpi Available 4 minutes ago Remove" [ref=e143]:
+              - row "Brother HL-L5100DN Default Brother HL-L5100DN series network Duplex 2400 x 600 dpi Available 3 minutes ago Remove" [ref=e143]:
                 - cell "Brother HL-L5100DN Default Brother HL-L5100DN series" [ref=e144]:
                   - generic [ref=e145]:
                     - img [ref=e148]
@@ -135,7 +135,7 @@
                     - generic [ref=e158]: 2400 x 600 dpi
                 - cell "Available" [ref=e159]:
                   - generic [ref=e160]: Available
-                - cell "4 minutes ago" [ref=e162]
+                - cell "3 minutes ago" [ref=e162]
                 - cell "Remove" [ref=e163]:
                   - button "Remove" [ref=e165] [cursor=pointer]
               - row "Epson WorkForce Pro WF-3730 Eson WF-3730 Series network Color Duplex 4800 x 1200 dpi Offline 1 day ago Remove" [ref=e166]:
@@ -174,7 +174,7 @@
                 - cell "about 1 hour ago" [ref=e208]
                 - cell "Remove" [ref=e209]:
                   - button "Remove" [ref=e211] [cursor=pointer]
-              - row "Shared HP on Reception HP Universal Printing PCL 6 shared Duplex 600 x 600 dpi Available 16 minutes ago Set Default Remove" [ref=e212]:
+              - row "Shared HP on Reception HP Universal Printing PCL 6 shared Duplex 600 x 600 dpi Available 15 minutes ago Set Default Remove" [ref=e212]:
                 - cell "Shared HP on Reception HP Universal Printing PCL 6" [ref=e213]:
                   - generic [ref=e214]:
                     - img [ref=e217]
@@ -188,7 +188,7 @@
                     - generic [ref=e226]: 600 x 600 dpi
                 - cell "Available" [ref=e227]:
                   - generic [ref=e228]: Available
-                - cell "16 minutes ago" [ref=e230]
+                - cell "15 minutes ago" [ref=e230]
                 - cell "Set Default Remove" [ref=e231]:
                   - generic [ref=e232]:
                     - button "Set Default" [ref=e233] [cursor=pointer]

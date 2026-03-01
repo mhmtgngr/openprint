@@ -1,22 +1,15 @@
-All services are now running and healthy. Here's a summary:
+Fixed the health check handlers across all services to accept both GET and HEAD requests. The issue was that Docker's healthcheck uses `wget --spider` which sends HEAD requests by default, but the health handlers only accepted GET requests (causing 405 errors).
 
-## Fixed Issues
+**Changes made:**
 
-1. **Missing `wget` in Dockerfiles** - The auth-service, registry-service, job-service, notification-service, and dashboard Dockerfiles used `wget` for health checks but didn't have it installed. Added `wget` to the `apk add` command in each Dockerfile.
+| Service | File | Change |
+|---------|------|--------|
+| registry-service | `services/registry-service/main.go` | Accept HEAD for `/health` |
+| job-service | `services/job-service/main.go` | Accept HEAD for `/health` |
+| auth-service | `services/auth-service/main.go` | Accept HEAD for `/health` |
+| notification-service | `services/notification-service/main.go` | Accept HEAD for `/health` |
+| storage-service | `services/storage-service/main.go` | Accept HEAD for `/health` |
 
-## Current Status
+**Note:** The 401 Unauthorized errors for `/agents/heartbeat` are expected - these are from agents sending heartbeats without valid authentication tokens. This is normal security behavior.
 
-| Service | Status | Port |
-|---------|--------|------|
-| postgres | ✅ healthy | 15432 |
-| redis | ✅ healthy | 16379 |
-| auth-service | ✅ healthy | 18001 |
-| registry-service | ✅ healthy | 8002 |
-| job-service | ✅ healthy | 8003 |
-| storage-service | ✅ healthy | 8004 |
-| notification-service | ✅ healthy | 18005 |
-| dashboard | ✅ running | 3000 |
-
-**Dashboard is accessible at http://localhost:3000**
-
-The Docker compose state mismatch was worked around by starting the dashboard directly with `docker run`. You may want to run `docker compose down --remove-orphans` to fully reset the compose state for future starts.
+After rebuilding and restarting the Docker containers, the 405 healthcheck errors should be resolved.

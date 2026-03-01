@@ -1,84 +1,125 @@
 {
-  "overall_score": 42,
+  "overall_score": 45,
   "verdict": "NEEDS_FIXES",
   "code_issues": [
     {
       "severity": "critical",
-      "file": "services/api-gateway/main.go",
-      "issue": "URL parsing errors discarded with _, causing nil pointer panic if URLs are invalid",
-      "fix": "Add proper error handling: authServiceURL, err := url.Parse(cfg.AuthServiceURL); if err != nil { log.Fatalf(...) }"
+      "file": "web/dashboard/e2e/",
+      "issue": "E2E tests failing with multiple test-failed-1.png artifacts",
+      "fix": "Review and fix failing test cases - tests are not passing"
     },
     {
       "severity": "critical",
-      "file": "services/m365-integration-service/main.go",
-      "issue": "Path traversal vulnerability in filepath operations with user input",
-      "fix": "Use filepath.Base() and validate all paths against allowed directory"
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-001 Playwright framework setup appears incomplete - no test files visible",
+      "fix": "Complete Playwright initialization with proper test configuration"
     },
     {
       "severity": "critical",
-      "file": "services/compliance-service/main.go",
-      "issue": "Overlapping route patterns /api/v1/controls/ and /api/v1/controls cause ambiguous routing",
-      "fix": "Use distinct paths or register specific routes before generic ones"
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-002 Authentication test suite not visible/implemented",
+      "fix": "Implement authentication flow tests (login, logout, session management)"
     },
     {
       "severity": "major",
-      "file": "services/auth-service/handler/oidc.go",
-      "issue": "Race condition in testModeTokens map access without proper locking scope",
-      "fix": "Ensure all map access within mu.Lock()/Unlock() or use sync.Map"
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-003 Job Management test suite not visible",
+      "fix": "Implement job submission, tracking, cancellation tests"
     },
     {
       "severity": "major",
-      "file": "services/m365-integration-service/main.go",
-      "issue": "RefreshTokens stored in plaintext without encryption",
-      "fix": "Encrypt sensitive tokens at rest using encryption.Key from config"
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-004 Device/Printer Registry test suite not visible",
+      "fix": "Implement printer registration, status monitoring tests"
     },
     {
       "severity": "major",
-      "file": "services/compliance-service/compliance.go",
-      "issue": "No input validation on Control struct fields before database operations",
-      "fix": "Add validation for required fields, length constraints, and allowed values"
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-005 Document Storage test suite not visible",
+      "fix": "Implement upload, download, deletion tests"
     },
     {
       "severity": "major",
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-006 Dashboard Navigation test suite not visible",
+      "fix": "Implement routing and navigation tests"
+    },
+    {
+      "severity": "major",
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-007 Settings Management test suite not visible",
+      "fix": "Implement settings CRUD tests"
+    },
+    {
+      "severity": "major",
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-008 Visual Regression Testing not implemented",
+      "fix": "Add Playwright screenshot comparison for visual regression"
+    },
+    {
+      "severity": "major",
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-009 Test Data Management not visible",
+      "fix": "Implement test data fixtures and factories"
+    },
+    {
+      "severity": "major",
+      "file": "web/dashboard/e2e/",
+      "issue": "FR-010 Multi-Environment Configuration not visible",
+      "fix": "Add environment-specific config files (dev, staging, prod)"
+    },
+    {
+      "severity": "minor",
+      "file": "web/dashboard/e2e/error-context.md",
+      "issue": "Error context files only 74 bytes - insufficient detail",
+      "fix": "Add detailed error context including stack traces and reproduction steps"
+    },
+    {
+      "severity": "minor",
+      "file": "internal/middleware/cookie_auth.go",
+      "issue": "SameSite mode inconsistency between DefaultCookieSecurity (Lax) and ProductionCookieSecurity (Strict)",
+      "fix": "Document when to use each mode or standardize on one approach"
+    },
+    {
+      "severity": "minor",
       "file": "services/api-gateway/main.go",
-      "issue": "Missing /health endpoint for service discovery",
-      "fix": "Add mux.HandleFunc(\"/health\", healthHandler)"
+      "issue": "Fatal errors on service URL parsing - no graceful degradation",
+      "fix": "Implement retry mechanism or fallback configuration for service discovery"
     },
     {
       "severity": "minor",
-      "file": "services/m365-integration-service/main.go",
-      "issue": "No rate limiting on Microsoft Graph API calls",
-      "fix": "Add rate limiter middleware to prevent quota exhaustion"
+      "file": "internal/auth/jwt/",
+      "issue": "Missing tests for token validation edge cases (expired tokens, invalid signatures)",
+      "fix": "Add comprehensive unit tests for all validation scenarios"
     },
     {
       "severity": "minor",
-      "file": "services/compliance-service/main.go",
-      "issue": "CORS middleware not configured for cross-origin requests",
-      "fix": "Add middleware.CORS() to middleware chain"
-    },
-    {
-      "severity": "minor",
-      "file": "services/auth-service/handler/oidc.go",
-      "issue": "No validation for TestUser fields (email format, required fields)",
-      "fix": "Add struct validation using validator package"
+      "file": "internal/middleware/",
+      "issue": "Missing tests for cookie expiration behavior",
+      "fix": "Add tests for session timeout and refresh token handling"
     }
   ],
   "missing_items": [
-    "FR-001: Playwright framework not initialized in web/dashboard/e2e/",
-    "FR-002: Authentication test suite missing",
-    "FR-008: Visual regression testing not implemented",
-    "FR-009: Test data management utilities missing",
-    "FR-011: CI/CD GitHub Actions workflow for E2E tests missing",
-    "FR-012: Real-time WebSocket test coverage missing",
-    "Playwright configuration file (playwright.config.ts)",
-    "Test fixtures and page object models",
-    "E2E test reports generation"
+    "Playwright test configuration files (playwright.config.ts)",
+    "Authentication E2E test suite",
+    "Job management E2E test suite",
+    "Device registry E2E test suite",
+    "Document storage E2E test suite",
+    "Navigation E2E test suite",
+    "Settings management E2E test suite",
+    "Visual regression baseline images",
+    "Test data fixtures and factories",
+    "Multi-environment configuration",
+    "CI/CD workflow files (.github/workflows/e2e-tests.yml)",
+    "Page object model files",
+    "Test utilities and helpers",
+    "API mocking setup for isolated testing"
   ],
   "blocking_issues": [
-    "All E2E tests failing - test-failed-1.png and video.webm artifacts indicate 8+ failed tests",
-    "No actual Playwright test implementations exist despite 3389 file changes",
-    "Services return HTTP 500 errors causing test failures",
-    "OIDC test mode mock server not properly configured"
+    "Multiple E2E tests failing (evidenced by test-failed-1.png artifacts)",
+    "No visible Playwright test implementation for core features",
+    "Visual regression testing not implemented",
+    "CI/CD integration not visible"
   ],
-  "fix_instructions": "1. Fix URL parsing error handling in api-gateway/main.go\n2. Resolve overlapping routes in compliance-service\n3. Implement proper race condition protection in oidc.go\n4. Add path traversal protection in m365-integration-service\n5. Create playwright.config.ts with proper baseUrl and testMatch\n6. Implement at least basic auth.spec.ts, jobs.spec.ts test files\n7. Add health endpoint to all services\n8. Fix failing tests - review error-context.md files\n9. Add input validation middleware to all services\n10. Implement test data fixtures in web/dashboard/e2e/fixtures/"
+  "fix_instructions": "1. Fix all failing E2E tests - review error-context.md files and video recordings\n2. Implement complete Playwright test framework with all required test suites\n3. Add visual regression testing with baseline images\n4. Implement test data management with fixtures\n5. Add multi-environment configuration\n6. Create CI/CD workflow for automated E2E testing\n7. Add comprehensive unit tests for JWT and middleware edge cases\n8. Document cookie SameSite mode usage guidelines"
 }
