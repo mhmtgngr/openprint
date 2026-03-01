@@ -2,23 +2,26 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useJobs } from '@/hooks/useJobs';
-import { printersApi } from '@/services/api';
 import { analyticsApi } from '@/services/api';
 import { JobStatusBadge } from '@/components/JobStatusBadge';
 import { EnvironmentReport } from '@/components/EnvironmentReport';
 import { PrinterIcon } from '@/components/icons';
+import type { Printer } from '@/types';
 
 export const Dashboard = () => {
   const { user } = useAuth();
   const { data: jobs } = useJobs({ limit: 5 });
-  const { data: printers } = useQuery({
+  const { data: printersResponse } = useQuery({
     queryKey: ['printers'],
-    queryFn: () => printersApi.list(),
+    queryFn: () => fetch('/api/v1/printers').then(r => r.json()),
   });
+  const printers = (printersResponse?.printers || []) as Printer[];
   const { data: environment } = useQuery({
     queryKey: ['environment'],
     queryFn: () => analyticsApi.getEnvironment('30d'),
   });
+
+  const jobsList = jobs?.data || [];
 
   const stats = [
     {
@@ -31,7 +34,7 @@ export const Dashboard = () => {
     },
     {
       label: 'Jobs Today',
-      value: jobs?.data.filter((j) => {
+      value: jobsList.filter((j) => {
         const today = new Date().toDateString();
         return new Date(j.createdAt).toDateString() === today;
       }).length || 0,
@@ -120,7 +123,7 @@ export const Dashboard = () => {
             </Link>
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {jobs?.data.length === 0 ? (
+            {jobsList.length === 0 ? (
               <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                 No print jobs yet.{' '}
                 <Link to="/printers" className="text-blue-600 dark:text-blue-400 hover:underline">
@@ -129,7 +132,7 @@ export const Dashboard = () => {
                 to get started.
               </div>
             ) : (
-              jobs?.data.slice(0, 5).map((job) => (
+              jobsList.slice(0, 5).map((job) => (
                 <div
                   key={job.id}
                   className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
