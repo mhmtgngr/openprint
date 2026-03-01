@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   LoadingFallback,
   PageLoadingFallback,
@@ -20,19 +20,19 @@ describe('LoadingFallback', () => {
     });
 
     it('should render small size spinner', () => {
-      const { container } = render(<LoadingFallback size="sm" />);
+      const { container: _container } = render(<LoadingFallback size="sm" />);
       const spinner = screen.getByTestId('loading-spinner');
       expect(spinner).toHaveClass('w-8 h-8 border-2');
     });
 
     it('should render medium size spinner (default)', () => {
-      const { container } = render(<LoadingFallback size="md" />);
+      const { container: _container } = render(<LoadingFallback size="md" />);
       const spinner = screen.getByTestId('loading-spinner');
       expect(spinner).toHaveClass('w-12 h-12 border-4');
     });
 
     it('should render large size spinner', () => {
-      const { container } = render(<LoadingFallback size="lg" />);
+      const { container: _container } = render(<LoadingFallback size="lg" />);
       const spinner = screen.getByTestId('loading-spinner');
       expect(spinner).toHaveClass('w-16 h-16 border-4');
     });

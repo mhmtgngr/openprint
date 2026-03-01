@@ -148,7 +148,7 @@ func (h *Handler) OIDCHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Store session
-			if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, 7*24*time.Hour); err != nil {
+			if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, jwt.MaxRefreshDuration); err != nil {
 				respondError(w, apperrors.Wrap(err, "failed to store session", http.StatusInternalServerError))
 				return
 			}
@@ -224,7 +224,7 @@ func (h *Handler) SAMLACSHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store session
-	if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, 7*24*time.Hour); err != nil {
+	if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, jwt.MaxRefreshDuration); err != nil {
 		respondError(w, apperrors.Wrap(err, "failed to store session", http.StatusInternalServerError))
 		return
 	}

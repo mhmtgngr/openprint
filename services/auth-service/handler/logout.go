@@ -9,7 +9,9 @@ import (
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
-// Logout handles user logout.
+// Logout handles user logout by revoking all refresh tokens for the user.
+// This implements token revocation by removing the tokens from the session store,
+// effectively preventing any further use of those tokens for refreshing access tokens.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -38,14 +40,13 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete session (refresh token) from Redis
-	if err := h.sessionRepo.DeleteByUserID(ctx, claims.UserID); err != nil {
-		// Log but don't fail logout
-		fmt.Printf("Failed to delete session: %v", err)
+	// Revoke all sessions (refresh tokens) for this user
+	// This implements the token blacklist mechanism - deleted tokens cannot be used
+	// to refresh access tokens even if the JWT itself hasn't expired yet.
+	if err := h.sessionRepo.RevokeUserTokens(ctx, claims.UserID); err != nil {
+		// Log but don't fail logout - the access token will expire naturally
+		fmt.Printf("Failed to revoke user tokens: %v", err)
 	}
-
-	// Add token to blacklist (optional implementation)
-	// In production, you'd want to cache this to prevent immediate reuse
 
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -116,28 +116,34 @@ func main() {
 	mux.HandleFunc("/auth/saml/acs", h.SAMLACSHandler)
 
 	// Apply security middleware chain
-	// 1. Rate limiting for auth endpoints (10 requests per minute for sensitive endpoints)
-	authRateLimiter := middleware.RateLimitMiddleware(10, 5*time.Minute)
-	// 2. General rate limiting (60 requests per minute)
-	generalRateLimiter := middleware.RateLimitMiddleware(60, 5*time.Minute)
-	// 3. Security headers
+	// Rate limiting strategy:
+	// - Strict rate limiting (5 per 5 minutes) for login/register to prevent brute force attacks
+	// - Moderate rate limiting (10 per 5 minutes) for refresh token endpoint
+	// - Permissive rate limiting (60 per 5 minutes) for general endpoints
+	// Rate limiting is applied per IP address
+	strictRateLimiter := middleware.RateLimitMiddleware(5, 5*time.Minute)  // For login/register
+	authRateLimiter := middleware.RateLimitMiddleware(10, 5*time.Minute)    // For refresh/oidc/saml
+	generalRateLimiter := middleware.RateLimitMiddleware(60, 5*time.Minute) // For other endpoints
+
+	// Security headers middleware
 	securityHeaders := middleware.SecurityHeadersMiddleware()
-	// 4. CORS (allow specific origins in production)
+	// CORS (allow specific origins in production)
 	corsMiddleware := middleware.CORSMiddleware(
 		[]string{"*"}, // Configure appropriately for production
 		[]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		[]string{"Content-Type", "Authorization"},
 	)
 
-	// Apply stricter rate limiting to sensitive auth endpoints
+	// Apply rate limiting to all authentication endpoints
+	// Login and register have strict rate limiting to prevent credential stuffing and brute force
 	protectedMux := http.NewServeMux()
-	protectedMux.Handle("/auth/register", authRateLimiter(http.HandlerFunc(h.Register)))
-	protectedMux.Handle("/auth/login", authRateLimiter(http.HandlerFunc(h.Login)))
+	protectedMux.Handle("/auth/register", strictRateLimiter(http.HandlerFunc(h.Register)))
+	protectedMux.Handle("/auth/login", strictRateLimiter(http.HandlerFunc(h.Login)))
 	protectedMux.Handle("/auth/refresh", authRateLimiter(http.HandlerFunc(h.RefreshToken)))
-	protectedMux.Handle("/auth/logout", http.HandlerFunc(h.Logout))
-	protectedMux.Handle("/auth/me", http.HandlerFunc(h.GetCurrentUser))
+	protectedMux.Handle("/auth/logout", authRateLimiter(http.HandlerFunc(h.Logout)))
+	protectedMux.Handle("/auth/me", generalRateLimiter(http.HandlerFunc(h.GetCurrentUser)))
 	protectedMux.Handle("/auth/oidc/", authRateLimiter(http.HandlerFunc(h.OIDCHandler)))
-	protectedMux.Handle("/auth/saml/metadata", http.HandlerFunc(h.SAMLMetadataHandler))
+	protectedMux.Handle("/auth/saml/metadata", generalRateLimiter(http.HandlerFunc(h.SAMLMetadataHandler)))
 	protectedMux.Handle("/auth/saml/acs", authRateLimiter(http.HandlerFunc(h.SAMLACSHandler)))
 	protectedMux.Handle("/health", http.HandlerFunc(healthHandler))
 

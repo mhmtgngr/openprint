@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import App from './App';
 
 // Mock the hooks
@@ -381,7 +381,7 @@ describe('App Component', () => {
     it('should wrap routes in Suspense with loading fallback', async () => {
       // The App component wraps all routes in a Suspense boundary
       // with PageLoadingFallback as the fallback
-      const { container } = renderAppWithRouter(['/dashboard']);
+      const { container: _container } = renderAppWithRouter(['/dashboard']);
 
       // After lazy loading completes, the page should be rendered
       await waitFor(() => {
