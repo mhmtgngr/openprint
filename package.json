@@ -6,6 +6,9 @@
     "test:all": "npm run test:scanner && npm run test:diagnosis"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3"
   }
 }
