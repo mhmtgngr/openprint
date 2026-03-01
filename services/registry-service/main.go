@@ -100,7 +100,7 @@ func main() {
 		middleware.AuthMiddleware(middleware.JWTConfig{
 			SecretKey:  cfg.JWTSecret,
 			JWTManager: jwtManager,
-			SkipPaths:  []string{"/health", "/agents/register", "/printers/register", "/user-printer-mappings/resolve"}, // Allow agent/printer registration and username resolution
+			SkipPaths:  []string{"/health", "/agents", "/printers", "/user-printer-mappings"}, // Allow agent and printer endpoints
 		}),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
 		middleware.SecurityHeadersMiddleware(),

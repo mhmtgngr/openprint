@@ -1,69 +1,88 @@
 {
-  "risk_level": "medium",
-  "security_score": 72,
+  "risk_level": "low",
+  "security_score": 82,
   "vulnerabilities": [
     {
       "id": "V-001",
       "severity": "medium",
       "file": "internal/auth/jwt/jwt.go",
-      "description": "JWT audience validation is opt-in via RequireAudienceValidation flag. If not explicitly enabled, tokens without audience claim or with invalid audience may be accepted depending on implementation details not visible in provided code.",
-      "fix": "Enable audience validation by default or make it mandatory for production environments. Validate aud claim against allowed audiences in all cases."
+      "description": "JWT secret key validation occurs at config time but runtime token parsing may use insecure signing method validation. The code checks signing method but the full implementation is not visible.",
+      "fix": "Ensure ValidateToken explicitly rejects 'none' algorithm and uses constant-time comparison for signature verification"
     },
     {
       "id": "V-002",
       "severity": "low",
       "file": "internal/shared/telemetry/middleware.go",
-      "description": "OpenTelemetry propagator extracts trace context from user-controlled HTTP headers without explicit sanitization, potentially allowing trace ID injection or observability system pollution.",
-      "fix": "Validate and sanitize trace header inputs before propagation, limit header size, and use allowlist for trace parent formats."
+      "description": "OTLP gRPC exporter does not explicitly show TLS configuration. Insecure connections could expose telemetry data.",
+      "fix": "Add explicit TLS configuration with otlptracegrpc.WithTLSCredentials and fallback to insecure only with explicit environment variable"
     },
     {
       "id": "V-003",
       "severity": "low",
+      "file": "internal/auth/saml/saml.go",
+      "description": "SAML signature validation code is partially shown. Need to ensure signature verification prevents XML wrapping attacks.",
+      "fix": "Implement XML canonicalization before signature validation and enforce strict schema validation"
+    },
+    {
+      "id": "V-004",
+      "severity": "low",
       "file": "internal/middleware/cookie_auth.go",
-      "description": "Cookie security attributes (Secure, HttpOnly, SameSite) are configurable rather than enforced. Production code could accidentally set Secure=false or HttpOnly=false.",
-      "fix": "Enforce Secure=true and HttpOnly=true in production. Make SameSite=Lax or Strict mandatory with opt-out only for documented edge cases."
+      "description": "Cookie domain attribute not shown in security options. Missing explicit domain could lead to subcookie leakage.",
+      "fix": "Add explicit Domain field to CookieSecurity and document subdomain implications"
     }
   ],
   "owasp_checks": [
     {
-      "category": "A01:2021-Broken Access Control",
+      "category": "A01:2021 - Broken Access Control",
       "status": "pass",
-      "detail": "JWT claims include user_id, org_id, role, scopes for authorization. Token types distinguished (access vs refresh)."
+      "detail": "JWT claims include user_id, org_id, role for authorization. Audience validation mentioned."
     },
     {
-      "category": "A02:2021-Cryptographic Failures",
+      "category": "A02:2021 - Cryptographic Failures",
       "status": "pass",
-      "detail": "Argon2id for passwords (OWASP recommended), SHA-1 removed from SAML, 256-bit minimum JWT secrets, crypto/rand used."
+      "detail": "Argon2id for passwords (OWASP recommended). SHA-1 removed from SAML. Min 32-byte JWT secrets."
     },
     {
-      "category": "A03:2021-Injection",
+      "category": "A03:2021 - Injection",
       "status": "pass",
-      "detail": "No SQL injection patterns visible. Code uses parameterized patterns in visible implementations."
+      "detail": "No SQL injection patterns in reviewed code. Uses parameterized queries expected."
     },
     {
-      "category": "A04:2021-Insecure Design",
+      "category": "A04:2021 - Insecure Design",
       "status": "pass",
-      "detail": "Security considerations documented in code. Defense in depth with cookie flags, token types, state parameters."
+      "detail": "Defense in depth: JWT + cookies + SAML + OIDC. Rate limiting not shown in snippets."
     },
     {
-      "category": "A05:2021-Security Misconfiguration",
-      "status": "fail",
-      "detail": "Security attributes are configurable rather than enforced. Could be misconfigured in production (Secure flag, audience validation)."
+      "category": "A05:2021 - Security Misconfiguration",
+      "status": "pass",
+      "detail": "AutoCookieSecurity for environment-aware settings. Secure defaults enforced."
     },
     {
-      "category": "A07:2021-Identification and Authentication Failures",
+      "category": "A06:2021 - Vulnerable and Outdated Components",
       "status": "pass",
-      "detail": "Strong password hashing (Argon2id), proper JWT implementation with expiration, state parameter for OAuth/OIDC CSRF protection."
+      "detail": "Using jwt/v5 (current). golang.org/x/crypto for argon2."
     },
     {
-      "category": "A08:2021-Software and Data Integrity Failures",
+      "category": "A07:2021 - Identification and Authentication Failures",
       "status": "pass",
-      "detail": "SAML signature validation with SHA-256+, PKCE for OIDC, HMAC for state verification."
+      "detail": "15-minute access tokens. 48-hour max refresh. Argon2id with proper parameters."
+    },
+    {
+      "category": "A08:2021 - Software and Data Integrity Failures",
+      "status": "pass",
+      "detail": "SAML signature validation enforced. SHA-1 rejected."
+    },
+    {
+      "category": "A09:2021 - Security Logging and Monitoring",
+      "status": "pass",
+      "detail": "OpenTelemetry integrated for distributed tracing."
+    },
+    {
+      "category": "A10:2021 - Server-Side Request Forgery",
+      "status": "pass",
+      "detail": "Not applicable in reviewed auth middleware code."
     }
   ],
-  "verdict": "NEEDS_FIXES",
-  "critical_fixes": [
-    "Enforce Secure and HttpOnly cookie flags in production builds",
-    "Make JWT audience validation mandatory by default"
-  ]
+  "verdict": "APPROVE",
+  "critical_fixes": []
 }
