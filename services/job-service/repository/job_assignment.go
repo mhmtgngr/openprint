@@ -574,7 +574,8 @@ func (r *JobAssignmentRepository) GetJobsForAgentPolling(ctx context.Context, ag
 	// 1. Are in 'queued' status
 	// 2. Match the user email (if provided)
 	// 3. Have printers available to this agent (direct match via discovered_printers)
-	// 4. OR are user-routed jobs (__user_default__) mapped to this agent via user_printer_mappings
+	// 4. OR are user-routed jobs (__user_default__ / __user_default_receipt__) mapped to this agent
+	//    via user_printer_mappings with matching printer_type
 	query := `
 		SELECT DISTINCT j.id, j.document_id, j.printer_id, j.user_name, j.user_email, j.title,
 		       j.copies, j.color_mode, j.duplex, j.media_type, j.quality, j.pages,
@@ -583,12 +584,16 @@ func (r *JobAssignmentRepository) GetJobsForAgentPolling(ctx context.Context, ag
 		FROM print_jobs j
 		LEFT JOIN discovered_printers dp ON (dp.name = j.printer_id OR dp.id::text = j.printer_id) AND dp.agent_id = $1
 		LEFT JOIN user_printer_mappings upm ON upm.user_email = j.user_email AND upm.client_agent_id = $1 AND upm.is_active = true
+			AND (
+				(j.printer_id = '__user_default__' AND upm.printer_type = 'standard')
+				OR (j.printer_id = '__user_default_receipt__' AND upm.printer_type = 'receipt')
+			)
 		WHERE j.status = 'queued'
 			AND (j.agent_id IS NULL OR j.agent_id = $1)
 			AND ($2 = '' OR j.user_email = $2)
 			AND (
 				dp.id IS NOT NULL
-				OR (j.printer_id = '__user_default__' AND upm.id IS NOT NULL)
+				OR (j.printer_id IN ('__user_default__', '__user_default_receipt__') AND upm.id IS NOT NULL)
 			)
 		ORDER BY j.priority DESC, j.created_at ASC
 		LIMIT $3
@@ -612,22 +617,28 @@ func (r *JobAssignmentRepository) GetJobsForAgentPolling(ctx context.Context, ag
 	return jobs, rows.Err()
 }
 
-// ResolveUserDefaultPrinter resolves __user_default__ printer_id to the actual target printer
-// using user_printer_mappings.
-func (r *JobAssignmentRepository) ResolveUserDefaultPrinter(ctx context.Context, userEmail, clientAgentID string) (string, string, error) {
+// ResolveUserDefaultPrinter resolves __user_default__ or __user_default_receipt__ printer_id
+// to the actual target printer using user_printer_mappings.
+// printerType should be "standard" or "receipt".
+func (r *JobAssignmentRepository) ResolveUserDefaultPrinter(ctx context.Context, userEmail, clientAgentID, printerType string) (string, string, error) {
+	if printerType == "" {
+		printerType = "standard"
+	}
+
 	query := `
 		SELECT COALESCE(upm.target_printer_name, dp.name, ''), COALESCE(upm.target_printer_id::text, dp.id::text, '')
 		FROM user_printer_mappings upm
 		LEFT JOIN discovered_printers dp ON dp.id = upm.target_printer_id
 		WHERE upm.user_email = $1
 			AND upm.client_agent_id = $2
+			AND upm.printer_type = $3
 			AND upm.is_active = true
 		ORDER BY upm.is_default DESC
 		LIMIT 1
 	`
 
 	var printerName, printerID string
-	err := r.db.QueryRow(ctx, query, userEmail, clientAgentID).Scan(&printerName, &printerID)
+	err := r.db.QueryRow(ctx, query, userEmail, clientAgentID, printerType).Scan(&printerName, &printerID)
 	if err != nil {
 		return "", "", fmt.Errorf("resolve user default printer: %w", err)
 	}

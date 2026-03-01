@@ -21,6 +21,7 @@ type UserPrinterMapping struct {
 	TargetPrinterID   string
 	TargetPrinterName string
 	ServerAgentID     string
+	PrinterType       string // "standard" or "receipt"
 	IsActive          bool
 	IsDefault         bool
 	CreatedAt         time.Time
@@ -46,21 +47,24 @@ func (r *UserPrinterMappingRepository) Create(ctx context.Context, m *UserPrinte
 	if m.ID == "" {
 		m.ID = uuid.New().String()
 	}
+	if m.PrinterType == "" {
+		m.PrinterType = "standard"
+	}
 
 	query := `
 		INSERT INTO user_printer_mappings (
 			id, organization_id, user_email, user_name, client_agent_id,
 			target_printer_id, target_printer_name, server_agent_id,
-			is_active, is_default, created_at, updated_at
+			printer_type, is_active, is_default, created_at, updated_at
 		)
-		VALUES ($1, NULLIF($2, '')::uuid, $3, $4, $5, NULLIF($6, '')::uuid, $7, NULLIF($8, '')::uuid, $9, $10, $11, $12)
+		VALUES ($1, NULLIF($2, '')::uuid, $3, $4, $5, NULLIF($6, '')::uuid, $7, NULLIF($8, '')::uuid, $9, $10, $11, $12, $13)
 		RETURNING id
 	`
 
 	err := r.db.QueryRow(ctx, query,
 		m.ID, m.OrganizationID, m.UserEmail, m.UserName, m.ClientAgentID,
 		m.TargetPrinterID, m.TargetPrinterName, m.ServerAgentID,
-		m.IsActive, m.IsDefault, m.CreatedAt, m.UpdatedAt,
+		m.PrinterType, m.IsActive, m.IsDefault, m.CreatedAt, m.UpdatedAt,
 	).Scan(&m.ID)
 
 	if err != nil {
@@ -75,7 +79,7 @@ func (r *UserPrinterMappingRepository) FindByID(ctx context.Context, id string) 
 	query := `
 		SELECT id, organization_id, user_email, user_name, client_agent_id,
 		       target_printer_id, target_printer_name, server_agent_id,
-		       is_active, is_default, created_at, updated_at
+		       printer_type, is_active, is_default, created_at, updated_at
 		FROM user_printer_mappings
 		WHERE id = $1
 	`
@@ -95,7 +99,7 @@ func (r *UserPrinterMappingRepository) FindByUserEmail(ctx context.Context, user
 	query := `
 		SELECT id, organization_id, user_email, user_name, client_agent_id,
 		       target_printer_id, target_printer_name, server_agent_id,
-		       is_active, is_default, created_at, updated_at
+		       printer_type, is_active, is_default, created_at, updated_at
 		FROM user_printer_mappings
 		WHERE user_email = $1 AND is_active = true
 		ORDER BY is_default DESC, created_at ASC
@@ -124,7 +128,7 @@ func (r *UserPrinterMappingRepository) FindDefaultByUserEmail(ctx context.Contex
 	query := `
 		SELECT id, organization_id, user_email, user_name, client_agent_id,
 		       target_printer_id, target_printer_name, server_agent_id,
-		       is_active, is_default, created_at, updated_at
+		       printer_type, is_active, is_default, created_at, updated_at
 		FROM user_printer_mappings
 		WHERE user_email = $1 AND is_active = true AND is_default = true
 		LIMIT 1
@@ -145,7 +149,7 @@ func (r *UserPrinterMappingRepository) findFirstActiveByUserEmail(ctx context.Co
 	query := `
 		SELECT id, organization_id, user_email, user_name, client_agent_id,
 		       target_printer_id, target_printer_name, server_agent_id,
-		       is_active, is_default, created_at, updated_at
+		       printer_type, is_active, is_default, created_at, updated_at
 		FROM user_printer_mappings
 		WHERE user_email = $1 AND is_active = true
 		ORDER BY created_at ASC
@@ -167,7 +171,7 @@ func (r *UserPrinterMappingRepository) FindByClientAgent(ctx context.Context, cl
 	query := `
 		SELECT id, organization_id, user_email, user_name, client_agent_id,
 		       target_printer_id, target_printer_name, server_agent_id,
-		       is_active, is_default, created_at, updated_at
+		       printer_type, is_active, is_default, created_at, updated_at
 		FROM user_printer_mappings
 		WHERE client_agent_id = $1 AND is_active = true
 		ORDER BY user_email, created_at ASC
@@ -202,7 +206,7 @@ func (r *UserPrinterMappingRepository) FindByOrganization(ctx context.Context, o
 	query := `
 		SELECT id, organization_id, user_email, user_name, client_agent_id,
 		       target_printer_id, target_printer_name, server_agent_id,
-		       is_active, is_default, created_at, updated_at
+		       printer_type, is_active, is_default, created_at, updated_at
 		FROM user_printer_mappings
 		WHERE organization_id = $1
 		ORDER BY user_email, created_at ASC
@@ -235,13 +239,13 @@ func (r *UserPrinterMappingRepository) Update(ctx context.Context, m *UserPrinte
 		UPDATE user_printer_mappings
 		SET user_name = $2, client_agent_id = $3, target_printer_id = NULLIF($4, '')::uuid,
 		    target_printer_name = $5, server_agent_id = NULLIF($6, '')::uuid,
-		    is_active = $7, is_default = $8, updated_at = $9
+		    printer_type = $7, is_active = $8, is_default = $9, updated_at = $10
 		WHERE id = $1
 	`
 
 	cmdTag, err := r.db.Exec(ctx, query,
 		m.ID, m.UserName, m.ClientAgentID, m.TargetPrinterID,
-		m.TargetPrinterName, m.ServerAgentID, m.IsActive, m.IsDefault, m.UpdatedAt,
+		m.TargetPrinterName, m.ServerAgentID, m.PrinterType, m.IsActive, m.IsDefault, m.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("update mapping: %w", err)
@@ -296,7 +300,7 @@ func (r *UserPrinterMappingRepository) scanMapping(row interface{ Scan(...interf
 	err := row.Scan(
 		&m.ID, &orgID, &m.UserEmail, &m.UserName, &m.ClientAgentID,
 		&targetPrinterID, &m.TargetPrinterName, &serverAgentID,
-		&m.IsActive, &m.IsDefault, &m.CreatedAt, &m.UpdatedAt,
+		&m.PrinterType, &m.IsActive, &m.IsDefault, &m.CreatedAt, &m.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err

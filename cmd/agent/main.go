@@ -62,6 +62,12 @@ type AgentConfig struct {
 	PrintListenPort  int    `json:"print_listen_port"`
 	// StorageServiceURL is the URL of the OpenPrint storage service for document uploads.
 	StorageServiceURL string `json:"storage_service_url"`
+	// EnableReceiptPrinter creates an additional receipt/thermal virtual printer in server mode.
+	EnableReceiptPrinter bool `json:"enable_receipt_printer"`
+	// ReceiptPrinterName is the name of the receipt virtual printer.
+	ReceiptPrinterName string `json:"receipt_printer_name"`
+	// ReceiptListenPort is the TCP port for the receipt virtual printer.
+	ReceiptListenPort int `json:"receipt_listen_port"`
 }
 
 // Agent represents the print agent.
@@ -81,7 +87,8 @@ type Agent struct {
 	isElevated     bool
 	stopCh         chan struct{}
 	// Server mode fields
-	printListener  net.Listener
+	printListener        net.Listener
+	receiptPrintListener net.Listener
 }
 
 // CapturedPrintJob represents a print job captured from the virtual printer on the RDP session host.
@@ -89,6 +96,7 @@ type CapturedPrintJob struct {
 	FilePath    string `json:"file_path"`
 	FileName    string `json:"file_name"`
 	ContentType string `json:"content_type"`
+	PrinterType string `json:"printer_type"` // "standard" or "receipt"
 	UserName    string `json:"user_name"`
 	UserEmail   string `json:"user_email"`
 	Title       string `json:"title"`
@@ -293,12 +301,22 @@ func (a *Agent) Run(ctx context.Context) {
 	a.discoverPrinters()
 	a.registerPrinters()
 
-	// Server mode: set up virtual printer and TCP listener for print capture
+	// Server mode: set up virtual printer(s) and TCP listener(s) for print capture
 	if a.getRole() == "server" {
+		// Standard virtual printer (A4/PostScript for documents)
 		if err := a.setupVirtualPrinter(ctx); err != nil {
 			log.Printf("WARNING: Failed to set up virtual printer: %v", err)
 		} else {
-			go a.startPrintCaptureListener(ctx)
+			go a.startPrintCaptureListener(ctx, "standard")
+		}
+
+		// Receipt virtual printer (narrow paper for thermal/POS printers)
+		if a.config.EnableReceiptPrinter {
+			if err := a.setupReceiptVirtualPrinter(ctx); err != nil {
+				log.Printf("WARNING: Failed to set up receipt virtual printer: %v", err)
+			} else {
+				go a.startPrintCaptureListener(ctx, "receipt")
+			}
 		}
 	}
 
@@ -321,8 +339,14 @@ func (a *Agent) Run(ctx context.Context) {
 			if a.printListener != nil {
 				a.printListener.Close()
 			}
+			if a.receiptPrintListener != nil {
+				a.receiptPrintListener.Close()
+			}
 			if a.getRole() == "server" {
 				a.removeVirtualPrinter()
+				if a.config.EnableReceiptPrinter {
+					a.removeReceiptVirtualPrinter()
+				}
 			}
 			a.stopCh <- struct{}{}
 			return
@@ -363,12 +387,28 @@ func (a *Agent) getVirtualPrinterName() string {
 	return "OpenPrint"
 }
 
-// getPrintListenPort returns the TCP port for print capture.
+// getPrintListenPort returns the TCP port for standard print capture.
 func (a *Agent) getPrintListenPort() int {
 	if a.config.PrintListenPort > 0 {
 		return a.config.PrintListenPort
 	}
 	return 9100
+}
+
+// getReceiptPrinterName returns the receipt virtual printer name.
+func (a *Agent) getReceiptPrinterName() string {
+	if a.config.ReceiptPrinterName != "" {
+		return a.config.ReceiptPrinterName
+	}
+	return "OpenPrint Receipt"
+}
+
+// getReceiptListenPort returns the TCP port for receipt print capture.
+func (a *Agent) getReceiptListenPort() int {
+	if a.config.ReceiptListenPort > 0 {
+		return a.config.ReceiptListenPort
+	}
+	return 9101
 }
 
 // virtualPrinterDrivers is the preference order for virtual printer drivers.
@@ -452,7 +492,61 @@ func (a *Agent) setupVirtualPrinter(ctx context.Context) error {
 	return nil
 }
 
-// removeVirtualPrinter removes the virtual printer created in server mode.
+// setupReceiptVirtualPrinter creates a receipt/thermal virtual printer.
+// Uses "Generic / Text Only" driver which is ideal for POS/receipt printers:
+// applications that print receipts already format their output as plain text
+// with the correct narrow width.
+func (a *Agent) setupReceiptVirtualPrinter(ctx context.Context) error {
+	printerName := a.getReceiptPrinterName()
+	port := a.getReceiptListenPort()
+	portName := fmt.Sprintf("OPENPRINT_RECEIPT_127.0.0.1_%d", port)
+
+	log.Printf("Setting up receipt virtual printer '%s' on port %d", printerName, port)
+
+	// Check if printer already exists
+	checkCmd := powershellCommand(fmt.Sprintf(`Get-Printer -Name "%s" -ErrorAction SilentlyContinue | Select-Object Name | ConvertTo-Json`, printerName))
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", checkCmd)
+	if output, err := cmd.Output(); err == nil && len(output) > 0 && strings.Contains(string(output), printerName) {
+		log.Printf("Receipt virtual printer '%s' already exists", printerName)
+		return nil
+	}
+
+	// Create TCP port
+	addPortCmd := powershellCommand(fmt.Sprintf(
+		`Add-PrinterPort -Name "%s" -PrinterHostAddress "127.0.0.1" -PortNumber %d -SNMP $false -ErrorAction Stop`,
+		portName, port,
+	))
+	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", addPortCmd)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("Add receipt printer port output: %s (err: %v)", string(output), err)
+	}
+
+	// Receipt printers: use "Generic / Text Only" driver
+	// POS/receipt applications format their own output as plain text with proper width
+	driverName := "Generic / Text Only"
+	checkDriverCmd := powershellCommand(fmt.Sprintf(`Get-PrinterDriver -Name "%s" -ErrorAction SilentlyContinue`, driverName))
+	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", checkDriverCmd)
+	if _, err := cmd.Output(); err != nil {
+		addDriverCmd := powershellCommand(fmt.Sprintf(`Add-PrinterDriver -Name "%s" -ErrorAction SilentlyContinue`, driverName))
+		cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", addDriverCmd)
+		cmd.Run()
+	}
+
+	// Create the receipt virtual printer
+	addPrinterCmd := powershellCommand(fmt.Sprintf(
+		`Add-Printer -Name "%s" -DriverName "%s" -PortName "%s" -Comment "OpenPrint Receipt Printer - routes to your local thermal/POS printer" -ErrorAction Stop`,
+		printerName, driverName, portName,
+	))
+	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", addPrinterCmd)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to create receipt virtual printer: %s: %w", string(output), err)
+	}
+
+	log.Printf("Receipt virtual printer '%s' created successfully", printerName)
+	return nil
+}
+
+// removeVirtualPrinter removes the standard virtual printer.
 func (a *Agent) removeVirtualPrinter() {
 	printerName := a.getVirtualPrinterName()
 	port := a.getPrintListenPort()
@@ -469,37 +563,66 @@ func (a *Agent) removeVirtualPrinter() {
 	cmd.Run()
 }
 
-// startPrintCaptureListener starts a TCP listener that receives print data from the virtual printer.
-func (a *Agent) startPrintCaptureListener(ctx context.Context) {
-	port := a.getPrintListenPort()
+// removeReceiptVirtualPrinter removes the receipt virtual printer.
+func (a *Agent) removeReceiptVirtualPrinter() {
+	printerName := a.getReceiptPrinterName()
+	port := a.getReceiptListenPort()
+	portName := fmt.Sprintf("OPENPRINT_RECEIPT_127.0.0.1_%d", port)
+
+	log.Printf("Removing receipt virtual printer '%s'", printerName)
+
+	removeCmd := powershellCommand(fmt.Sprintf(`Remove-Printer -Name "%s" -ErrorAction SilentlyContinue`, printerName))
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", removeCmd)
+	cmd.Run()
+
+	removePortCmd := powershellCommand(fmt.Sprintf(`Remove-PrinterPort -Name "%s" -ErrorAction SilentlyContinue`, portName))
+	cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", removePortCmd)
+	cmd.Run()
+}
+
+// startPrintCaptureListener starts a TCP listener for the given printer type.
+// printerType is "standard" or "receipt".
+func (a *Agent) startPrintCaptureListener(ctx context.Context, printerType string) {
+	var port int
+	if printerType == "receipt" {
+		port = a.getReceiptListenPort()
+	} else {
+		port = a.getPrintListenPort()
+	}
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 
-	var err error
-	a.printListener, err = net.Listen("tcp", addr)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Printf("ERROR: Failed to start print capture listener on %s: %v", addr, err)
+		log.Printf("ERROR: Failed to start %s print capture listener on %s: %v", printerType, addr, err)
 		return
 	}
 
-	log.Printf("Print capture listener started on %s", addr)
+	if printerType == "receipt" {
+		a.receiptPrintListener = listener
+	} else {
+		a.printListener = listener
+	}
+
+	log.Printf("%s print capture listener started on %s", printerType, addr)
 
 	for {
-		conn, err := a.printListener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				log.Printf("Accept error: %v", err)
+				log.Printf("Accept error (%s): %v", printerType, err)
 				continue
 			}
 		}
-		go a.handlePrintCapture(ctx, conn)
+		go a.handlePrintCapture(ctx, conn, printerType)
 	}
 }
 
-// handlePrintCapture handles an incoming print data connection from the virtual printer.
-func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn) {
+// handlePrintCapture handles an incoming print data connection from a virtual printer.
+// printerType is "standard" or "receipt".
+func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn, printerType string) {
 	defer conn.Close()
 
 	// Set a read deadline to avoid hanging connections
@@ -508,7 +631,7 @@ func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn) {
 	// Create temp file to store captured print data
 	tempDir := os.TempDir()
 	jobID := uuid.New().String()
-	tempFile := filepath.Join(tempDir, fmt.Sprintf("openprint_capture_%s.prn", jobID))
+	tempFile := filepath.Join(tempDir, fmt.Sprintf("openprint_capture_%s_%s.prn", printerType, jobID))
 
 	f, err := os.Create(tempFile)
 	if err != nil {
@@ -530,7 +653,7 @@ func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	log.Printf("Captured print job: %d bytes -> %s", bytesWritten, tempFile)
+	log.Printf("Captured %s print job: %d bytes -> %s", printerType, bytesWritten, tempFile)
 
 	// Detect the content type from the captured data
 	contentType := detectPrintDataFormat(tempFile)
@@ -540,6 +663,7 @@ func (a *Agent) handlePrintCapture(ctx context.Context, conn net.Conn) {
 	capturedJob := a.identifyPrintJobOwner(tempFile, bytesWritten)
 	capturedJob.FilePath = tempFile
 	capturedJob.ContentType = contentType
+	capturedJob.PrinterType = printerType
 
 	// Upload to OpenPrint Cloud and create a routed job
 	if err := a.uploadCapturedJob(ctx, capturedJob); err != nil {
@@ -716,21 +840,30 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 	log.Printf("Document uploaded: id=%s checksum=%s", documentID, checksum)
 
 	// Step 2: Create a print job in the job service that will be routed to the user's client agent
+	// Use printer type-specific routing: __user_default__ for standard, __user_default_receipt__ for receipt
+	printerID := "__user_default__"
+	mediaType := "a4"
+	if captured.PrinterType == "receipt" {
+		printerID = "__user_default_receipt__"
+		mediaType = "receipt"
+	}
+
 	jobReq := map[string]interface{}{
 		"document_id": documentID,
-		"printer_id":  "__user_default__", // Special value: route to user's default mapped printer
+		"printer_id":  printerID,
 		"user_name":   captured.UserName,
 		"user_email":  captured.UserEmail,
 		"title":       captured.Title,
 		"copies":      1,
 		"color_mode":  "auto",
-		"media_type":  "a4",
+		"media_type":  mediaType,
 		"quality":     "normal",
 		"options": map[string]string{
 			"source":            "rdp_capture",
 			"server_agent_id":   a.config.AgentID,
 			"captured_size":     fmt.Sprintf("%d", captured.Size),
 			"content_type":      captured.ContentType,
+			"printer_type":      captured.PrinterType,
 		},
 	}
 
@@ -1108,8 +1241,15 @@ func (a *Agent) downloadDocument(url, destPath string) error {
 }
 
 // printDocument prints a document using Windows print commands.
-// Handles PostScript, PDF, and raw print data from the server-side capture.
+// Handles PostScript, PDF, raw data, and receipt/thermal printer output.
 func (a *Agent) printDocument(filePath, printerName string, job PrintJob) error {
+	// Check if this is a receipt printer job
+	printerType := getJobOption(job, "printer_type")
+	if printerType == "receipt" {
+		log.Printf("Printing receipt: printer=%s file=%s", printerName, filePath)
+		return a.printReceipt(filePath, printerName)
+	}
+
 	// Determine the content type from job options or file extension
 	contentType := ""
 	if job.ColorMode == "auto" {
@@ -1202,6 +1342,33 @@ func (a *Agent) printRaw(filePath, printerName string) error {
 		// Fallback: use the Windows print command via file association
 		return exec.Command("cmd", "/C",
 			fmt.Sprintf(`rundll32 mshtml.dll,PrintHTML "%s"`, filePath),
+		).Run()
+	}
+	return nil
+}
+
+// printReceipt sends captured receipt data directly to a thermal/POS printer.
+// Receipt data from "Generic / Text Only" driver is plain text that thermal printers
+// handle natively. We send it as a raw print job through the Windows spooler.
+func (a *Agent) printReceipt(filePath, printerName string) error {
+	// Send raw data to the receipt printer via Windows spooler RAW datatype.
+	// This preserves the original formatting from the POS/ERP application.
+	psCmd := powershellCommand(fmt.Sprintf(
+		`$printerPath = (Get-Printer -Name "%s").PortName; `+
+			`$rawData = [System.IO.File]::ReadAllBytes("%s"); `+
+			`$stream = [System.IO.File]::OpenWrite("\\.\\" + $printerPath); `+
+			`$stream.Write($rawData, 0, $rawData.Length); `+
+			`$stream.Close()`,
+		printerName, filePath,
+	))
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psCmd)
+	if err := cmd.Run(); err != nil {
+		// Fallback: use lpr command for network receipt printers
+		return exec.Command("lpr",
+			"-S", "localhost",
+			"-P", printerName,
+			"-o", "l", // raw mode
+			filePath,
 		).Run()
 	}
 	return nil

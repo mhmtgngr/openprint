@@ -31,6 +31,7 @@ type CreateMappingRequest struct {
 	TargetPrinterID   string `json:"target_printer_id,omitempty"`
 	TargetPrinterName string `json:"target_printer_name,omitempty"`
 	ServerAgentID     string `json:"server_agent_id,omitempty"`
+	PrinterType       string `json:"printer_type,omitempty"` // "standard" (default) or "receipt"
 	IsDefault         bool   `json:"is_default"`
 }
 
@@ -77,6 +78,7 @@ func (h *UserPrinterMappingHandler) createMapping(w http.ResponseWriter, r *http
 		TargetPrinterID:   req.TargetPrinterID,
 		TargetPrinterName: req.TargetPrinterName,
 		ServerAgentID:     req.ServerAgentID,
+		PrinterType:       req.PrinterType,
 		IsActive:          true,
 		IsDefault:         req.IsDefault,
 	}
@@ -205,6 +207,9 @@ func (h *UserPrinterMappingHandler) MappingHandler(w http.ResponseWriter, r *htt
 		if req.ServerAgentID != "" {
 			mapping.ServerAgentID = req.ServerAgentID
 		}
+		if req.PrinterType != "" {
+			mapping.PrinterType = req.PrinterType
+		}
 		mapping.IsDefault = req.IsDefault
 
 		if err := h.mappingRepo.Update(ctx, mapping); err != nil {
@@ -253,12 +258,17 @@ func (h *UserPrinterMappingHandler) resolveUsername(w http.ResponseWriter, r *ht
 }
 
 func mappingToResponse(m *repository.UserPrinterMapping) map[string]interface{} {
+	printerType := m.PrinterType
+	if printerType == "" {
+		printerType = "standard"
+	}
 	resp := map[string]interface{}{
 		"id":                  m.ID,
 		"user_email":          m.UserEmail,
 		"user_name":           m.UserName,
 		"client_agent_id":     m.ClientAgentID,
 		"target_printer_name": m.TargetPrinterName,
+		"printer_type":        printerType,
 		"is_active":           m.IsActive,
 		"is_default":          m.IsDefault,
 		"created_at":          m.CreatedAt.Format(time.RFC3339),

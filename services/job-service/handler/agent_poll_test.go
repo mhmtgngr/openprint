@@ -92,7 +92,7 @@ func (m *MockAssignmentRepository) GetJobWithPrinter(ctx context.Context, jobID 
 	return nil, nil, errors.New("job not found")
 }
 
-func (m *MockAssignmentRepository) ResolveUserDefaultPrinter(ctx context.Context, userEmail, clientAgentID string) (string, string, error) {
+func (m *MockAssignmentRepository) ResolveUserDefaultPrinter(ctx context.Context, userEmail, clientAgentID, printerType string) (string, string, error) {
 	return "Default Printer", "printer-default-id", nil
 }
 

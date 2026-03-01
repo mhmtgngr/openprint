@@ -132,6 +132,9 @@ New-Item -ItemType Directory -Force -Path "C:\ProgramData\OpenPrint\agent"
     agent_role = "server"
     virtual_printer_name = "OpenPrint"
     print_listen_port = 9100
+    enable_receipt_printer = $true
+    receipt_printer_name = "OpenPrint Receipt"
+    receipt_listen_port = 9101
     storage_service_url = "https://your-openprint-cloud.example.com"
     enrollment_token = "your-enrollment-token"
     organization_id = "your-org-id"
@@ -147,12 +150,11 @@ sc.exe start OpenPrintAgent
 ```
 
 The server agent will automatically:
-- Create a virtual printer called "OpenPrint" using a **PostScript driver** (Microsoft PS Class Driver)
-- The PostScript driver preserves full formatting, fonts, graphics, and colors — producing
-  output equivalent to Windows RDP local printer redirection
-- Create a TCP/IP port pointing to localhost:9100
-- Start listening for print data on port 9100
-- Detect the print data format (PostScript, PDF, PCL, XPS)
+- Create **"OpenPrint"** virtual printer using PostScript driver (full-fidelity for A4/Letter documents)
+- Create **"OpenPrint Receipt"** virtual printer using Generic/Text Only driver (for thermal/POS printers)
+- Create TCP/IP ports pointing to localhost:9100 (standard) and localhost:9101 (receipt)
+- Detect the print data format (PostScript, PDF, PCL, XPS, plain text)
+- Tag jobs with `printer_type` ("standard" or "receipt") for correct routing
 - Discover existing printers on the server
 
 #### Required Windows Components (Server)
@@ -213,7 +215,7 @@ Map each user to their local printer/agent. This tells the system where to route
 captured print jobs.
 
 ```bash
-# Create mapping via API
+# Create mapping for standard printer (A4/Letter documents)
 curl -X POST https://your-openprint-cloud.example.com/user-printer-mappings \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -222,6 +224,22 @@ curl -X POST https://your-openprint-cloud.example.com/user-printer-mappings \
     "user_name": "DOMAIN\\john",
     "client_agent_id": "<client-agent-uuid>",
     "target_printer_name": "HP LaserJet 4200",
+    "printer_type": "standard",
+    "server_agent_id": "<server-agent-uuid>",
+    "organization_id": "<org-uuid>",
+    "is_default": true
+  }'
+
+# Create mapping for receipt/thermal printer (POS/invoice output)
+curl -X POST https://your-openprint-cloud.example.com/user-printer-mappings \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "user_email": "john@example.com",
+    "user_name": "DOMAIN\\john",
+    "client_agent_id": "<client-agent-uuid>",
+    "target_printer_name": "EPSON TM-T88V",
+    "printer_type": "receipt",
     "server_agent_id": "<server-agent-uuid>",
     "organization_id": "<org-uuid>",
     "is_default": true
@@ -274,8 +292,11 @@ Configure your Guacamole connection to the RDP server:
 | Config Field | Default | Description |
 |-------------|---------|-------------|
 | `agent_role` | `"standard"` | Set to `"server"` for RDP session host |
-| `virtual_printer_name` | `"OpenPrint"` | Name shown in Windows print dialog |
-| `print_listen_port` | `9100` | TCP port for capturing print data |
+| `virtual_printer_name` | `"OpenPrint"` | Standard printer name in Windows print dialog |
+| `print_listen_port` | `9100` | TCP port for standard print data capture |
+| `enable_receipt_printer` | `false` | Create a second virtual printer for thermal/POS receipts |
+| `receipt_printer_name` | `"OpenPrint Receipt"` | Receipt printer name in Windows print dialog |
+| `receipt_listen_port` | `9101` | TCP port for receipt print data capture |
 | `storage_service_url` | Same as `server_url` | URL of storage-service for uploads |
 
 ### Client Mode (`agent_role: "client"`)
