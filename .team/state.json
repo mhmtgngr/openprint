@@ -2,26 +2,22 @@
   "phases": {
     "requirements": {
       "status": "done",
-      "_updated": "2026-03-01T15:32:43.756605"
+      "_updated": "2026-03-01T17:29:56.399167"
     },
     "market_research": {
       "status": "done",
-      "_updated": "2026-03-01T15:36:46.118031"
+      "_updated": "2026-03-01T17:33:45.915653"
     },
     "design": {
       "status": "done",
-      "_updated": "2026-03-01T15:38:05.396745"
+      "_updated": "2026-03-01T17:34:38.670434"
     },
     "backend": {
-      "status": "done",
-      "_updated": "2026-03-01T15:39:06.231888"
-    },
-    "frontend": {
       "status": "running",
-      "_updated": "2026-03-01T15:39:06.278436"
+      "_updated": "2026-03-01T17:34:38.716978"
     }
   },
-  "project": "Dashboard has no test files. Create test suite for React components using React Testing Library and Vitest. Add tests for: LoginForm (submit with valid/invalid credentials), JobList (render jobs, filter functionality), DeviceList (display devices, status indicators), DocumentList (upload, delete actions), Dashboard home (stats display). Create web/dashboard/src/__tests__/ directory. Add test setup in web/dashboard/vitest.config.ts. Ensure npm run test passes with at least 70% coverage.",
-  "branch": "team/dashboard-has-no-test-files-create-test--1772379103",
-  "current_phase": "frontend"
+  "project": "The diagnosis reports 0 TSX files despite frontend: 'yes' and dashboard components existing. Investigate web/dashboard structure to confirm React components are properly structured. Check if files are .jsx instead of .tsx, or if Glob scan missed the files. Verify src/features/ contains expected components (auth, jobs, devices, documents, dashboard, settings). Confirm TypeScript configuration is correct and all components are discoverable. Update scanning logic if needed to properly count frontend artifacts.",
+  "branch": "team/the-diagnosis-reports-0-tsx-files-despit-1772386144",
+  "current_phase": "backend"
 }

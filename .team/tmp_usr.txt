@@ -1,5 +1,88 @@
 REQUIREMENTS (enriched with market research):
-{"project_name":"Dashboard Test Suite Implementation","summary":"Create comprehensive unit test suite for OpenPrint Dashboard React components using React Testing Library and Vitest. Establish testing infrastructure, achieve 70% code coverage, and ensure all critical user flows are validated through automated tests.","user_stories":[{"id":"US-001","as_a":"Developer","i_want":"automated tests for the LoginForm component","so_that":"I can ensure user authentication works correctly with valid and invalid credentials","priority":"critical","acceptance_criteria":["Test renders email and password input fields","Test validates form submission with valid credentials","Test displays error message with invalid credentials","Test shows loading state during submission","Test prevents submission with empty fields","Test password field has minlength of 8 characters"]},{"id":"US-002","as_a":"Developer","i_want":"automated tests for the JobList component","so_that":"I can verify print jobs display correctly and filtering functions work","priority":"critical","acceptance_criteria":["Test renders loading skeleton when isLoading is true","Test renders error state when error prop is provided","Test renders empty state when jobs array is empty","Test renders job entries table with all columns","Test displays job status badges correctly","Test filters jobs by status","Test handles job selection checkbox changes","Test calls onJobClick when job row is clicked","Test shows cancel button for queued jobs","Test shows retry button for failed jobs"]},{"id":"US-003","as_a":"Developer","i_want":"automated tests for the DeviceList component","so_that":"I can ensure devices and printers display with correct status indicators","priority":"high","acceptance_criteria":["Test renders device stats cards","Test displays online/offline status indicators","Test renders devices in table view","Test renders devices in grid view","Test filters devices by status (online/offline/error)","Test filters devices by type (agent/printer)","Test search functionality filters by device name","Test shows empty state when no devices exist","Test toggles between table and grid view modes"]},{"id":"US-004","as_a":"Developer","i_want":"automated tests for the DocumentList component","so_that":"I can verify document management operations function correctly","priority":"high","acceptance_criteria":["Test renders document statistics (total count, storage, encrypted)","Test displays upload button and toggles upload form","Test renders document grid with document cards","Test filters documents by search query","Test shows empty state when no documents exist","Test shows loading state during initial fetch","Test displays error state on API failure","Test pagination controls work correctly"]},{"id":"US-005","as_a":"Developer","i_want":"automated tests for the Dashboard home page","so_that":"I can verify statistics display and data aggregation works correctly","priority":"high","acceptance_criteria":["Test renders all stat cards (Total Jobs, Active Devices, Pages Today, Completed Jobs)","Test displays loading state while fetching data","Test renders JobChart component with statistics","Test renders RecentActivity feed","Test shows trend indicators on stat cards","Test handles failed API calls gracefully"]},{"id":"US-006","as_a":"Developer","i_want":"proper test infrastructure and configuration","so_that":"tests can run reliably in CI/CD pipelines","priority":"critical","acceptance_criteria":["Vitest configuration with jsdom environment","Test setup file with global cleanup","Coverage reporting enabled","npm run test executes all tests","Coverage threshold of at least 70% enforced","Tests run in watch mode for local development"]},{"id":"US-007","as_a":"Developer","i_want":"test utilities and mocks","so_that":"tests can isolate components from external dependencies","priority":"medium","acceptance_criteria":["Mock wrappers for React Query","Mock router context for navigation components","Mock 
+{
+ "project_name": "Frontend Artifact Scanner Fix",
+ "summary": "Investigation reveals the diagnosis scanner reports 0 TSX files despite 80 TSX and 33 TS files existing in web/dashboard/src. The scanning logic needs correction to properly enumerate frontend artifacts.",
+ "functional_requirements": [
+  {
+   "id": "FR-001",
+   "title": "Accurate TSX File Enumeration"
+  },
+  {
+   "id": "FR-002",
+   "title": "TypeScript File Enumeration"
+  },
+  {
+   "id": "FR-003",
+   "title": "Feature Module Breakdown"
+  },
+  {
+   "id": "FR-004",
+   "title": "Test File Enumeration"
+  },
+  {
+   "id": "FR-M005",
+   "title": "Secure Print Release"
+  },
+  {
+   "id": "FR-M006",
+   "title": "Print Quota & Cost Allocation"
+  },
+  {
+   "id": "FR-M007",
+   "title": "Microsoft 365 Integration"
+  },
+  {
+   "id": "FR-M008",
+   "title": "Multi-tenant Architecture"
+  },
+  {
+   "id": "FR-M009",
+   "title": "Print Policy Engine"
+  }
+ ],
+ "affected_services": [
+  "diagnostic-scanner"
+ ],
+ "implementation_phases": [
+  {
+   "phase": 1,
+   "name": "Diagnose Scanner Logic",
+   "tasks": [
+    "Locate the diagnostic scanner code that generates diagnosis.json",
+    "Review the glob patterns and search paths used for TSX file enumeration",
+    "Add debug logging to trace scanner execution through frontend code path"
+   ]
+  },
+  {
+   "phase": 2,
+   "name": "Fix File Enumeration",
+   "tasks": [
+    "Update scanner base path to include web/dashboard/src",
+    "Correct glob pattern from '*.tsx' to '**/*.tsx' or use find command equivalent",
+    "Add exclusion patterns for node_modules, dist, build artifacts"
+   ]
+  },
+  {
+   "phase": 3,
+   "name": "Add Feature Breakdown",
+   "tasks": [
+    "Implement per-module counting for src/features subdirectories",
+    "Separate test file counting from production code",
+    "Add TypeScript configuration validation"
+   ]
+  },
+  {
+   "phase": 4,
+   "name": "Verify and Test",
+   "tasks": [
+    "Run scanner and verify tsx_files count equals 80",
+    "Verify total TypeScript files equals 113",
+    "Confirm diagnosis.json updated with correct values",
+    "Add regression test for scanner accuracy"
+   ]
+  }
+ ]
+}
 
 MARKET ANALYSIS:
 {
@@ -7,77 +90,86 @@ MARKET ANALYSIS:
   {
    "name": "PaperCut",
    "strengths": [
-    "100M+ users across 70K organizations",
-    "Cross-platform support (Windows, macOS, Linux, Chromebook)",
+    "100M+ users across 195 countries",
+    "99% printer brand support",
+    "Microsoft 365/Google Workspace integration",
+    "Environmental reporting",
+    "Mobile/BYOD support",
+    "Quota management",
     "Secure print release",
-    "BYOD/mobile printing",
-    "OCR scanning integration",
-    "Sustainability tracking",
-    "Regional data centers",
-    "Cost control quotas and reporting"
+    "Dual solutions (MF/Hive)"
    ],
    "weaknesses": [
-    "Higher cost structure",
-    "Enterprise-focused pricing may not suit SMBs"
+    "Higher cost for enterprise",
+    "Complex setup for MF version"
    ],
-   "pricing_model": "Per-user pricing model, enterprise licensing"
+   "pricing_model": "Freemium for small business (Pocket), subscription for Hive, perpetual license for MF"
+  },
+  {
+   "name": "HP JetAdvantage",
+   "strengths": [
+    "Deep HP hardware integration",
+    "Simple management",
+    "Hardware-optimized"
+   ],
+   "weaknesses": [
+    "HP hardware lock-in",
+    "Limited cross-vendor support"
+   ],
+   "pricing_model": "Included with HP printers, subscription for advanced features"
   },
   {
    "name": "Printix",
    "strengths": [
-    "Microsoft Azure cloud infrastructure",
-    "Azure AD integration",
-    "Modern workplace design",
-    "EDU/SMB/Enterprise segments"
+    "Cloud-native architecture",
+    "Multi-branch support",
+    "Quick deployment"
    ],
    "weaknesses": [
-    "Azure vendor lock-in",
-    "Limited multi-cloud flexibility"
+    "Smaller market presence",
+    "Fewer enterprise features"
    ],
-   "pricing_model": "Cloud subscription, Azure-based"
+   "pricing_model": "Subscription-based SaaS"
   },
   {
-   "name": "\u5b89\u4f01\u795e\u8f6f\u4ef6 (AnQiShen)",
+   "name": "Ping32",
    "strengths": [
+    "Print behavior monitoring",
+    "Content auditing",
     "Dynamic watermarking",
     "Sensitive word interception",
-    "Fine-grained print permission control",
-    "Financial/government/compliance focus",
-    "Chinese market localization"
+    "DLP capabilities"
    ],
    "weaknesses": [
-    "Limited to Chinese market",
-    "Less international presence"
+    "Focus on surveillance vs management",
+    "Regional availability"
    ],
-   "pricing_model": "Enterprise licensing with compliance features"
+   "pricing_model": "Perpetual license with maintenance"
   },
   {
-   "name": "YSoft SafeQ",
+   "name": "Lansweeper",
    "strengths": [
-    "Dual authentication",
-    "Encrypted transmission",
-    "Strong security focus",
-    "Mobile printing"
+    "IT asset inventory integration",
+    "Hardware discovery",
+    "Automated reporting"
    ],
    "weaknesses": [
-    "Premium pricing",
-    "Complex setup for small teams"
+    "Print management is secondary feature"
    ],
-   "pricing_model": "Tiered subscription pricing"
-  },
+   "pricing_model": "Per-asset subscription"
+  }
+ ],
+ "feature_comparison": [
   {
-   "name": "\u4e09\u884c\u542f\u7cfb\u7edf (Sanhangqi)",
-   "strengths": [
-    "10M+ enterprise users",
-    "Hybrid cloud deployment",
-    "AI-powered consumable prediction",
-    "Global enterprise presence"
+   "feature": "Secure Print Release",
+   "competitors_with_feature": [
+    "PaperCut",
+    "HP JetAdvantage",
+    "Printix"
    ],
-   "weaknesses": [
-    "AI features require historical data",
-    "Enterprise-focused complexity"
-   ],
-   "pricing_model": "Enterprise licensing with AI f
+   "project_status": "missing",
+   "priority": "critical",
+   "implementation_effort
 
 PROJECT CONTEXT (from CLAUDE.md):
 # OpenPrint Cloud

@@ -1,1 +1,220 @@
-{"project_name":"Dashboard Test Suite Implementation","summary":"Create comprehensive unit test suite for OpenPrint Dashboard React components using React Testing Library and Vitest. Establish testing infrastructure, achieve 70% code coverage, and ensure all critical user flows are validated through automated tests.","user_stories":[{"id":"US-001","as_a":"Developer","i_want":"automated tests for the LoginForm component","so_that":"I can ensure user authentication works correctly with valid and invalid credentials","priority":"critical","acceptance_criteria":["Test renders email and password input fields","Test validates form submission with valid credentials","Test displays error message with invalid credentials","Test shows loading state during submission","Test prevents submission with empty fields","Test password field has minlength of 8 characters"]},{"id":"US-002","as_a":"Developer","i_want":"automated tests for the JobList component","so_that":"I can verify print jobs display correctly and filtering functions work","priority":"critical","acceptance_criteria":["Test renders loading skeleton when isLoading is true","Test renders error state when error prop is provided","Test renders empty state when jobs array is empty","Test renders job entries table with all columns","Test displays job status badges correctly","Test filters jobs by status","Test handles job selection checkbox changes","Test calls onJobClick when job row is clicked","Test shows cancel button for queued jobs","Test shows retry button for failed jobs"]},{"id":"US-003","as_a":"Developer","i_want":"automated tests for the DeviceList component","so_that":"I can ensure devices and printers display with correct status indicators","priority":"high","acceptance_criteria":["Test renders device stats cards","Test displays online/offline status indicators","Test renders devices in table view","Test renders devices in grid view","Test filters devices by status (online/offline/error)","Test filters devices by type (agent/printer)","Test search functionality filters by device name","Test shows empty state when no devices exist","Test toggles between table and grid view modes"]},{"id":"US-004","as_a":"Developer","i_want":"automated tests for the DocumentList component","so_that":"I can verify document management operations function correctly","priority":"high","acceptance_criteria":["Test renders document statistics (total count, storage, encrypted)","Test displays upload button and toggles upload form","Test renders document grid with document cards","Test filters documents by search query","Test shows empty state when no documents exist","Test shows loading state during initial fetch","Test displays error state on API failure","Test pagination controls work correctly"]},{"id":"US-005","as_a":"Developer","i_want":"automated tests for the Dashboard home page","so_that":"I can verify statistics display and data aggregation works correctly","priority":"high","acceptance_criteria":["Test renders all stat cards (Total Jobs, Active Devices, Pages Today, Completed Jobs)","Test displays loading state while fetching data","Test renders JobChart component with statistics","Test renders RecentActivity feed","Test shows trend indicators on stat cards","Test handles failed API calls gracefully"]},{"id":"US-006","as_a":"Developer","i_want":"proper test infrastructure and configuration","so_that":"tests can run reliably in CI/CD pipelines","priority":"critical","acceptance_criteria":["Vitest configuration with jsdom environment","Test setup file with global cleanup","Coverage reporting enabled","npm run test executes all tests","Coverage threshold of at least 70% enforced","Tests run in watch mode for local development"]},{"id":"US-007","as_a":"Developer","i_want":"test utilities and mocks","so_that":"tests can isolate components from external dependencies","priority":"medium","acceptance_criteria":["Mock wrappers for React Query","Mock router context for navigation components","Mock API responses for backend services","Custom render function with providers","Test data factories for common entities"]},{"id":"US-008","as_a":"QA Engineer","i_want":"CI/CD integration for automated testing","so_that":"code changes are validated automatically before deployment","priority":"medium","acceptance_criteria":["Tests run on every pull request","Test results reported in GitHub Actions","Coverage badges updated automatically","Failed tests block merge","Test artifacts downloadable for debugging"]}],"functional_requirements":[{"id":"FR-001","title":"LoginForm Test Coverage","description":"Create comprehensive tests for LoginForm component including rendering, validation, submission handling, loading states, and error display","service":"dashboard"},{"id":"FR-002","title":"JobList Test Coverage","description":"Create tests for JobList component covering loading states, error handling, empty states, job rendering, filtering, selection, and action buttons","service":"dashboard"},{"id":"FR-003","title":"DeviceList Test Coverage","description":"Create tests for Devices component covering stats display, status indicators, view modes (table/grid), filtering by status/type, and search functionality","service":"dashboard"},{"id":"FR-004","title":"DocumentList Test Coverage","description":"Create tests for Documents component covering statistics display, upload toggle, document grid, search filtering, pagination, and loading/error states","service":"dashboard"},{"id":"FR-005","title":"DashboardHome Test Coverage","description":"Create tests for DashboardHome component covering stat cards, loading states, JobChart integration, and RecentActivity feed","service":"dashboard"},{"id":"FR-006","title":"Vitest Configuration","description":"Configure vitest.config.ts with proper test environment, coverage settings, and global setup","service":"dashboard"},{"id":"FR-007","title":"Test Utilities","description":"Create test utilities including custom render function, mock wrappers for React Query and React Router, and test data factories","service":"dashboard"},{"id":"FR-008","title":"CI/CD Test Integration","description":"Integrate test execution into GitHub Actions workflow with coverage reporting and artifact collection","service":"dashboard"}],"non_functional_requirements":[{"id":"NFR-001","category":"performance","requirement":"Test suite should complete execution within 60 seconds","metric":"< 60 seconds total execution time"},{"id":"NFR-002","category":"quality","requirement":"Minimum code coverage for tested components","metric":"≥ 70% code coverage"},{"id":"NFR-003","category":"maintainability","requirement":"Tests should be isolated and independent","metric":"Each test must be runnable independently"},{"id":"NFR-004","category":"reliability","requirement":"No flaky tests due to timing or async issues","metric":"100% consistent test results across runs"},{"id":"NFR-005","category":"usability","requirement":"Clear test failure messages","metric":"Descriptive assertion messages for all tests"},{"id":"NFR-006","category":"performance","requirement":"Individual test execution time","metric":"< 5 seconds per test file"}],"api_endpoints":[{"method":"POST","path":"/api/v1/auth/login","description":"Authentication endpoint for login tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/jobs","description":"Jobs listing endpoint for JobList tests","roles":["admin","user"]},{"method":"DELETE","path":"/api/v1/jobs/{id}","description":"Job cancellation endpoint for JobList tests","roles":["admin","user"]},{"method":"POST","path":"/api/v1/jobs/{id}/retry","description":"Job retry endpoint for JobList tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/devices","description":"Devices listing endpoint for DeviceList tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/documents","description":"Documents listing endpoint for DocumentList tests","roles":["admin","user"]},{"method":"POST","path":"/api/v1/documents/upload","description":"Document upload endpoint for DocumentList tests","roles":["admin","user"]},{"method":"GET","path":"/api/v1/analytics/usage","description":"Analytics endpoint for Dashboard tests","roles":["admin"]},{"method":"GET","path":"/api/v1/analytics/environment","description":"Environment report endpoint for Dashboard tests","roles":["admin"]}],"database_changes":[],"affected_services":["dashboard"],"risks":[{"risk":"Component dependencies on React Query may require complex mocking","mitigation":"Create custom wrapper components and test utilities to provide mocked query client"},{"risk":"Async operations may cause flaky tests","mitigation":"Use waitFor and findBy queries from React Testing Library for async assertions"},{"risk":"Tests may break when component implementations change","mitigation":"Focus on testing user behavior and accessibility rather than implementation details"},{"risk":"Global state (localStorage, sessionStorage) may interfere between tests","mitigation":"Clear all storage in beforeEach/afterEach hooks in test setup"},{"risk":"Mocking file uploads for DocumentList tests","mitigation":"Create mock File objects and use MSW (Mock Service Worker) or fetch mocks for API calls"}],"implementation_phases":[{"phase":1,"name":"Test Infrastructure Setup","tasks":["Create __tests__ directory structure","Update vitest.config.ts with coverage settings","Create test-utils.ts with custom render function and providers","Create test data factories for common entities","Add test setup for global cleanup and mocks"]},{"phase":2,"name":"LoginForm Tests","tasks":["Create LoginForm.test.tsx in __tests__/features/auth/","Test component renders with email and password fields","Test form submission with mock onSubmit callback","Test error message display","Test loading state when isLoading prop is true","Test HTML5 validation attributes (required, minLength)","Test keyboard navigation and accessibility"]},{"phase":3,"name":"JobList Tests","tasks":["Create JobList.test.tsx in __tests__/features/jobs/","Test loading skeleton rendering","Test error state rendering","Test empty state rendering","Test job table rendering with mock data","Test job status badges display","Test filter functionality","Test job selection (checkboxes)","Test cancel and retry action buttons"]},{"phase":4,"name":"DeviceList Tests","tasks":["Create Devices.test.tsx in __tests__/features/devices/","Test stats cards rendering (total agents, printers, online/offline)","Test table view rendering","Test grid view rendering","Test status indicator colors and labels","Test status filter dropdown","Test type filter dropdown","Test search input filtering","Test view mode toggle (table/grid)","Test empty state"]},{"phase":5,"name":"DocumentList Tests","tasks":["Create Documents.test.tsx in __tests__/features/documents/","Test statistics cards (total documents, storage, encrypted)","Test upload button and form toggle","Test document grid rendering","Test search filtering","Test pagination controls","Test loading state","Test error state","Test empty state"]},{"phase":6,"name":"Dashboard Home Tests","tasks":["Create DashboardHome.test.tsx in __tests__/features/dashboard/","Test stat cards rendering (Total Jobs, Active Devices, Pages Today, Completed Jobs)","Test loading state while data fetches","Test JobChart component receives correct data","Test RecentActivity component receives correct activities","Test trend indicators on stat cards"]},{"phase":7,"name":"CI/CD Integration","tasks":["Create GitHub Actions workflow for running tests","Configure coverage reporting","Add coverage badge to README","Set up test artifact upload","Configure test results blocking on PR"}]}}
+{
+  "project_name": "Frontend Artifact Scanner Fix",
+  "summary": "Investigation reveals the diagnosis scanner reports 0 TSX files despite 80 TSX and 33 TS files existing in web/dashboard/src. The scanning logic needs correction to properly enumerate frontend artifacts.",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "as_a": "development team",
+      "i_want": "the project scanner to accurately count all TypeScript and TSX files",
+      "so_that": "we have correct metrics about the frontend codebase size and composition",
+      "priority": "high",
+      "acceptance_criteria": [
+        "Scanner reports correct count of TSX files (actual: 80)",
+        "Scanner reports correct count of TS files (actual: 33)",
+        "Scanner distinguishes between component files (TSX) and utility files (TS)",
+        "Scanner excludes node_modules from counting",
+        "diagnosis.json shows accurate tsx_files count > 0"
+      ]
+    },
+    {
+      "id": "US-002",
+      "as_a": "project manager",
+      "i_want": "visibility into frontend feature modules",
+      "so_that": "I can track progress and understand codebase organization",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Scanner reports files per feature module (agents, auth, dashboard, devices, documents, jobs, printers, settings)",
+        "Scanner reports test file counts per module",
+        "Scanner distinguishes between src/features, src/pages, src/components, src/layouts"
+      ]
+    },
+    {
+      "id": "US-003",
+      "as_a": "developer",
+      "i_want": "the scanner to verify TypeScript configuration",
+      "so_that": "we ensure the frontend is properly configured for type checking",
+      "priority": "low",
+      "acceptance_criteria": [
+        "Scanner validates tsconfig.json exists",
+        "Scanner checks for correct jsx configuration (react-jsx)",
+        "Scanner confirms path aliases (@/*) are configured"
+      ]
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-001",
+      "title": "Accurate TSX File Enumeration",
+      "description": "Update scanning logic to correctly identify and count all .tsx files in the web/dashboard directory, excluding node_modules and dist directories. Must find files in src/features, src/pages, src/components, src/layouts directories.",
+      "service": "diagnostic-scanner"
+    },
+    {
+      "id": "FR-002",
+      "title": "TypeScript File Enumeration",
+      "description": "Count all .ts files excluding .d.ts type definition files, node_modules, and build artifacts. Include API files, hooks, services, and utility modules.",
+      "service": "diagnostic-scanner"
+    },
+    {
+      "id": "FR-003",
+      "title": "Feature Module Breakdown",
+      "description": "Provide per-feature file counts for: agents (6 files), auth (6 files), dashboard (10 files), devices (8 files), documents (9 files), jobs (8 files), printers (2 files), settings (8 files).",
+      "service": "diagnostic-scanner"
+    },
+    {
+      "id": "FR-004",
+      "title": "Test File Enumeration",
+      "description": "Separate counting of test files (*.test.tsx, *.test.ts) from production code to provide accurate test coverage metrics.",
+      "service": "diagnostic-scanner"
+    },
+    {
+      "id": "FR-M005",
+      "title": "Secure Print Release",
+      "description": "Users authenticate at printer to release jobs, preventing abandoned documents",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Prevents data breaches from uncollected documents"
+    },
+    {
+      "id": "FR-M006",
+      "title": "Print Quota & Cost Allocation",
+      "description": "Department/user-level quotas with cost center billing",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Enables cost recovery and chargeback models"
+    },
+    {
+      "id": "FR-M007",
+      "title": "Microsoft 365 Integration",
+      "description": "Universal Print integration, Azure AD sync, SharePoint printing",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Leverages Microsoft's modern print infrastructure"
+    },
+    {
+      "id": "FR-M008",
+      "title": "Multi-tenant Architecture",
+      "description": "Isolated environments for MSP/enterprise customers",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Enables SaaS business model"
+    },
+    {
+      "id": "FR-M009",
+      "title": "Print Policy Engine",
+      "description": "Rule-based routing (color, duplex, size restrictions)",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Automates governance and cost control"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-001",
+      "category": "performance",
+      "requirement": "Scanner must complete within 5 seconds for codebases up to 10,000 files",
+      "metric": "5000ms max execution time"
+    },
+    {
+      "id": "NFR-002",
+      "category": "accuracy",
+      "requirement": "File counting must be 100% accurate - zero false negatives",
+      "metric": "0% margin of error"
+    },
+    {
+      "id": "NFR-003",
+      "category": "maintainability",
+      "requirement": "Scanning logic must handle future addition of new feature modules without code changes",
+      "metric": "zero configuration for new modules"
+    }
+  ],
+  "api_endpoints": [],
+  "database_changes": [],
+  "affected_services": [
+    "diagnostic-scanner"
+  ],
+  "risks": [
+    {
+      "risk": "Scanner may be using incorrect glob patterns or missing the web/dashboard directory entirely",
+      "mitigation": "Verify scanner configuration includes web/dashboard/src in search paths, uses pattern '**/*.tsx' with proper base directory"
+    },
+    {
+      "risk": "Scanner may be filtering out TSX files due to incorrect file extension matching",
+      "mitigation": "Review extension matching logic to ensure .tsx is not confused with .ts or excluded"
+    },
+    {
+      "risk": "Scanner may be throwing an error silently during frontend scanning",
+      "mitigation": "Add error handling and logging to diagnose-scanner to capture any failures during file enumeration"
+    }
+  ],
+  "implementation_phases": [
+    {
+      "phase": 1,
+      "name": "Diagnose Scanner Logic",
+      "tasks": [
+        "Locate the diagnostic scanner code that generates diagnosis.json",
+        "Review the glob patterns and search paths used for TSX file enumeration",
+        "Add debug logging to trace scanner execution through frontend code path"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Fix File Enumeration",
+      "tasks": [
+        "Update scanner base path to include web/dashboard/src",
+        "Correct glob pattern from '*.tsx' to '**/*.tsx' or use find command equivalent",
+        "Add exclusion patterns for node_modules, dist, build artifacts"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Add Feature Breakdown",
+      "tasks": [
+        "Implement per-module counting for src/features subdirectories",
+        "Separate test file counting from production code",
+        "Add TypeScript configuration validation"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Verify and Test",
+      "tasks": [
+        "Run scanner and verify tsx_files count equals 80",
+        "Verify total TypeScript files equals 113",
+        "Confirm diagnosis.json updated with correct values",
+        "Add regression test for scanner accuracy"
+      ]
+    }
+  ],
+  "market_context": {
+    "competitors_analyzed": [
+      "PaperCut",
+      "HP JetAdvantage",
+      "Printix",
+      "Ping32",
+      "Lansweeper"
+    ],
+    "key_gaps": [
+      "Secure print release with user authentication at device",
+      "Environmental impact reporting and sustainability metrics",
+      "Microsoft 365 and Google Workspace deep integration",
+      "Print quota management and cost allocation",
+      "Content security (watermarking, sensitive word detection)"
+    ],
+    "trends": [
+      "AI-Powered Print Optimization",
+      "Zero Trust Print Security",
+      "Sustainability Reporting",
+      "Cloud-Native Only Deployment",
+      "MPS (Managed Print Services) Integration"
+    ],
+    "unique_selling_points": [
+      "Modern microservices architecture vs legacy monoliths",
+      "Open-source potential for community contributions",
+      "Vendor-agnostic by design with no hardware lock-in",
+      "Built for cloud-native deployment from ground up",
+      "OpenTelemetry observability built-in",
+      "Real-time WebSocket notifications",
+      "Modern React/TypeScript dashboard"
+    ]
+  }
+}
