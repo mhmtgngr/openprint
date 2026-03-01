@@ -228,3 +228,172 @@ export class AnalyticsPage extends BasePage {
     await this.page.getByRole('button', { name: label }).click();
   }
 }
+
+/**
+ * Agents Page Object
+ */
+export class AgentsPage extends BasePage {
+  readonly heading: Locator;
+  readonly addButton: Locator;
+  readonly agentList: Locator;
+  readonly statusFilter: (status: string) => Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /agents/i });
+    this.addButton = page.getByRole('button', { name: /add agent/i });
+    this.agentList = page.locator('[data-testid="agent-list"]');
+    this.statusFilter = (status: string) =>
+      page.getByRole('button', { name: status });
+  }
+
+  async navigate() {
+    await this.goto('/agents');
+  }
+
+  async filterByStatus(status: string) {
+    await this.statusFilter(status).click();
+  }
+}
+
+/**
+ * Documents Page Object
+ */
+export class DocumentsPage extends BasePage {
+  readonly heading: Locator;
+  readonly uploadButton: Locator;
+  readonly documentList: Locator;
+  readonly searchInput: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /documents/i });
+    this.uploadButton = page.getByRole('button', { name: /upload/i });
+    this.documentList = page.locator('[data-testid="document-list"]');
+    this.searchInput = page.getByPlaceholder(/search/i);
+  }
+
+  async navigate() {
+    await this.goto('/documents');
+  }
+
+  async search(query: string) {
+    await this.searchInput.fill(query);
+  }
+}
+
+/**
+ * Quotas Page Object
+ */
+export class QuotasPage extends BasePage {
+  readonly heading: Locator;
+  readonly editButton: Locator;
+  readonly quotaTable: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /quotas/i });
+    this.editButton = page.getByRole('button', { name: /edit/i }).first();
+    this.quotaTable = page.locator('table');
+  }
+
+  async navigate() {
+    await this.goto('/quotas');
+  }
+}
+
+/**
+ * Policies Page Object
+ */
+export class PoliciesPage extends BasePage {
+  readonly heading: Locator;
+  readonly createButton: Locator;
+  readonly policyList: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /policies/i });
+    this.createButton = page.getByRole('button', { name: /create policy/i });
+    this.policyList = page.locator('[data-testid="policy-list"]');
+  }
+
+  async navigate() {
+    await this.goto('/policies');
+  }
+
+  async openCreateModal() {
+    await this.createButton.click();
+  }
+}
+
+/**
+ * AuditLogs Page Object
+ */
+export class AuditLogsPage extends BasePage {
+  readonly heading: Locator;
+  readonly exportButton: Locator;
+  readonly logsTable: Locator;
+  readonly actionFilter: Locator;
+  readonly userFilter: Locator;
+  readonly searchInput: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /audit logs/i });
+    this.exportButton = page.getByRole('button', { name: /export/i });
+    this.logsTable = page.locator('table');
+    this.actionFilter = page.getByLabel(/action/i);
+    this.userFilter = page.getByLabel(/user/i);
+    this.searchInput = page.getByPlaceholder(/search/i);
+  }
+
+  async navigate() {
+    await this.goto('/audit-logs');
+  }
+
+  async filterByAction(action: string) {
+    await this.actionFilter.selectOption(action);
+  }
+}
+
+/**
+ * EmailToPrint Page Object
+ */
+export class EmailToPrintPage extends BasePage {
+  readonly heading: Locator;
+  readonly enableToggle: Locator;
+  readonly domainInput: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /email-to-print/i });
+    this.enableToggle = page.getByRole('switch', { name: /enable/i });
+    this.domainInput = page.getByLabel(/email domain/i);
+  }
+
+  async navigate() {
+    await this.goto('/email-to-print');
+  }
+}
+
+/**
+ * PrintRelease Page Object
+ */
+export class PrintReleasePage extends BasePage {
+  readonly heading: Locator;
+  readonly releaseButton: Locator;
+  readonly cancelButton: Locator;
+  readonly jobList: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /print release/i });
+    this.releaseButton = page.getByRole('button', { name: /release/i }).first();
+    this.cancelButton = page.getByRole('button', { name: /cancel/i }).first();
+    this.jobList = page.locator('[data-testid="release-job-list"]');
+  }
+
+  async navigate() {
+    await this.goto('/print-release');
+  }
+}
