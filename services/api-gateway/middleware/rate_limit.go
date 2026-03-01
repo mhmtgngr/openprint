@@ -204,13 +204,6 @@ func APIKeyMiddleware(db *pgxpool.Pool, skipPaths []string) func(http.Handler) h
 			var scopes []string
 			var keyID string
 
-			query := `
-				SELECT id, organization_id, created_by, is_active, scopes
-				FROM api_keys
-				WHERE key_hash = encode(sha256($1::bytea), 'hex')::text
-				  AND (expires_at IS NULL OR expires_at > NOW())
-			`
-
 			err := db.QueryRow(ctx, "SELECT id, organization_id, created_by, is_active, scopes FROM api_keys WHERE key_hash = $1", apiKey).
 				Scan(&keyID, &orgID, &userID, &isActive, &scopes)
 
@@ -222,7 +215,7 @@ func APIKeyMiddleware(db *pgxpool.Pool, skipPaths []string) func(http.Handler) h
 				ctx = context.WithValue(ctx, "scopes", scopes)
 
 				// Log API usage
-				go h.logAPIUsage(context.Background(), db, keyID, r)
+				go logAPIUsage(context.Background(), db, keyID, r)
 
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -306,10 +307,9 @@ func determineActionAndResource(method, path string) (string, string) {
 
 	// Extract resource from path
 	parts := splitPath(path)
+	resource := "unknown"
 	if len(parts) > 0 {
 		resource = parts[0]
-	} else {
-		resource = "unknown"
 	}
 
 	return action, resource

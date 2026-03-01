@@ -488,22 +488,3 @@ func quotaToResponse(q *PrintQuota) map[string]interface{} {
 	}
 	return resp
 }
-
-func parsePath(path string) []string {
-	parts := make([]string, 0)
-	current := ""
-	for _, c := range path {
-		if c == '/' {
-			if current != "" {
-				parts = append(parts, current)
-				current = ""
-			}
-		} else {
-			current += string(c)
-		}
-	}
-	if current != "" {
-		parts = append(parts, current)
-	}
-	return parts
-}

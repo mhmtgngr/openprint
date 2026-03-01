@@ -17,9 +17,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	sharedmiddleware "github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
-	"github.com/openprint/openprint/services/api-gateway/handler"
-	"github.com/openprint/openprint/services/api-gateway/middleware"
+	handler "github.com/openprint/openprint/services/api-gateway/handlers"
+	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
 )
 
 // Config holds service configuration.
@@ -123,14 +124,14 @@ func main() {
 	mux.HandleFunc("/api/v1/organizations/", withServiceProxy(organizationProxy, "organization"))
 
 	// Build middleware chain
-	middlewareChain := middleware.Chain(
-		middleware.LoggingMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
-		middleware.RecoveryMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
-		middleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization"}),
-		middleware.RateLimitMiddleware(60, 1*time.Minute),
+	middlewareChain := sharedmiddleware.Chain(
+		sharedmiddleware.LoggingMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
+		sharedmiddleware.RecoveryMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
+		sharedmiddleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization"}),
+		sharedmiddleware.RateLimitMiddleware(60, 1*time.Minute),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
-		middleware.SecurityHeadersMiddleware(),
-		middleware.APIKeyMiddleware(db, []string{"/health", "/api/v1/docs"}),
+		sharedmiddleware.SecurityHeadersMiddleware(),
+		gatewaymiddleware.APIKeyMiddleware(db, []string{"/health", "/api/v1/docs"}),
 	)
 
 	wrappedMux := middlewareChain(mux)

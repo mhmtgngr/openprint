@@ -146,7 +146,6 @@ func (r *costRepository) CalculateJobCost(ctx context.Context, jobID string) (*J
 
 	// Get costs
 	monoCost, _ := r.GetCostConfig(ctx, organizationID, printerID, "monochrome_a4")
-	colorCost, _ := r.GetCostConfig(ctx, organizationID, printerID, "color_a4")
 
 	// For simplicity, assume all pages are monochrome
 	costPerPage := 0.0
@@ -331,12 +330,4 @@ func (r *costRepository) GetCostByPrinter(ctx context.Context, organizationID, p
 	}
 
 	return summaries, nil
-}
-
-// nullIfEmpty returns nil if string is empty, otherwise returns the string.
-func nullIfEmpty(s string) interface{} {
-	if s == "" {
-		return nil
-	}
-	return s
 }
