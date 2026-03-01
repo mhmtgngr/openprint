@@ -119,10 +119,10 @@ export class CompliancePage extends BasePage {
 
     // Security settings
     this.encryptionToggle = page.getByRole('switch', { name: /encryption/i });
-    this.encryptionAlgorithm = page.getByLabel(/encryption algorithm|cipher/i });
+    this.encryptionAlgorithm = page.getByLabel(/encryption algorithm|cipher/i);
     this.twoFactorToggle = page.getByRole('switch', { name: /two factor|2fa|mfa/i });
-    this.sessionTimeoutInput = page.getByLabel(/session timeout/i });
-    this.ipWhitelistInput = page.getByLabel(/ip address|whitelist/i });
+    this.sessionTimeoutInput = page.getByLabel(/session timeout/i);
+    this.ipWhitelistInput = page.getByLabel(/ip address|whitelist/i);
     this.addIpWhitelistButton = page.getByRole('button', { name: /add|allow/i });
     this.ipWhitelistList = page.locator('[data-testid="ip-whitelist"]');
 

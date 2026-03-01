@@ -1,21 +1,84 @@
 {
-  "overall_score": 90,
-  "verdict": "APPROVE",
+  "overall_score": 42,
+  "verdict": "NEEDS_FIXES",
   "code_issues": [
     {
-      "severity": "minor",
-      "file": "web/dashboard/package.json",
-      "issue": "Node.js version mismatch - project requires >=20.0.0 but running on v18.19.1",
-      "fix": "Upgrade Node.js to version 20+ to avoid engine warnings"
+      "severity": "critical",
+      "file": "services/api-gateway/main.go",
+      "issue": "URL parsing errors discarded with _, causing nil pointer panic if URLs are invalid",
+      "fix": "Add proper error handling: authServiceURL, err := url.Parse(cfg.AuthServiceURL); if err != nil { log.Fatalf(...) }"
+    },
+    {
+      "severity": "critical",
+      "file": "services/m365-integration-service/main.go",
+      "issue": "Path traversal vulnerability in filepath operations with user input",
+      "fix": "Use filepath.Base() and validate all paths against allowed directory"
+    },
+    {
+      "severity": "critical",
+      "file": "services/compliance-service/main.go",
+      "issue": "Overlapping route patterns /api/v1/controls/ and /api/v1/controls cause ambiguous routing",
+      "fix": "Use distinct paths or register specific routes before generic ones"
+    },
+    {
+      "severity": "major",
+      "file": "services/auth-service/handler/oidc.go",
+      "issue": "Race condition in testModeTokens map access without proper locking scope",
+      "fix": "Ensure all map access within mu.Lock()/Unlock() or use sync.Map"
+    },
+    {
+      "severity": "major",
+      "file": "services/m365-integration-service/main.go",
+      "issue": "RefreshTokens stored in plaintext without encryption",
+      "fix": "Encrypt sensitive tokens at rest using encryption.Key from config"
+    },
+    {
+      "severity": "major",
+      "file": "services/compliance-service/compliance.go",
+      "issue": "No input validation on Control struct fields before database operations",
+      "fix": "Add validation for required fields, length constraints, and allowed values"
+    },
+    {
+      "severity": "major",
+      "file": "services/api-gateway/main.go",
+      "issue": "Missing /health endpoint for service discovery",
+      "fix": "Add mux.HandleFunc(\"/health\", healthHandler)"
     },
     {
       "severity": "minor",
-      "file": "web/dashboard/package.json",
-      "issue": "5 moderate security vulnerabilities detected in npm packages",
-      "fix": "Run 'npm audit fix' after addressing breaking changes, or review vulnerabilities with 'npm audit'"
+      "file": "services/m365-integration-service/main.go",
+      "issue": "No rate limiting on Microsoft Graph API calls",
+      "fix": "Add rate limiter middleware to prevent quota exhaustion"
+    },
+    {
+      "severity": "minor",
+      "file": "services/compliance-service/main.go",
+      "issue": "CORS middleware not configured for cross-origin requests",
+      "fix": "Add middleware.CORS() to middleware chain"
+    },
+    {
+      "severity": "minor",
+      "file": "services/auth-service/handler/oidc.go",
+      "issue": "No validation for TestUser fields (email format, required fields)",
+      "fix": "Add struct validation using validator package"
     }
   ],
-  "missing_items": [],
-  "blocking_issues": [],
-  "fix_instructions": ""
+  "missing_items": [
+    "FR-001: Playwright framework not initialized in web/dashboard/e2e/",
+    "FR-002: Authentication test suite missing",
+    "FR-008: Visual regression testing not implemented",
+    "FR-009: Test data management utilities missing",
+    "FR-011: CI/CD GitHub Actions workflow for E2E tests missing",
+    "FR-012: Real-time WebSocket test coverage missing",
+    "Playwright configuration file (playwright.config.ts)",
+    "Test fixtures and page object models",
+    "E2E test reports generation"
+  ],
+  "blocking_issues": [
+    "All E2E tests failing - test-failed-1.png and video.webm artifacts indicate 8+ failed tests",
+    "No actual Playwright test implementations exist despite 3389 file changes",
+    "Services return HTTP 500 errors causing test failures",
+    "OIDC test mode mock server not properly configured"
+  ],
+  "fix_instructions": "1. Fix URL parsing error handling in api-gateway/main.go\n2. Resolve overlapping routes in compliance-service\n3. Implement proper race condition protection in oidc.go\n4. Add path traversal protection in m365-integration-service\n5. Create playwright.config.ts with proper baseUrl and testMatch\n6. Implement at least basic auth.spec.ts, jobs.spec.ts test files\n7. Add health endpoint to all services\n8. Fix failing tests - review error-context.md files\n9. Add input validation middleware to all services\n10. Implement test data fixtures in web/dashboard/e2e/fixtures/"
 }

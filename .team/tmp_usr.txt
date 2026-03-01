@@ -1,5 +1,4 @@
-REQUIREMENTS (enriched with market research):
-{
+REQUIREMENTS: {
  "project_name": "OpenPrint Dashboard E2E Testing with Playwright",
  "summary": "Implement comprehensive end-to-end testing infrastructure using Playwright for the OpenPrint dashboard frontend, covering authentication, job management, device registry, document handling, navigation, and settings with visual regression capabilities and CI/CD integration.",
  "functional_requirements": [
@@ -90,300 +89,433 @@ REQUIREMENTS (enriched with market research):
    "name": "Framework Setup and Configuration",
    "tasks": [
     "Initialize Playwright project in web/dashboard/e2e/",
-    "Configure TypeScript and test runner settings",
-    "Set up browser configuration (Chromium, Firefox, WebKit)",
-    "Create test fixtures and page object model base classes",
-    "Configure environment variable support for multiple environments",
-    "Set up test data utilities and API helpers",
-    "Create base test authentication fixture"
-   ]
-  },
-  {
-   "phase": 2,
-   "name": "Authentication Test Implementation",
-   "tasks": [
-    "Implement login flow tests (valid and invalid credentials)",
-    "Implement logout and session termination tests",
-    "Implement password reset flow tests",
-    "Add session persistence and timeout tests",
-    "Create authentication page object models"
-   ]
-  },
-  {
-   "phase": 3,
-   "name": "Job Management Test Implementation",
-   "tasks": [
-    "Implement job creation tests with document upload",
-    "Implement job listing and filtering tests",
-    "Implement job cancellation tests",
-    "Implement job retry tests for failed jobs",
-    "Create job management page object models"
-   ]
-  },
-  {
-   "phase": 4,
-   "name": "Device/Printer Management Test Implementation",
-   "tasks": [
-    "Implement printer registration tests",
-    "Implement printer listing and status tests",
-    "Implement printer configuration tests",
-    "Implement printer discovery tests",
-    "Create device management page object models"
-   ]
-  },
-  {
-   "phase": 5,
-   "name": "Document Storage Test Implementation",
-   "tasks": [
-    "Implement document upload tests (multiple formats)",
-    "Implement document retrieval tests",
-    "Implement document deletion tests",
-    "Test S3 and local storage backend handling",
-    "Create document storage page object models"
-   ]
-  },
-  {
-   "phase": 6,
-   "name": "Navigation and Settings Test Implementation",
-   "tasks": [
-    "Implement dashboard navigation tests",
-    "Implement settings management tests",
-    "Implement user profile update tests",
-    "Add accessibility validation tests",
-    "Create navigation and settings page object models"
-   ]
-  },
-  {
- 
+    "Configure TypeScript and test runner se
+CHANGES:  .../test-failed-1.png                              |   Bin 0 -> 17878 bytes
+ .../video.webm                                     |   Bin 0 -> 1924 bytes
+ .../test-failed-1.png                              |   Bin 0 -> 10629 bytes
+ .../video.webm                                     |   Bin 0 -> 5386 bytes
+ .../test-failed-1.png                              |   Bin 0 -> 13466 bytes
+ .../video.webm                                     |   Bin 0 -> 3683 bytes
+ .../error-context.md                               |    74 +
+ .../test-failed-1.png                              |   Bin 0 -> 61582 bytes
+ .../video.webm                                     |   Bin 0 -> 392446 bytes
+ .../error-context.md                               |    74 +
+ .../test-failed-1.png                              |   Bin 0 -> 86696 bytes
+ .../video.webm                                     |   Bin 0 -> 410377 bytes
+ .../test-failed-1.png                              |   Bin 0 -> 17878 bytes
+ .../video.webm                                     |   Bin 0 -> 1924 bytes
+ 3389 files changed, 63165 insertions(+), 43287 deletions(-)
+FILES: services/api-gateway/main.go
+services/auth-service/handler/oidc.go
+services/compliance-service/compliance.go
+services/compliance-service/main.go
+services/m365-integration-service/main.go
+services/policy-service/main.go
+services/policy-service/policy_engine.go
+services/registry-service/handler/agent.go
+CODE: 
+--- services/api-gateway/main.go ---
+// Package main provides the API Gateway service for OpenPrint.
+// This service acts as a unified entry point for all API requests and provides
+// rate limiting, request routing, and developer portal functionality.
+package main
 
-MARKET ANALYSIS:
-{
- "competitor_summary": [
-  {
-   "name": "PaperCut",
-   "strengths": [
-    "Microsoft 365 integration",
-    "Behavior analysis",
-    "Cross-platform support (Windows/Linux/Mac/Chromebook/Android/iOS)",
-    "User quotas and cost allocation",
-    "Environmental reporting",
-    "Secure print release",
-    "100M+ users across 70K organizations"
-   ],
-   "weaknesses": [
-    "Enterprise-focused pricing may exclude SMBs",
-    "Complex deployment for small organizations"
-   ],
-   "pricing_model": "Per-user/per-printer licensing with enterprise tiers"
-  },
-  {
-   "name": "PrinterLogic",
-   "strengths": [
-    "Serverless SaaS architecture",
-    "Direct IP printing",
-    "Mobile printing support",
-    "Cloud-based management",
-    "Zero infrastructure footprint"
-   ],
-   "weaknesses": [
-    "Limited offline capabilities",
-    "Dependent on internet connectivity"
-   ],
-   "pricing_model": "Subscription-based SaaS pricing"
-  },
-  {
-   "name": "YSoft SafeQ",
-   "strengths": [
-    "Embedded terminal solutions",
-    "3D print management",
-    "Comprehensive reporting",
-    "Rule-based printing policies"
-   ],
-   "weaknesses": [
-    "Hardware dependency for full features",
-    "Higher cost of ownership"
-   ],
-   "pricing_model": "Per-device licensing with optional hardware"
-  },
-  {
-   "name": "HP/Canon/Xerox/Ricoh (OEM Cloud Solutions)",
-   "strengths": [
-    "Hardware-software integration",
-    "Predictive maintenance",
-    "Hardware-level support",
-    "Enterprise support contracts"
-   ],
-   "weaknesses": [
-    "Vendor lock-in",
-    "Limited multi-vendor support"
-   ],
-   "pricing_model": "Bundled with hardware or separate enterprise licensing"
-  }
- ],
- "feature_comparison": [
-  {
-   "feature": "Secure Print Release (PIN/Card)",
-   "competitors_with_feature": [
-    "PaperCut",
-    "YSoft SafeQ",
-    "PrinterLogic",
-    "HP",
-    "Canon"
-   ],
-   "project_status": "missing",
-   "priority": "critical",
-   "implementation_effort": "large"
-  },
-  {
-   "feature": "User Quotas & Cost 
+import (
+	"context"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-PROJECT CONTEXT (from CLAUDE.md):
-# OpenPrint Cloud
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/shared/middleware"
+	"github.com/openprint/openprint/internal/shared/telemetry"
+	gatewayhandlers "github.com/openprint/openprint/services/api-gateway/handlers"
+	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
+)
 
-OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.
+// Config holds service configuration.
+type Config struct {
+	ServerAddr          string
+	DatabaseURL         string
+	JWTSecret           string
+	JaegerEndpoint      string
+	ServiceName         string
+	AuthServiceURL      string
+	JobServiceURL       string
+	RegistryServiceURL  string
+	StorageServiceURL   string
+	NotificationServiceURL string
+	AnalyticsServiceURL string
+	OrganizationServiceURL string
+}
 
-## Project Overview
+func main() {
+	cfg := loadConfig()
 
-- **Module**: `github.com/openprint/openprint`
-- **Go Version**: 1.24.0
-- **Architecture**: Microservices with shared internal packages
-- **Frontend**: React + TypeScript + Vite dashboard
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-## Architecture
+	// Initialize telemetry
+	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
+	if err != nil {
+		log.Printf("Warning: failed to initialize tracer: %v", err)
+	}
+	if shutdown != nil {
+		defer shutdown(ctx)
+	}
 
-### Services
+	// Connect to PostgreSQL
+	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `auth-service` | 8001 | User authentication, sessions, OIDC/SAML identity providers |
-| `registry-service` | 8002 | Printer and agent registration, heartbeat monitoring |
-| `job-service` | 8003 | Print job queuing, routing, and processing |
-| `storage-service` | 8004 | Document storage (S3 or local), encryption support |
-| `notification-service` | 8005 | WebSocket notifications for real-time updates |
+	// Create service URLs
+	authServiceURL, _ := url.Parse(cfg.AuthServiceURL)
+	jobServiceURL, _ := url.Parse(cfg.JobServiceURL)
+	registryServiceURL, _ := url.Parse(cfg.RegistryServiceURL)
+	storageServiceURL, _ := url.Parse(cfg.StorageServiceURL)
+	notificationServiceURL, _ := url.Parse(cfg.NotificationServiceURL)
+	analyticsServiceURL, _ := url.Parse(cfg.AnalyticsServiceURL)
+	organizationServiceURL, _ := url.Parse(cfg.OrganizationServiceURL)
 
-### Internal Packages
+	// Create reverse proxies
+	authProxy := createReverseProxy(authServiceURL, "auth-service")
+	jobProxy := createReverseProxy(jobServiceURL, "job-service")
+	registryProxy := createReverseProxy(registryServiceURL, "registry-service")
+	storageProxy := createReverseProxy(storageServiceURL, "storage-service")
+	notificationProxy := createReverseProxy(notificationServiceURL, "notification-service")
+	analyticsProxy := createReverseProxy(analyticsServiceURL, "analytics-service")
+	organizationProxy := createReverseProxy(organizationServiceURL, "organization-service")
+--- services/auth-service/handler/oidc.go ---
+// Package handler provides HTTP handlers for Microsoft 365 OIDC authentication.
+// This handler includes E2E test mocking support for automated testing.
+package handler
 
-```
-internal/
-├── auth/              # Authentication utilities
-│   ├── jwt/          # JWT token generation/validation
-│   ├── oidc/         # OpenID Connect provider support
-│   ├── saml/         # SAML SSO support
-│   └── password/     # Password hashing (bcrypt)
-└── shared/           # Shared service components
-    ├── errors/       # Common error types
-    ├── middleware/   # HTTP middleware (auth, CORS, logging, recovery)
-    └── telemetry/    # OpenTelemetry tracing
-```
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"sync"
 
-### Infrastructure
+	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/auth/oidc"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/services/auth-service/repository"
+)
 
-- **PostgreSQL 16**: Primary database (ports 5432/15432)
-- **Redis 7**: Job queue and session storage (ports 6379/16379)
-- **S3/MinIO**: Optional document storage backend
+// Microsoft365Config holds Microsoft 365 OIDC configuration.
+type Microsoft365Config struct {
+	TenantID       string
+	ClientID       string
+	ClientSecret   string
+	RedirectURL    string
+	IsTestMode     bool
+	TestUsers      []TestUser
+}
 
-## Development Commands
+// TestUser represents a mock user for E2E testing.
+type TestUser struct {
+	Email         string   `json:"email"`
+	ID            string   `json:"id"`
+	DisplayName   string   `json:"display_name"`
+	GivenName     string   `json:"given_name"`
+	FamilyName    string   `json:"family_name"`
+	Groups        []string `json:"groups"`
+	RefreshToken  string   `json:"refresh_token"`
+}
 
-### Go Services
+// OIDCHandler provides Microsoft 365 OIDC authentication with test mocking.
+type OIDCHandler struct {
+	userRepo       *repository.UserRepository
+	sessionRepo    *repository.SessionRepository
+	jwtManager     *jwt.Manager
+	config         *Microsoft365Config
+	oidcManager    *oidc.Manager
+	mockServer     *httptest.Server
+	testModeTokens map[string]string // state -> mock user email
+	mu             sync.RWMutex
+}
 
-```bash
-# Run tests
-go test ./...
+// NewOIDCHandler creates a new Microsoft 365 OIDC handler.
+func NewOIDCHandler(
+	userRepo *repository.UserRepository,
+	sessionRepo *repository.SessionRepository,
+	jwtManager *jwt.Manager,
+	config *Microsoft365Config,
+) *OIDCHandler {
+	h := &OIDCHandler{
+		userRepo:       userRepo,
+		sessionRepo:    sessionRepo,
+		jwtManager:     jwtManager,
+		config:         config,
+		testModeTokens: make(map[string]string),
+	}
 
-# Run tests with coverage
-go test -cover ./...
+	// Initialize test mode if enabled
+	if config.IsTestMode {
+		h.initTestMode()
+	} else {
+		h.initOIDCManager()
+	}
 
-# Run tests for specific package
-go test ./services/auth-service/...
+	return h
+}
 
-# Build all services
-go build ./...
+// initTestMode sets up the mock OIDC server for E2E testing.
+func (h *OIDCHandler) initTestMode() {
+	// Create a mock server that simulates Microsoft 365 OAuth endpoints
+--- services/compliance-service/compliance.go ---
+// Package main is the entry point for the OpenPrint Compliance Service.
+// This service handles FedRAMP, HIPAA, GDPR, and SOC2 compliance tracking and reporting.
+package main
 
-# Build specific service
-go build ./services/auth-service
-```
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
 
-### Dashboard (TypeScript/React)
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
 
-```bash
-cd web/dashboard
+// ComplianceFramework represents the compliance framework type.
+type ComplianceFramework string
 
-# Install dependencies
-npm install
+const (
+	FrameworkFedRAMP ComplianceFramework = "fedramp"
+	FrameworkHIPAA  ComplianceFramework = "hipaa"
+	FrameworkGDPR   ComplianceFramework = "gdpr"
+	FrameworkSOC2   ComplianceFramework = "soc2"
+)
 
-# Development server
-npm run dev
+// ComplianceStatus represents the status of compliance requirements.
+type ComplianceStatus string
 
-# Type checking
-npm run type-check    # or: npx tsc --noEmit
+const (
+	StatusCompliant     ComplianceStatus = "compliant"
+	StatusNonCompliant  ComplianceStatus = "non_compliant"
+	StatusPending       ComplianceStatus = "pending"
+	StatusNotApplicable ComplianceStatus = "not_applicable"
+	StatusUnknown       ComplianceStatus = "unknown"
+)
 
-# Run tests
-npm run test
+// Control represents a compliance control requirement.
+type Control struct {
+	ID               string               `json:"id"`
+	Framework        ComplianceFramework  `json:"framework"`
+	Family           string               `json:"family"`
+	Title            string               `json:"title"`
+	Description      string               `json:"description"`
+	Implementation   string               `json:"implementation"`
+	Status           ComplianceStatus     `json:"status"`
+	LastAssessed     *time.Time           `json:"last_assessed"`
+	NextReview       *time.Time           `json:"next_review"`
+	EvidenceCount    int                  `json:"evidence_count"`
+	Policies         []string             `json:"policies"`
+	ResponsibleTeam  string               `json:"responsible_team"`
+	RiskLevel        string               `json:"risk_level"`
+	Remediation      *RemediationPlan     `json:"remediation,omitempty"`
+}
 
-# Build for production
-npm run build
+// RemediationPlan represents a plan to address compliance gaps.
+type RemediationPlan struct {
+	ID          string    `json:"id"`
+	ControlID   string    `json:"control_id"`
+	Description string    `json:"description"`
+	Priority    string    `json:"priority"`
+	TargetDate  time.Time `json:"target_date"`
+	Assignee    string    `json:"assignee"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
 
-# Lint
-npm run lint
-```
+// AuditEvent represents a compliance-related audit event.
+type AuditEvent struct {
+	ID            string            `json:"id"`
+	Timestamp     time.Time         `json:"timestamp"`
+	EventType     string            `json:"event_type"`
+	Category      string            `json:"category"`
+	UserID        string            `json:"user_id"`
+	UserName      string            `json:"user_name"`
+	ResourceID    string            `json:"resource_id"`
+	ResourceType  string            `json:"resource_type"`
+	Action        string            `json:"action"`
+--- services/compliance-service/main.go ---
+// Package main is the entry point for the OpenPrint Compliance Service.
+// This service handles FedRAMP, HIPAA, GDPR, and SOC2 compliance tracking and reporting.
+package main
 
-## Docker Deployment
+import (
+	"context"
+	"encoding/json"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-### Quick Start
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/shared/middleware"
+	"github.com/openprint/openprint/internal/shared/telemetry"
+)
 
-```bash
-cd deployments/docker
-docker-compose up -d
-```
+// ServerConfig holds service configuration.
+type ServerConfig struct {
+	ServerAddr     string
+	DatabaseURL    string
+	JWTSecret      string
+	JaegerEndpoint string
+	ServiceName    string
+}
 
-### Environment Variables
+func main() {
+	cfg := loadServerConfig()
 
-Create a `.env` file (see `.env.example`):
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-```bash
-JWT_SECRET=your-secret-key-min-32-chars
-S3_ENDPOINT=          # Optional, falls back to local storage
-S3_BUCKET=openprint-documents
-ENCRYPTION_KEY=       # Optional AES-256 key
-JAEGER_ENDPOINT=      # Optional tracing
-```
+	// Initialize telemetry
+	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
+	if err != nil {
+		log.Printf("Warning: failed to initialize tracer: %v", err)
+	}
+	if shutdown != nil {
+		defer shutdown(ctx)
+	}
 
-### Service Ports (Docker)
+	// Connect to PostgreSQL
+	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
 
-| Service | Internal | External |
-|---------|----------|----------|
-| PostgreSQL | 5432 | 15432 |
-| Redis | 6379 | 16379 |
-| auth-service | 8001 | 18001 |
-| registry-service | 8002 | 8002 |
-| job-service | 8003 | 8003 |
-| storage-service | 8004 | 8004 |
-| notification-service | 8005 | 18005 |
-| dashboard | 3000 | 30
+	// Initialize compliance service
+	compSvc := New(Config{
+		DB: db,
+	})
 
-EXISTING FILES:
-internal/agent/types.go
-internal/auth/jwt/jwt.go
-internal/auth/oidc/oidc.go
-internal/auth/password/password.go
-internal/auth/saml/saml.go
-internal/middleware/cookie_auth.go
-internal/middleware/validation.go
-internal/shared/errors/errors.go
-internal/shared/middleware/agent_auth.go
-internal/shared/middleware/auth.go
-internal/shared/middleware/validation.go
-internal/shared/telemetry/middleware.go
-internal/testutil/assertions.go
-internal/testutil/config.go
-internal/testutil/context.go
-internal/testutil/db.go
-internal/testutil/fixtures.go
-internal/testutil/http.go
-internal/testutil/jwt.go
-internal/testutil/metrics.go
-internal/testutil/migrate.go
-internal/testutil/redis.go
-internal/testutil/s3.go
+	// Create JWT manager for authentication
+	jwtCfg, err := jwt.DefaultConfig(cfg.JWTSecret)
+	if err != nil {
+		log.Fatalf("Failed to create JWT config: %v", err)
+	}
+	jwtManager, err := jwt.NewManager(jwtCfg)
+	if err != nil {
+		log.Fatalf("Failed to create JWT manager: %v", err)
+	}
 
-Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
+	// Setup HTTP server with middleware
+	mux := http.NewServeMux()
+
+	// Health check
+	mux.HandleFunc("/health", healthHandler)
+
+	// Compliance endpoints
+	mux.HandleFunc("/api/v1/controls/", controlsHandler(compSvc))
+	mux.HandleFunc("/api/v1/controls", listControlsHandler(compSvc))
+	mux.HandleFunc("/api/v1/controls/", updateControlStatusHandler(compSvc))
+	mux.HandleFunc("/api/v1/audit", auditLogHandler(compSvc))
+	mux.HandleFunc("/api/v1/audit/export", exportAuditLogsHandler(compSvc))
+	mux.HandleFunc("/api/v1/reports/generate", generateReportHandler(compSvc))
+--- services/m365-integration-service/main.go ---
+// Package main is the entry point for the OpenPrint Microsoft 365 Integration Service.
+// This service handles Microsoft 365 integration for OneDrive, SharePoint, and document handling.
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/shared/middleware"
+	"github.com/openprint/openprint/internal/shared/telemetry"
+)
+
+// Config holds service configuration.
+type Config struct {
+	ServerAddr       string
+	DatabaseURL      string
+	JWTSecret        string
+	JaegerEndpoint   string
+	ServiceName      string
+	M365ClientID     string
+	M365ClientSecret string
+	M365TenantID     string
+	StoragePath      string
+}
+
+// Service provides Microsoft 365 integration functionality.
+type Service struct {
+	db              *pgxpool.Pool
+	config          *Config
+	graphAPIBaseURL string
+}
+
+// M365Document represents a document from Microsoft 365.
+type M365Document struct {
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	DriveID         string                 `json:"drive_id"`
+	ItemID          string                 `json:"item_id"`
+	DownloadURL     string                 `json:"download_url"`
+	Size            int64                  `json:"size"`
+	MimeType        string                 `json:"mime_type"`
+	CreatedBy       string                 `json:"created_by"`
+	CreatedAt       time.Time              `json:"created_at"`
+	ModifiedAt      time.Time              `json:"modified_at"`
+	SharePointURL   string                 `json:"sharepoint_url,omitempty"`
+	OneDriveURL     string                 `json:"onedrive_url,omitempty"`
+	Path            string                 `json:"path"`
+	WebURL          string                 `json:"web_url"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// PrintJobSource represents the source of a print job from Microsoft 365.
+type PrintJobSource struct {
+	SourceID    string                 `json:"source_id"`
+	SourceType  string                 `json:"source_type"` // onedrive, sharepoint, outlook
+	DocumentID  string                 `json:"document_id"`
+	DocumentURL string                 `json:"document_url"`
+	UserID      string                 `json:"user_id"`
+	UserEmail   string                 `json:"user_email"`
+	FileName    string                 `json:"file_name"`
+	FileSize    int64                  `json:"file_size"`
+	AccessToken string                 `json:"access_token"`
+	RefreshToken string                 `json:"refresh_token"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.

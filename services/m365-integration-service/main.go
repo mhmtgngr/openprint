@@ -505,10 +505,35 @@ func (s *Service) oneDriveDownloadHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Sanitize document ID to prevent path traversal attacks
+	sanitizedID := filepath.Base(req.DocumentID)
+	if sanitizedID == "" || sanitizedID == "." || sanitizedID == ".." {
+		http.Error(w, "invalid document_id", http.StatusBadRequest)
+		return
+	}
+
+	// Validate the path is within the allowed storage directory
+	localPath := filepath.Join(s.config.StoragePath, sanitizedID+".pdf")
+	absPath, err := filepath.Abs(localPath)
+	if err != nil {
+		http.Error(w, "invalid path", http.StatusBadRequest)
+		return
+	}
+
+	absStoragePath, err := filepath.Abs(s.config.StoragePath)
+	if err != nil {
+		http.Error(w, "storage path error", http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure the resulting path is within the storage directory
+	if !strings.HasPrefix(absPath, absStoragePath+string(filepath.Separator)) && absPath != absStoragePath {
+		http.Error(w, "invalid document_id: path traversal detected", http.StatusBadRequest)
+		return
+	}
+
 	// In production, this would download from Microsoft Graph API
 	// For E2E testing, return a mock response
-
-	localPath := filepath.Join(s.config.StoragePath, req.DocumentID+".pdf")
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"document_id": req.DocumentID,
@@ -779,7 +804,32 @@ func (s *Service) createPrintJob(ctx context.Context, source *PrintJobSource, lo
 
 // copyToStorage copies a downloaded file to permanent storage.
 func (s *Service) copyToStorage(reader io.Reader, filename string) (string, int64, error) {
-	storagePath := filepath.Join(s.config.StoragePath, filename)
+	// Sanitize filename to prevent path traversal
+	sanitizedFilename := sanitizeFilename(filename)
+	sanitizedFilename = filepath.Base(sanitizedFilename)
+
+	if sanitizedFilename == "" || sanitizedFilename == "." || sanitizedFilename == ".." {
+		return "", 0, fmt.Errorf("invalid filename")
+	}
+
+	storagePath := filepath.Join(s.config.StoragePath, sanitizedFilename)
+
+	// Validate the path is within the allowed storage directory
+	absPath, err := filepath.Abs(storagePath)
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid path: %w", err)
+	}
+
+	absStoragePath, err := filepath.Abs(s.config.StoragePath)
+	if err != nil {
+		return "", 0, fmt.Errorf("storage path error: %w", err)
+	}
+
+	// Ensure the resulting path is within the storage directory
+	if !strings.HasPrefix(absPath, absStoragePath+string(filepath.Separator)) && absPath != absStoragePath {
+		return "", 0, fmt.Errorf("path traversal detected")
+	}
+
 	file, err := os.Create(storagePath)
 	if err != nil {
 		return "", 0, err

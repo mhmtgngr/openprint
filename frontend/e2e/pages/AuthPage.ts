@@ -59,7 +59,7 @@ export class AuthPage extends BasePage {
 
     // Registration
     this.registerLink = page.getByRole('link', { name: /register|sign up|create account/i });
-    this.registerNameInput = page.getByLabel(/full name|name/i });
+    this.registerNameInput = page.getByLabel(/full name|name/i);
     this.registerEmailInput = page.locator('input[type="email"]').nth(1);
     this.registerPasswordInput = page.locator('(//input[@type="password"])[1]');
     this.registerConfirmPasswordInput = page.locator('(//input[@type="password"])[2]');
@@ -85,7 +85,7 @@ export class AuthPage extends BasePage {
     this.twoFactorCodeInput = page.getByLabel(/code|verification code/i);
     this.twoFactorSubmitButton = page.getByRole('button', { name: /verify|confirm/i });
     this.twoFactorBackupCodeLink = page.getByRole('link', { name: /backup code|use backup/i });
-    this.twoFactorRememberDeviceCheckbox = page.getByLabel(/remember|trust/i });
+    this.twoFactorRememberDeviceCheckbox = page.getByLabel(/remember|trust/i);
 
     // Organization selection
     this.organizationSelect = page.getByLabel(/organization|tenant/i);

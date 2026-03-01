@@ -84,8 +84,8 @@ export class SecurePrintPage extends BasePage {
       page.locator(`[data-job-id="${jobId}"]`).or(page.locator('[data-testid="job-card"]').filter({ hasText: jobId }));
     this.noJobsMessage = page.getByText(/no jobs|queue is empty|nothing to release/i);
     this.refreshButton = page.getByRole('button', { name: /refresh/i });
-    this.filterSelect = page.getByLabel(/filter|status/i });
-    this.searchInput = page.getByPlaceholder(/search|find job/i });
+    this.filterSelect = page.getByLabel(/filter|status/i);
+    this.searchInput = page.getByPlaceholder(/search|find job/i);
 
     // Job actions
     this.releaseButton = page.getByRole('button', { name: /release/i }).first();
@@ -112,7 +112,7 @@ export class SecurePrintPage extends BasePage {
     this.jobFileSize = page.locator('[data-testid="file-size"]');
 
     // Printer selection
-    this.printerSelect = page.getByLabel(/printer|destination/i });
+    this.printerSelect = page.getByLabel(/printer|destination/i);
     this.selectedPrinterDisplay = page.locator('[data-testid="selected-printer"]');
 
     // Release confirmation modal
@@ -123,8 +123,8 @@ export class SecurePrintPage extends BasePage {
 
     // Settings
     this.enableSecurePrintToggle = page.getByRole('switch', { name: /enable secure print/i });
-    this.pinLengthSelect = page.getByLabel(/pin length/i });
-    this.pinExpiryInput = page.getByLabel(/pin expiry|expiry time/i });
+    this.pinLengthSelect = page.getByLabel(/pin length/i);
+    this.pinExpiryInput = page.getByLabel(/pin expiry|expiry time/i);
     this.autoReleaseToggle = page.getByRole('switch', { name: /auto release/i });
     this.saveSettingsButton = page.getByRole('button', { name: /save|update settings/i });
 

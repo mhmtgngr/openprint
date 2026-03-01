@@ -71,10 +71,10 @@ func main() {
 	// Health check
 	mux.HandleFunc("/health", healthHandler)
 
-	// Compliance endpoints
+	// Compliance endpoints - register specific routes before generic ones
+	mux.HandleFunc("/api/v1/controls/status/", updateControlStatusHandler(compSvc))
 	mux.HandleFunc("/api/v1/controls/", controlsHandler(compSvc))
 	mux.HandleFunc("/api/v1/controls", listControlsHandler(compSvc))
-	mux.HandleFunc("/api/v1/controls/", updateControlStatusHandler(compSvc))
 	mux.HandleFunc("/api/v1/audit", auditLogHandler(compSvc))
 	mux.HandleFunc("/api/v1/audit/export", exportAuditLogsHandler(compSvc))
 	mux.HandleFunc("/api/v1/reports/generate", generateReportHandler(compSvc))
@@ -215,8 +215,13 @@ func updateControlStatusHandler(svc *Service) http.HandlerFunc {
 			return
 		}
 
-		// TODO: Implement status update
-		respondJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+		controlID := extractIDFromPath(r.URL.Path, "/api/v1/controls/status/")
+
+		// TODO: Implement status update with controlID
+		respondJSON(w, http.StatusOK, map[string]string{
+			"control_id": controlID,
+			"status":     "updated",
+		})
 	}
 }
 

@@ -99,7 +99,13 @@ func (h *OIDCHandler) handleMockAuthorize(w http.ResponseWriter, r *http.Request
 
 	// Store the state with the email for callback validation
 	if email == "" {
-		email = h.config.TestUsers[0].Email // Default test user
+		h.mu.RLock()
+		if len(h.config.TestUsers) > 0 {
+			email = h.config.TestUsers[0].Email // Default test user
+		} else {
+			email = "test@example.com"
+		}
+		h.mu.RUnlock()
 	}
 
 	h.mu.Lock()
@@ -135,16 +141,21 @@ func (h *OIDCHandler) handleMockUserInfo(w http.ResponseWriter, r *http.Request)
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
 	// Find test user by token (in real mode, this would validate the access token)
+	h.mu.RLock()
 	var testUser *TestUser
-	for _, u := range h.config.TestUsers {
-		if strings.Contains(token, u.Email) || len(h.config.TestUsers) == 1 {
+	testUsers := make([]TestUser, len(h.config.TestUsers))
+	copy(testUsers, h.config.TestUsers) // Take a snapshot for safe iteration
+	h.mu.RUnlock()
+
+	for _, u := range testUsers {
+		if strings.Contains(token, u.Email) || len(testUsers) == 1 {
 			testUser = &u
 			break
 		}
 	}
 
-	if testUser == nil && len(h.config.TestUsers) > 0 {
-		testUser = &h.config.TestUsers[0]
+	if testUser == nil && len(testUsers) > 0 {
+		testUser = &testUsers[0]
 	}
 
 	if testUser == nil {
@@ -205,8 +216,14 @@ func (h *OIDCHandler) Microsoft365Login(w http.ResponseWriter, r *http.Request) 
 func (h *OIDCHandler) handleTestModeLogin(w http.ResponseWriter, r *http.Request) {
 	// Get test user email from query or use default
 	testEmail := r.URL.Query().Get("test_email")
-	if testEmail == "" && len(h.config.TestUsers) > 0 {
-		testEmail = h.config.TestUsers[0].Email
+	if testEmail == "" {
+		h.mu.RLock()
+		if len(h.config.TestUsers) > 0 {
+			testEmail = h.config.TestUsers[0].Email
+		} else {
+			testEmail = "test@example.com"
+		}
+		h.mu.RUnlock()
 	}
 
 	// Return mock authorization URL
@@ -307,14 +324,18 @@ func (h *OIDCHandler) findOrCreateTestUser(ctx context.Context, email string) (*
 		return user, nil
 	}
 
-	// Find test user details
+	// Find test user details - take a snapshot under lock
+	h.mu.RLock()
 	var testUser *TestUser
 	for _, u := range h.config.TestUsers {
 		if u.Email == email {
-			testUser = &u
+			// Make a copy to avoid holding the lock
+			uCopy := u
+			testUser = &uCopy
 			break
 		}
 	}
+	h.mu.RUnlock()
 
 	// Create default test user if not found
 	if testUser == nil {
@@ -383,7 +404,12 @@ func isE2ETestRequest(r *http.Request) bool {
 
 // GetTestUsers returns the configured test users.
 func (h *OIDCHandler) GetTestUsers() []TestUser {
-	return h.config.TestUsers
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	// Return a copy to prevent race conditions
+	users := make([]TestUser, len(h.config.TestUsers))
+	copy(users, h.config.TestUsers)
+	return users
 }
 
 // SetTestUsers sets the test users for E2E testing.

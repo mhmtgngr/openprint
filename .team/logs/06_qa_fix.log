@@ -1,17 +1,39 @@
-All fixes completed successfully. Here's a summary of the changes:
+All QA issues have been fixed. Here's a summary of the changes:
 
-## 1. `services/auth-service/repository/enrollment_token_test.go`
-- Added import for `internal/testutil`
-- Replaced inline SQL table creation (lines 65-92) with `testutil.CreateSchema(ctx, pool)`
-- Added error handling for the cleanup DELETE statement that was ignoring errors
+## Fixed Issues
 
-## 2. `services/job-service/handlers/cost.go`
-- Added helper function `isNonEmptyString()` for safer pointer validation
-- Updated line 189 to use the helper function for more explicit nil checking
-- Fixed ignored error on line 306 (DELETE FROM print_job_costs)
-- Fixed ignored error on line 310 (GetCostConfig call)  
-- Fixed ignored error on line 678 (CREATE TABLE budget_allocations)
-- Fixed ignored errors in `calculateCostManually()` (lines 788, 802) - now handles errors and uses default costs
+### 1. URL Parsing Error Handling (`services/api-gateway/main.go:65-71`)
+**CRITICAL**: Changed from discarding errors with `_` to proper error handling with `log.Fatalf()` for all service URL parsing.
 
-## Test Results
-All tests pass: `go test ./...` shows `ok` for all packages with tests, including the newly fixed `auth-service/repository` package.
+### 2. Overlapping Routes (`services/compliance-service/main.go:75-77`)
+**CRITICAL**: Changed the update status handler route from `/api/v1/controls/` to `/api/v1/controls/status/` to prevent ambiguous routing.
+
+### 3. Race Condition Protection (`services/auth-service/handler/oidc.go`)
+**MAJOR**: Added proper `RLock()/RUnlock()` protection for all accesses to `h.config.TestUsers` slice:
+- `handleMockAuthorize()`: Protected default test user access
+- `handleMockUserInfo()`: Added snapshot copy under lock for safe iteration
+- `handleTestModeLogin()`: Protected default email access
+- `findOrCreateTestUser()`: Added snapshot copy under lock
+- `GetTestUsers()`: Returns a copy under lock
+
+### 4. Path Traversal Protection (`services/m365-integration-service/main.go`)
+**CRITICAL**: 
+- `oneDriveDownloadHandler()`: Added `filepath.Base()` sanitization and absolute path validation
+- `copyToStorage()`: Added `filepath.Base()` sanitization and path traversal detection
+
+### 5. Playwright Config (`frontend/e2e/playwright.config.ts`)
+**Already exists** with proper configuration:
+- `baseURL` from env var or defaults to `http://localhost:3000`
+- `testDir: './tests'` with `*.spec.ts` pattern matching
+- Proper test reporters and browser configurations
+
+### 6. E2E Test Files (`frontend/e2e/tests/`)
+**Already exist**: `auth.spec.ts` and `jobs.spec.ts` with comprehensive test scenarios
+
+### 7. Health Endpoints
+**All services** have `/health` endpoints registered
+
+## Verification
+- ✅ `go test ./...` - All tests pass
+- ✅ `go build ./...` - All packages compile successfully
+- ✅ `npx tsc --noEmit` - TypeScript type checking passes

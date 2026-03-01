@@ -112,29 +112,29 @@ export class Microsoft365Page extends BasePage {
     // OneDrive integration
     this.oneDriveSection = page.locator('[data-testid="onedrive-section"], section:has-text("OneDrive")');
     this.oneDriveToggle = page.locator('[data-testid="onedrive-toggle"]').or(page.getByRole('switch', { name: /onedrive/i }));
-    this.oneDriveFolderInput = page.getByLabel(/folder|destination folder/i });
+    this.oneDriveFolderInput = page.getByLabel(/folder|destination folder/i);
     this.oneDriveTestButton = page.locator('[data-testid="onedrive-test"]').or(page.getByRole('button', { name: /test onedrive/i }));
 
     // SharePoint integration
     this.sharePointSection = page.locator('[data-testid="sharepoint-section"], section:has-text("SharePoint")');
     this.sharePointToggle = page.locator('[data-testid="sharepoint-toggle"]').or(page.getByRole('switch', { name: /sharepoint/i }));
-    this.sharePointSiteInput = page.getByLabel(/sharepoint site|site url/i });
-    this.sharePointLibraryInput = page.getByLabel(/document library|library/i });
+    this.sharePointSiteInput = page.getByLabel(/sharepoint site|site url/i);
+    this.sharePointLibraryInput = page.getByLabel(/document library|library/i);
     this.sharePointTestButton = page.locator('[data-testid="sharepoint-test"]').or(page.getByRole('button', { name: /test sharepoint/i }));
 
     // Email to Print (M365)
     this.emailToPrintSection = page.locator('[data-testid="email-to-print-section"], section:has-text("Email to Print")');
     this.emailToPrintToggle = page.locator('[data-testid="email-to-print-toggle"]');
     this.emailAddressDisplay = page.locator('[data-testid="email-address-display"]');
-    this.allowedSendersInput = page.getByLabel(/allowed senders|allowed domains/i });
+    this.allowedSendersInput = page.getByLabel(/allowed senders|allowed domains/i);
     this.addAllowedSenderButton = page.getByRole('button', { name: /add|allow/i });
     this.allowedSendersList = page.locator('[data-testid="allowed-senders-list"]');
 
     // User and group sync
     this.userSyncSection = page.locator('[data-testid="user-sync-section"], section:has-text("User Sync")');
     this.userSyncToggle = page.locator('[data-testid="user-sync-toggle"]');
-    this.syncIntervalSelect = page.getByLabel(/sync interval|sync frequency/i });
-    this.syncGroupsInput = page.getByLabel(/groups|security groups/i });
+    this.syncIntervalSelect = page.getByLabel(/sync interval|sync frequency/i);
+    this.syncGroupsInput = page.getByLabel(/groups|security groups/i);
     this.addSyncGroupButton = page.getByRole('button', { name: /add group/i });
     this.syncGroupsList = page.locator('[data-testid="sync-groups-list"]');
 
