@@ -51,7 +51,7 @@ func MetricsMiddleware(cfg MetricsMiddlewareConfig) func(http.Handler) http.Hand
 				cfg.ServiceName,
 				r.Method,
 				path,
-			Inc()
+			).Inc()
 
 			// Wrap response writer to capture status and size
 			rw := &metricsResponseWriter{
@@ -384,10 +384,10 @@ func WithMetricLabel(r *http.Request, key, value string) *http.Request {
 	return r.WithContext(contextWithMetricLabel(r.Context(), key, value))
 }
 
-// contextKey is the type for context keys.
-type contextKey string
+// metricContextKey is the type for metric label context keys.
+type metricContextKey string
 
-const metricLabelKey contextKey = "metric_labels"
+const metricLabelKey metricContextKey = "metric_labels"
 
 // contextWithMetricLabel adds a metric label to the context.
 func contextWithMetricLabel(ctx context.Context, key, value string) context.Context {

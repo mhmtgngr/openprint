@@ -281,3 +281,45 @@ func (r *WebSocketMetricsRecorder) Message() {
 func (r *WebSocketMetricsRecorder) Broadcast(clientCount int) {
 	RecordWebSocketBroadcast(r.metrics, r.serviceName, clientCount)
 }
+
+// RecordPrinterMetric records printer-related metrics.
+func RecordPrinterMetric(metrics *Metrics, serviceName, orgID, printerID string, metricType string) {
+	switch metricType {
+	case "heartbeat":
+		metrics.Business.PrinterHeartbeatsTotal.WithLabelValues(
+			serviceName,
+			orgID,
+		).Inc()
+	case "register":
+		metrics.Business.PrintersRegisteredTotal.WithLabelValues(
+			serviceName,
+			orgID,
+		).Inc()
+	case "register_failed":
+		// Currently no specific metric for failed registrations
+		// Could add a separate counter for this in the future
+	}
+}
+
+// RecordStorageMetric records storage-related metrics.
+func RecordStorageMetric(metrics *Metrics, serviceName, backend, docType string, metricType string, size int64) {
+	switch metricType {
+	case "store":
+		metrics.Business.DocumentsStoredTotal.WithLabelValues(
+			serviceName,
+			backend,
+			docType,
+		).Inc()
+		if size > 0 {
+			metrics.Business.DocumentStorageSize.WithLabelValues(
+				serviceName,
+				backend,
+			).Add(float64(size))
+		}
+	case "retrieve":
+		metrics.Business.DocumentsRetrievedTotal.WithLabelValues(
+			serviceName,
+			backend,
+		).Inc()
+	}
+}

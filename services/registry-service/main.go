@@ -83,13 +83,6 @@ func main() {
 		defer shutdown(ctx)
 	}
 
-	// Connect to PostgreSQL (already done above)
-	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
 	// Initialize repositories
 	agentRepo := repository.NewAgentRepository(db)
 	printerRepo := repository.NewPrinterRepository(db)

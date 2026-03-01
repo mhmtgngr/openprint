@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.31.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Config holds Jaeger tracing configuration.
@@ -178,7 +179,7 @@ func InitTracerFromEnv(serviceName string) (func(context.Context) error, error) 
 
 // GetTraceID extracts the trace ID from the context.
 func GetTraceID(ctx context.Context) string {
-	span := otel.SpanFromContext(ctx)
+	span := trace.SpanFromContext(ctx)
 	spanContext := span.SpanContext()
 	if spanContext.IsValid() {
 		return spanContext.TraceID().String()
@@ -188,7 +189,7 @@ func GetTraceID(ctx context.Context) string {
 
 // GetSpanID extracts the span ID from the context.
 func GetSpanID(ctx context.Context) string {
-	span := otel.SpanFromContext(ctx)
+	span := trace.SpanFromContext(ctx)
 	spanContext := span.SpanContext()
 	if spanContext.IsValid() {
 		return spanContext.SpanID().String()
@@ -198,7 +199,7 @@ func GetSpanID(ctx context.Context) string {
 
 // IsTracingEnabled returns true if tracing is enabled for the given context.
 func IsTracingEnabled(ctx context.Context) bool {
-	span := otel.SpanFromContext(ctx)
+	span := trace.SpanFromContext(ctx)
 	return span.SpanContext().IsValid()
 }
 

@@ -24,8 +24,9 @@ var upgrader = websocket.Upgrader{
 
 // HandlerConfig holds handler configuration.
 type HandlerConfig struct {
-	Hub *Hub
-	DB  *pgxpool.Pool
+	Hub     *Hub
+	DB      *pgxpool.Pool
+	Metrics interface{} // Can be *prometheus.Metrics when available
 }
 
 // Handler handles WebSocket connections.

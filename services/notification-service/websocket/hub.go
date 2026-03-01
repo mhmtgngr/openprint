@@ -184,10 +184,8 @@ func (h *Hub) registerClient(client *Client) {
 
 	// Record connection metric
 	if h.metrics != nil {
-		h.metrics.Business.WebSocketConnections.WithLabelValues(
+		h.metrics.Business.WebSocketConnectionsActive.WithLabelValues(
 			h.serviceName,
-			client.OrgID,
-			"connected",
 		).Inc()
 	}
 
@@ -215,11 +213,9 @@ func (h *Hub) unregisterClient(client *Client) {
 
 	// Record disconnection metric
 	if h.metrics != nil {
-		h.metrics.Business.WebSocketConnections.WithLabelValues(
+		h.metrics.Business.WebSocketConnectionsActive.WithLabelValues(
 			h.serviceName,
-			client.OrgID,
-			"disconnected",
-		).Inc()
+		).Dec()
 	}
 
 	close(client.Send)

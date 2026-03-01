@@ -130,46 +130,6 @@ func main() {
 		Metrics:     metrics,
 		ServiceName: cfg.ServiceName,
 	})
-	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
-	// Connect to Redis for job queue
-	redisOpts, err := redis.ParseURL(cfg.RedisURL)
-	if err != nil {
-		log.Fatalf("Failed to parse Redis URL: %v", err)
-	}
-	redisClient := redis.NewClient(redisOpts)
-
-	if err := redisClient.Ping(ctx).Err(); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
-	}
-	defer redisClient.Close()
-
-	// Initialize repositories
-	jobRepo := repository.NewJobRepository(db)
-	historyRepo := repository.NewJobHistoryRepository(db)
-
-	// Initialize processor
-	jobProcessor := processor.New(processor.Config{
-		JobRepo:       jobRepo,
-		HistoryRepo:   historyRepo,
-		Redis:         redisClient,
-		Workers:       cfg.ProcessorWorkers,
-		PollInterval:  1 * time.Second,
-	})
-
-	// Start processor in background
-	go jobProcessor.Start(ctx)
-
-	// Create handlers
-	h := handler.New(handler.Config{
-		JobRepo:     jobRepo,
-		HistoryRepo: historyRepo,
-		Processor:   jobProcessor,
-	})
 
 	// Create JWT manager for authentication
 	jwtCfg, err := jwt.DefaultConfig(cfg.JWTSecret)

@@ -1,31 +1,32 @@
-All Go compilation errors have been fixed. Here's a summary of the changes:
+All Go compilation errors have been fixed. Here's a summary of the changes made:
 
-**1. compliance-service** (`services/compliance-service/`):
-- Changed `compliance.go` package from `package compliance` to `package main`
-- Removed self-import from `main.go`
-- Renamed `Config` to `ServerConfig` in `main.go` to avoid collision with `Config` in `compliance.go`
-- Removed unused variables (`ctx`, `repo`)
-- Removed incorrect `event.DataTypes` reference
-- Added missing `net/http` import to `compliance.go`
+## Fixed Issues
 
-**2. policy-service** (`services/policy-service/`):
-- Changed `policy_engine.go` package from `package policy` to `package main`
-- Removed self-import from `main.go`
-- Renamed `Config` to `ServerConfig` in `main.go` to avoid collision
-- Fixed malformed function signature: `func (s, substr string) bool` → `func hasPrefixOrSuffix(s, substr string) bool`
-- Fixed `contains` function call to use `hasPrefixOrSuffix`
-- Removed unused variables (`ctx`, `repo`)
+### 1. **middleware/metrics.go** (syntax errors)
+- Fixed missing closing parentheses on line 54 where `Inc()` was incorrectly on a new line
 
-**3. api-gateway** (`services/api-gateway/`):
-- Fixed import path alias: `handlers` → `gatewayhandlers` and updated all references
+### 2. **jaeger/config.go** (undefined: otel.SpanFromContext)
+- Added `"go.opentelemetry.io/otel/trace"` import
+- Changed `otel.SpanFromContext()` to `trace.SpanFromContext()` in `GetTraceID()`, `GetSpanID()`, and `IsTracingEnabled()`
 
-**4. auth-service** (`services/auth-service/handler/oidc.go`):
-- Fixed unused variables (`oidcConfig`, `ctx`)
+### 3. **middleware/metrics.go** (contextKey redeclared)
+- Renamed `contextKey` type to `metricContextKey` to avoid conflict with `auth.go`
 
-**5. m365-integration-service** (`services/m365-integration-service/main.go`):
-- Fixed unused variable (`ctx`)
+### 4. **websocket/hub.go** (undefined: WebSocketConnections)
+- Changed `h.metrics.Business.WebSocketConnections` to `h.metrics.Business.WebSocketConnectionsActive`
+- Updated `Inc()`/`Dec()` calls accordingly
 
-**6. registry-service** (`services/registry-service/handler/agent.go`):
-- Changed `FindByAgentID` → `FindByAgent` (correct method name)
-- Fixed `agent.OrganizationID != nil` → `agent.OrganizationID != ""` (it's a string, not a pointer)
-- Removed unnecessary dereference `*agent.OrganizationID`
+### 5. **prometheus/business.go** (undefined: RecordPrinterMetric, RecordStorageMetric)
+- Added `RecordPrinterMetric()` function for printer metrics (heartbeat, register, register_failed)
+- Added `RecordStorageMetric()` function for storage metrics (store, retrieve)
+
+### 6. **job-service/main.go** (no new variables on left side of :=)
+- Removed duplicate code block that was redeclaring variables (db, redisClient, jobRepo, historyRepo, jobProcessor, h)
+
+### 7. **notification-service/websocket/handler.go** (unknown field Metrics)
+- Added `Metrics` field to `HandlerConfig` struct
+
+### 8. **registry-service/main.go** (no new variables on left side of :=)
+- Removed duplicate database connection code block
+
+`go build ./...` now succeeds with no errors.

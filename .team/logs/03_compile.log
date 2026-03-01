@@ -1,0 +1,22 @@
+# github.com/openprint/openprint/internal/shared/middleware
+internal/shared/middleware/metrics.go:54:9: syntax error: unexpected newline in argument list; possibly missing comma or )
+internal/shared/middleware/metrics.go:60:5: syntax error: unexpected newline in argument list; possibly missing comma or )
+internal/shared/middleware/metrics.go:116:4: syntax error: unexpected ) at end of statement
+internal/shared/middleware/metrics.go:118:1: syntax error: non-declaration statement outside function body
+# github.com/openprint/openprint/services/notification-service/websocket
+services/notification-service/websocket/hub.go:187:22: h.metrics.Business.WebSocketConnections undefined (type *"github.com/openprint/openprint/internal/shared/telemetry/prometheus".BusinessMetrics has no field or method WebSocketConnections)
+services/notification-service/websocket/hub.go:218:22: h.metrics.Business.WebSocketConnections undefined (type *"github.com/openprint/openprint/internal/shared/telemetry/prometheus".BusinessMetrics has no field or method WebSocketConnections)
+# github.com/openprint/openprint/services/registry-service/handler
+services/registry-service/handler/agent.go:107:15: undefined: prometheus.RecordPrinterMetric
+services/registry-service/handler/agent.go:115:14: undefined: prometheus.RecordPrinterMetric
+services/registry-service/handler/agent.go:216:14: undefined: prometheus.RecordPrinterMetric
+services/registry-service/handler/agent.go:289:15: undefined: prometheus.RecordPrinterMetric
+services/registry-service/handler/agent.go:463:15: undefined: prometheus.RecordPrinterMetric
+services/registry-service/handler/agent.go:471:14: undefined: prometheus.RecordPrinterMetric
+# github.com/openprint/openprint/services/storage-service/handler
+services/storage-service/handler/storage.go:148:14: undefined: prometheus.RecordStorageMetric
+services/storage-service/handler/storage.go:304:14: undefined: prometheus.RecordStorageMetric
+# github.com/openprint/openprint/internal/shared/telemetry/jaeger
+internal/shared/telemetry/jaeger/config.go:181:15: undefined: otel.SpanFromContext
+internal/shared/telemetry/jaeger/config.go:191:15: undefined: otel.SpanFromContext
+internal/shared/telemetry/jaeger/config.go:201:15: undefined: otel.SpanFromContext
