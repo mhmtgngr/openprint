@@ -55,6 +55,42 @@ func setupEnrollmentTokenTestDBFull(t *testing.T) *testDB {
 		return nil
 	}
 
+	// Ensure uuid-ossp extension is available (required for gen_random_uuid)
+	if _, err := pool.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""); err != nil {
+		pool.Close()
+		t.Skipf("failed to create uuid-ossp extension: %v", err)
+		return nil
+	}
+
+	// Create the enrollment_tokens table if it doesn't exist
+	// This is the schema from migrations/000020_create_enrollment_tokens.up.sql
+	createTableSQL := `
+		CREATE TABLE IF NOT EXISTS enrollment_tokens (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			token VARCHAR(255) UNIQUE NOT NULL,
+			organization_id VARCHAR(255),
+			name VARCHAR(255) NOT NULL,
+			created_by VARCHAR(255) NOT NULL,
+			max_uses INTEGER NOT NULL DEFAULT 0,
+			use_count INTEGER NOT NULL DEFAULT 0,
+			expires_at TIMESTAMPTZ,
+			revoked_at TIMESTAMPTZ,
+			revoked_by VARCHAR(255),
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_enrollment_tokens_token ON enrollment_tokens(token);
+		CREATE INDEX IF NOT EXISTS idx_enrollment_tokens_org_id ON enrollment_tokens(organization_id);
+		CREATE INDEX IF NOT EXISTS idx_enrollment_tokens_expires_at ON enrollment_tokens(expires_at);
+		CREATE INDEX IF NOT EXISTS idx_enrollment_tokens_revoked_at ON enrollment_tokens(revoked_at);
+	`
+	if _, err := pool.Exec(ctx, createTableSQL); err != nil {
+		pool.Close()
+		t.Skipf("failed to create enrollment_tokens table: %v", err)
+		return nil
+	}
+
 	// Clean up test data from previous runs to avoid duplicate key errors
 	_, _ = pool.Exec(ctx, "DELETE FROM enrollment_tokens WHERE token LIKE 'test-%' OR token LIKE 'find-%' OR token LIKE 'valid-%' OR token LIKE 'expired-%' OR token LIKE 'revoke-%' OR token LIKE 'max-%' OR token LIKE 'org-%' OR token LIKE 'increment-%' OR token LIKE 'list-%' OR token LIKE 'other-%'")
 

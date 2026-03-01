@@ -1,19 +1,19 @@
 {
   "project": {
-    "go_files": 40,
+    "go_files": 41,
     "test_files": 36,
     "tsx_files": 0,
     "todo_count": 2,
     "build": "yes",
-    "tests": "pass",
-    "test_count": 16,
-    "test_passed": 16,
+    "tests": "fail",
+    "test_count": 24,
+    "test_passed": 14,
     "dockerfiles": 6,
     "compose": "yes",
     "frontend": "no"
   },
   "compile_errors": "",
-  "test_failures": "",
+  "test_failures": "--- FAIL: TestEnrollmentTokenRepository_Create (0.02s)\n    enrollment_token_test.go:102: \n        \tError Trace:\t/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:102\n        \tError:      \tReceived unexpected error:\n        \t            \tcreate enrollment token: ERROR: relation \"enrollment_tokens\" does not exist (SQLSTATE 42P01)\n        \tTest:       \tTestEnrollmentTokenRepository_Create\n--- FAIL: TestEnrollmentTokenRepository_FindByToken (0.01s)\n    enrollment_token_test.go:130: \n        \tError Trace:\t/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:130\n        \tError:      \tReceived unexpected error:\n        \t            \tcreate enrollment token: ERROR: relation \"enrollment_tokens\" does not exist (SQLSTATE 42P01)\n        \tTest:       \tTestEnrollmentTokenRepository_FindByToken\n--- FAIL: TestEnrollmentTokenRepository_Validate (0.02s)\n    --- FAIL: TestEnrollmentTokenRepository_Validate/valid_token (0.00s)\n        enrollment_token_test.go:162: \n            \tError Trace:\t/home/cmit/openprint/services/auth-service/repository/enrollment_token_test.go:162\n            \tError:      \tReceived unexpected error:\n            \t            \tcreate enrollment token: ERROR: relation \"enrollment_tokens\" does not exist (SQLSTATE 42P01)\n            \tTest:       \tTestEnrollmentTokenRepository_Validate/valid_token\n    --- FAIL: TestEnrollmentTokenRepository_Validate/expired_token (0.00s)",
   "ts_errors": "",
   "todos": "/home/cmit/openprint/internal/testutil/migrate.go:19://   XXX_description.up.sql - for applying the migration\n/home/cmit/openprint/internal/testutil/migrate.go:20://   XXX_description.down.sql - for rolling back the migration (not used in tests)"
 }

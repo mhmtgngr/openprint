@@ -2,22 +2,22 @@
   "phases": {
     "requirements": {
       "status": "done",
-      "_updated": "2026-02-28T20:24:44.517310"
+      "_updated": "2026-03-01T12:08:28.210898"
     },
     "market_research": {
       "status": "done",
-      "_updated": "2026-02-28T20:28:32.761251"
+      "_updated": "2026-03-01T12:11:37.290516"
     },
     "design": {
       "status": "done",
-      "_updated": "2026-02-28T20:29:31.920645"
+      "_updated": "2026-03-01T12:13:25.922284"
     },
     "backend": {
       "status": "running",
-      "_updated": "2026-02-28T20:29:31.986201"
+      "_updated": "2026-03-01T12:13:25.966915"
     }
   },
-  "project": "Verify and complete the React dashboard. The diagnosis shows tsx_files: 0 despite rounds 11-17 creating components. Check web/dashboard/src/ for actual component files. If missing, create: LoginForm.tsx, JobList.tsx, Devices.tsx, Documents.tsx, Dashboard.tsx, Settings.tsx. Ensure web/dashboard/package.json has all dependencies (react, react-router-dom, @tanstack/react-query, axios). Run npm install and npm run build. Fix any TypeScript errors. Verify dashboard starts on port 3000 and connects to API gateway on port 8000.",
-  "branch": "team/verify-and-complete-the-react-dashboard--1772310161",
+  "project": "Fix 4 failing tests in services/auth-service/repository/enrollment_token_test.go. Tests fail with 'relation enrollment_tokens does not exist (SQLSTATE 42P01)'. The migration file 000006_create_enrollment_tokens_table.up.sql exists but tests aren't running migrations properly. Fix internal/testutil/migrate.go to ensure enrollment_tokens table is created before tests run. Verify testutil setup calls all migration files, not just users table. Run tests with full migration suite to confirm fix: go test -v ./services/auth-service/repository/...",
+  "branch": "team/fix-4-failing-tests-in-servicesauth-serv-1772366882",
   "current_phase": "backend"
 }

@@ -1,119 +1,92 @@
 REQUIREMENTS (enriched with market research):
 {
- "project_name": "openprint-dashboard",
- "summary": "Verify and complete the React dashboard for OpenPrint Cloud print management platform. The diagnosis shows tsx_files: 0 but the actual codebase has 100+ TSX files with a working build (1056 modules, 881.57 kB bundle). TypeScript type-check passes, all required components exist (LoginForm, JobList, Devices, Documents, Dashboard, Settings). The main issues are: diagnosis inaccuracy, missing axios dependency (code uses fetch API), and no API gateway on port 8000 (direct service proxying configured).",
+ "project_name": "auth-service-enrollment-token-tests",
+ "summary": "Fix 4 failing tests in auth-service enrollment_token_test.go by ensuring database migrations run properly to create the enrollment_tokens table before tests execute",
  "functional_requirements": [
   {
    "id": "FR-001",
-   "title": "Dashboard Build Verification"
+   "title": "Fix testutil migration execution"
   },
   {
    "id": "FR-002",
-   "title": "API Client Configuration"
+   "title": "Discover migration files dynamically"
   },
   {
    "id": "FR-003",
-   "title": "Authentication Flow"
+   "title": "Verify migration execution order"
   },
   {
-   "id": "FR-004",
-   "title": "Job Management UI"
-  },
-  {
-   "id": "FR-005",
-   "title": "Device Management UI"
-  },
-  {
-   "id": "FR-006",
-   "title": "Document Management UI"
-  },
-  {
-   "id": "FR-007",
-   "title": "Settings Pages"
-  },
-  {
-   "id": "FR-008",
-   "title": "Analytics Dashboard"
-  },
-  {
-   "id": "FR-M009",
-   "title": "Print Quota & Cost Management"
-  },
-  {
-   "id": "FR-M010",
+   "id": "FR-M004",
    "title": "Secure Print Release"
   },
   {
+   "id": "FR-M005",
+   "title": "Print Quota & Cost Allocation"
+  },
+  {
+   "id": "FR-M006",
+   "title": "Comprehensive Audit Logging"
+  },
+  {
+   "id": "FR-M007",
+   "title": "Sustainability Dashboard"
+  },
+  {
+   "id": "FR-M008",
+   "title": "Follow-Me Printing"
+  },
+  {
+   "id": "FR-M009",
+   "title": "Mobile Print Applications"
+  },
+  {
+   "id": "FR-M010",
+   "title": "SOC2/ISO27001 Compliance Framework"
+  },
+  {
    "id": "FR-M011",
-   "title": "Mobile Print App"
-  },
-  {
-   "id": "FR-M012",
-   "title": "Advanced Reporting"
-  },
-  {
-   "id": "FR-M013",
-   "title": "Document Watermarking"
-  },
-  {
-   "id": "FR-M014",
-   "title": "API Gateway + Developer Portal"
+   "title": "Advanced Reporting & Analytics"
   }
  ],
  "affected_services": [
-  "dashboard",
   "auth-service",
-  "job-service",
-  "registry-service",
-  "storage-service"
+  "testutil"
  ],
  "implementation_phases": [
   {
    "phase": 1,
-   "name": "Verify Build Status",
+   "name": "Diagnosis",
    "tasks": [
-    "Run npm install to verify dependencies",
-    "Run npm run type-check to verify TypeScript",
-    "Run npm run build to verify production build",
-    "Verify dashboard starts on port 3000 with npm run dev"
+    "Read internal/testutil/migrate.go to understand current migration logic",
+    "Read 000006_create_enrollment_tokens_table.up.sql to verify table definition",
+    "Read enrollment_token_test.go to understand test requirements",
+    "List all migration files to confirm complete set"
    ]
   },
   {
    "phase": 2,
-   "name": "Correct Diagnosis",
+   "name": "Fix Implementation",
    "tasks": [
-    "Update diagnosis.json with correct tsx_files count",
-    "Update frontend_files dimension score",
-    "Recalculate project completion percentage"
+    "Modify internal/testutil/migrate.go to execute all migration files",
+    "Add dynamic migration file discovery if not present",
+    "Ensure migrations execute in filename order"
    ]
   },
   {
    "phase": 3,
-   "name": "API Integration Verification",
+   "name": "Verification",
    "tasks": [
-    "Verify auth-service endpoint connectivity",
-    "Verify job-service endpoint connectivity",
-    "Verify registry-service endpoint connectivity",
-    "Test authentication flow end-to-end"
+    "Run failing tests: go test -v ./services/auth-service/repository/...",
+    "Verify all 4 tests now pass",
+    "Run full auth-service test suite to ensure no regressions"
    ]
   },
   {
    "phase": 4,
-   "name": "Documentation Updates",
+   "name": "Documentation",
    "tasks": [
-    "Update CLAUDE.md to remove axios reference or add it",
-    "Document API gateway vs direct proxy architecture",
-    "Update deployment documentation"
-   ]
-  },
-  {
-   "phase": 5,
-   "name": "Optional Optimizations",
-   "tasks": [
-    "Implement code splitting with dynamic imports",
-    "Add route-based lazy loading",
-    "Optimize bundle size",
-    "Consider httpOnly cookies for JWT storage"
+    "Update CLAUDE.md with test database setup notes if needed",
+    "Comment the migration logic in testutil for future maintainers"
    ]
   }
  ]
@@ -125,84 +98,88 @@ MARKET ANALYSIS:
   {
    "name": "PaperCut",
    "strengths": [
-    "100M+ users across 195+ countries",
-    "Cross-platform support (Windows/Linux/Mac/Chromebook/Mobile)",
-    "Vendor-neutral architecture",
-    "Secure print release with watermarking",
-    "Print quotas and cost allocation",
-    "Advanced reporting and analytics",
-    "Environmental sustainability features",
-    "Self-hosted and cloud deployment",
-    "BYOD mobility print"
+    "100M+ users across 70K organizations",
+    "Print monitoring and tracking",
+    "User quota management",
+    "Secure print release",
+    "Mobile printing",
+    "Cost allocation and chargeback",
+    "Sustainability reporting",
+    "15%+ cost savings",
+    "Multi-platform support"
    ],
    "weaknesses": [
-    "Proprietary licensing",
-    "Enterprise pricing can be expensive",
-    "Complex setup for small organizations"
+    "Traditional on-premise deployment for MF version",
+    "Complex enterprise pricing"
    ],
-   "pricing_model": "Perpetual license for self-hosted, subscription for cloud (PaperCut Hive/Pocket)"
+   "pricing_model": "Per-user/per-printer licensing, MF (on-premise), Hive (cloud), Mobility Print (free)"
   },
   {
-   "name": "uniFLOW Online",
+   "name": "Printix",
    "strengths": [
-    "Serverless cloud architecture",
-    "Microsoft Azure integration",
-    "Scan management",
-    "Advanced security features"
+    "Cloud-native architecture",
+    "GDPR compliant",
+    "Serverless design"
    ],
    "weaknesses": [
-    "Vendor lock-in to Canon ecosystem",
-    "Requires Azure infrastructure"
+    "Smaller market presence than PaperCut",
+    "Limited offline capabilities"
    ],
-   "pricing_model": "SaaS subscription"
+   "pricing_model": "Subscription-based cloud SaaS"
   },
   {
-   "name": "HP Web Jetadmin",
+   "name": "PrinterLogic",
    "strengths": [
-    "HP device integration",
-    "Fleet management",
-    "Security features"
+    "Serverless enterprise print management",
+    "Centralized printer driver management",
+    "Direct IP printing"
    ],
    "weaknesses": [
-    "HP-only focus",
-    "Limited cross-vendor support"
+    "Enterprise-focused, complex for SMB",
+    "Windows-centric"
    ],
-   "pricing_model": "Free with HP devices, premium tier available"
+   "pricing_model": "Enterprise perpetual license + maintenance"
+  },
+  {
+   "name": "Print Manager Plus",
+   "strengths": [
+    "Real-time tracking",
+    "Cost control features"
+   ],
+   "weaknesses": [
+    "Limited cloud features",
+    "Traditional architecture"
+   ],
+   "pricing_model": "Per-seat licensing"
+  },
+  {
+   "name": "YSoft SafeQ",
+   "strengths": [
+    "Integrated document capture",
+    "Workflow automation",
+    "3D print management"
+   ],
+   "weaknesses": [
+    "Complex deployment",
+    "Higher cost"
+   ],
+   "pricing_model": "Enterprise tiered pricing"
   },
   {
    "name": "Canon uniFLOW",
    "strengths": [
-    "Hardware-software integration",
-    "Enterprise document workflows",
-    "Advanced scanning"
+    "Hardware integration",
+    "Card reader support",
+    "Advanced reporting"
    ],
    "weaknesses": [
-    "Canon ecosystem lock-in",
-    "Higher total cost"
+    "Canon-ecosystem lock-in",
+    "Expensive"
    ],
-   "pricing_model": "Per-device licensing"
-  },
-  {
-   "name": "Lexmark Markvision Enterprise",
-   "strengths": [
-    "Fleet monitoring",
-    "Device management"
-   ],
-   "weaknesses": [
-    "Lexmark-focused",
-    "Limited cloud features"
-   ],
-   "pricing_model": "Per-device licensing"
+   "pricing_model": "Hardware-bundled licensing"
   }
  ],
- "feature_comparison": [
-  {
-   "feature": "Secure Print Release",
-   "competitors_with_feature": [
-    "PaperCut",
-    "uniFLOW",
-    "HP",
- 
+ "feature_com
 
 PROJECT CONTEXT (from CLAUDE.md):
 # OpenPrint Cloud
@@ -334,6 +311,7 @@ internal/auth/jwt/jwt.go
 internal/auth/oidc/oidc.go
 internal/auth/password/password.go
 internal/auth/saml/saml.go
+internal/middleware/cookie_auth.go
 internal/middleware/validation.go
 internal/shared/errors/errors.go
 internal/shared/middleware/agent_auth.go
