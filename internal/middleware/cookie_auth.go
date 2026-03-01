@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/openprint/openprint/internal/auth/jwt"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
 const (
@@ -16,6 +15,13 @@ const (
 	SessionCookieName = "openprint_session"
 	// RefreshCookieName is the name of the refresh token cookie
 	RefreshCookieName = "openprint_refresh"
+
+	UserIDKey  contextKey = "user_id"
+	EmailKey   contextKey = "email"
+	OrgIDKey   contextKey = "org_id"
+	RoleKey    contextKey = "role"
+	ScopesKey  contextKey = "scopes"
+	TokenKey   contextKey = "token"
 )
 
 // CookieAuthConfig holds cookie authentication configuration.

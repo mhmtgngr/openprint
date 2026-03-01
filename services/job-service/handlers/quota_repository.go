@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -290,12 +289,4 @@ func (r *quotaRepository) logQuotaHistory(ctx context.Context, quota *PrintQuota
 	)
 
 	return err
-}
-
-// nullIfEmpty returns nil if string is empty, otherwise returns the string.
-func nullIfEmpty(s string) interface{} {
-	if s == "" {
-		return nil
-	}
-	return s
 }

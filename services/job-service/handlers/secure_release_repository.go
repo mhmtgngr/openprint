@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/types"
 )
 
 // secureReleaseRepository implements the SecureReleaseRepository interface.
@@ -437,7 +436,7 @@ func (r *secureReleaseRepository) ListReleaseStations(ctx context.Context, organ
 	var stations []*ReleaseStation
 	for rows.Next() {
 		var station ReleaseStation
-		var assignedPrinters types.JSONB
+		var assignedPrinters []byte
 		var lastHeartbeat *time.Time
 
 		if err := rows.Scan(
@@ -449,8 +448,8 @@ func (r *secureReleaseRepository) ListReleaseStations(ctx context.Context, organ
 		}
 
 		// Parse assigned printers from JSONB
-		if len(assignedPrinters.Bytes) > 0 {
-			json.Unmarshal(assignedPrinters.Bytes, &station.AssignedPrinters)
+		if len(assignedPrinters) > 0 {
+			json.Unmarshal(assignedPrinters, &station.AssignedPrinters)
 		}
 
 		station.LastHeartbeat = lastHeartbeat
@@ -574,12 +573,4 @@ func (r *secureReleaseRepository) initTables(ctx context.Context) {
 	for _, q := range initQueries {
 		r.db.Exec(ctx, q)
 	}
-}
-
-// nullIfEmpty returns nil if string is empty.
-func nullIfEmpty(s string) interface{} {
-	if s == "" {
-		return nil
-	}
-	return s
 }
