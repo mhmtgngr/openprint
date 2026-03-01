@@ -177,7 +177,7 @@ function performProfile(accessToken) {
   };
 
   const startTime = Date.now();
-  const response = http.get(`${BASE_URL}/auth/profile`, {
+  const response = http.get(`${BASE_URL}/auth/me`, {
     headers,
     tags: { name: 'Profile' },
   });

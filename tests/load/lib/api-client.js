@@ -121,7 +121,7 @@ export class ApiClient {
       tags: { name: path },
     };
 
-    const http.patch(url, JSON.stringify(data), options);
+    return http.patch(url, JSON.stringify(data), options);
   }
 
   /**
@@ -229,10 +229,17 @@ export class AuthClient extends ApiClient {
   }
 
   /**
-   * Get user profile
+   * Get current user (me endpoint)
+   */
+  getCurrentUser() {
+    return this.get(API_PATHS.AUTH_ME);
+  }
+
+  /**
+   * Get user profile (alias for getCurrentUser)
    */
   getProfile() {
-    return this.get(API_PATHS.AUTH_PROFILE);
+    return this.getCurrentUser();
   }
 }
 
@@ -370,14 +377,14 @@ export class JobClient extends ApiClient {
    * Get job history
    */
   getJobHistory(jobId) {
-    return this.get(API_PATHS.JOB_HISTORY, { job_id: jobId });
+    return this.get(API_PATHS.HISTORY, { job_id: jobId });
   }
 
   /**
    * Get queue statistics
    */
   getQueueStats() {
-    return this.get(API_PATHS.JOB_QUEUE_STATS);
+    return this.get(API_PATHS.QUEUE_STATS);
   }
 
   /**
@@ -417,10 +424,10 @@ export class StorageClient extends ApiClient {
   }
 
   /**
-   * Get document metadata
+   * Get document metadata (GET /documents/{id})
    */
   getDocumentMetadata(documentId) {
-    return this.get(`${API_PATHS.DOCUMENT(documentId)}/metadata`);
+    return this.get(API_PATHS.DOCUMENT(documentId));
   }
 
   /**

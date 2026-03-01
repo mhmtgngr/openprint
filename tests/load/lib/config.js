@@ -13,27 +13,29 @@ export const STORAGE_URL = __ENV.STORAGE_URL || 'http://localhost:8004';
 export const NOTIFICATION_URL = __ENV.NOTIFICATION_URL || 'http://localhost:8005';
 export const GATEWAY_URL = __ENV.GATEWAY_URL || 'http://localhost:8080';
 
-// API Paths
+// API Paths - aligned with actual service endpoints
 export const API_PATHS = {
   // Auth service
   AUTH_LOGIN: '/auth/login',
   AUTH_REGISTER: '/auth/register',
   AUTH_REFRESH: '/auth/refresh',
   AUTH_LOGOUT: '/auth/logout',
-  AUTH_PROFILE: '/auth/profile',
+  AUTH_ME: '/auth/me',  // Changed from AUTH_PROFILE - actual endpoint is /auth/me
 
   // Registry service
   AGENTS: '/agents',
-  AGENT_HEARTBEAT: (id) => `/agents/${id}/heartbeat`,
+  AGENT_HEARTBEAT: (id) => `/agents/${id}`,  // Agent handler handles heartbeat via PUT
   AGENT_REGISTER: '/agents/register',
   PRINTERS: '/printers',
-  DISCOVERED_PRINTERS: '/agents/{agent_id}/discovered-printers',
+  PRINTER_REGISTER: '/printers/register',
+  USER_PRINTER_MAPPINGS: '/user-printer-mappings',
 
   // Job service
   JOBS: '/jobs',
-  JOB_STATUS: (id) => `/jobs/${id}`,
-  JOB_HISTORY: '/jobs/history',
-  JOB_QUEUE_STATS: '/jobs/queue/stats',
+  JOB_BY_ID: (id) => `/jobs/${id}`,  // Changed from JOB_STATUS
+  JOB_STATUS: (id) => `/jobs/status/${id}`,  // Dedicated status endpoint
+  HISTORY: '/history',  // Changed from /jobs/history
+  QUEUE_STATS: '/queue/stats',  // Changed from /jobs/queue/stats
 
   // Storage service
   DOCUMENTS: '/documents',
@@ -41,7 +43,7 @@ export const API_PATHS = {
   UPLOAD: '/upload',
   DOWNLOAD: (path) => `/download/${path}`,
 
-  // Notification service
+  // Notification service (placeholder - to be implemented)
   WS_CONNECT: '/ws',
   BROADCAST: '/broadcast',
   CONNECTIONS: '/connections',

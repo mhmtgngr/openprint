@@ -4,7 +4,7 @@
  * This module provides common utility functions used across test scenarios.
  */
 
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { TestData } from './config.js';
 
 /**
