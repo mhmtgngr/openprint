@@ -31,6 +31,10 @@ const MetricsDashboard = lazy(() => import('./pages/MetricsDashboard').then(m =>
 const Monitoring = lazy(() => import('./pages/Monitoring').then(m => ({ default: m.Monitoring })));
 const ObservabilityHub = lazy(() => import('./pages/ObservabilityHub').then(m => ({ default: m.ObservabilityHub })));
 
+// Platform Admin routes (multi-tenancy)
+const OrganizationsList = lazy(() => import('./pages/admin/OrganizationsList').then(m => ({ default: m.OrganizationsList })));
+const OrganizationDetail = lazy(() => import('./pages/admin/OrganizationDetail').then(m => ({ default: m.OrganizationDetail })));
+
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoadingFallback />}>
     {children}
@@ -70,6 +74,28 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!isAuthenticated || !hasRole(['admin', 'owner'])) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <DashboardLayout>{children}</DashboardLayout>;
+};
+
+// Platform Admin Route - only for platform administrators
+const PlatformAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Check if user is a platform admin
+  const isPlatformAdmin = user?.role === 'platform_admin' || (user as any)?.isPlatformAdmin;
+
+  if (!isAuthenticated || !isPlatformAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -321,6 +347,28 @@ function App() {
                 <ObservabilityHub />
               </SuspenseWrapper>
             </AdminRoute>
+          }
+        />
+
+        {/* Platform Admin routes (multi-tenancy) */}
+        <Route
+          path="/admin/organizations"
+          element={
+            <PlatformAdminRoute>
+              <SuspenseWrapper>
+                <OrganizationsList />
+              </SuspenseWrapper>
+            </PlatformAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/organizations/:orgId"
+          element={
+            <PlatformAdminRoute>
+              <SuspenseWrapper>
+                <OrganizationDetail />
+              </SuspenseWrapper>
+            </PlatformAdminRoute>
           }
         />
 

@@ -223,6 +223,17 @@ export const mockUsers = [
     emailVerified: true,
     createdAt: '2024-01-01T00:00:00Z',
   },
+  {
+    id: '3',
+    email: 'platform-admin@openprint.cloud',
+    name: 'Platform Admin',
+    role: 'platform_admin',
+    isPlatformAdmin: true,
+    orgId: 'platform',
+    isActive: true,
+    emailVerified: true,
+    createdAt: '2024-01-01T00:00:00Z',
+  },
 ];
 
 export const mockPrinters = [
