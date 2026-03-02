@@ -337,39 +337,42 @@ import (
 // but this wrapper provides explicit security controls for defense-in-depth.
 type secureXMLDecoder struct {
 	*xml.Decoder
+	maxBytes int64
+	bytesRead int64
 }
 
 // newSecureXMLDecoder creates a new secure XML decoder with size limits.
 // The decoder is configured to prevent XXE attacks by:
 // 1. Using a limited reader to enforce maximum XML size
 // 2. Disallowing DTD processing (already disabled by default in Go)
+// 3. Returning an error when size limit is exceeded (not silent truncation)
 func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
 	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
-	limitedReader := &io.LimitedReader{R: r, N: maxXMLSize}
 	return &secureXMLDecoder{
-		Decoder: xml.NewDecoder(limitedReader),
+		Decoder: xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
+		maxBytes: maxXMLSize,
 	}
 }
 
-// Decode wraps the underlying Decoder's Decode method.
+// Decode wraps the underlying Decoder's Decode method with size checking.
+// Returns an error if the XML document exceeds the maximum allowed size.
 func (d *secureXMLDecoder) Decode(v interface{}) error {
-	return d.Decoder.Decode(v)
-}
-
-var (
-	// ErrInvalidResponse is returned when the SAML response is invalid.
-	ErrInvalidResponse = errors.New("invalid SAML response")
-	// ErrMissingAttribute is returned when a required attribute is missing.
-	ErrMissingAttribute = errors.New("missing required SAML attribute")
-	// ErrInvalidSignature is returned when the signature is invalid.
-	ErrInvalidSignature = errors.New("invalid SAML signature")
-	ErrNotConfigured  = errors.New("SAML not configured")
-)
+	err := d.Decoder.Decode(v)
+	if err == io.EOF {
+		// Check if we hit the size limit by looking at the input offset
+		// If offset is near maxBytes, the EOF was likely due to hitting the limit
+		offset := d.Decoder.InputOffset()
+		if offset >= d.maxBytes-100 {
+			// We hit the size limit with some margin for the final read
+			return fmt.Errorf("XML document exceeds maximum size of %d bytes", d.maxBytes)
 --- internal/auth/saml/saml_test.go ---
 // Package saml provides tests for SAML 2.0 SSO integration.
 package saml
 
 import (
+	"bytes"
+	"encoding/xml"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -423,9 +426,6 @@ func TestManager_Metadata(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Metadata() error = %v", err)
 	}
-
-	if len(metadata) == 0 {
-		t.Fatal("Metadata() returned empty bytes")
 --- internal/auth/jwt/jwt_test.go ---
 // Package jwt provides tests for JWT token generation and validation.
 package jwt
@@ -775,6 +775,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/openprint/openprint/internal/auth/roles"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/middleware"
 )
@@ -811,7 +812,6 @@ func TenantMiddleware(cfg MiddlewareConfig) func(http.Handler) http.Handler {
 			// Check if this is a platform admin only path
 			for _, adminPath := range cfg.PlatformAdminPaths {
 				if strings.HasPrefix(r.URL.Path, adminPath) {
-					role := middleware.GetRole(r)
-					if role != "admin" && role != "platform_admin" {
-						respondForbidden(w, "platform admin access required")
+					userRole := middleware.GetRole(r)
+					// Use centralized role validation for security
 Check: SQL injection, XSS, CSRF, insecure JWT, weak crypto, missing auth, IDOR, data exposure. Be thorough.

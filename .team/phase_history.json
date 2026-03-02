@@ -179,7 +179,19 @@
       "category": "project",
       "result": "done",
       "timestamp": "2026-03-02T01:21:38.468218"
+    },
+    {
+      "description": "Dev: Fix phase_deploy unsafe pipes \u2014 Add || true to all 69 unsafe grep/find/awk pipes in phase_deploy that currently lack error handling. Pattern: find ... | grep ... | head ... becomes: find ... 2>/dev/null | grep ... 2>/dev/null | head ... || true",
+      "category": "team",
+      "result": "done",
+      "timestamp": "2026-03-02T19:11:54.851126"
+    },
+    {
+      "description": "Dev: Add exponential backoff retry wrapper \u2014 Create retry_with_backoff(command, max_retries, base_delay) that implements exponential backoff: sleep $((base_delay * 2**attempt)) before retry. Replace raw retry loops throughout. This addresses 31 retry attempts.",
+      "category": "team",
+      "result": "done",
+      "timestamp": "2026-03-02T19:14:17.111957"
     }
   ],
-  "current_round": 30
+  "current_round": 32
 }

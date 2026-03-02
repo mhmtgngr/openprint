@@ -8,8 +8,18 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Retry on network errors or 5xx errors up to 3 times
+        if (failureCount >= 3) return false;
+        const err = error as { status?: number };
+        return !err.status || err.status >= 500;
+      },
       refetchOnWindowFocus: false,
+      staleTime: 5000, // Consider data fresh for 5 seconds
+      gcTime: 300000, // Keep unused data in cache for 5 minutes
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
