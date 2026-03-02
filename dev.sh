@@ -511,16 +511,25 @@ try:
     if result.returncode == 0:
         containers = json.loads(result.stdout)
         for container in containers:
-            name = container.get('Names', '')
+            # Names is a list in podman JSON output
+            names = container.get('Names', [])
+            if not isinstance(names, list):
+                names = [names]
+
             # Extract service name from container name
             for svc in services.keys():
-                if svc in name:
-                    # Parse port from Ports field
-                    ports = container.get('Ports', '')
-                    match = re.search(r'0\.0\.0\.0\.:(\d+)->', ports)
-                    if match:
-                        services[svc] = match.group(1)
-except:
+                for name in names:
+                    if svc in name:
+                        # Parse port from Ports field (array of objects in podman)
+                        ports = container.get('Ports', [])
+                        if isinstance(ports, list) and ports:
+                            # Get the first port mapping's host_port
+                            host_port = ports[0].get('host_port')
+                            if host_port:
+                                services[svc] = str(host_port)
+                                break
+except Exception as e:
+    # Fallback to defaults on error
     pass
 
 print(json.dumps(services))
@@ -838,7 +847,11 @@ generate_access_report() {
   local external_ip
   external_ip=$(get_external_ip 2>/dev/null) || external_ip="localhost"
 
-  python3 - "$report_file" "$external_ip" "${DASHBOARD_PORT:-3000}" "${SERVICE_PORTS:-}" "${PROJECT_NAME:-docker}" << 'PYEOF'
+  # Get actual dashboard port from running containers (dynamic)
+  service_ports_json=$(get_all_service_ports 2>/dev/null || echo '{}')
+  detected_dashboard_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','3000'))" 2>/dev/null || echo "3000")
+
+  python3 - "$report_file" "$external_ip" "${detected_dashboard_port}" "${SERVICE_PORTS:-}" "${PROJECT_NAME:-docker}" << 'PYEOF'
 import json, sys, socket
 from datetime import datetime
 
@@ -2008,12 +2021,63 @@ verify_container_health() {
   $runtime inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null | grep -q "true"
 }
 
+# Fix postgres container startup issues (data directory, network, etc.)
+fix_postgres_container() {
+  local runtime
+  runtime=$(detect_container_runtime)
+  local pg_container="openprint-postgres"
+  local pg_network="openprint-network"
+
+  # Check if postgres container exists
+  if ! $runtime ps -a --format "{{.Names}}" | grep -q "^${pg_container}$"; then
+    return 0  # Container doesn't exist yet, nothing to fix
+  fi
+
+  local pg_state
+  pg_state=$($runtime ps --format "{{.State}}" --filter "name=$pg_container" 2>/dev/null || echo "")
+
+  # Check if postgres is stuck in "starting" or exited state
+  if [ "$pg_state" = "starting" ] || [ "$pg_state" = "Exited" ] || [ "$pg_state" = "exited" ]; then
+    log "  🔧 PostgreSQL container stuck ($pg_state), fixing..."
+
+    # Check logs for data directory errors
+    local logs
+    logs=$($runtime logs "$pg_container" 2>&1 || echo "")
+
+    if echo "$logs" | grep -qi "exists but is not empty\|initdb: error"; then
+      log "  🗑️  PostgreSQL data directory issue detected, recreating..."
+
+      # Stop and remove container
+      $runtime stop "$pg_container" 2>/dev/null || true
+      $runtime rm "$pg_container" 2>/dev/null || true
+
+      # Note: We preserve the volume, just recreate the container
+      log "  ✓ PostgreSQL container removed, will be recreated"
+      return 1  # Signal that recreation is needed
+    fi
+
+    # Check if postgres is on correct network
+    if ! $runtime inspect "$pg_container" --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' 2>/dev/null | grep -q "$pg_network"; then
+      log "  🔧 PostgreSQL not on correct network, fixing..."
+      $runtime stop "$pg_container" 2>/dev/null || true
+      $runtime rm "$pg_container" 2>/dev/null || true
+      log "  ✓ PostgreSQL will be recreated with correct network"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
 docker_up() {
   log "  🚀 Starting services..."
   cd "$REPO_DIR"
 
   # Rotate docker_up.log if it's getting large
   rotate_logs 500  # Rotate at 500KB
+
+  # Fix postgres container issues before starting
+  fix_postgres_container
 
   detect_service_ports
   local compose=""
@@ -2057,6 +2121,9 @@ docker_up() {
     local runtime
     runtime=$(detect_container_runtime)
 
+    # Get actual service ports from running containers (dynamic)
+    service_ports_json=$(get_all_service_ports 2>/dev/null || echo '{}')
+
     # Check application service containers directly first
     local app_containers="auth-service registry-service job-service storage-service notification-service dashboard"
     for container in $app_containers; do
@@ -2065,16 +2132,9 @@ docker_up() {
       if [ "$SKIP_HEALTH_CHECK" = true ]; then
         h=$((h+1)); log "  ✓ $container (health check skipped)"
       elif $runtime ps --format "{{.Names}}" | grep -q "^${full_name}$"; then
-        # Container is running, try health endpoint
+        # Get port from dynamic detection
         local port=""
-        case "$container" in
-          auth-service) port="18001" ;;
-          registry-service) port="8002" ;;
-          job-service) port="8003" ;;
-          storage-service) port="8004" ;;
-          notification-service) port="18005" ;;
-          dashboard) port="3000" ;;
-        esac
+        port=$(echo "$service_ports_json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('$container','')))" 2>/dev/null || echo "")
 
         if [ -n "$port" ] && curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1; then
           h=$((h+1)); log "  ✓ $container (:$port)"
@@ -2087,6 +2147,33 @@ docker_up() {
     done
 
     log "  Health: $h/$t services up"
+
+    # Check PostgreSQL specifically (critical for auth service)
+    if [ "$SKIP_HEALTH_CHECK" != true ]; then
+      local pg_ready=false
+      local pg_container="openprint-postgres"
+
+      if $runtime ps --format "{{.Names}}" | grep -q "^${pg_container}$"; then
+        # Try pg_isready up to 10 times
+        for i in $(seq 1 10); do
+          if $runtime exec "$pg_container" pg_isready -U openprint -d openprint >/dev/null 2>&1; then
+            pg_ready=true
+            log "  ✓ PostgreSQL ready"
+            break
+          fi
+          sleep 1
+        done
+
+        if [ "$pg_ready" = false ]; then
+          warn "  ⚠️  PostgreSQL not ready - checking for issues..."
+          local pg_logs
+          pg_logs=$($runtime logs "$pg_container" 2>&1 | tail -5 || echo "")
+          if echo "$pg_logs" | grep -qi "exists but is not empty\|initdb: error"; then
+            warn "  🗑️  PostgreSQL data issue detected - run './dev.sh fix-postgres' to repair"
+          fi
+        fi
+      fi
+    fi
 
     # Additional port-based check for any extra services
     if [ "$h" -lt "$t" ] && [ "$SKIP_HEALTH_CHECK" != true ]; then
@@ -2689,9 +2776,13 @@ phase_e2e_production() {
   FRONTEND_DIR="${FRONTEND_CONFIG%%:*}"
   DASHBOARD_PORT="${FRONTEND_CONFIG##*:}"
 
+  # Get actual dashboard port from running containers (dynamic)
+  service_ports_json=$(get_all_service_ports 2>/dev/null || echo '{}')
+  detected_dashboard_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','${DASHBOARD_PORT:-3000}'))" 2>/dev/null || echo "${DASHBOARD_PORT:-3000}")
+
   local external_ip
   external_ip=$(get_external_ip 2>/dev/null) || external_ip="localhost"
-  local base_url="${E2E_BASE_URL:-http://localhost:3000}"
+  local base_url="${E2E_BASE_URL:-http://localhost:${detected_dashboard_port}}"
 
   log "  🌐 Testing against: $base_url"
   log "  📡 Server IP: $external_ip"
@@ -4198,6 +4289,7 @@ show_help() { cat << 'HELP'
     ./dev.sh resume                     # Continue from last phase
     ./dev.sh phase backend              # Single phase (fg)
     ./dev.sh start "desc" --fg          # Foreground mode
+    ./dev.sh fix-postgres               # Fix PostgreSQL container issues
 
   PRODUCTION TESTING (after deploy):
     ./dev.sh ports                      # Check port availability
@@ -4454,8 +4546,17 @@ case "$CMD" in
 
   # AI-Powered E2E testing (run directly)
   ai-e2e|ai-test)
-    target_url="${2:-http://localhost:3000}"
     auto_fix="${3:-true}"
+
+    # Detect actual dashboard port dynamically if URL not provided
+    if [[ -n "${2:-}" ]]; then
+      target_url="$2"
+    else
+      # Get actual dashboard port from running containers
+      ports_json=$(get_all_service_ports)
+      dashboard_port=$(echo "$ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','3000'))")
+      target_url="http://localhost:${dashboard_port}"
+    fi
 
     echo -e "${W}═══ AI-POWERED E2E TESTING ═══${NC}"
     echo -e "  Target: ${G}$target_url${NC}"
@@ -4517,6 +4618,74 @@ print(f"    2. Open browser: {d['client_connection']['base_url']}")
 print(f"    3. For firewall, allow ports: {', '.join(map(str, d['services']['api_ports']))}")
 PYEOF
     fi
+    ;;
+
+  fix-postgres)
+    (
+      # Fix PostgreSQL container issues (in subshell for proper scoping)
+      log "🔧 Fixing PostgreSQL container..."
+      runtime=$(detect_container_runtime)
+      pg_container="openprint-postgres"
+      pg_volume="openprint-postgres-data"
+      pg_network="openprint-network"
+
+      # Stop and remove existing postgres container
+      if $runtime ps -a --format "{{.Names}}" | grep -q "^${pg_container}$"; then
+        log "  🛑 Stopping PostgreSQL container..."
+        $runtime stop "$pg_container" 2>/dev/null || true
+        $runtime rm "$pg_container" 2>/dev/null || true
+        log "  ✓ Removed old container"
+      fi
+
+      # Check if volume exists
+      if $runtime volume ls --format "{{.Name}}" | grep -q "^${pg_volume}$"; then
+        log "  📦 PostgreSQL volume exists: $pg_volume"
+      else
+        log "  📦 Creating PostgreSQL volume..."
+        $runtime volume create "$pg_volume" >/dev/null 2>&1
+      fi
+
+      # Create container with correct configuration
+      log "  🚀 Creating new PostgreSQL container..."
+      $runtime run -d \
+        --name "$pg_container" \
+        --hostname postgres \
+        --network "$pg_network" \
+        -e POSTGRES_USER=openprint \
+        -e POSTGRES_PASSWORD=openprint \
+        -e POSTGRES_DB=openprint \
+        -e PGDATA=/var/lib/postgresql/data/pgdata \
+        -v "${pg_volume}:/var/lib/postgresql/data" \
+        -p 15432:5432 \
+        postgres:16-alpine >/dev/null 2>&1
+
+      if [ $? -eq 0 ]; then
+        log "  ✓ PostgreSQL container created"
+
+        # Wait for postgres to be ready
+        log "  ⏳ Waiting for PostgreSQL to be ready..."
+        ready=false
+        for i in $(seq 1 30); do
+          if $runtime exec "$pg_container" pg_isready -U openprint -d openprint >/dev/null 2>&1; then
+            ready=true
+            break
+          fi
+          sleep 1
+        done
+
+        if [ "$ready" = true ]; then
+          log "  ✓ PostgreSQL is ready!"
+          log "  📌 Running on port 15432"
+          log "  📌 Connect: psql -h localhost -p 15432 -U openprint -d openprint"
+        else
+          warn "  ⚠️  PostgreSQL started but not accepting connections"
+          log "  Check logs: $runtime logs $pg_container"
+        fi
+      else
+        err "  ✗ Failed to create PostgreSQL container"
+        exit 1
+      fi
+    )
     ;;
 
   stop)            stop_all ;;
