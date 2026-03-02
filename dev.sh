@@ -34,6 +34,24 @@
 #    ./dev.sh scan                           # Gap analysis
 #    ./dev.sh -h                             # Full help
 #
+#  NEW PHASES:
+#    ./dev.sh phase ci                       # CI/CD pipeline generation
+#    ./dev.sh phase perf                     # Performance benchmarking
+#    ./dev.sh phase docs                     # API documentation generation
+#    ./dev.sh phase e2e-gen                  # E2E test generation
+#    ./dev.sh migrate-test                  # Test database migrations
+#    ./dev.sh migrate-rollback              # Test migration rollback
+#
+#  GIT WORKFLOW:
+#    ./dev.sh squash [branch]               # Squash commits before PR
+#    ./dev.sh rebase-main                   # Rebase current branch onto main
+#    ./dev.sh cleanup-branches              # Remove merged branches
+#    ./dev.sh new-branch "name"             # Create new feature branch
+#
+#  SMART IMPROVE ENHANCED:
+#    ./dev.sh smart-improve [threshold%] [--incremental]  # Incremental mode
+#    ./dev.sh focus [type]                  # Focus: migrations, frontend, backend, todos
+#
 # ═══════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -90,134 +108,17 @@ AUTO_PHASES="${AUTO_PHASES:-3}"
 
 # Port range (auto-detected from docker-compose, or default)
 SERVICE_PORTS="${SERVICE_PORTS:-}"
-# Health check ports (external services only - excludes postgres, redis, etc.)
-HEALTH_CHECK_PORTS="${HEALTH_CHECK_PORTS:-}"
 
 # Health check configuration
 HEALTH_CHECK_PATH="${HEALTH_CHECK_PATH:-/health}"
 HEALTH_CHECK_TIMEOUT="${HEALTH_CHECK_TIMEOUT:-5}"
 SKIP_HEALTH_CHECK="${SKIP_HEALTH_CHECK:-false}"
 
-# External server configuration (for client connectivity)
-# Auto-detects server IP, can be overridden for remote testing
-SERVER_HOST="${SERVER_HOST:-$(hostname -f 2>/dev/null || hostname)}"
-SERVER_IP="${SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}' || echo '127.0.0.1')}"
-
-# Project type auto-detection
-detect_project_type() {
-  if [ -f "go.mod" ] && grep -q "module " go.mod 2>/dev/null; then
-    echo "go"
-  elif [ -f "package.json" ] && [ -d "src" ]; then
-    echo "node"
-  elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
-    echo "python"
-  elif [ -f "pom.xml" ] || [ -f "build.gradle" ]; then
-    echo "java"
-  elif [ -f "Cargo.toml" ]; then
-    echo "rust"
-  else
-    echo "unknown"
-  fi
-}
-
-PROJECT_TYPE="${PROJECT_TYPE:-$(detect_project_type)}"
-
-# Auto-detect frontend directory and port (with intelligent nested search)
-detect_frontend_config() {
-  local frontend_dir=""
-  local default_port="3000"
-  local best_score=0
-
-  # Priority 1: Direct root-level frontend with E2E framework
-  # Priority 2: Nested frontend (e.g., web/dashboard) with E2E framework
-  # Priority 3: Any directory with package.json
-
-  # Score-based detection: higher score = better match
-  for dir in $(find "$REPO_DIR" -maxdepth 3 -type d -name "node_modules" -prune -o -type f -name "package.json" -print | xargs dirname 2>/dev/null | sort -u); do
-    local rel_dir="${dir#$REPO_DIR/}"
-    [ "$rel_dir" = "$dir" ] && rel_dir="$dir"  # Handle case where already relative
-
-    local score=0
-
-    # Check for E2E framework files (highest priority)
-    [ -f "$dir/playwright.config.ts" ] && score=$((score + 100))
-    [ -f "$dir/playwright.config.js" ] && score=$((score + 100))
-    [ -f "$dir/cypress.config.ts" ] && score=$((score + 100))
-    [ -f "$dir/cypress.config.js" ] && score=$((score + 100))
-    [ -d "$dir/e2e" ] && score=$((score + 50))
-
-    # Check for test files
-    [ -d "$dir/tests" ] && score=$((score + 20))
-    [ -d "$dir/__tests__" ] && score=$((score + 20))
-
-    # Check for src directory (common in frontend projects)
-    [ -d "$dir/src" ] && score=$((score + 30))
-
-    # Prefer specific directory names
-    case "$rel_dir" in
-      */dashboard) score=$((score + 40)) ;;
-      dashboard) score=$((score + 40)) ;;
-      */frontend) score=$((score + 30)) ;;
-      frontend) score=$((score + 30)) ;;
-      */web) score=$((score + 20)) ;;
-      web) score=$((score + 20)) ;;
-    esac
-
-    # Penalize deep nesting (too deep is likely not the main frontend)
-    local depth; depth=$(echo "$rel_dir" | tr -cd '/' | wc -c)
-    score=$((score - depth * 5))
-
-    if [ $score -gt $best_score ]; then
-      best_score=$score
-      frontend_dir="$rel_dir"
-    fi
-  done
-
-  # Fallback: simple search if find didn't work
-  if [ -z "$frontend_dir" ]; then
-    for dir in "frontend" "dashboard" "web" "client" "ui" "app"; do
-      if [ -d "$REPO_DIR/$dir" ] && [ -f "$REPO_DIR/$dir/package.json" ]; then
-        frontend_dir="$dir"
-        break
-      fi
-    done
-  fi
-
-  # Detect port from package.json or docker-compose
-  if [ -n "$frontend_dir" ]; then
-    local pkg_port; pkg_port=$(grep -oP '"port":\s*\K\d+' "$REPO_DIR/$frontend_dir/package.json" 2>/dev/null || echo "")
-    [ -n "$pkg_port" ] && default_port="$pkg_port"
-  fi
-
-  # Check docker-compose for port mappings
-  if [ -f "$REPO_DIR/docker-compose.yml" ] || [ -f "$REPO_DIR/deployments/docker/docker-compose.yml" ]; then
-    local compose_file; compose_file="$REPO_DIR/docker-compose.yml"
-    [ -f "$REPO_DIR/deployments/docker/docker-compose.yml" ] && compose_file="$REPO_DIR/deployments/docker/docker-compose.yml"
-    local dc_port; dc_port=$(grep -oP '"\K\d{4,5}(?=:'"$default_port"')' "$compose_file" 2>/dev/null | head -1 || echo "")
-    [ -n "$dc_port" ] && default_port="$dc_port"
-  fi
-
-  echo "$frontend_dir:$default_port"
-}
-
-FRONTEND_CONFIG="${FRONTEND_CONFIG:-$(detect_frontend_config)}"
-FRONTEND_DIR="${FRONTEND_DIR:-${FRONTEND_CONFIG%%:*}}"
-DASHBOARD_PORT="${DASHBOARD_PORT:-${FRONTEND_CONFIG##*:}}"
-
-# E2E Testing configuration (generic)
-E2E_BASE_URL="${E2E_BASE_URL:-http://${SERVER_IP}:${DASHBOARD_PORT}}"
-E2E_ENABLED="${E2E_ENABLED:-true}"
-
-# Store detected E2E framework for reuse
-DETECTED_E2E_FRAMEWORK=""
-DETECTED_E2E_DIR=""
-
 # Timeouts per phase (seconds)
 declare -A PHASE_TIMEOUT=(
   [requirements]=600    [market_research]=900  [design]=900
   [backend]=3600        [frontend]=3600        [testing]=2400
   [qa]=600              [security]=600         [deploy]=1800
-  [e2e_production]=1200
 )
 
 BRANCH=""
@@ -337,6 +238,31 @@ safe_tr() {
 }
 
 # ═══════════════════════════════════════════════
+# RETRY WITH EXPONENTIAL BACKOFF
+# ═══════════════════════════════════════════════
+
+# Retry a command with exponential backoff: sleep $((base_delay * 2**attempt))
+# Usage: retry_with_backoff "command" max_retries base_delay
+# Returns: 0 on success, 1 on final failure
+retry_with_backoff() {
+  local command="$1" max_retries="${2:-3}" base_delay="${3:-1}"
+  local attempt=0 exit_code=0
+
+  while [ "$attempt" -lt "$max_retries" ]; do
+    attempt=$((attempt + 1))
+    if eval "$command"; then
+      return 0
+    fi
+    exit_code=$?
+    if [ "$attempt" -lt "$max_retries" ]; then
+      local delay=$((base_delay * (1 << (attempt - 1))))
+      sleep "$delay"
+    fi
+  done
+  return 1
+}
+
+# ═══════════════════════════════════════════════
 # ERROR MEMORY
 # ═══════════════════════════════════════════════
 
@@ -418,330 +344,18 @@ current_phase() { state_get _meta current_phase; }
 phase_status() { state_get "$1" status; }
 
 # ═══════════════════════════════════════════════
-# LOG ROTATION
-# ═══════════════════════════════════════════════
-
-# Rotate log files that exceed size threshold
-# Usage: rotate_logs [size_kb]
-rotate_logs() {
-  local max_size="${1:-1024}"  # Default 1MB
-  local rotated=0
-
-  for log_file in "$LIVE_LOG" "$SUP_LOG" "$PHASE_LOGS"/*.log; do
-    [ -f "$log_file" ] 2>/dev/null || continue
-
-    local size_kb
-    size_kb=$(du -k "$log_file" 2>/dev/null | cut -f1)
-    size_kb=${size_kb:-0}  # Default to 0 if empty
-
-    if [ "$size_kb" -gt "$max_size" ]; then
-      local timestamp
-      timestamp=$(date +%Y%m%d_%H%M%S)
-      local base_name; base_name=$(basename "$log_file" .log)
-      local dir_name; dir_name=$(dirname "$log_file")
-      local archived="${dir_name}/${base_name}_${timestamp}.log"
-
-      mv "$log_file" "$archived" 2>/dev/null || continue
-      touch "$log_file" 2>/dev/null || true
-
-      # Keep only last 3 rotated logs
-      ls -t "${dir_name}/${base_name}_"*.log 2>/dev/null | tail -n +4 | xargs rm -f 2>/dev/null || true
-
-      rotated=$((rotated + 1))
-      info "  Rotated: $log_file (${size_kb}KB → ${archived})"
-    fi
-  done
-
-  [ "$rotated" -gt 0 ] && log "  Rotated $rotated log file(s)"
-  return 0
-}
-
-# ═══════════════════════════════════════════════
 # PROJECT CONTEXT HELPERS
 # ═══════════════════════════════════════════════
 
-# Get actual port for a service (accounts for dynamic mappings)
-get_service_port() {
-  local service_name="$1"
-  local default_port="$2"
-
-  # Check if there's a port mapping
-  if [ -f "$DEV_DIR/port_mappings.txt" ]; then
-    local mapped
-    mapped=$(grep -o "^${default_port}:[0-9]*" "$DEV_DIR/port_mappings.txt" | cut -d: -f2)
-    if [ -n "$mapped" ]; then
-      echo "$mapped"
-      return
-    fi
-  fi
-
-  # Check container's actual port binding
-  local runtime
-  runtime=$(detect_container_runtime)
-  local container_name="openprint-${service_name}"
-
-  local actual_port
-  actual_port=$($runtime port inspect "$container_name" 2>/dev/null | grep -oP "0.0.0.0:\K\d+(?= -> 8001)" | head -1)
-  if [ -n "$actual_port" ]; then
-    echo "$actual_port"
-    return
-  fi
-
-  # Fallback to default
-  echo "$default_port"
-}
-
-# Get all service ports as a map
-get_all_service_ports() {
-  python3 - << 'PYEOF'
-import json, subprocess, sys, re
-
-services = {
-    "auth-service": "18001",
-    "registry-service": "8002",
-    "job-service": "8003",
-    "storage-service": "8004",
-    "notification-service": "18005",
-    "dashboard": "3000",
-}
-
-# Try to get actual ports from podman
-try:
-    result = subprocess.run(['podman', 'ps', '--format', 'json'], capture_output=True, text=True, timeout=5)
-    if result.returncode == 0:
-        containers = json.loads(result.stdout)
-        for container in containers:
-            # Names is a list in podman JSON output
-            names = container.get('Names', [])
-            if not isinstance(names, list):
-                names = [names]
-
-            # Extract service name from container name
-            for svc in services.keys():
-                for name in names:
-                    if svc in name:
-                        # Parse port from Ports field (array of objects in podman)
-                        ports = container.get('Ports', [])
-                        if isinstance(ports, list) and ports:
-                            # Get the first port mapping's host_port
-                            host_port = ports[0].get('host_port')
-                            if host_port:
-                                services[svc] = str(host_port)
-                                break
-except Exception as e:
-    # Fallback to defaults on error
-    pass
-
-print(json.dumps(services))
-PYEOF
-}
-
-# Check if a port is available (not in use)
-is_port_available() {
-  local port="$1"
-  # Check with ss or netstat
-  if command -v ss >/dev/null 2>&1; then
-    ss -tlnp 2>/dev/null | grep -q ":$port " && return 1
-  elif command -v netstat >/dev/null 2>&1; then
-    netstat -tlnp 2>/dev/null | grep -q ":$port " && return 1
-  fi
-  # Also check podman containers
-  podman ps -a --format "{{.Ports}}" 2>/dev/null | grep -q ":$port->" && return 1
-  return 0
-}
-
-# Find next available port starting from a given port
-find_free_port() {
-  local start_port="$1"
-  local max_attempts="${2:-100}"
-  local port=$start_port
-
-  for ((i=0; i<max_attempts; i++)); do
-    if is_port_available "$port"; then
-      echo "$port"
-      return 0
-    fi
-    port=$((port + 1))
-  done
-  return 1
-}
-
-# Get dynamic port mappings (replaces occupied ports with free ones)
-# Sets: PORT_MAPPINGS (comma-separated "original:new" pairs)
-get_dynamic_ports() {
-  local compose=""
-  [ -f "$REPO_DIR/docker-compose.yml" ] && compose="$REPO_DIR/docker-compose.yml"
-  [ -f "$REPO_DIR/deployments/docker/docker-compose.yml" ] && compose="$REPO_DIR/deployments/docker/docker-compose.yml"
-
-  if [ ! -f "$compose" ]; then
-    return 0
-  fi
-
-  # Extract ports and check availability
-  local occupied_ports=()
-  local port_mappings=()
-
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[0-9]+:[0-9]+$ ]]; then
-      local external_port="${line%%:*}"
-      if ! is_port_available "$external_port"; then
-        occupied_ports+=("$external_port")
-        local free_port
-        free_port=$(find_free_port "$external_port" 50)
-        if [ -n "$free_port" ]; then
-          port_mappings+=("$external_port:$free_port")
-          warn "  ⚠️  Port $external_port in use, using $free_port instead"
-        fi
-      fi
-    fi
-  done < <(python3 - "$compose" << 'PYEOF'
-import sys, re, yaml
-try:
-    with open(sys.argv[1]) as f:
-        data = yaml.safe_load(f)
-    for svc, cfg in data.get('services', {}).items():
-        for port in cfg.get('ports', []):
-            if isinstance(port, str):
-                m = re.match(r'^(\d+):', port)
-                if m:
-                    print(f"{m.group(1)}:{port.split(':')[1]}")
-            elif isinstance(port, int):
-                print(f"{port}:{port}")
-except:
-    pass
-PYEOF
-)
-
-  if [ ${#port_mappings[@]} -gt 0 ]; then
-    PORT_MAPPINGS=$(IFS=,; echo "${port_mappings[*]}")
-    log "  🔄 Port mappings: $PORT_MAPPINGS"
-    # Store in file for docker-compose to use
-    echo "$PORT_MAPPINGS" > "$DEV_DIR/port_mappings.txt"
-  else
-    PORT_MAPPINGS=""
-    rm -f "$DEV_DIR/port_mappings.txt"
-  fi
-}
-
-# Apply port mappings to docker-compose.yml
-apply_port_mappings() {
-  local mappings_file="$DEV_DIR/port_mappings.txt"
-  local compose="$1"
-
-  if [ ! -f "$mappings_file" ]; then
-    return 0
-  fi
-
-  log "  🔧 Applying port mappings to $compose..."
-
-  local backup="${compose}.backup"
-  cp "$compose" "$backup"
-
-  python3 - "$compose" "$mappings_file" "${compose}.tmp" << 'PYEOF'
-import sys, re
-
-compose_file = sys.argv[1]
-mappings_file = sys.argv[2]
-output_file = sys.argv[3]
-
-# Read mappings
-mappings = {}
-with open(mappings_file) as f:
-    for pair in f.read().strip().split(','):
-        if ':' in pair:
-            orig, new = pair.split(':')
-            mappings[orig] = new
-
-# Apply mappings to compose file
-with open(compose_file, 'r') as f:
-    content = f.read()
-
-for orig, new in mappings.items():
-    # Replace port mappings "orig:cont" with "new:cont"
-    content = re.sub(rf'({re.escape(orig)}):(\d+)', rf'{new}:\2', content)
-
-with open(output_file, 'w') as f:
-    f.write(content)
-
-print(f"Applied {len(mappings)} port mappings")
-PYEOF
-
-  mv "${compose}.tmp" "$compose"
-  log "  ✓ Port mappings applied"
-}
-
-# Detect service ports from docker-compose.yml
-# Also sets HEALTH_CHECK_PORTS (external services only)
 detect_service_ports() {
   local compose=""
   [ -f "$REPO_DIR/docker-compose.yml" ] && compose="$REPO_DIR/docker-compose.yml"
   [ -f "$REPO_DIR/deployments/docker/docker-compose.yml" ] && compose="$REPO_DIR/deployments/docker/docker-compose.yml"
-
   if [ -n "$compose" ] && [ -f "$compose" ]; then
-    # Extract all external port mappings (host:container)
-    # Skip commented-out ports and internal-only services
-    SERVICE_PORTS=$(python3 - "$compose" << 'PYEOF' 2>/dev/null || true
-import sys, re
-import yaml
-
-try:
-    with open(sys.argv[1]) as f:
-        data = yaml.safe_load(f)
-
-    health_ports = []
-    all_ports = []
-
-    services = data.get('services', {})
-    for svc_name, svc_config in services.items():
-        # Skip internal infrastructure services for health checks
-        if svc_name in ('postgres', 'redis', 'prometheus', 'alertmanager', 'grafana', 'jaeger'):
-            continue
-
-        ports = svc_config.get('ports', [])
-        for port in ports:
-            if isinstance(port, str):
-                # Parse "host:container" or "host:container/protocol"
-                match = re.match(r'^(\d+):', port)
-                if match:
-                    host_port = int(match.group(1))
-                    all_ports.append(host_port)
-                    # Add to health check ports (non-infrastructure services)
-                    health_ports.append(host_port)
-            elif isinstance(port, int):
-                all_ports.append(port)
-                health_ports.append(port)
-
-    # Output sorted unique ports
-    all_ports = sorted(set(all_ports))
-    health_ports = sorted(set(health_ports))
-
-    print(' '.join(map(str, all_ports)))
-    print('HEALTH_PORTS:' + ' '.join(map(str, health_ports)))
-except Exception as e:
-    # Fallback to regex parsing if yaml fails
-    with open(sys.argv[1]) as f:
-        content = f.read()
-        ports = re.findall(r'"\s*(\d{4,5}):(\d+)', content)
-        # Filter out common internal service ports
-        filtered = [p for p in ports if p[0] not in ('15432', '16379', '5432', '6379')]
-        all_ports = sorted(set([int(p[0]) for p in ports]))
-        health_ports = sorted(set([int(p[0]) for p in filtered]))
-        print(' '.join(map(str, all_ports)))
-        print('HEALTH_PORTS:' + ' '.join(map(str, health_ports)))
-PYEOF
-)
+    SERVICE_PORTS=$(grep -oP '"\K\d{4,5}(?=:\d)' "$compose" 2>/dev/null | sort -u | tr '\n' ' ' || true)
   fi
-
-  # Parse health ports from output
-  HEALTH_CHECK_PORTS=$(echo "$SERVICE_PORTS" | grep -o 'HEALTH_PORTS:[0-9 ]*' | cut -d: -f2- || echo "")
-  SERVICE_PORTS=$(echo "$SERVICE_PORTS" | grep -v '^HEALTH_PORTS:' || echo "$SERVICE_PORTS")
-
-  # Fallback if detection failed
   if [ -z "$SERVICE_PORTS" ]; then
-    SERVICE_PORTS="3000 8002 8003 8004 8005 9090 9091 9092 9093 9094 9095 18001 18005"
-  fi
-  if [ -z "$HEALTH_CHECK_PORTS" ]; then
-    HEALTH_CHECK_PORTS="3000 8002 8003 8004 8005 18001 18005"
+    SERVICE_PORTS="8500 8501 8502 8503 8504 8505 8506"
   fi
 }
 
@@ -789,745 +403,6 @@ except:
     print(open(f).read()[:max_c])
 PYEOF
   fi
-}
-
-# ═══════════════════════════════════════════════
-# EXTERNAL ACCESS HELPERS (Generic)
-# ═══════════════════════════════════════════════
-
-# Get server's external IP for client connectivity
-get_external_ip() {
-  # Try multiple methods to get external IP
-  local ip=""
-
-  # Method 1: From environment variable
-  [ -n "$SERVER_IP" ] && echo "$SERVER_IP" && return
-
-  # Method 2: From hostname -I
-  ip=$(hostname -I 2>/dev/null | awk '{print $1}')
-  [ -n "$ip" ] && echo "$ip" && return
-
-  # Method 3: From ip command
-  ip=$(ip route get 1 2>/dev/null | awk '{print $7}' | head -1)
-  [ -n "$ip" ] && echo "$ip" && return
-
-  # Method 4: From ifconfig
-  ip=$(ifconfig 2>/dev/null | grep "inet " | grep -v "127.0.0.1" | head -1 | awk '{print $2}')
-  [ -n "$ip" ] && echo "$ip" && return
-
-  # Fallback
-  echo "127.0.0.1"
-}
-
-# Check if port is accessible from external
-check_external_access() {
-  local port="$1"
-  local host="${2:-0.0.0.0}"
-
-  # Check if service is listening on all interfaces
-  if command -v ss >/dev/null 2>&1; then
-    ss -tlnp 2>/dev/null | grep -q ":$port " || return 1
-  elif command -v netstat >/dev/null 2>&1; then
-    netstat -tlnp 2>/dev/null | grep -q ":$port " || return 1
-  fi
-
-  # Test connectivity
-  curl -sf --max-time 5 "http://$(get_external_ip):$port${HEALTH_CHECK_PATH}" >/dev/null 2>&1
-}
-
-# Generate access report for client connection
-generate_access_report() {
-  # Ensure artifacts directory exists
-  [ -d "$ARTIFACTS" ] || mkdir -p "$ARTIFACTS" 2>/dev/null || {
-    warn "  Cannot create artifacts directory"
-    return 1
-  }
-
-  local report_file="${ARTIFACTS}/access_report.json"
-  local external_ip
-  external_ip=$(get_external_ip 2>/dev/null) || external_ip="localhost"
-
-  # Get actual dashboard port from running containers (dynamic)
-  service_ports_json=$(get_all_service_ports 2>/dev/null || echo '{}')
-  detected_dashboard_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','3000'))" 2>/dev/null || echo "3000")
-
-  python3 - "$report_file" "$external_ip" "${detected_dashboard_port}" "${SERVICE_PORTS:-}" "${PROJECT_NAME:-docker}" << 'PYEOF'
-import json, sys, socket
-from datetime import datetime
-
-report_file, ext_ip, dash_port, svc_ports_str, proj_name = sys.argv[1:]
-
-# Parse service ports
-svc_ports = svc_ports_str.split() if svc_ports_str else []
-
-# Check which ports are accessible
-accessible_ports = []
-for port in svc_ports:
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2)
-        result = s.connect_ex(('127.0.0.1', int(port)))
-        if result == 0:
-            accessible_ports.append(int(port))
-        s.close()
-    except:
-        pass
-
-report = {
-    "generated_at": datetime.now().isoformat(),
-    "project": proj_name,
-    "server": {
-        "hostname": socket.gethostname(),
-        "external_ip": ext_ip,
-        "localhost": "127.0.0.1"
-    },
-    "services": {
-        "dashboard": {
-            "url": f"http://{ext_ip}:{dash_port}",
-            "local_url": f"http://localhost:{dash_port}",
-            "port": int(dash_port),
-            "accessible": int(dash_port) in accessible_ports
-        },
-        "api_ports": [int(p) for p in svc_ports if p != dash_port],
-        "all_accessible_ports": accessible_ports
-    },
-    "client_connection": {
-        "base_url": f"http://{ext_ip}:{dash_port}",
-        "api_base": f"http://{ext_ip}",
-        "note": "Ensure firewall allows inbound connections to the ports listed above"
-    }
-}
-
-json.dump(report, open(report_file, 'w'), indent=2)
-print(f"Access report saved to: {report_file}")
-PYEOF
-}
-
-# ═══════════════════════════════════════════════
-# E2E TESTING HELPERS (Generic)
-# ═══════════════════════════════════════════════
-
-# Detect E2E framework with intelligent recursive search
-# Sets: DETECTED_E2E_FRAMEWORK, DETECTED_E2E_DIR
-# Returns: 0 if found, 1 if not found
-detect_e2e_framework() {
-  # Use cached result if available
-  if [ -n "$DETECTED_E2E_FRAMEWORK" ]; then
-    return 0
-  fi
-
-  info "  🔍 Searching for E2E test framework..."
-
-  # Search in priority order
-  local frameworks=(
-    "playwright.config.ts:playwright"
-    "playwright.config.js:playwright"
-    "cypress.config.ts:cypress"
-    "cypress.config.js:cypress"
-  )
-
-  local best_match=""
-  local best_framework=""
-  local best_score=0
-
-  # First, check the detected frontend directory
-  if [ -n "$FRONTEND_DIR" ]; then
-    local frontend_path="$REPO_DIR/$FRONTEND_DIR"
-    for fw in "${frameworks[@]}"; do
-      local config="${fw%%:*}"
-      local framework="${fw##*:}"
-      if [ -f "$frontend_path/$config" ]; then
-        DETECTED_E2E_FRAMEWORK="$framework"
-        DETECTED_E2E_DIR="$frontend_path"
-        info "  ✓ Found $framework at $FRONTEND_DIR/"
-        return 0
-      fi
-    done
-  fi
-
-  # Recursive search for E2E configs (up to 3 levels deep)
-  while IFS= read -r -d '' config_file; do
-    local rel_path="${config_file#$REPO_DIR/}"
-    local dir; dir=$(dirname "$config_file")
-    local filename; filename=$(basename "$config_file")
-    local framework=""
-
-    case "$filename" in
-      playwright.config.ts|playwright.config.js) framework="playwright" ;;
-      cypress.config.ts|cypress.config.js) framework="cypress" ;;
-    esac
-
-    # Score: prefer closer to root, prefer with e2e/ directory
-    local score=0
-    [ -d "$dir/e2e" ] && score=$((score + 50))
-    [ -n "$framework" ] && score=$((score + 100))
-
-    if [ $score -gt $best_score ]; then
-      best_score=$score
-      best_match="$dir"
-      best_framework="$framework"
-    fi
-  done < <(find "$REPO_DIR" -maxdepth 4 -type f \( -name "playwright.config.ts" -o -name "playwright.config.js" -o -name "cypress.config.ts" -o -name "cypress.config.js" \) -print0 2>/dev/null | grep -vz node_modules)
-
-  if [ -n "$best_framework" ]; then
-    DETECTED_E2E_FRAMEWORK="$best_framework"
-    DETECTED_E2E_DIR="$best_match"
-    local rel_dir="${best_match#$REPO_DIR/}"
-    info "  ✓ Found $best_framework at $rel_dir/"
-    return 0
-  fi
-
-  # Fallback: check for .e2e.ts or .e2e.js files
-  if find "$REPO_DIR" -maxdepth 4 -name "*.e2e.ts" -o -name "*.e2e.js" 2>/dev/null | grep -v node_modules | head -1 | read -r e2e_file; then
-    local e2e_dir; e2e_dir=$(dirname "$e2e_file")
-    DETECTED_E2E_FRAMEWORK="generic"
-    DETECTED_E2E_DIR="$e2e_dir"
-    info "  ✓ Found generic E2E test files"
-    return 0
-  fi
-
-  warn "  ⚠️  No E2E framework detected - will use generic smoke tests"
-  DETECTED_E2E_FRAMEWORK="none"
-  return 1
-}
-
-# Self-healing: Install missing E2E dependencies
-heal_e2e_dependencies() {
-  local framework="$1"
-  local e2e_dir="$2"
-
-  case "$framework" in
-    playwright)
-      if ! command -v npx &>/dev/null; then
-        warn "  npx not found - installing Node.js dependencies..."
-        return 1
-      fi
-
-      # Check if playwright is installed
-      if ! cd "$e2e_dir" && npx playwright --version &>/dev/null; then
-        info "  📦 Installing Playwright..."
-        cd "$e2e_dir" || return 1
-
-        # First, ensure node_modules exist
-        if [ ! -d "node_modules" ]; then
-          log "  Running npm install..."
-          npm install 2>&1 | tail -5 || {
-            err "  Failed to install npm dependencies"
-            return 1
-          }
-        fi
-
-        # Install Playwright browsers
-        log "  Installing Playwright browsers..."
-        npx playwright install --with-deps 2>&1 | tail -3 || {
-          warn "  Browser installation had issues, but continuing..."
-        }
-      fi
-      ;;
-    cypress)
-      if ! cd "$e2e_dir" && npx cypress --version &>/dev/null; then
-        info "  📦 Installing Cypress..."
-        cd "$e2e_dir" || return 1
-        [ ! -d "node_modules" ] && npm install 2>&1 | tail -5
-        npx cypress install 2>&1 | tail -3 || true
-      fi
-      ;;
-  esac
-  return 0
-}
-
-# Detect E2E framework and run tests (with self-healing)
-run_e2e_tests() {
-  local base_url="$1"
-  local report_file="$2"
-
-  log "  🧪 Running E2E tests against: $base_url"
-
-  # Detect framework
-  detect_e2e_framework
-  local framework="$DETECTED_E2E_FRAMEWORK"
-  local e2e_dir="$DETECTED_E2E_DIR"
-
-  case "$framework" in
-    playwright)
-      # Self-heal: install dependencies if needed
-      heal_e2e_dependencies "playwright" "$e2e_dir" || {
-        warn "  Dependency healing failed, attempting anyway..."
-      }
-      run_playwright_e2e "$base_url" "$report_file" "$e2e_dir"
-      return $?
-      ;;
-    cypress)
-      heal_e2e_dependencies "cypress" "$e2e_dir" || true
-      run_cypress_e2e "$base_url" "$report_file" "$e2e_dir"
-      return $?
-      ;;
-    generic)
-      run_ai_e2e "$base_url" "$report_file" "true"
-      return $?
-      ;;
-    *)
-      warn "  No E2E framework detected - running AI-powered smoke tests"
-      run_ai_e2e "$base_url" "$report_file" "true"
-      return $?
-      ;;
-  esac
-}
-
-# Run Playwright E2E tests
-run_playwright_e2e() {
-  local base_url="$1"
-  local report_file="$2"
-  local e2e_dir="${3:-$REPO_DIR/$FRONTEND_DIR}"
-
-  log "  🎭 Using Playwright at: ${e2e_dir#$REPO_DIR/}"
-
-  cd "$e2e_dir" || {
-    err "  Cannot access E2E directory: $e2e_dir"
-    return 1
-  }
-
-  # Ensure node_modules exist
-  if [ ! -d "node_modules" ]; then
-    log "  📦 Installing npm dependencies..."
-    npm install 2>&1 | tail -5 || {
-      err "  Failed to install dependencies"
-      return 1
-    }
-  fi
-
-  # Ensure browsers are installed
-  if ! npx playwright --version &>/dev/null; then
-    log "  🌐 Installing Playwright browsers..."
-    npx playwright install --with-deps 2>&1 | tail -3 || true
-  fi
-
-  # Disable webServer since we're testing against deployed instance
-  export PW_DISABLE_WEB_SERVER=1
-  export BASE_URL="$base_url"
-
-  local rc=0
-  log "  Running tests with BASE_URL=$base_url (set via global-setup.ts)"
-  npx playwright test \
-    --reporter=json \
-    --reporter=list \
-    --output="$ARTIFACTS/playwright-report" 2>&1 | tee "$PHASE_LOGS/e2e_production.log" | tail -40 || rc=$?
-
-  # Parse results - check both output locations
-  local results_json="$ARTIFACTS/playwright-report/results.json"
-  if [ ! -f "$results_json" ]; then
-    results_json="$e2e_dir/playwright-report/results.json"
-  fi
-
-  if [ -f "$results_json" ]; then
-    python3 - "$results_json" "$report_file" << 'PYEOF' 2>/dev/null || true
-import json, sys
-from datetime import datetime
-
-results_file = sys.argv[1]
-report_file = sys.argv[2]
-
-try:
-    with open(results_file) as f:
-        data = json.load(f)
-
-    # Handle both old and new Playwright result formats
-    suites = data.get('suites', [])
-    total = 0
-    passed = 0
-    failed = 0
-    skipped = 0
-
-    for suite in suites:
-        for spec in suite.get('specs', []):
-            for test in spec.get('tests', []):
-                total += 1
-                status = test.get('results', [{}])[0].get('status', 'unknown')
-                if status == 'passed':
-                    passed += 1
-                elif status == 'failed':
-                    failed += 1
-                elif status in ('skipped', 'interrupted'):
-                    skipped += 1
-
-    report = {
-        "timestamp": datetime.now().isoformat(),
-        "framework": "playwright",
-        "summary": {"total": total, "passed": passed, "failed": failed, "skipped": skipped},
-        "success_rate": round(passed / total * 100, 1) if total > 0 else 0,
-        "status": "passed" if failed == 0 else "failed"
-    }
-
-    with open(report_file, 'w') as f:
-        json.dump(report, f, indent=2)
-    print(f"Playwright results: {passed}/{total} passed")
-except Exception as e:
-    with open(report_file, 'w') as f:
-        json.dump({"error": str(e), "status": "error", "framework": "playwright"}, f, indent=2)
-    print(f"Error parsing results: {e}")
-PYEOF
-  else
-    warn "  ⚠️  No Playwright results found at expected locations"
-    # Create a report from the log output
-    python3 - "$report_file" "$PHASE_LOGS/e2e_production.log" << 'PYEOF' 2>/dev/null || true
-import json, sys
-from datetime import datetime
-import re
-
-report_file = sys.argv[1]
-log_file = sys.argv[2]
-
-report = {
-    "timestamp": datetime.now().isoformat(),
-    "framework": "playwright",
-    "summary": {"total": 0, "passed": 0, "failed": 0, "skipped": 0},
-    "status": "unknown"
-}
-
-try:
-    with open(log_file) as f:
-        content = f.read()
-        # Try to extract pass/fail from the log
-        passed = len(re.findall(r'passed', content, re.IGNORECASE))
-        failed = len(re.findall(r'failed', content, re.IGNORECASE))
-        report["summary"]["passed"] = min(passed, 100)  # reasonable cap
-        report["summary"]["failed"] = min(failed, 100)
-        report["status"] = "failed" if failed > 0 else "passed"
-except Exception:
-    pass
-
-with open(report_file, 'w') as f:
-    json.dump(report, f, indent=2)
-PYEOF
-  fi
-
-  return $rc
-}
-
-# Run Cypress E2E tests
-run_cypress_e2e() {
-  local base_url="$1"
-  local report_file="$2"
-  local e2e_dir="${3:-$REPO_DIR/$FRONTEND_DIR}"
-
-  log "  🌲 Using Cypress at: ${e2e_dir#$REPO_DIR/}"
-
-  cd "$e2e_dir" || {
-    err "  Cannot access E2E directory: $e2e_dir"
-    return 1
-  }
-
-  # Ensure node_modules exist
-  if [ ! -d "node_modules" ]; then
-    log "  📦 Installing npm dependencies..."
-    npm install 2>&1 | tail -5 || {
-      err "  Failed to install dependencies"
-      return 1
-    }
-  fi
-
-  export CYPRESS_baseUrl="$base_url"
-  local rc=0
-  npx cypress run --config baseUrl="$base_url" --reporter=json 2>&1 | tee "$PHASE_LOGS/e2e_production.log" | tail -20 || rc=$?
-
-  # Parse Cypress results if available
-  return $rc
-}
-
-# Generic E2E test runner (uses curl for smoke tests)
-run_generic_e2e() {
-  local base_url="$1"
-  local report_file="$2"
-
-  log "  🧪 Running generic smoke tests..."
-
-  local passed=0 failed=0
-  local results=()
-
-  # Define health checks
-  declare -A checks=(
-    ["homepage"]="$base_url"
-    ["health"]="${base_url}${HEALTH_CHECK_PATH}"
-  )
-
-  # Try service health endpoints if they exist
-  for port in 8001 8002 8003 8004 8005; do
-    checks["service-port-$port"]="http://${SERVER_IP}:${port}/health"
-  done
-
-  # Run checks
-  for name in "${!checks[@]}"; do
-    local url="${checks[$name]}"
-    info "    Checking $name: $url"
-    if curl -sf --max-time 5 "$url" >/dev/null 2>&1; then
-      ((passed++))
-      results+=("$name:passed")
-      log "    ✓ $name OK"
-    else
-      ((failed++))
-      results+=("$name:failed")
-      log "    ✗ $name FAILED"
-    fi
-  done
-
-  # Check if common API endpoints respond (even with 404, means server is up)
-  for endpoint in "/api" "/api/v1" "/api/health"; do
-    local url="${base_url}${endpoint}"
-    local status; status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" 2>/dev/null || echo "000")
-    if [ "$status" != "000" ]; then
-      ((passed++))
-      results+=("api-endpoint-${endpoint##*/}:passed")
-      log "    ✓ API endpoint $endpoint responds (HTTP $status)"
-    fi
-  done
-
-  # Generate report
-  python3 - "$report_file" "$passed" "$failed" "${results[@]}" << 'PYEOF'
-import json, sys
-from datetime import datetime
-
-report_file = sys.argv[1]
-passed = int(sys.argv[2])
-failed = int(sys.argv[3])
-results = sys.argv[4:] if len(sys.argv) > 4 else []
-
-total = passed + failed
-checks = []
-for r in results:
-    name, status = r.split(':', 1) if ':' in r else (r, 'unknown')
-    checks.append({"check": name, "status": status})
-
-report = {
-    "timestamp": datetime.now().isoformat(),
-    "framework": "generic/smoke",
-    "summary": {"total": total, "passed": passed, "failed": failed, "skipped": 0},
-    "checks": checks,
-    "success_rate": round(passed / total * 100, 1) if total > 0 else 0,
-    "status": "passed" if failed == 0 else "partial"
-}
-
-with open(report_file, 'w') as f:
-    json.dump(report, f, indent=2)
-
-print(f"Smoke tests: {passed}/{total} passed")
-PYEOF
-
-  return 0
-}
-
-# AI-Powered E2E test runner - intelligently tests and can self-heal
-run_ai_e2e() {
-  local base_url="$1"
-  local report_file="$2"
-  local auto_fix="${3:-true}"
-
-  log "  🤖 Running AI-powered E2E tests..."
-
-  local runtime
-  runtime=$(detect_container_runtime)
-  local compose_cmd
-  compose_cmd=$(detect_compose_command)
-
-  # Get actual ports from running containers
-  local service_ports_json
-  service_ports_json=$(get_all_service_ports)
-
-  # Build dynamic service endpoints
-  local dashboard_port auth_port registry_port job_port storage_port notification_port
-  dashboard_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','3000'))")
-  auth_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('auth-service','18001'))")
-  registry_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('registry-service','8002'))")
-  job_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('job-service','8003'))")
-  storage_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('storage-service','8004'))")
-  notification_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('notification-service','18005'))")
-
-  log "  📍 Detected ports: Dashboard:$dashboard_port Auth:$auth_port Registry:$registry_port Job:$job_port Storage:$storage_port Notification:$notification_port"
-
-  # Define service endpoints with dynamic ports
-  declare -A service_checks=(
-    ["Dashboard"]="http://localhost:$dashboard_port"
-    ["Auth Service"]="http://localhost:$auth_port/health"
-    ["Registry Service"]="http://localhost:$registry_port/health"
-    ["Job Service"]="http://localhost:$job_port/health"
-    ["Storage Service"]="http://localhost:$storage_port/health"
-    ["Notification Service"]="http://localhost:$notification_port/health"
-  )
-
-  local passed=0 failed=0
-  local results=()
-  local failed_services=()
-  local test_output=""
-
-  # Test each service
-  for service in "${!service_checks[@]}"; do
-    local url="${service_checks[$service]}"
-    info "    Testing $service: $url"
-
-    # Try health endpoint first
-    local http_code="" response=""
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" 2>/dev/null || echo "000")
-
-    if [ "$http_code" != "000" ]; then
-      ((passed++))
-      results+=("$service:passed:$http_code")
-      log "    ✓ $service (HTTP $http_code)"
-      test_output+="✓ $service responded with HTTP $http_code\n"
-
-      # Try to get actual response data for API services
-      if [[ "$url" == *"/health" ]]; then
-        local health_data
-        health_data=$(curl -s --max-time 5 "$url" 2>/dev/null || echo "")
-        if [ -n "$health_data" ]; then
-          test_output+="  Health: $health_data\n"
-        fi
-      fi
-    else
-      ((failed++))
-      results+=("$service:failed:000")
-      log "    ✗ $service FAILED (no response)"
-      test_output+="✗ $service - No response on $url\n"
-      failed_services+=("$service|$url")
-    fi
-  done
-
-  # Test API functionality if services are up
-  if [ $passed -gt 0 ]; then
-    log "  🧪 Testing API functionality..."
-
-    # Test authentication endpoint (using dynamic port)
-    local auth_response
-    auth_response=$(curl -s --max-time 5 "http://localhost:$auth_port/api/v1/auth/login" \
-      -H "Content-Type: application/json" \
-      -d '{"email":"test@example.com","password":"test123"}' 2>/dev/null || echo "")
-
-    if [ -n "$auth_response" ]; then
-      test_output+="\n📝 Auth endpoint test:\n$auth_response\n"
-      # Check if response contains expected fields
-      if echo "$auth_response" | grep -qE '(token|error|message|status)'; then
-        ((passed++))
-        test_output+="✓ Auth API is functional\n"
-      fi
-    fi
-
-    # Test registry endpoint
-    local registry_response
-    registry_response=$(curl -s --max-time 5 "http://localhost:8002/api/v1/printers" 2>/dev/null || echo "")
-    test_output+="\n📝 Registry endpoint test:\n${registry_response:0:200}...\n"
-  fi
-
-  # AI Analysis of failures
-  if [ ${#failed_services[@]} -gt 0 ] && [ "$auto_fix" = true ]; then
-    log "  🧠 AI analyzing failures..."
-
-    # Get container logs for failed services
-    local diagnostic_data=""
-    for failed in "${failed_services[@]}"; do
-      local svc_name="${failed%%|*}"
-      local container_name="openprint-$(echo "$svc_name" | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g' | sed 's/service//')"
-      local logs
-      logs=$($runtime logs --tail 20 "$container_name" 2>/dev/null || echo "No logs available")
-      diagnostic_data+="$svc_name:\n$logs\n\n"
-    done
-
-    # Use AI to diagnose and potentially fix
-    local diagnosis_file="$PHASE_LOGS/e2e_diagnosis.json"
-    claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
-      "Analyze these E2E test failures for the OpenPrint project and provide a JSON response:
-
-FAILED SERVICES:
-$(printf '%s\n' "${failed_services[@]}")
-
-SERVICE LOGS:
-$diagnostic_data
-
-TEST OUTPUT:
-$test_output
-
-Respond with ONLY this JSON format:
-{
-  \"diagnosis\": \"brief explanation of what's wrong\",
-  \"root_cause\": \"primary cause (e.g., 'missing dependency', 'port conflict', 'configuration error', 'container crash')\",
-  \"fix_commands\": [\"command to fix issue 1\", \"command to fix issue 2\"],
-  \"verification_url\": \"url to check after fix\",
-  \"severity\": \"low|medium|high|critical\"
-}" > "$diagnosis_file" 2>/dev/null || true
-
-    # Parse and apply fixes if low/medium severity
-    if [ -f "$diagnosis_file" ]; then
-      local fix_commands
-      fix_commands=$(python3 -c "
-import json, sys
-try:
-    with open('$diagnosis_file') as f:
-        data = json.load(f)
-    if data.get('severity', 'high') in ['low', 'medium']:
-        cmds = data.get('fix_commands', [])
-        for cmd in cmds[:2]:  # Max 2 fixes
-            print(cmd)
-except:
-    pass
-" 2>/dev/null || "")
-
-      if [ -n "$fix_commands" ]; then
-        log "  🔧 Applying AI-recommended fixes..."
-        for cmd in $fix_commands; do
-          log "    Running: $cmd"
-          eval "$cmd" 2>&1 | tail -3 || true
-          sleep 2
-        done
-
-        # Re-check services after fixes
-        log "  🔄 Re-checking services after fixes..."
-        sleep 5
-      fi
-    fi
-  fi
-
-  # Generate comprehensive report
-  python3 - "$report_file" "$passed" "$failed" "${results[@]}" "$test_output" << 'PYEOF'
-import json, sys
-from datetime import datetime
-
-report_file = sys.argv[1]
-passed = int(sys.argv[2])
-failed = int(sys.argv[3])
-results = sys.argv[4] if len(sys.argv) > 4 else []
-test_output = sys.argv[5] if len(sys.argv) > 5 else ""
-
-total = passed + failed
-checks = []
-for r in results:
-    parts = r.split(':')
-    if len(parts) >= 2:
-        checks.append({"service": parts[0], "status": parts[1], "code": parts[2] if len(parts) > 2 else ""})
-
-report = {
-    "timestamp": datetime.now().isoformat(),
-    "framework": "ai-enhanced/smoke",
-    "summary": {"total": total, "passed": passed, "failed": failed, "skipped": 0},
-    "checks": checks,
-    "test_output": test_output,
-    "success_rate": round(passed / total * 100, 1) if total > 0 else 0,
-    "status": "passed" if failed == 0 else "partial" if passed > 0 else "failed",
-    "ready_for_production": failed == 0
-}
-
-with open(report_file, 'w') as f:
-    json.dump(report, f, indent=2)
-
-print(f"AI E2E Tests: {passed}/{total} passed ({report['success_rate']}%)")
-PYEOF
-
-  # Display summary
-  if [ $failed -eq 0 ]; then
-    log "  ✅ All services operational!"
-  elif [ $passed -gt 0 ]; then
-    warn "  ⚠️  Some services degraded: $failed failed"
-  else
-    err "  ❌ Critical: All services down!"
-  fi
-
-  return $failed
 }
 
 # ═══════════════════════════════════════════════
@@ -1815,44 +690,39 @@ run_claude() {
 # Primary code execution: retry + prompt shrink + commit
 claude_do() {
   local role_name="$1" prompt="$2" log_file="$3"
-  local timeout="${4:-1800}"  # Increased default: 30 minutes (was 900s)
+  local timeout="${4:-900}"
   team "$role_name" "Working..."
   cd "$REPO_DIR"
 
-  # Truncate prompt if too large (reduced threshold for better reliability)
+  # Truncate prompt if too large
   local prompt_len=${#prompt}
-  if [ "$prompt_len" -gt 8000 ]; then
-    warn "  Prompt too large (${prompt_len} chars) — truncating to 8000"
-    prompt="${prompt:0:8000}
+  if [ "$prompt_len" -gt 12000 ]; then
+    warn "  Prompt too large (${prompt_len} chars) — truncating to 12000"
+    prompt="${prompt:0:12000}
 
 [TRUNCATED — original was ${prompt_len} chars. Focus on the most important parts above.]"
   fi
 
-  local attempt=0 ok=false exit_code=0 backoff=5
-  while [ $attempt -lt 3 ]; do
+  local attempt=0 exit_code=0 ok=false
+  _claude_retry_cmd() {
     attempt=$((attempt + 1))
-    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/3 (after ${backoff}s delay)"
-
+    [ $attempt -gt 1 ] && warn "  ↻ Attempt $attempt/3"
     if timeout "$timeout" claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
       "$prompt" 2>&1 | tee "$log_file"; then
-      ok=true; break
+      ok=true; return 0
     fi
-
     exit_code=$?
     if [ $exit_code -eq 124 ]; then
-      warn "  ⏰ Timeout after ${timeout}s — increasing timeout for retry"
-      timeout=$((timeout + 600))  # Add 10 minutes for retry
+      warn "  ⏰ Timeout after ${timeout}s"
     elif [ $exit_code -ge 137 ]; then
-      warn "  💀 Killed (exit $exit_code) — likely OOM or rate limit, reducing prompt"
-      prompt="${prompt:0:4000}
+      warn "  💀 Killed (exit $exit_code) — likely OOM or rate limit"
+      prompt="${prompt:0:6000}
 
-[REDUCED — Claude was killed. Simplified prompt for retry.]"
+[REDUCED — Claude was killed. Simplified prompt.]"
     fi
-
-    # Exponential backoff before retry
-    [ $attempt -lt 3 ] && sleep "$backoff"
-    backoff=$((backoff * 2))
-  done
+    return 1
+  }
+  retry_with_backoff "_claude_retry_cmd" 3 5
 
   if [ "$ok" = true ]; then
     cd "$REPO_DIR"; git add -A
@@ -1873,14 +743,9 @@ claude_do() {
 
 docker_build_all() {
   cd "$REPO_DIR"
-  local runtime
-  runtime=$(detect_container_runtime)
   local ok=true total=0 built=0 failed=0 max_failures=3
   for df in deployments/docker/Dockerfile.*; do [ -f "$df" ] && total=$((total+1)); done
   [ "$total" -eq 0 ] && { warn "No Dockerfiles found"; return 0; }
-
-  # Rotate docker_build.log if it's getting large
-  rotate_logs 500
 
   local idx=0
   for df in deployments/docker/Dockerfile.*; do
@@ -1896,7 +761,7 @@ docker_build_all() {
     local t0; t0=$(date +%s)
     log "  🐳 Building ($idx/$total): $svc"
     local build_rc=0
-    timeout 300 $runtime build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tee -a "$PHASE_LOGS/docker_build.log" | tail -5 || build_rc=$?
+    timeout 300 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tee -a "$PHASE_LOGS/docker_build.log" | tail -5 || build_rc=$?
     local elapsed=$(( $(date +%s) - t0 ))
     if [ $build_rc -eq 0 ]; then
       log "  ✓ Built: $svc (${elapsed}s)"; built=$((built+1))
@@ -1910,281 +775,33 @@ $(tail -15 "$PHASE_LOGS/docker_build.log" 2>/dev/null)
 
 Fix the Dockerfile or source code. Rebuild should pass." \
         "$PHASE_LOGS/docker_fix_${svc}.log" 600
-      timeout 300 $runtime build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
+      timeout 300 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
     fi
   done
   log "  Docker: $built/$total built, $failed failed"
   $ok
 }
 
-# Clean up containers with stale dependencies (orphaned references)
-cleanup_stale_containers() {
-  local compose_file="$1"
-  local project_name="${PROJECT_NAME:-docker}"
-
-  log "  🔧 Checking for stale containers..."
-
-  # Get runtime from detect_container_runtime()
-  local runtime
-  runtime=$(detect_container_runtime)
-
-  # Get list of containers for this project
-  local containers
-  containers=$($runtime ps -a --format "{{.Names}}" --filter "label=com.docker.compose.project=$project_name" 2>/dev/null || true)
-
-  if [ -z "$containers" ]; then
-    return 0
-  fi
-
-  local stale_count=0
-  for container in $containers; do
-    # Check if container has stale dependencies by attempting to inspect it
-    # If inspection fails with dependency error, remove it
-    if ! $runtime inspect "$container" &>/dev/null; then
-      log "  🗑️  Removing stale container: $container"
-      $runtime rm -f "$container" 2>/dev/null || true
-      stale_count=$((stale_count + 1))
-    fi
-  done
-
-  # Also check for containers in "Created" or "Exited" states but failing to start
-  for container in $containers; do
-    local state
-    state=$($runtime ps -a --format "{{.State}}" --filter "name=$container" 2>/dev/null || echo "")
-    if [ "$state" = "Created" ] || [ "$state" = "Exited" ]; then
-      # Check if it has been in this state for more than 5 minutes
-      local created_since
-      created_since=$($runtime ps -a --format "{{.CreatedAt}}" --filter "name=$container" 2>/dev/null || echo "")
-      if [ -n "$created_since" ]; then
-        log "  🗑️  Removing stuck container ($state state): $container"
-        $runtime rm -f "$container" 2>/dev/null || true
-        stale_count=$((stale_count + 1))
-      fi
-    fi
-  done
-
-  if [ $stale_count -gt 0 ]; then
-    log "  ✓ Removed $stale_count stale container(s)"
-  fi
-}
-
-# Detect container runtime (docker or podman)
-detect_container_runtime() {
-  if command -v podman >/dev/null 2>&1; then
-    echo "podman"
-  elif command -v docker >/dev/null 2>&1; then
-    echo "docker"
-  else
-    echo "docker"  # Default fallback
-  fi
-}
-
-# Detect compose command (docker-compose, podman-compose, or docker compose)
-detect_compose_command() {
-  if command -v podman-compose >/dev/null 2>&1; then
-    echo "podman-compose"
-  elif docker compose version >/dev/null 2>&1; then
-    echo "docker compose"
-  elif command -v docker-compose >/dev/null 2>&1; then
-    echo "docker-compose"
-  else
-    echo "docker compose"  # Default fallback (plugin is most common now)
-  fi
-}
-
-# Verify container health directly (works around podman-compose healthcheck parsing issues)
-verify_container_health() {
-  local container_name="$1"
-  local health_url="$2"
-  local runtime
-  runtime=$(detect_container_runtime)
-
-  # Check if container is running
-  if ! $runtime ps --format "{{.Names}}" | grep -q "^${container_name}$"; then
-    return 1
-  fi
-
-  # If health_url provided, check it
-  if [ -n "$health_url" ]; then
-    curl -sf --max-time 5 "$health_url" >/dev/null 2>&1
-    return $?
-  fi
-
-  # Fallback: check if container is healthy (if healthcheck is working)
-  local health_status
-  health_status=$($runtime inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null || echo "")
-  if [ "$health_status" = "healthy" ]; then
-    return 0
-  fi
-
-  # If no healthcheck status but container is running, assume OK
-  $runtime inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null | grep -q "true"
-}
-
-# Fix postgres container startup issues (data directory, network, etc.)
-fix_postgres_container() {
-  local runtime
-  runtime=$(detect_container_runtime)
-  local pg_container="openprint-postgres"
-  local pg_network="openprint-network"
-
-  # Check if postgres container exists
-  if ! $runtime ps -a --format "{{.Names}}" | grep -q "^${pg_container}$"; then
-    return 0  # Container doesn't exist yet, nothing to fix
-  fi
-
-  local pg_state
-  pg_state=$($runtime ps --format "{{.State}}" --filter "name=$pg_container" 2>/dev/null || echo "")
-
-  # Check if postgres is stuck in "starting" or exited state
-  if [ "$pg_state" = "starting" ] || [ "$pg_state" = "Exited" ] || [ "$pg_state" = "exited" ]; then
-    log "  🔧 PostgreSQL container stuck ($pg_state), fixing..."
-
-    # Check logs for data directory errors
-    local logs
-    logs=$($runtime logs "$pg_container" 2>&1 || echo "")
-
-    if echo "$logs" | grep -qi "exists but is not empty\|initdb: error"; then
-      log "  🗑️  PostgreSQL data directory issue detected, recreating..."
-
-      # Stop and remove container
-      $runtime stop "$pg_container" 2>/dev/null || true
-      $runtime rm "$pg_container" 2>/dev/null || true
-
-      # Note: We preserve the volume, just recreate the container
-      log "  ✓ PostgreSQL container removed, will be recreated"
-      return 1  # Signal that recreation is needed
-    fi
-
-    # Check if postgres is on correct network
-    if ! $runtime inspect "$pg_container" --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' 2>/dev/null | grep -q "$pg_network"; then
-      log "  🔧 PostgreSQL not on correct network, fixing..."
-      $runtime stop "$pg_container" 2>/dev/null || true
-      $runtime rm "$pg_container" 2>/dev/null || true
-      log "  ✓ PostgreSQL will be recreated with correct network"
-      return 1
-    fi
-  fi
-
-  return 0
-}
-
 docker_up() {
   log "  🚀 Starting services..."
   cd "$REPO_DIR"
-
-  # Rotate docker_up.log if it's getting large
-  rotate_logs 500  # Rotate at 500KB
-
-  # Fix postgres container issues before starting
-  fix_postgres_container
-
   detect_service_ports
   local compose=""
   [ -f "docker-compose.yml" ] && compose="docker-compose.yml"
   [ -f "deployments/docker/docker-compose.yml" ] && compose="deployments/docker/docker-compose.yml"
-
   if [ -n "$compose" ]; then
-    # Detect compose command
-    local compose_cmd
-    compose_cmd=$(detect_compose_command)
-
-    # Check for port conflicts and get dynamic mappings
-    log "  🔍 Checking port availability..."
-    get_dynamic_ports
-
-    # Apply port mappings if there were conflicts
-    if [ -f "$DEV_DIR/port_mappings.txt" ]; then
-      apply_port_mappings "$compose"
-      # Update compose path to use the modified file
-      compose="${compose}.modified"
-      cp "${compose%.modified}" "$compose"
-    fi
-
-    # Clean up stale containers first
-    cleanup_stale_containers "$compose"
-
-    local up_failed=false
-    if ! $compose_cmd -f "$compose" up -d 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10; then
-      up_failed=true
-    fi
-
-    # If up failed due to dependency errors, force recreate
-    if $up_failed || grep -qi "depends on.*not found\|no such container\|requires.*not found" "$PHASE_LOGS/docker_up.log" 2>/dev/null; then
-      warn "  ⚠️  Dependency errors detected, recreating containers..."
-      $compose_cmd -f "$compose" down 2>/dev/null || true
-      $compose_cmd -f "$compose" up -d --force-recreate 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10 || true
-    fi
-
+    podman-compose -f "$compose" up -d 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10 || true
     sleep "$DOCKER_TIMEOUT"
     local h=0 t=0
-    local runtime
-    runtime=$(detect_container_runtime)
-
-    # Get actual service ports from running containers (dynamic)
-    service_ports_json=$(get_all_service_ports 2>/dev/null || echo '{}')
-
-    # Check application service containers directly first
-    local app_containers="auth-service registry-service job-service storage-service notification-service dashboard"
-    for container in $app_containers; do
+    for port in $SERVICE_PORTS; do
       t=$((t+1))
-      local full_name="openprint-${container}"
       if [ "$SKIP_HEALTH_CHECK" = true ]; then
-        h=$((h+1)); log "  ✓ $container (health check skipped)"
-      elif $runtime ps --format "{{.Names}}" | grep -q "^${full_name}$"; then
-        # Get port from dynamic detection
-        local port=""
-        port=$(echo "$service_ports_json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('$container','')))" 2>/dev/null || echo "")
-
-        if [ -n "$port" ] && curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1; then
-          h=$((h+1)); log "  ✓ $container (:$port)"
-        else
-          warn "  ✗ $container (:$port)"
-        fi
+        h=$((h+1)); log "  ✓ :$port (health check skipped)"
       else
-        warn "  ✗ $container (not running)"
+        curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1 && h=$((h+1)) && log "  ✓ :$port" || warn "  ✗ :$port"
       fi
     done
-
-    log "  Health: $h/$t services up"
-
-    # Check PostgreSQL specifically (critical for auth service)
-    if [ "$SKIP_HEALTH_CHECK" != true ]; then
-      local pg_ready=false
-      local pg_container="openprint-postgres"
-
-      if $runtime ps --format "{{.Names}}" | grep -q "^${pg_container}$"; then
-        # Try pg_isready up to 10 times
-        for i in $(seq 1 10); do
-          if $runtime exec "$pg_container" pg_isready -U openprint -d openprint >/dev/null 2>&1; then
-            pg_ready=true
-            log "  ✓ PostgreSQL ready"
-            break
-          fi
-          sleep 1
-        done
-
-        if [ "$pg_ready" = false ]; then
-          warn "  ⚠️  PostgreSQL not ready - checking for issues..."
-          local pg_logs
-          pg_logs=$($runtime logs "$pg_container" 2>&1 | tail -5 || echo "")
-          if echo "$pg_logs" | grep -qi "exists but is not empty\|initdb: error"; then
-            warn "  🗑️  PostgreSQL data issue detected - run './dev.sh fix-postgres' to repair"
-          fi
-        fi
-      fi
-    fi
-
-    # Additional port-based check for any extra services
-    if [ "$h" -lt "$t" ] && [ "$SKIP_HEALTH_CHECK" != true ]; then
-      log "  Waiting for services to be ready..."
-      sleep 10
-      for port in $HEALTH_CHECK_PORTS; do
-        if curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1; then
-          log "  ✓ Additional service on :$port"
-        fi
-      done
-    fi
+    log "  Health: $h/$t"
   else
     warn "  No docker-compose found"
   fi
@@ -2192,10 +809,8 @@ docker_up() {
 
 docker_down() {
   cd "$REPO_DIR" 2>/dev/null || return 0
-  local compose_cmd
-  compose_cmd=$(detect_compose_command)
   for f in docker-compose.yml deployments/docker/docker-compose.yml; do
-    [ -f "$REPO_DIR/$f" ] && $compose_cmd -f "$REPO_DIR/$f" down 2>/dev/null || true
+    [ -f "$REPO_DIR/$f" ] && podman-compose -f "$REPO_DIR/$f" down 2>/dev/null || true
   done
 }
 
@@ -2227,7 +842,7 @@ ${past:+$past
 }
 
 run_playwright() {
-  local dir="$REPO_DIR/${FRONTEND_DIR:-web/dashboard}"
+  local dir="$REPO_DIR/frontend"
   [ -d "$dir" ] || return 0
   team "🧪 Tester" "Running Playwright..."
   cd "$dir"
@@ -2382,8 +997,7 @@ phase_design() {
 
   cd "$REPO_DIR"
   local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 4000)
-  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-  local files; files=$(find internal "$frontend_dir/src" -name "*.go" -o -name "*.tsx" 2>/dev/null | grep -v _test | grep -v node_modules | sort | head -50 || true)
+  local files; files=$(find internal frontend/src -name "*.go" -o -name "*.tsx" 2>/dev/null | grep -v _test | grep -v node_modules | sort | head -50 || true)
   local market; market=$(summarize_artifact "$ARTIFACTS/03_market_analysis.json" 2000)
 
   cat > "$DEV_DIR/tmp_sys.txt" << 'PROMPT'
@@ -2463,8 +1077,8 @@ phase_frontend() {
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   state_set frontend status running; ensure_branch
 
-  local design; design=$(summarize_artifact "$ARTIFACTS/02_design.json" 2500)
-  local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 1500)
+  local design; design=$(summarize_artifact "$ARTIFACTS/02_design.json" 4000)
+  local reqs; reqs=$(summarize_artifact "$ARTIFACTS/01_requirements.json" 2000)
 
   claude_do "🎨 Frontend" \
     "Read CLAUDE.md first. You are the Frontend Developer for this project.
@@ -2472,12 +1086,11 @@ phase_frontend() {
 DESIGN: $design
 REQUIREMENTS: $reqs
 
-IMPLEMENT ALL frontend components/pages from design. Follow the conventions in CLAUDE.md. Create Playwright E2E tests in ${FRONTEND_DIR:-web/dashboard}/e2e/. Install deps if needed." \
-    "$PHASE_LOGS/04_frontend.log" 2400  # 40 minutes for frontend implementation
+IMPLEMENT ALL frontend components/pages from design. Follow the conventions in CLAUDE.md. Create Playwright E2E tests in frontend/e2e/. Install deps if needed." \
+    "$PHASE_LOGS/04_frontend.log"
 
-  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-  if [ -d "$REPO_DIR/$frontend_dir" ]; then
-    cd "$REPO_DIR/$frontend_dir"; [ -d "node_modules" ] || npm install 2>&1 | tail -3 || true
+  if [ -d "$REPO_DIR/frontend" ]; then
+    cd "$REPO_DIR/frontend"; [ -d "node_modules" ] || npm install 2>&1 | tail -3 || true
     local ts_ok=true
     npx tsc --noEmit 2>&1 | tee "$PHASE_LOGS/04_typecheck.log" | tail -5 || ts_ok=false
     if [ "$ts_ok" = false ]; then
@@ -2536,8 +1149,7 @@ Write comprehensive tests for ALL new files following CLAUDE.md conventions. Wri
 
   # Sub-step 3: E2E
   if [ "$(state_get testing e2e)" != "passed" ] && [ "$(state_get testing e2e)" != "skipped" ]; then
-    local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-    if [ -d "$REPO_DIR/$frontend_dir" ] && ls "$REPO_DIR/$frontend_dir/e2e/"*.spec.* >/dev/null 2>&1; then
+    if [ -d "$REPO_DIR/frontend" ] && ls "$REPO_DIR/frontend/e2e/"*.spec.* >/dev/null 2>&1; then
       if docker_build_all; then
         docker_up
         if ! run_playwright; then
@@ -2673,44 +1285,12 @@ phase_deploy() {
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   state_set deploy status running
 
-  # 🔍 Port availability check (early warning for conflicts)
-  log ""
-  log "  🔍 Checking port availability..."
-  local default_ports=(3000 8001 8002 8003 8004 8005 18001 18005)
-  local occupied_ports=()
-  local port_alternatives=""
-
-  for port in "${default_ports[@]}"; do
-    if ! is_port_available "$port"; then
-      occupied_ports+=("$port")
-      local free_port
-      free_port=$(find_free_port "$((port + 1))" 3)
-      if [ -n "$free_port" ]; then
-        port_alternatives+="    → Port $port occupied, will use $free_port\n"
-        # Store mapping for later use
-        echo "${port}:${free_port}" >> "$DEV_DIR/port_conflicts.txt"
-      else
-        port_alternatives+="    → Port $port occupied, no free alternative found!\n"
-      fi
-    fi
-  done
-
-  if [ -n "$port_alternatives" ]; then
-    warn "  ⚠️  Port conflicts detected:"
-    echo -e "$port_alternatives"
-    log "  🔄 Will use alternative ports for conflicting services"
-  else
-    log "  ✓ All required ports are available"
-  fi
-
-  # Docker setup creation if needed
-  if ! ls "$REPO_DIR/deployments/docker/Dockerfile."* >/dev/null 2>&1 && [ ! -f "$REPO_DIR/Dockerfile" ]; then
+  if ! ls "$REPO_DIR/deployments/docker/Dockerfile."* >/dev/null 2>&1; then
     claude_do "🐳 DevOps" \
       "Read CLAUDE.md. Create Docker setup in deployments/docker/:
 - Dockerfile for each service (multi-stage build, non-root user, HEALTHCHECK)
-- docker-compose.yml with all services + database + networking, health checks, volumes.
-Follow the service names and ports defined in CLAUDE.md.
-Ensure services bind to 0.0.0.0 for external access." \
+- docker-compose.yml with all services + PostgreSQL 16 + Redis 7, networking, health checks, volumes.
+Follow the service names and ports defined in CLAUDE.md." \
       "$PHASE_LOGS/08_docker.log"
   fi
 
@@ -2741,19 +1321,7 @@ $logs" "$PHASE_LOGS/08_fix.log"
     docker_build_all || true; docker_down; docker_up
   fi
 
-  # Generate access report for external client connectivity
-  log ""
-  log "  📡 Generating access report..."
-  generate_access_report
-
-  local access_report="${ARTIFACTS:-}/access_report.json"
-  if [ -f "$access_report" ]; then
-    local ext_url; ext_url=$(python3 -c "import json; print(json.load(open('$access_report'))['client_connection']['base_url'])" 2>/dev/null || echo "N/A")
-    log "  🌐 External Access URL: $ext_url"
-    log "  📄 Full report: $access_report"
-  fi
-
-  [ -d "$REPO_DIR/$FRONTEND_DIR" ] && { run_playwright || true; }
+  [ -d "$REPO_DIR/frontend" ] && { run_playwright || true; }
 
   cd "$REPO_DIR"; git add -A && git commit -m "[DevOps] deploy ready" 2>/dev/null || true
   merge_to_main
@@ -2763,159 +1331,311 @@ $logs" "$PHASE_LOGS/08_fix.log"
 }
 
 # ──────────────────────────────
-# 9. E2E PRODUCTION (End-to-End Testing)
+# 9. CI/CD PIPELINE (DevOps)
 # ──────────────────────────────
-phase_e2e_production() {
+phase_ci() {
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  log "PHASE 9: E2E PRODUCTION — 🧪 Full System Test"
+  log "PHASE 9: CI/CD — 🔄 DevOps"
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  state_set e2e_production status running
+  state_set ci status running
+  ensure_branch
 
-  # Re-detect configuration in case it changed
-  FRONTEND_CONFIG=$(detect_frontend_config)
-  FRONTEND_DIR="${FRONTEND_CONFIG%%:*}"
-  DASHBOARD_PORT="${FRONTEND_CONFIG##*:}"
+  mkdir -p .github/workflows
 
-  # Get actual dashboard port from running containers (dynamic)
-  service_ports_json=$(get_all_service_ports 2>/dev/null || echo '{}')
-  detected_dashboard_port=$(echo "$service_ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','${DASHBOARD_PORT:-3000}'))" 2>/dev/null || echo "${DASHBOARD_PORT:-3000}")
+  claude_do "🐳 DevOps" \
+    "Read CLAUDE.md. Create .github/workflows/ci.yml with:
+- Trigger on push/PR to main
+- Go tests (all packages)
+- Docker build validation
+- TypeScript typecheck if frontend exists
+- Security scan with golangci-lint
+- Auto-cancel redundant runs
+- Matrix testing if applicable
 
-  local external_ip
-  external_ip=$(get_external_ip 2>/dev/null) || external_ip="localhost"
-  local base_url="${E2E_BASE_URL:-http://localhost:${detected_dashboard_port}}"
+Create .github/workflows/release.yml for:
+- Docker image publishing on tags
+- Semantic release automation" \
+    "$PHASE_LOGS/09_ci.log"
 
-  log "  🌐 Testing against: $base_url"
-  log "  📡 Server IP: $external_ip"
-  log "  🐳 Services should be running from deploy phase"
-
-  # Ensure services are still running
-  detect_service_ports
-  local services_ok=true
-  for port in $SERVICE_PORTS; do
-    check_external_access "$port" "$external_ip" || { warn "  Service on port $port not accessible"; services_ok=false; }
-  done
-
-  if [ "$services_ok" = false ]; then
-    warn "  Some services not accessible - attempting restart..."
-    docker_up
-    sleep 10
-  fi
-
-  # Run E2E tests with AI enhancement
-  local e2e_report="${ARTIFACTS:-}/e2e_production_report.json"
-  local e2e_result=0
-
-  if [ "$E2E_ENABLED" = true ]; then
-    # Try framework-specific E2E first, fall back to AI-powered generic
-    if ! run_e2e_tests "$base_url" "$e2e_report" 2>/dev/null; then
-      log "  🤖 Framework E2E unavailable, using AI-powered tests..."
-      run_ai_e2e "$base_url" "$e2e_report" "true" || e2e_result=$?
-    fi
-  else
-    log "  ⏭️  E2E tests disabled (E2E_ENABLED=false)"
-  fi
-
-  # Parse and display results
-  if [ -f "$e2e_report" ]; then
-    local summary; summary=$(python3 -c "
-import json, sys
-d = json.load(open(sys.argv[1]))
-s = d.get('summary', {})
-print(f\"{s.get('passed',0)}/{s.get('total',0)} passed\")
-print(f\"Status: {d.get('status', 'unknown').upper()}\")
-print(f\"Success Rate: {d.get('success_rate',0)}%\")
-" "$e2e_report" 2>/dev/null || echo "Results unavailable")
-
-    log "  📊 E2E Results: $summary"
-
-    local status; status=$(python3 -c "import json; print(json.load(open('$e2e_report')).get('status','failed'))" 2>/dev/null || echo "failed")
-    state_set e2e_production result "$status"
-  else
-    warn "  ⚠️  E2E report not generated"
-    state_set e2e_production result "skipped"
-  fi
-
-  # Generate access report if not already exists
-  generate_access_report
-  local access_report="${ARTIFACTS}/access_report.json"
-
-  # Generate final system status report
-  local final_report="${ARTIFACTS}/final_system_status.json"
-
-  # Ensure access_report file exists (create empty if not)
-  [ -f "$access_report" ] || { echo "{}" > "$access_report"; }
-
-  python3 - "$final_report" "$external_ip" "$base_url" "$e2e_report" "$access_report" << 'PYEOF'
-import json, sys, socket, subprocess
-from datetime import datetime
-
-final_file = sys.argv[1]
-ext_ip = sys.argv[2]
-base_url = sys.argv[3]
-e2e_file = sys.argv[4]
-access_file = sys.argv[5]
-
-# Load E2E results
-e2e_data = {}
-try:
-    with open(e2e_file) as f:
-        e2e_data = json.load(f)
-except:
-    pass
-
-# Load access report
-access_data = {}
-try:
-    with open(access_file) as f:
-        access_data = json.load(f)
-except:
-    pass
-
-# Check service status
-services = {}
-try:
-    result = subprocess.run(['podman', 'ps', '--format', 'json'], capture_output=True, text=True, timeout=10)
-    if result.returncode == 0:
-        for container in json.loads(result.stdout):
-            services[container['Names']] = {
-                'status': container['State'],
-                'ports': container.get('Ports', '')
-            }
-except:
-    pass
-
-report = {
-    "generated_at": datetime.now().isoformat(),
-    "server": {
-        "hostname": socket.gethostname(),
-        "external_ip": ext_ip,
-        "base_url": base_url
-    },
-    "e2e_tests": {
-        "framework": e2e_data.get('framework', 'none'),
-        "status": e2e_data.get('status', 'not_run'),
-        "summary": e2e_data.get('summary', {}),
-        "success_rate": e2e_data.get('success_rate', 0)
-    },
-    "services": services,
-    "access_info": access_data.get('client_connection', {}),
-    "ready_for_production": e2e_data.get('status', 'failed') == 'passed' and len(services) > 0
+  state_set ci status done; log "✅ CI/CD done"
 }
 
-with open(final_file, 'w') as f:
-    json.dump(report, f, indent=2)
-PYEOF
+# ──────────────────────────────
+# 10. PERFORMANCE BENCHMARKING (DevOps)
+# ──────────────────────────────
+phase_perf() {
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log "PHASE 10: PERF — ⚡ Performance"
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  state_set perf status running
+  ensure_branch
 
-  log "  📄 Final report: $final_report"
+  cd "$REPO_DIR"
 
-  if [ "$e2e_result" -ne 0 ] && [ "$e2e_result" -ne 0 ]; then
-    warn "  ⚠️  E2E tests had issues - system may not be fully functional"
-  else
-    log "  ✅ System verified and accessible"
+  # Check if k6 or vegeta exists
+  local bench_tool=""
+  command -v k6 >/dev/null 2>&1 && bench_tool="k6"
+  command -v vegeta >/dev/null 2>&1 && bench_tool="${bench_tool}vegeta"
+
+  team "⚡ Performance" "Benchmarking services..."
+
+  # Get service ports
+  detect_service_ports
+
+  local report="$ARTIFACTS/performance_report.json"
+  local results="{}"
+
+  for port in $SERVICE_PORTS; do
+    log "  Testing :$port..."
+    local url="http://localhost:${port}${HEALTH_CHECK_PATH}"
+    local response_time; response_time=$(curl -o /dev/null -s -w '%{time_total}' "$url" 2>/dev/null || echo "0")
+    log "    Response: ${response_time}s"
+    results=$(echo "$results" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+d['port_$port'] = {'response_time': float('${response_time}'), 'status': 'ok' if float('${response_time}') < 1.0 else 'slow'}
+print(json.dumps(d))
+" 2>/dev/null || echo "{}")
+  done
+
+  echo "$results" | python3 -c "import json, sys; print(json.dumps(json.load(sys.stdin), indent=2))" > "$report" 2>/dev/null
+
+  # Go benchmark
+  if ls "$REPO_DIR"/**/*_bench.go 2>/dev/null | head -1 >/dev/null; then
+    log "  Running Go benchmarks..."
+    go test -bench=. -benchmem ./... 2>&1 | tee "$PHASE_LOGS/bench.log" | tail -20 || true
   fi
 
-  state_set e2e_production status done
-  log "✅ E2E Production done"
+  claude_do "⚡ Performance" \
+    "Read CLAUDE.md. Analyze performance results and suggest optimizations:
+$(cat "$report" 2>/dev/null || echo 'No report')
+
+Create benchmark tests in services/*/*_bench.go for hot paths." \
+    "$PHASE_LOGS/10_perf.log" 600
+
+  state_set perf status done; log "✅ Performance done"
+}
+
+# ──────────────────────────────
+# 11. DOCUMENTATION (Technical Writer)
+# ──────────────────────────────
+phase_docs() {
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log "PHASE 11: DOCS — 📚 Documentation"
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  state_set docs status running
+  ensure_branch
+
+  cd "$REPO_DIR"
+
+  claude_do "📚 Docs" \
+    "Read CLAUDE.md. Generate comprehensive documentation:
+
+1. API Documentation:
+   - Create openapi.yaml from Go handler annotations
+   - Generate API client SDKs (TypeScript, Python)
+
+2. Architecture:
+   - Create docs/architecture.md with service diagram
+   - Document data flow and inter-service communication
+
+3. Runbook:
+   - Create docs/runbook.md with deployment steps
+   - Troubleshooting common issues
+
+4. Migration Guide:
+   - docs/migrations.md for schema changes
+
+Use swag or similar for OpenAPI generation." \
+    "$PHASE_LOGS/11_docs.log" 900
+
+  state_set docs status done; log "✅ Documentation done"
+}
+
+# ──────────────────────────────
+# 12. E2E TEST GENERATION (Tester)
+# ──────────────────────────────
+phase_e2e_gen() {
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log "PHASE 12: E2E-GEN — 🧪 E2E Generator"
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  state_set e2e_gen status running
+  ensure_branch
+
+  cd "$REPO_DIR"
+
+  local api_spec=""
+  [ -f "openapi.yaml" ] && api_spec="$(cat openapi.yaml | head -5000)"
+  [ -f "docs/openapi.yaml" ] && api_spec="$(cat docs/openapi.yaml | head -5000)"
+
+  local frontend_dir="$FRONTEND_DIR"
+  [ -z "$frontend_dir" ] && frontend_dir="frontend"
+  [ -z "$frontend_dir" ] && frontend_dir="web/dashboard"
+
+  claude_do "🧪 Tester" \
+    "Read CLAUDE.md. Generate Playwright E2E tests for the critical user flows:
+
+API Spec (if available):
+${api_spec:+$api_spec}
+
+Frontend: $frontend_dir
+Dashboard Port: $DASHBOARD_PORT
+
+Create tests in ${frontend_dir}/e2e/ covering:
+1. Authentication flow (login, logout, session)
+2. Main CRUD operations for each service
+3. Error handling (404, 500, validation)
+4. Multi-tenant operations (if applicable)
+5. Real-time features (WebSocket tests)
+
+Use Page Object Model. Ensure tests are independent and can run in parallel." \
+    "$PHASE_LOGS/12_e2e_gen.log" 1200
+
+  # Install playwright if needed
+  if [ -d "$REPO_DIR/$frontend_dir" ]; then
+    cd "$REPO_DIR/$frontend_dir"
+    [ -d "node_modules" ] || npm install 2>&1 | tail -3 || true
+    npx playwright install --with-deps 2>&1 | tail -3 || true
+    cd "$REPO_DIR"
+  fi
+
+  state_set e2e_gen status done; log "✅ E2E generation done"
+}
+
+# ═══════════════════════════════════════════════
+# DATABASE MIGRATION HELPERS
+# ═══════════════════════════════════════════════
+
+test_migrations() {
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log "MIGRATION TEST — 🗄️ Database"
+  log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  local migrations_dir="${1:-migrations}"
+  [ ! -d "$migrations_dir" ] && { warn "No migrations directory"; return 0; }
+
+  log "  Testing migrations in $migrations_dir..."
+
+  # Find migration files
+  local up_files=() down_files=()
+  while IFS= read -r f; do up_files+=("$f"); done < <(find "$migrations_dir" -name "*.up.sql" 2>/dev/null | sort)
+  while IFS= read -r f; do down_files+=("$f"); done < <(find "$migrations_dir" -name "*.down.sql" 2>/dev/null | sort)
+
+  log "  Found ${#up_files[@]} up migrations, ${#down_files[@]} down migrations"
+
+  # Validate SQL syntax
+  local errors=0
+  for f in "${up_files[@]}"; do
+    if grep -qi "drop table\|truncate\|delete from.*where 1=1" "$f" 2>/dev/null; then
+      warn "  ⚠ Potentially destructive: $f"
+    fi
+    # Check for transaction wrapping
+    if ! grep -qi "begin" "$f" 2>/dev/null; then
+      warn "  ⚠ Missing transaction: $f"
+    fi
+  done
+
+  # Test against temp database if PostgreSQL is available
+  if command -v psql >/dev/null 2>&1 && docker ps | grep -q postgres; then
+    log "  Testing migrations against test database..."
+    local test_db="test_$(date +%s)"
+    docker exec "$(docker ps -q -f name=postgres)" psql -U openprint -c "CREATE DATABASE $test_db;" 2>/dev/null || true
+
+    for f in "${up_files[@]}"; do
+      log "    Applying: $(basename "$f")"
+      docker exec -i "$(docker ps -q -f name=postgres)" psql -U openprint -d "$test_db" < "$f" 2>&1 | tail -3 || errors=$((errors+1))
+    done
+
+    # Test rollback
+    for f in "${down_files[@]}"; do
+      log "    Rolling back: $(basename "$f")"
+      docker exec -i "$(docker ps -q -f name=postgres)" psql -U openprint -d "$test_db" < "$f" 2>&1 | tail -3 || true
+    done
+
+    docker exec "$(docker ps -q -f name=postgres)" psql -U openprint -c "DROP DATABASE $test_db;" 2>/dev/null || true
+  fi
+
+  if [ $errors -eq 0 ]; then
+    log "  ✅ All migrations validated"
+  else
+    err "  ❌ $errors migration errors found"
+  fi
+
+  return $errors
+}
+
+# ═══════════════════════════════════════════════
+# GIT WORKFLOW HELPERS
+# ═══════════════════════════════════════════════
+
+git_squash() {
+  local branch="${1:-$(git branch --show-current)}"
+  local target="${2:-main}"
+
+  log "Squashing $branch onto $target..."
+
+  cd "$REPO_DIR"
+  local commit_count; commit_count=$(git rev-list --count "$target..HEAD" 2>/dev/null || echo "0")
+
+  if [ "$commit_count" -le 1 ]; then
+    log "  Nothing to squash ($commit_count commits)"
+    return 0
+  fi
+
+  log "  Squashing $commit_count commits..."
+
+  # Reset to target but keep changes staged
+  git reset --soft "$target" || { err "Failed to reset"; return 1; }
+
+  # Commit with combined message
+  local msg; msg=$(git log --format=%s "$target..@{1}" 2>/dev/null | head -1 || echo "Squashed commits")
+  git commit -m "$msg
+
+Co-Authored-By: Claude Dev.sh <dev.sh@openprint>" || true
+
+  log "  ✅ Squashed to 1 commit"
+}
+
+git_rebase_main() {
+  log "Rebasing current branch onto main..."
+
+  cd "$REPO_DIR"
+  local branch; branch=$(git branch --show-current)
+  [ "$branch" = "main" ] && { warn "Already on main"; return 0; }
+
+  git fetch origin main 2>/dev/null || true
+  git rebase origin/main || {
+    warn "  Conflicts detected. Opening editor..."
+    git rebase --continue 2>/dev/null || git rebase --abort || true
+  }
+}
+
+git_new_branch() {
+  local name="$1"
+  [ -z "$name" ] && { err "Usage: ./dev.sh new-branch \"feature-name\""; return 1; }
+
+  cd "$REPO_DIR"
+  git checkout main 2>/dev/null || git checkout -b main 2>/dev/null || true
+  git pull origin main 2>/dev/null || true
+  git checkout -b "feature/$name" || git checkout -b "$name"
+  log "  ✅ Created branch: $(git branch --show-current)"
+}
+
+git_cleanup_branches() {
+  log "Cleaning up merged branches..."
+
+  cd "$REPO_DIR"
+  git fetch -p 2>/dev/null || true
+
+  local branches; branches=$(git branch -vv | grep ': gone]' | awk '{print $1}')
+  [ -z "$branches" ] && { log "  No stale branches"; return 0; }
+
+  echo "$branches" | while read -r b; do
+    log "  Removing: $b"
+    git branch -D "$b" 2>/dev/null || true
+  done
+
+  log "  ✅ Cleanup complete"
 }
 
 # ═══════════════════════════════════════════════
@@ -2927,7 +1647,7 @@ skip_phase() {
   warn "Skipping phase: $phase"
   state_set "$phase" status done
 
-  local phases=(requirements market_research design backend frontend testing qa security deploy e2e_production)
+  local phases=(requirements market_research design backend frontend testing qa security deploy)
   local next="" found=false
   for p in "${phases[@]}"; do
     if [ "$found" = true ]; then next="$p"; break; fi
@@ -2962,7 +1682,6 @@ run_waterfall() {
   log "╠═══════════════════════════════════════════════╣"
   log "║ 🧑‍💼 PM → 🔍 Market → 🏗️ Arch → ⚙️ Back         ║"
   log "║ → 🎨 Front → 🧪 Test → 📋 QA → 🔒 Sec → 🐳      ║"
-  log "║ → 🧪 E2E (Production)                          ║"
   log "╚═══════════════════════════════════════════════╝"
   log "Project: $project"
   log "Branch:  $BRANCH"
@@ -3006,18 +1725,10 @@ run_waterfall() {
     fi
 
     # Deploy
-    phase_deploy
-
-    # E2E Production Testing (Final Verification)
-    phase_e2e_production
-
-    break
+    phase_deploy; break
   done
 
   local elapsed=$(( $(date +%s) - t0 ))
-  local external_ip; external_ip=$(get_external_ip)
-  local final_report="$ARTIFACTS/final_system_status.json"
-
   log ""
   log "╔═══════════════════════════════════════════════╗"
   log "║   🎉 PROJECT COMPLETE                         ║"
@@ -3026,28 +1737,6 @@ run_waterfall() {
   log "  Loops:     $loop"
   log "  Branch:    $BRANCH → main"
   log "  Artifacts: $ARTIFACTS/"
-  log ""
-  log "╔═══════════════════════════════════════════════╗"
-  log "║   🌐 CLIENT CONNECTION INFO                   ║"
-  log "╚═══════════════════════════════════════════════╝"
-  log "  Server IP:      $external_ip"
-  log "  Dashboard URL:  http://$external_ip:$DASHBOARD_PORT"
-  log "  Status Report:  $final_report"
-
-  # Display final status
-  if [ -f "$final_report" ]; then
-    local ready; ready=$(python3 -c "import json; print('READY' if json.load(open('$final_report')).get('ready_for_production') else 'NEEDS FIXES')" 2>/dev/null || echo "UNKNOWN")
-    local e2e_status; e2e_status=$(python3 -c "import json; print(json.load(open('$final_report')).get('e2e_tests',{}).get('status','unknown').upper())" 2>/dev/null || echo "UNKNOWN")
-    log "  System Status:  $ready"
-    log "  E2E Tests:      $e2e_status"
-  fi
-
-  log ""
-  log "  To connect from your client:"
-  log "    1. Ensure network connectivity to: $external_ip"
-  log "    2. Open browser: http://$external_ip:$DASHBOARD_PORT"
-  log "    3. For firewall, allow ports: $SERVICE_PORTS"
-  log ""
   log "  Next:      ./dev.sh start \"next feature\""
 }
 
@@ -3465,62 +2154,6 @@ run_dev_improvement() {
 # TRACK B: PROJECT IMPROVEMENT
 # ═══════════════════════════════════════════════════
 
-# scan_frontend_files - Accurately count TSX and TS files in the frontend directory
-# Returns JSON string with: tsx_count, ts_count, total_count, test_count, features{}
-# Uses detected FRONTEND_DIR with fallback to web/dashboard/src
-scan_frontend_files() {
-  local frontend_src="${1:-$REPO_DIR/${FRONTEND_DIR:-web/dashboard}/src}"
-
-  # Return zeros if directory doesn't exist
-  [ ! -d "$frontend_src" ] && echo '{"tsx_count":0,"ts_count":0,"total_count":0,"test_count":0,"features":{}}' && return 0
-
-  # Proper find command with grouped expressions and exclusions
-  # Excludes: node_modules, dist, build directories
-  local tsx_count ts_count total_count test_count features_json
-
-  tsx_count=$(find "$frontend_src" \
-    \( -name "node_modules" -o -name "dist" -o -name "build" \) -prune \
-    -o -type f -name "*.tsx" -print 2>/dev/null | wc -l || echo "0")
-  tsx_count="${tsx_count//[^0-9]/}"; tsx_count="${tsx_count:-0}"
-
-  ts_count=$(find "$frontend_src" \
-    \( -name "node_modules" -o -name "dist" -o -name "build" \) -prune \
-    -o -type f -name "*.ts" ! -name "*.tsx" -print 2>/dev/null | wc -l || echo "0")
-  ts_count="${ts_count//[^0-9]/}"; ts_count="${ts_count:-0}"
-
-  total_count=$((tsx_count + ts_count))
-
-  # Count test files (*.spec.ts, *.spec.tsx, *.test.ts, *.test.tsx)
-  test_count=$(find "$frontend_src" \
-    \( -name "node_modules" -o -name "dist" -o -name "build" \) -prune \
-    -o -type f \( -name "*.spec.ts" -o -name "*.spec.tsx" -o -name "*.test.ts" -o -name "*.test.tsx" \) -print 2>/dev/null | wc -l || echo "0")
-  test_count="${test_count//[^0-9]/}"; test_count="${test_count:-0}"
-
-  # Feature module breakdown - count files per feature directory
-  local features_json="{}"
-  if [ -d "$frontend_src/features" ]; then
-    local feature_dirs feature_dir feature_tsx feature_ts
-    feature_dirs=$(find "$frontend_src/features" -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
-    if [ -n "$feature_dirs" ]; then
-      features_json="{"
-      local first=true
-      while IFS= read -r feature_dir; do
-        [ ! -d "$feature_dir" ] && continue
-        local feature_name; feature_name=$(basename "$feature_dir")
-        feature_tsx=$(find "$feature_dir" -type f -name "*.tsx" 2>/dev/null | wc -l || echo "0")
-        feature_ts=$(find "$feature_dir" -type f -name "*.ts" ! -name "*.tsx" 2>/dev/null | wc -l || echo "0")
-        feature_tsx="${feature_tsx//[^0-9]/}"; feature_tsx="${feature_tsx:-0}"
-        feature_ts="${feature_ts//[^0-9]/}"; feature_ts="${feature_ts:-0}"
-        [ "$first" = true ] && first=false || features_json="${features_json},"
-        features_json="${features_json}\"${feature_name}\":{\"tsx\":${feature_tsx},\"ts\":${feature_ts}}"
-      done <<< "$feature_dirs"
-      features_json="${features_json}}"
-    fi
-  fi
-
-  echo "{\"tsx_count\":${tsx_count},\"ts_count\":${ts_count},\"total_count\":${total_count},\"test_count\":${test_count},\"features\":${features_json}}"
-}
-
 diagnose_project() {
   slog "🔍 DIAGNOSING project..."
   cd "$REPO_DIR"
@@ -3530,21 +2163,11 @@ diagnose_project() {
   go_files="${go_files//[^0-9]/}"; go_files="${go_files:-0}"
   local test_files; test_files=$(find "$REPO_DIR" -name "*_test.go" 2>/dev/null | wc -l || true)
   test_files="${test_files//[^0-9]/}"; test_files="${test_files:-0}"
-
-  # Use detected frontend directory for accurate file enumeration
-  local frontend_src_dir="$REPO_DIR/${FRONTEND_DIR:-web/dashboard}/src"
-  local frontend_scan; frontend_scan=$(scan_frontend_files "$frontend_src_dir")
-  local tsx_files; tsx_files=$(echo "$frontend_scan" | python3 -c "import json,sys; print(json.load(sys.stdin).get('tsx_count',0))" 2>/dev/null || echo "0")
+  local tsx_files; tsx_files=$(find "$REPO_DIR/frontend/src" -name "*.tsx" -o -name "*.ts" 2>/dev/null | wc -l || true)
   tsx_files="${tsx_files//[^0-9]/}"; tsx_files="${tsx_files:-0}"
-  local ts_files; ts_files=$(echo "$frontend_scan" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ts_count',0))" 2>/dev/null || echo "0")
-  ts_files="${ts_files//[^0-9]/}"; ts_files="${ts_files:-0}"
-  local frontend_total; frontend_total=$((tsx_files + ts_files))
-
-  # Get frontend directory for TODO scanning (use detected path)
-  local frontend_for_scan="${FRONTEND_DIR:-web/dashboard}"
-  local todo_count; todo_count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/$frontend_for_scan" 2>/dev/null | wc -l || true)
+  local todo_count; todo_count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/frontend/src" 2>/dev/null | wc -l || true)
   todo_count="${todo_count//[^0-9]/}"; todo_count="${todo_count:-0}"
-  local todo_list; todo_list=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/$frontend_for_scan" 2>/dev/null | head -20 || true)
+  local todo_list; todo_list=$(grep -rn "TODO\|FIXME\|HACK\|XXX" "$REPO_DIR/internal" "$REPO_DIR/cmd" "$REPO_DIR/frontend/src" 2>/dev/null | head -20 || true)
 
   local build_ok="yes" compile_errors=""
   go build ./... 2>/dev/null || { build_ok="no"; compile_errors=$(go build ./... 2>&1 | tail -20 || true); }
@@ -3564,10 +2187,9 @@ diagnose_project() {
   [ -f "deployments/docker/docker-compose.yml" ] || [ -f "docker-compose.yml" ] && compose_exists="yes"
 
   local frontend_exists="no" ts_errors=""
-  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-  if [ -d "$REPO_DIR/$frontend_dir" ]; then
+  if [ -d "$REPO_DIR/frontend" ]; then
     frontend_exists="yes"
-    cd "$REPO_DIR/$frontend_dir"
+    cd "$REPO_DIR/frontend"
     [ -d node_modules ] || npm install 2>/dev/null || true
     [ -f node_modules/.bin/tsc ] && ts_errors=$(npx tsc --noEmit 2>&1 | grep "error TS" | head -10 || true)
     cd "$REPO_DIR"
@@ -3583,30 +2205,27 @@ import json, sys, os
 d = sys.argv
 report = {
     "project": {
-        "go_files": int(d[1]), "test_files": int(d[2]),
-        "tsx_files": int(d[3]), "ts_files": int(d[4]), "frontend_total": int(d[5]),
-        "todo_count": int(d[6]), "build": d[7], "tests": d[8],
-        "test_count": int(d[9]), "test_passed": int(d[10]),
-        "dockerfiles": int(d[11]), "compose": d[12], "frontend": d[13],
-        "features": d[14] if len(d) > 14 else "{}"
+        "go_files": int(d[1]), "test_files": int(d[2]), "tsx_files": int(d[3]),
+        "todo_count": int(d[4]), "build": d[5], "tests": d[6],
+        "test_count": int(d[7]), "test_passed": int(d[8]),
+        "dockerfiles": int(d[9]), "compose": d[10], "frontend": d[11]
     },
-    "compile_errors": open(d[15]).read().strip() if os.path.exists(d[15]) else "",
-    "test_failures": open(d[16]).read().strip() if os.path.exists(d[16]) else "",
-    "ts_errors": open(d[17]).read().strip() if os.path.exists(d[17]) else "",
-    "todos": open(d[18]).read().strip() if os.path.exists(d[18]) else ""
+    "compile_errors": open(d[12]).read().strip() if os.path.exists(d[12]) else "",
+    "test_failures": open(d[13]).read().strip() if os.path.exists(d[13]) else "",
+    "ts_errors": open(d[14]).read().strip() if os.path.exists(d[14]) else "",
+    "todos": open(d[15]).read().strip() if os.path.exists(d[15]) else ""
 }
-json.dump(report, open(d[19], "w"), indent=2)
-' "$go_files" "$test_files" "$tsx_files" "$ts_files" "$frontend_total" "$todo_count" \
+json.dump(report, open(d[16], "w"), indent=2)
+' "$go_files" "$test_files" "$tsx_files" "$todo_count" \
   "$build_ok" "$test_ok" "$test_count" "$test_passed" \
   "$dockerfiles" "$compose_exists" "$frontend_exists" \
-  "$frontend_scan" \
   "$DEV_DIR/tmp_ce.txt" "$DEV_DIR/tmp_tf.txt" "$DEV_DIR/tmp_ts.txt" \
   "$DEV_DIR/tmp_td.txt" "$report" 2>/dev/null || slog "  ⚠ Diagnosis write failed"
 
   rm -f "$DEV_DIR"/tmp_ce.txt "$DEV_DIR"/tmp_tf.txt "$DEV_DIR"/tmp_ts.txt "$DEV_DIR"/tmp_td.txt
 
   slog "📊 DIAGNOSIS:"
-  slog "  Code:    $go_files .go + $tsx_files .tsx + $ts_files .ts = $frontend_total frontend + $test_files tests"
+  slog "  Code:    $go_files .go + $tsx_files .ts/tsx + $test_files tests"
   slog "  Build:   $build_ok | Tests: $test_ok ($test_passed/$test_count)"
   slog "  TODOs:   $todo_count | Docker: $dockerfiles files"
   [ -n "$compile_errors" ] && slog "  ⚠ Compile errors found"
@@ -3769,9 +2388,8 @@ verify_results() {
   if [ "$failed" -eq 0 ] 2>/dev/null; then slog "  ✓ Tests: ALL PASS ($passed packages)"
   else slog "  ⚠ Tests: $passed pass, $failed fail"; score=$((score - 20)); fi
 
-  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-  if [ -d "$REPO_DIR/$frontend_dir" ]; then
-    cd "$REPO_DIR/$frontend_dir"
+  if [ -d "$REPO_DIR/frontend" ]; then
+    cd "$REPO_DIR/frontend"
     if [ -f node_modules/.bin/tsc ]; then
       if npx tsc --noEmit 2>/dev/null; then slog "  ✓ TypeScript: PASS"
       else
@@ -3846,8 +2464,7 @@ scan_project_completion() {
 
   local exist_go; exist_go=$(find internal cmd -name "*.go" 2>/dev/null | grep -v _test | wc -l || echo "0")
   exist_go="${exist_go//[^0-9]/}"; exist_go="${exist_go:-0}"
-  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-  local exist_tsx; exist_tsx=$(find "$frontend_dir/src" -type f \( -name "*.tsx" -o -name "*.ts" \) 2>/dev/null | grep -v node_modules | wc -l || echo "0")
+  local exist_tsx; exist_tsx=$(find frontend/src -name "*.tsx" -o -name "*.ts" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
   exist_tsx="${exist_tsx//[^0-9]/}"; exist_tsx="${exist_tsx:-0}"
   local exist_tests; exist_tests=$(find . -name "*_test.go" -o -name "*.spec.ts" -o -name "*.spec.tsx" 2>/dev/null | grep -v node_modules | wc -l || echo "0")
   exist_tests="${exist_tests//[^0-9]/}"; exist_tests="${exist_tests:-0}"
@@ -3867,8 +2484,7 @@ scan_project_completion() {
   test_fail="${test_fail//[^0-9]/}"; test_fail="${test_fail:-0}"
   [ "$test_fail" -eq 0 ] && [ "$test_pass" -gt 0 ] && test_ok="yes"
 
-  local frontend_dir="${FRONTEND_DIR:-web/dashboard}"
-  local todos; todos=$(grep -rn "TODO\|FIXME\|HACK\|XXX" internal cmd "$frontend_dir" 2>/dev/null | wc -l || echo "0")
+  local todos; todos=$(grep -rn "TODO\|FIXME\|HACK\|XXX" internal cmd frontend/src 2>/dev/null | wc -l || echo "0")
   todos="${todos//[^0-9]/}"; todos="${todos:-0}"
   local docker_ok="no"
   { ls deployments/docker/Dockerfile.* >/dev/null 2>&1 || [ -f Dockerfile ]; } && docker_ok="yes"
@@ -4184,29 +2800,6 @@ show_status() {
   fi
   echo ""
 
-  # Show environment detection
-  echo -e "  ${B}Environment:${NC}"
-  echo -e "    📁 Frontend: ${FRONTEND_DIR:-${Y}not detected${NC}}"
-  echo -e "    🔌 Dashboard Port: ${DASHBOARD_PORT:-${Y}not detected${NC}}"
-  echo -e "    🌐 Base URL: $E2E_BASE_URL"
-
-  # Detect and show E2E framework
-  detect_e2e_framework 2>/dev/null
-  local fw="$DETECTED_E2E_FRAMEWORK"
-  local fw_dir="${DETECTED_E2E_DIR#$REPO_DIR/}"
-  case "$fw" in
-    playwright|cypress)
-      echo -e "    🧪 E2E Framework: ${G}$fw${NC} (${fw_dir})"
-      ;;
-    generic)
-      echo -e "    🧪 E2E Framework: ${Y}generic tests${NC} (${fw_dir})"
-      ;;
-    none|*)
-      echo -e "    🧪 E2E Framework: ${R}none detected${NC} (will use smoke tests)"
-      ;;
-  esac
-  echo ""
-
   if [ -f "$STATE_FILE" ]; then
     python3 - "$STATE_FILE" << 'PYEOF'
 import json, sys
@@ -4289,14 +2882,22 @@ show_help() { cat << 'HELP'
     ./dev.sh resume                     # Continue from last phase
     ./dev.sh phase backend              # Single phase (fg)
     ./dev.sh start "desc" --fg          # Foreground mode
-    ./dev.sh fix-postgres               # Fix PostgreSQL container issues
 
-  PRODUCTION TESTING (after deploy):
-    ./dev.sh ports                      # Check port availability
-    ./dev.sh ai-e2e                     # AI-powered E2E (auto-fix issues)
-    ./dev.sh e2e                        # Run E2E tests against deployed system
-    ./dev.sh ai-e2e URL false           # AI E2E without auto-fix
-    ./dev.sh access-report              # Show client connection info
+  NEW PHASES:
+    ./dev.sh phase ci                   # CI/CD pipeline generation
+    ./dev.sh phase perf                 # Performance benchmarking
+    ./dev.sh phase docs                 # API documentation generation
+    ./dev.sh phase e2e-gen              # E2E test generation
+
+  GIT WORKFLOW:
+    ./dev.sh squash [branch]            # Squash commits before PR
+    ./dev.sh rebase-main                # Rebase current branch onto main
+    ./dev.sh new-branch "name"          # Create new feature branch
+    ./dev.sh cleanup-branches           # Remove merged branches
+
+  DATABASE:
+    ./dev.sh migrate-test [dir]         # Test database migrations
+    ./dev.sh migrate-rollback           # Test migration rollback
 
   SMART IMPROVE (recommended):
     ./dev.sh smart-improve [threshold%]  # Scan→Plan→Run→Rescan→PR
@@ -4331,28 +2932,9 @@ show_help() { cat << 'HELP'
 HELP
 }
 
-# ── Parse global flags (must come before command extraction) ──
-FOREGROUND=false
-SKIP_HEALTH_CHECK=false
-
-# Extract command from args, skipping global flags
-for arg in "$@"; do
-  case "$arg" in
-    --fg) FOREGROUND=true ;;
-    --skip-health-check) SKIP_HEALTH_CHECK=true ;;
-    --*)
-      # Strip -- prefix for command detection
-      CMD="${arg#--}"
-      break
-      ;;
-    *)
-      CMD="$arg"
-      break
-      ;;
-  esac
-done
-
-CMD="${CMD:-}"
+# Strip -- prefix so both "status" and "--status" work
+CMD="${1:-}"
+CMD="${CMD#--}"
 
 # ── Preflight checks (only for commands that need tools) ──
 case "$CMD" in
@@ -4368,6 +2950,13 @@ case "$CMD" in
     fi
     ;;
 esac
+
+# ── Handle background dispatch for long-running commands ──
+FOREGROUND=false
+# Check if --fg is anywhere in args
+for arg in "$@"; do [ "$arg" = "--fg" ] && FOREGROUND=true; done
+# Check if --skip-health-check is anywhere in args
+for arg in "$@"; do [ "$arg" = "--skip-health-check" ] && SKIP_HEALTH_CHECK=true; done
 
 case "$CMD" in
   start)
@@ -4394,7 +2983,8 @@ case "$CMD" in
     case "$cur" in
       requirements) phase_requirements "$PROJECT" ;& market_research) phase_market_research ;& design) phase_design ;& backend) phase_backend ;&
       frontend) phase_frontend ;& testing) phase_testing ;& qa) phase_qa ;&
-      security) phase_security ;& deploy) phase_deploy ;& e2e_production) phase_e2e_production ;; *) run_waterfall "$PROJECT" ;;
+      security) phase_security ;& deploy) phase_deploy ;&
+      ci) phase_ci ;& perf) phase_perf ;& docs) phase_docs ;& e2e_gen) phase_e2e_gen ;; *) run_waterfall "$PROJECT" ;;
     esac
     ;;
 
@@ -4408,284 +2998,12 @@ case "$CMD" in
       requirements) phase_requirements "${3:-manual}" ;; market|market_research) phase_market_research ;; design) phase_design ;;
       backend) phase_backend ;; frontend) phase_frontend ;; testing) phase_testing ;;
       qa) phase_qa ;; security) phase_security ;; deploy) phase_deploy ;;
-      e2e|e2e_production) phase_e2e_production ;;
+      ci|ci-cd) phase_ci ;;
+      perf|performance|benchmark) phase_perf ;;
+      docs|documentation) phase_docs ;;
+      e2e-gen|e2e_gen|generate-e2e) phase_e2e_gen ;;
       *) err "Unknown phase: $2" ;;
     esac
-    ;;
-
-  # Check E2E setup (diagnostic command)
-  check-e2e|diag-e2e)
-    echo -e "${W}═══ E2E Framework Detection ═══${NC}"
-    echo ""
-
-    detect_e2e_framework
-    fw="$DETECTED_E2E_FRAMEWORK"
-    fw_dir="${DETECTED_E2E_DIR#$REPO_DIR/}"
-
-    echo -e "  Frontend Directory: ${FRONTEND_DIR:-${R}not detected${NC}}"
-    echo -e "  Dashboard Port: ${DASHBOARD_PORT:-${R}not detected${NC}}"
-    echo -e "  E2E Framework: ${G}${fw}${NC}"
-    echo -e "  E2E Directory: ${G}${fw_dir}${NC}"
-    echo ""
-
-    # Check for E2E test files
-    if [ -n "$DETECTED_E2E_DIR" ]; then
-      echo -e "${B}E2E Test Files:${NC}"
-      find "$DETECTED_E2E_DIR/e2e" -name "*.spec.ts" -o -name "*.spec.js" 2>/dev/null | head -10 | while read -r f; do
-        name="${f#$DETECTED_E2E_DIR/}"
-        echo -e "    ✓ $name"
-      done
-      echo ""
-    fi
-
-    # Check dependencies
-    echo -e "${B}Dependency Check:${NC}"
-    if [ -n "$DETECTED_E2E_DIR" ]; then
-      cd "$DETECTED_E2E_DIR" 2>/dev/null || {
-        echo -e "    ${R}✗ Cannot access E2E directory${NC}"
-        exit 1
-      }
-
-      if [ ! -d "node_modules" ]; then
-        echo -e "    ${Y}⚠️  node_modules not found - run: npm install${NC}"
-      else
-        echo -e "    ${G}✓ node_modules exists${NC}"
-      fi
-
-      case "$fw" in
-        playwright)
-          if npx playwright --version &>/dev/null; then
-            version=$(npx playwright --version 2>/dev/null)
-            echo -e "    ${G}✓ Playwright installed: $version${NC}"
-          else
-            echo -e "    ${R}✗ Playwright not found - run: npx playwright install${NC}"
-          fi
-          ;;
-        cypress)
-          if npx cypress --version &>/dev/null; then
-            version=$(npx cypress --version 2>/dev/null)
-            echo -e "    ${G}✓ Cypress installed: $version${NC}"
-          else
-            echo -e "    ${R}✗ Cypress not found - run: npx cypress install${NC}"
-          fi
-          ;;
-      esac
-    fi
-
-    echo ""
-    echo -e "${B}Target Configuration:${NC}"
-    echo -e "    Base URL: ${G}$E2E_BASE_URL${NC}"
-    echo -e "    Server IP: ${G}$SERVER_IP${NC}"
-
-    # Test connectivity
-    echo ""
-    echo -e "${B}Connectivity Test:${NC}"
-    if curl -sf --max-time 3 "$E2E_BASE_URL" >/dev/null 2>&1; then
-      echo -e "    ${G}✓ Dashboard is accessible${NC}"
-    else
-      echo -e "    ${Y}⚠️  Dashboard not accessible at $E2E_BASE_URL${NC}"
-      echo -e "    ${Y}  (This is OK if you're running tests before deployment)${NC}"
-    fi
-    echo ""
-
-    # Provide fix commands
-    if [ "$fw" = "none" ] || [ -z "$fw" ]; then
-      echo -e "${Y}No E2E framework detected. To set up Playwright:${NC}"
-    fi
-    ;;
-
-  # Port availability check
-  ports|check-ports)
-    echo -e "${W}═══ PORT AVAILABILITY CHECK ═══${NC}"
-    echo ""
-
-    default_ports=(3000 8001 8002 8003 8004 8005 9090 9091 9092 9093 9094 9095 18001 18005 15432 16379)
-    occupied=()
-    available=()
-
-    for port in "${default_ports[@]}"; do
-      if is_port_available "$port"; then
-        available+=("$port")
-        echo -e "  ${G}✓${NC} Port $port - ${G}AVAILABLE${NC}"
-      else
-        occupied+=("$port")
-        echo -e "  ${R}✗${NC} Port $port - ${R}IN USE${NC}"
-        # Show what's using it
-        if command -v ss >/dev/null 2>&1; then
-          process=$(ss -tlnp 2>/dev/null | grep ":$port " | head -1 | awk '{print $6}' || echo "")
-          [ -n "$process" ] && echo -e "    ${Y}used by: $process${NC}"
-        fi
-      fi
-    done
-
-    echo ""
-    echo -e "${B}Summary:${NC}"
-    echo -e "  Available: ${G}${#available[@]}${NC} ports"
-    echo -e "  Occupied: ${R}${#occupied[@]}${NC} ports"
-
-    if [ ${#occupied[@]} -gt 0 ]; then
-      echo ""
-      echo -e "${Y}Free port alternatives:${NC}"
-      for port in "${occupied[@]}"; do
-        free_port=$(find_free_port "$((port + 1))" 5)
-        if [ -n "$free_port" ]; then
-          echo -e "  $port → ${G}$free_port${NC}"
-        fi
-      done
-    fi
-    ;;
-
-  # Production E2E testing
-  e2e|e2e-test)
-    E2E_BASE_URL="${2:-$E2E_BASE_URL}"
-    echo "Running E2E tests against: $E2E_BASE_URL"
-    echo $$ > "$PID_FILE"
-    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
-    phase_e2e_production
-    ;;
-
-  # AI-Powered E2E testing (run directly)
-  ai-e2e|ai-test)
-    auto_fix="${3:-true}"
-
-    # Detect actual dashboard port dynamically if URL not provided
-    if [[ -n "${2:-}" ]]; then
-      target_url="$2"
-    else
-      # Get actual dashboard port from running containers
-      ports_json=$(get_all_service_ports)
-      dashboard_port=$(echo "$ports_json" | python3 -c "import json,sys; print(json.load(sys.stdin).get('dashboard','3000'))")
-      target_url="http://localhost:${dashboard_port}"
-    fi
-
-    echo -e "${W}═══ AI-POWERED E2E TESTING ═══${NC}"
-    echo -e "  Target: ${G}$target_url${NC}"
-    echo -e "  Auto-Fix: ${G}${auto_fix}${NC}"
-    echo ""
-
-    detect_service_ports
-    e2e_report="${ARTIFACTS:-}/ai_e2e_report.json}"
-
-    echo $$ > "$PID_FILE"
-    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
-
-    run_ai_e2e "$target_url" "$e2e_report" "$auto_fix"
-
-    # Display results
-    if [ -f "$e2e_report" ]; then
-      python3 - "$e2e_report" << 'PYEOF'
-import json, sys
-d = json.load(open(sys.argv[1]))
-s = d.get('summary', {})
-print(f"\n{'='*50}")
-print(f"  E2E TEST RESULTS")
-print(f"{'='*50}")
-print(f"  Status:    {d.get('status','unknown').upper()}")
-print(f"  Passed:    {s.get('passed',0)}/{s.get('total',0)}")
-print(f"  Success:   {d.get('success_rate',0)}%")
-print(f"  Ready:     {'YES' if d.get('ready_for_production') else 'NO'}")
-print(f"{'='*50}\n")
-PYEOF
-    fi
-    ;;
-
-  # Production E2E testing
-  e2e|e2e-test)
-    E2E_BASE_URL="${2:-$E2E_BASE_URL}"
-    echo "Running E2E tests against: $E2E_BASE_URL"
-    echo $$ > "$PID_FILE"
-    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
-    phase_e2e_production
-    ;;
-
-  access-report)
-    echo "Generating access report..."
-    generate_access_report
-    if [ -f "$ARTIFACTS/access_report.json" ]; then
-      python3 - "$ARTIFACTS/access_report.json" << 'PYEOF'
-import json, sys
-d = json.load(open(sys.argv[1]))
-print(f"\n╔═══════════════════════════════════════════════════════╗")
-print(f"║  CLIENT CONNECTION INFO                               ║")
-print(f"╚═══════════════════════════════════════════════════════╝")
-print(f"  Server:         {d['server']['hostname']}")
-print(f"  External IP:    {d['server']['external_ip']}")
-print(f"  Dashboard URL:  {d['client_connection']['base_url']}")
-print(f"\n  Accessible Ports: {', '.join(map(str, d['services']['all_accessible_ports']))}")
-print(f"\n  To connect from your client:")
-print(f"    1. Ensure network connectivity to: {d['server']['external_ip']}")
-print(f"    2. Open browser: {d['client_connection']['base_url']}")
-print(f"    3. For firewall, allow ports: {', '.join(map(str, d['services']['api_ports']))}")
-PYEOF
-    fi
-    ;;
-
-  fix-postgres)
-    (
-      # Fix PostgreSQL container issues (in subshell for proper scoping)
-      log "🔧 Fixing PostgreSQL container..."
-      runtime=$(detect_container_runtime)
-      pg_container="openprint-postgres"
-      pg_volume="openprint-postgres-data"
-      pg_network="openprint-network"
-
-      # Stop and remove existing postgres container
-      if $runtime ps -a --format "{{.Names}}" | grep -q "^${pg_container}$"; then
-        log "  🛑 Stopping PostgreSQL container..."
-        $runtime stop "$pg_container" 2>/dev/null || true
-        $runtime rm "$pg_container" 2>/dev/null || true
-        log "  ✓ Removed old container"
-      fi
-
-      # Check if volume exists
-      if $runtime volume ls --format "{{.Name}}" | grep -q "^${pg_volume}$"; then
-        log "  📦 PostgreSQL volume exists: $pg_volume"
-      else
-        log "  📦 Creating PostgreSQL volume..."
-        $runtime volume create "$pg_volume" >/dev/null 2>&1
-      fi
-
-      # Create container with correct configuration
-      log "  🚀 Creating new PostgreSQL container..."
-      $runtime run -d \
-        --name "$pg_container" \
-        --hostname postgres \
-        --network "$pg_network" \
-        -e POSTGRES_USER=openprint \
-        -e POSTGRES_PASSWORD=openprint \
-        -e POSTGRES_DB=openprint \
-        -e PGDATA=/var/lib/postgresql/data/pgdata \
-        -v "${pg_volume}:/var/lib/postgresql/data" \
-        -p 15432:5432 \
-        postgres:16-alpine >/dev/null 2>&1
-
-      if [ $? -eq 0 ]; then
-        log "  ✓ PostgreSQL container created"
-
-        # Wait for postgres to be ready
-        log "  ⏳ Waiting for PostgreSQL to be ready..."
-        ready=false
-        for i in $(seq 1 30); do
-          if $runtime exec "$pg_container" pg_isready -U openprint -d openprint >/dev/null 2>&1; then
-            ready=true
-            break
-          fi
-          sleep 1
-        done
-
-        if [ "$ready" = true ]; then
-          log "  ✓ PostgreSQL is ready!"
-          log "  📌 Running on port 15432"
-          log "  📌 Connect: psql -h localhost -p 15432 -U openprint -d openprint"
-        else
-          warn "  ⚠️  PostgreSQL started but not accepting connections"
-          log "  Check logs: $runtime logs $pg_container"
-        fi
-      else
-        err "  ✗ Failed to create PostgreSQL container"
-        exit 1
-      fi
-    )
     ;;
 
   stop)            stop_all ;;
@@ -4769,6 +3087,41 @@ PYEOF
     execute_planned_phases
     ;;
   verify|check)   verify_results ;;
+
+  # ── Git Workflow ──
+  squash|git-squash)
+    echo $$ > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
+    git_squash "${2:-}" "${3:-main}"
+    ;;
+  rebase-main|git-rebase)
+    echo $$ > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
+    git_rebase_main
+    ;;
+  new-branch|git-new)
+    [ -z "${2:-}" ] && { err "Usage: ./dev.sh new-branch \"feature-name\""; exit 1; }
+    echo $$ > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
+    git_new_branch "$2"
+    ;;
+  cleanup-branches|git-cleanup)
+    echo $$ > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
+    git_cleanup_branches
+    ;;
+
+  # ── Database ──
+  migrate-test|test-migrations)
+    echo $$ > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
+    test_migrations "${2:-migrations}"
+    ;;
+  migrate-rollback)
+    echo $$ > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit' EXIT INT TERM
+    warn "Migration rollback testing not yet implemented"
+    ;;
 
   # ── Info ──
   history)        show_history ;;
