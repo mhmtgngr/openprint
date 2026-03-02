@@ -77,7 +77,7 @@ func (q *QuotaInfo) UsagePercentage(resourceType string) float64 {
 		if q.MaxStorageGB == 0 {
 			return 0
 		}
-		return float64(q.CurrentStorageGB) / float64(q.MaxStorageGB*1024*1024*1024) * 100
+		return float64(q.CurrentStorageGB) / float64(int64(q.MaxStorageGB)*1024*1024*1024) * 100
 	case "jobs":
 		if q.MaxJobsPerMonth == 0 {
 			return 0

@@ -128,7 +128,8 @@ func (b *TenantQueryBuilder) injectWhereBefore(query string, keywords []string) 
 	}
 
 	if lowestIndex < len(query) {
-		return query[:lowestIndex] + " WHERE "+b.WhereClause()+" "+query[lowestIndex:]
+		// No extra space needed before query[lowestIndex:] since keywords have leading space
+		return query[:lowestIndex] + " WHERE "+b.WhereClause()+query[lowestIndex:]
 	}
 
 	return query + " WHERE " + b.WhereClause()
