@@ -1,0 +1,128 @@
+# Prometheus configuration for OpenPrint services monitoring.
+# This config uses file-based service discovery for Docker environments.
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+  external_labels:
+    cluster: 'openprint'
+    environment: 'production'
+
+# AlertManager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load alert rules
+rule_files:
+  - '/etc/prometheus/alerts.yml'
+
+# Service discovery configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # OpenPrint Auth Service
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:9091']
+        labels:
+          service: 'auth-service'
+          component: 'authentication'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'auth-service'
+
+  # OpenPrint Registry Service
+  - job_name: 'registry-service'
+    static_configs:
+      - targets: ['registry-service:9092']
+        labels:
+          service: 'registry-service'
+          component: 'printer-registry'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'registry-service'
+
+  # OpenPrint Job Service
+  - job_name: 'job-service'
+    static_configs:
+      - targets: ['job-service:9093']
+        labels:
+          service: 'job-service'
+          component: 'job-processing'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'job-service'
+
+  # OpenPrint Storage Service
+  - job_name: 'storage-service'
+    static_configs:
+      - targets: ['storage-service:9094']
+        labels:
+          service: 'storage-service'
+          component: 'document-storage'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'storage-service'
+
+  # OpenPrint Notification Service
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:9095']
+        labels:
+          service: 'notification-service'
+          component: 'websocket-notifications'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'notification-service'
+
+  # PostgreSQL Exporter (if using postgres_exporter) - optional
+  # Uncomment when using postgres_exporter sidecar
+  # - job_name: 'postgresql'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #       labels:
+  #         service: 'postgres'
+  #         component: 'database'
+
+  # Redis Exporter (if using redis_exporter) - optional
+  # Uncomment when using redis_exporter sidecar
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+  #         component: 'cache'
+
+  # Node Exporter (for host metrics) - optional
+  # Uncomment when using node-exporter
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
+  #       labels:
+  #         service: 'node-exporter'
+  #         component: 'infrastructure'
+
+  # cAdvisor (for container metrics) - optional
+  # Uncomment when using cadvisor
+  # - job_name: 'cadvisor'
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']
+  #       labels:
+  #         service: 'cadvisor'
+  #         component: 'containers'
+

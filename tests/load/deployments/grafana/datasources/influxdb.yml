@@ -1,0 +1,25 @@
+# Grafana datasource configuration for InfluxDB (k6 metrics)
+
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://test-influxdb:8086
+    jsonData:
+      version: Flux
+      organization: openprint
+      defaultBucket: k6
+      httpMode: POST
+    secureJsonData:
+      token: k6-test-token
+    isDefault: true
+    editable: true
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://test-prometheus:9090
+    isDefault: false
+    editable: true

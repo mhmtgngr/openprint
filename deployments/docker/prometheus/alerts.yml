@@ -1,0 +1,240 @@
+# Prometheus alerting rules for OpenPrint services.
+# These rules define when alerts should be triggered.
+
+groups:
+  # Service health alerts
+  - name: service_health
+    interval: 30s
+    rules:
+      # Service is down
+      - alert: ServiceDown
+        expr: up{job=~".*-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "{{ $labels.service }} has been down for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(openprint_http_errors_total[5m]) /
+          rate(openprint_http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          category: quality
+        annotations:
+          summary: "High error rate on {{ $labels.service_name }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.service_name }}."
+
+      # Very high error rate
+      - alert: CriticalErrorRate
+        expr: |
+          rate(openprint_http_errors_total[5m]) /
+          rate(openprint_http_requests_total[5m]) > 0.15
+        for: 2m
+        labels:
+          severity: critical
+          category: quality
+        annotations:
+          summary: "Critical error rate on {{ $labels.service_name }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.service_name }}."
+
+  # Performance alerts
+  - name: performance
+    interval: 30s
+    rules:
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(openprint_http_request_duration_seconds_bucket[5m])) by (le, service_name)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High latency on {{ $labels.service_name }}"
+          description: "P95 latency is {{ $value }}s for {{ $labels.service_name }}."
+
+      # Very high latency
+      - alert: CriticalLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(openprint_http_request_duration_seconds_bucket[5m])) by (le, service_name)
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "Critical latency on {{ $labels.service_name }}"
+          description: "P95 latency is {{ $value }}s for {{ $labels.service_name }}."
+
+      # High request rate
+      - alert: HighRequestRate
+        expr: |
+          rate(openprint_http_requests_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: info
+          category: capacity
+        annotations:
+          summary: "High request rate on {{ $labels.service_name }}"
+          description: "Request rate is {{ $value }}/s for {{ $labels.service_name }}."
+
+  # Database alerts
+  - name: database
+    interval: 30s
+    rules:
+      # High DB connection usage
+      - alert: HighDBConnectionUsage
+        expr: |
+          openprint_db_connections_active /
+          (openprint_db_connections_active + openprint_db_connections_idle) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "High database connection usage for {{ $labels.service_name }}"
+          description: "DB connection pool is {{ $value | humanizePercentage }} full."
+
+      # Slow database queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(openprint_db_query_duration_seconds_bucket[5m])) by (le, service_name, db_name)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow database queries on {{ $labels.service_name }}"
+          description: "P95 query duration is {{ $value }}s for {{ $labels.db_name }}."
+
+  # Authentication alerts
+  - name: authentication
+    interval: 30s
+    rules:
+      # High authentication failure rate
+      - alert: HighAuthFailureRate
+        expr: |
+          rate(openprint_auth_failures_total[5m]) /
+          (rate(openprint_auth_success_total[5m]) + rate(openprint_auth_failures_total[5m])) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value | humanizePercentage }} for {{ $labels.auth_method }}."
+
+      # Sustained high auth failures (possible attack)
+      - alert: PossibleBruteForceAttack
+        expr: |
+          rate(openprint_auth_failures_total[1m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Possible brute force attack detected"
+          description: "{{ $value | humanize }} auth failures/sec for {{ $labels.auth_method }}."
+
+  # Job processing alerts
+  - name: job_processing
+    interval: 30s
+    rules:
+      # High job failure rate
+      - alert: HighJobFailureRate
+        expr: |
+          rate(openprint_job_failed_total[5m]) /
+          rate(openprint_job_completed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: quality
+        annotations:
+          summary: "High job failure rate"
+          description: "Job failure rate is {{ $value | humanizePercentage }}."
+
+      # Slow job processing
+      - alert: SlowJobProcessing
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(openprint_job_processing_duration_seconds_bucket[10m])) by (le, service_name)
+          ) > 300
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow job processing"
+          description: "P95 job processing time is {{ $value }}s."
+
+  # Storage alerts
+  - name: storage
+    interval: 60s
+    rules:
+      # High storage usage
+      - alert: HighStorageUsage
+        expr: |
+          openprint_document_storage_size_bytes > 1000000000000
+        for: 5m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "High storage usage for {{ $labels.storage_backend }}"
+          description: "Storage size is {{ $value | humanize }}."
+
+  # WebSocket alerts
+  - name: websocket
+    interval: 30s
+    rules:
+      # Low WebSocket connections (potential issue)
+      - alert: LowWebSocketConnections
+        expr: |
+          openprint_websocket_connections_active < 1
+        for: 10m
+        labels:
+          severity: info
+          category: availability
+        annotations:
+          summary: "No active WebSocket connections"
+          description: "Notification service may have connectivity issues."
+
+  # Resource alerts
+  - name: resources
+    interval: 30s
+    rules:
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (go_memstats_heap_inuse_bytes{job=~".*-service"} /
+          (go_memstats_heap_inuse_bytes + go_memstats_heap_idle_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage for {{ $labels.service_name }}"
+          description: "Heap usage is {{ $value | humanizePercentage }}."
+
+      # High goroutine count
+      - alert: HighGoroutineCount
+        expr: |
+          go_goroutines{job=~".*-service"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High goroutine count for {{ $labels.service_name }}"
+          description: "{{ $value }} goroutines active."

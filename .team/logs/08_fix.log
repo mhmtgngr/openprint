@@ -1,21 +1,9 @@
-**All services are running correctly!** There are no startup failures.
+The Alertmanager configuration is now fixed. The YAML is valid and ready.
 
-The warnings you saw in the logs are benign:
-- PostgreSQL "invalid length of startup packet" = external probe sending HTTP to postgres port
-- Redis "Possible SECURITY ATTACK detected" = external probe sending HTTP to redis port
+**Summary of the fix:**
 
-These are just network scanners/probes hitting your exposed ports - they're harmless and don't affect service health.
+- **Problem**: The `silences` section (lines 152-163) in `/home/cmit/openprint/deployments/docker/alertmanager/config.yml` was invalid. Alertmanager does not support `silences` in its configuration file - they must be managed via the API (`POST /api/v2/silences`) or Web UI.
 
-**Summary:**
-| Service | Status | Health |
-|---------|--------|--------|
-| postgres | ✅ Up | healthy |
-| redis | ✅ Up | healthy |
-| auth-service | ✅ Up | healthy |
-| registry-service | ✅ Up | healthy |
-| job-service | ✅ Up | healthy |
-| storage-service | ✅ Up | healthy |
-| notification-service | ✅ Up | healthy |
-| dashboard | ✅ Up | healthy |
+- **Solution**: Removed the invalid `silences` block and added a comment explaining how to create silences programmatically.
 
-Is there a specific functionality issue you're experiencing, or were you just concerned about those log warnings?
+When you restart the services with `docker compose up -d`, Alertmanager should start without errors.

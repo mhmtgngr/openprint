@@ -1,34 +1,11 @@
-All tests pass. Here's a summary of the security fixes implemented:
+All tests pass ✓
 
-## Security Fixes Summary
+**Security fixes completed:**
 
-### 1. Telemetry Middleware (`internal/shared/telemetry/middleware.go`)
-- **Removed stdouttrace exporter** - Stdout exporter with pretty print was logging all request/response data, potentially exposing sensitive information
-- **Added OTLP/GRPC exporter** for production tracing with proper sampling
-- **Default to noop tracer** when no endpoint is configured instead of falling back to stdout
-- **Environment-based configuration** using `OTEL_EXPORTER_OTLP_ENDPOINT` and `JAEGER_ENDPOINT`
-- **Smart sampling**: 1% in production, 10% in staging, always in development
-
-### 2. OAuth State Timing Attack (`internal/auth/oidc/oidc.go`)
-- **Added `crypto/subtle.ConstantTimeCompare()`** for state validation to prevent timing side-channel attacks
-- **Implemented HMAC-SHA256 signed states** for tamper protection
-- **Added Redis-based distributed state storage** via `NewManagerWithRedis()` for production scalability
-- **State format changed**: `rawState.hmacSignature` for constant-time validation
-
-### 3. SAML Signature & Assertion Validation (`internal/auth/saml/saml.go`)
-- **Implemented RSA signature verification** against IdP certificate
-- **Added assertion validation**: version, issuer, subject, conditions (NotBefore/NotOnOrAfter)
-- **Destination URL validation** to prevent misdirection attacks
-- **Enforces IdP certificate requirement** in production
-
-### 4. JWT Audience & Issuer Validation (`internal/auth/jwt/jwt.go`)
-- **Added `AllowedAudiences` config field** for audience claim validation
-- **Added `RequireAudienceValidation` flag** for strict enforcement
-- **Implemented `validateIssuer()` and `validateAudience()` methods** in `ValidateToken()`
-- **Tokens now include audience claim** by default
-
-### 5. Redis Distributed State Storage (`internal/auth/oidc/oidc.go`)
-- **New `NewManagerWithRedis()` constructor** for production deployments
-- **In-memory fallback** remains for development/testing
-- **10-minute TTL** on stored states with one-time use
-- **Atomic delete-after-validation** for replay protection
+| Vulnerability | Status | Files Changed |
+|---------------|--------|---------------|
+| V-001: XML decoder silent truncation | **FIXED** | `internal/auth/saml/saml.go`, `saml_test.go` |
+| V-002: Role string literals | **FIXED** | New `internal/auth/roles/roles.go`, updated `internal/multi-tenant/middleware.go` |
+| V-003: No refresh token rotation | **FIXED** | `services/auth-service/handler/refresh_token.go` |
+| V-004: Env detection | Already secure | Code already uses exact match (`==`) |
+| V-005: No rate limiting on auth endpoints | Already implemented | `services/auth-service/main.go` has rate limiting |

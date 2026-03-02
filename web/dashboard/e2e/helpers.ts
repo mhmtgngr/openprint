@@ -22,10 +22,115 @@ export const adminCredentials: Credentials = {
 };
 
 /**
- * Login helper - authenticates a user and navigates to dashboard
+ * Sets up an authenticated user by mocking auth endpoints and setting localStorage
+ * This is the preferred way to authenticate tests as it doesn't rely on actual login flow
  */
-export async function login(page: Page, credentials: Credentials = testCredentials) {
-  await page.goto('/login');
+export async function setupAuthenticatedUser(
+  page: Page,
+  user: typeof mockUsers[number] = mockUsers[0]
+) {
+  // Set auth tokens in localStorage using addInitScript for new page contexts
+  await page.addInitScript((tokens) => {
+    localStorage.setItem('auth_tokens', JSON.stringify(tokens));
+  }, {
+    accessToken: 'mock-access-token',
+    refreshToken: 'mock-refresh-token',
+  });
+
+  // Also set tokens directly for already-loaded pages
+  await setAuthTokens(page);
+
+  // Mock ALL auth-related endpoints BEFORE any navigation
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await mockApiResponse(route, user);
+  });
+
+  await page.route('**/api/v1/auth/login', async (route) => {
+    await mockApiResponse(route, {
+      userId: user.id,
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
+      org: { id: 'org-1', name: 'Test Org' },
+    });
+  });
+
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await mockApiResponse(route, {
+      access_token: 'mock-refreshed-access-token',
+      refresh_token: 'mock-refresh-token',
+    });
+  });
+}
+
+/**
+ * Sets auth tokens in localStorage for an already-loaded page
+ */
+async function setAuthTokens(page: Page) {
+  await page.evaluate(() => {
+    const tokens = {
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token',
+    };
+    localStorage.setItem('auth_tokens', JSON.stringify(tokens));
+  });
+}
+
+/**
+ * Login helper - authenticates a user and navigates to dashboard
+ * Uses mocked auth endpoints for reliability
+ */
+export async function login(
+  page: Page,
+  credentials: Credentials = testCredentials,
+  user: typeof mockUsers[number] = mockUsers[0]
+) {
+  // Set auth tokens in localStorage for the current context
+  await setAuthTokens(page);
+
+  // Mock auth endpoints
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await mockApiResponse(route, user);
+  });
+
+  await page.route('**/api/v1/auth/login', async (route) => {
+    await mockApiResponse(route, {
+      userId: user.id,
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
+      org: { id: 'org-1', name: 'Test Org' },
+    });
+  });
+
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await mockApiResponse(route, {
+      access_token: 'mock-refreshed-access-token',
+      refresh_token: 'mock-refresh-token',
+    });
+  });
+
+  // Mock common dashboard APIs that are called during login flow
+  await page.route('**/api/v1/printers', async (route) => {
+    await mockApiResponse(route, { printers: mockPrinters });
+  });
+
+  await page.route('**/api/v1/jobs*', async (route) => {
+    await mockApiResponse(route, {
+      data: mockJobs,
+      total: mockJobs.length,
+      limit: 50,
+      offset: 0,
+    });
+  });
+
+  await page.route('**/api/v1/analytics/environment*', async (route) => {
+    await mockApiResponse(route, mockEnvironmentReport);
+  });
+
+  // Navigate to login page
+  await page.goto('/login', { waitUntil: 'networkidle' });
+
+  // Wait for email input to be visible
+  await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 5000 });
 
   // Fill in login form
   await page.fill('input[type="email"]', credentials.email);
@@ -35,7 +140,44 @@ export async function login(page: Page, credentials: Credentials = testCredentia
   await page.click('button[type="submit"]');
 
   // Wait for navigation to dashboard
-  await page.waitForURL('**/dashboard', { timeout: 5000 });
+  await page.waitForURL('**/dashboard', { timeout: 10000 });
+
+  // Re-ensure tokens are set after login for subsequent navigations
+  await setAuthTokens(page);
+}
+
+/**
+ * Quick setup for authenticated tests - sets up auth and navigates to a specific page
+ * This bypasses the login form for faster, more reliable tests
+ */
+export async function setupAuthAndNavigate(
+  page: Page,
+  path: string,
+  user: typeof mockUsers[number] = mockUsers[0]
+) {
+  // Set up authenticated state with all necessary mocks
+  await setupAuthenticatedUser(page, user);
+
+  // Also mock common APIs that most pages need
+  await page.route('**/api/v1/printers', async (route) => {
+    await mockApiResponse(route, { printers: mockPrinters });
+  });
+
+  await page.route('**/api/v1/jobs*', async (route) => {
+    await mockApiResponse(route, {
+      data: mockJobs,
+      total: mockJobs.length,
+      limit: 50,
+      offset: 0,
+    });
+  });
+
+  await page.route('**/api/v1/analytics/environment*', async (route) => {
+    await mockApiResponse(route, mockEnvironmentReport);
+  });
+
+  // Navigate to the path
+  await page.goto(path, { waitUntil: 'networkidle' });
 }
 
 /**
@@ -49,7 +191,7 @@ export async function logout(page: Page) {
 /**
  * Mock API response helper
  */
-export function mockApiResponse(route: Route, data: unknown, status = 200) {
+export async function mockApiResponse(route: Route, data: unknown, status = 200) {
   return route.fulfill({
     status,
     contentType: 'application/json',
@@ -77,6 +219,17 @@ export const mockUsers = [
     name: 'Admin User',
     role: 'admin',
     orgId: 'org-1',
+    isActive: true,
+    emailVerified: true,
+    createdAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '3',
+    email: 'platform-admin@openprint.cloud',
+    name: 'Platform Admin',
+    role: 'platform_admin',
+    isPlatformAdmin: true,
+    orgId: 'platform',
     isActive: true,
     emailVerified: true,
     createdAt: '2024-01-01T00:00:00Z',
@@ -618,3 +771,122 @@ export const mockAgentHealthMetrics = {
     },
   ],
 };
+
+/**
+ * Setup common API mocks for authenticated pages
+ * This sets up mocks for auth and common dashboard APIs
+ */
+export async function setupCommonApiMocks(page: Page, user: typeof mockUsers[number] = mockUsers[0]) {
+  // Mock auth/me endpoint
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await mockApiResponse(route, user);
+  });
+
+  // Mock auth/login endpoint (for login flow)
+  await page.route('**/api/v1/auth/login', async (route) => {
+    await mockApiResponse(route, {
+      userId: user.id,
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
+      org: { id: 'org-1', name: 'Test Org' },
+    });
+  });
+
+  // Mock auth/refresh endpoint
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await mockApiResponse(route, {
+      access_token: 'mock-refreshed-access-token',
+      refresh_token: 'mock-refresh-token',
+    });
+  });
+
+  // Mock printers API - Dashboard expects { printers: [...] }
+  await page.route('**/api/v1/printers', async (route) => {
+    await mockApiResponse(route, { printers: mockPrinters });
+  });
+
+  // Mock jobs API with pagination wrapper
+  await page.route('**/api/v1/jobs*', async (route) => {
+    await mockApiResponse(route, {
+      data: mockJobs,
+      total: mockJobs.length,
+      limit: 50,
+      offset: 0,
+    });
+  });
+
+  // Mock environment report API
+  await page.route('**/api/v1/analytics/environment*', async (route) => {
+    await mockApiResponse(route, mockEnvironmentReport);
+  });
+}
+
+/**
+ * Setup mocks for agents page
+ */
+export async function setupAgentsApiMocks(page: Page) {
+  // Mock agents list endpoint
+  await page.route('**/api/v1/agents**', async (route) => {
+    const url = route.request().url();
+    // Handle detail endpoint differently
+    if (url.includes('/detail')) {
+      const agentDetail = {
+        ...mockAgents[0],
+        printers: mockDiscoveredPrinters,
+        jobHistory: [],
+        healthMetrics: mockAgentHealthMetrics,
+      };
+      await mockApiResponse(route, agentDetail);
+    } else if (url.includes('/health')) {
+      await mockApiResponse(route, mockAgentHealthMetrics);
+    } else if (url.includes('/printers')) {
+      await mockApiResponse(route, mockDiscoveredPrinters);
+    } else if (url.includes('/jobs')) {
+      await mockApiResponse(route, []);
+    } else {
+      await mockApiResponse(route, mockAgents);
+    }
+  });
+
+  // Mock discovered printers endpoint
+  await page.route('**/api/v1/discovered-printers*', async (route) => {
+    await mockApiResponse(route, {
+      printers: mockDiscoveredPrinters,
+      total: mockDiscoveredPrinters.length,
+    });
+  });
+}
+
+/**
+ * Setup mocks for analytics page
+ */
+export async function setupAnalyticsApiMocks(page: Page) {
+  // Mock usage stats
+  await page.route('**/api/v1/analytics/usage*', async (route) => {
+    await mockApiResponse(route, mockUsageStats);
+  });
+
+  // Mock audit logs
+  await page.route('**/api/v1/analytics/audit-logs*', async (route) => {
+    await mockApiResponse(route, {
+      data: mockAuditLogs,
+      total: mockAuditLogs.length,
+      limit: 50,
+      offset: 0,
+    });
+  });
+}
+
+/**
+ * Setup mocks for job assignments
+ */
+export async function setupJobAssignmentsApiMocks(page: Page) {
+  await page.route('**/api/v1/job-assignments*', async (route) => {
+    await mockApiResponse(route, {
+      data: mockJobAssignments,
+      total: mockJobAssignments.length,
+      limit: 50,
+      offset: 0,
+    });
+  });
+}

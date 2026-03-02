@@ -10,8 +10,10 @@ services:
       POSTGRES_USER: openprint
       POSTGRES_PASSWORD: openprint
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "15432:5432"
+    # Remove external port exposure - only accessible within Docker network
+    # Uncomment for local development:
+    # ports:
+    #   - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -30,8 +32,10 @@ services:
     image: redis:7-alpine
     container_name: openprint-redis
     command: redis-server --appendonly yes --requirepass openprint
-    ports:
-      - "16379:6379"
+    # Remove external port exposure - only accessible within Docker network
+    # Uncomment for local development:
+    # ports:
+    #   - "16379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -52,20 +56,25 @@ services:
     container_name: openprint-auth-service
     environment:
       SERVER_ADDR: ":8001"
+      METRICS_PORT: "9091"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: auth-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18001:8001"
+      - "9091:9091"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -82,19 +91,24 @@ services:
     container_name: openprint-registry-service
     environment:
       SERVER_ADDR: ":8002"
+      METRICS_PORT: "9092"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: registry-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8002:8002"
+      - "9092:9092"
     depends_on:
       postgres:
         condition: service_healthy
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -111,14 +125,19 @@ services:
     container_name: openprint-job-service
     environment:
       SERVER_ADDR: ":8003"
+      METRICS_PORT: "9093"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: job-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       PROCESSOR_WORKERS: 10
     ports:
       - "8003:8003"
+      - "9093:9093"
     depends_on:
       postgres:
         condition: service_healthy
@@ -129,7 +148,7 @@ services:
       registry-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8003/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -146,6 +165,7 @@ services:
     container_name: openprint-storage-service
     environment:
       SERVER_ADDR: ":8004"
+      METRICS_PORT: "9094"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_BUCKET: ${S3_BUCKET:-openprint-documents}
@@ -154,11 +174,15 @@ services:
       S3_REGION: ${S3_REGION:-us-east-1}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: storage-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       MAX_UPLOAD_MB: 100
     ports:
       - "8004:8004"
+      - "9094:9094"
     volumes:
       - storage_data:/data/storage
     depends_on:
@@ -184,12 +208,17 @@ services:
     container_name: openprint-notification-service
     environment:
       SERVER_ADDR: ":8005"
+      METRICS_PORT: "9095"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: notification-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18005:8005"
+      - "9095:9095"
     depends_on:
       postgres:
         condition: service_healthy
@@ -198,7 +227,7 @@ services:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8005/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -230,11 +259,88 @@ services:
       notification-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # ============================================
+  # Monitoring Stack
+  # ============================================
+
+  # Prometheus (Port 9090)
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: openprint-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=http://localhost:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # AlertManager (Port 9093)
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: openprint-alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    volumes:
+      - ./alertmanager/config.yml:/etc/alertmanager/config.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Grafana (Port 3001)
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: openprint-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: ""
+      GF_SERVER_ROOT_URL: http://localhost:3001
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # Jaeger (Port 16686)
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    container_name: openprint-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+      - "14250:14250"  # Jaeger collector gRPC
+      - "6831:6831/udp" # Jaeger agent compact
+      - "6832:6832/udp" # Jaeger agent binary
     networks:
       - openprint-network
     restart: unless-stopped
@@ -253,3 +359,9 @@ volumes:
     name: openprint-redis-data
   storage_data:
     name: openprint-storage-data
+  prometheus_data:
+    name: openprint-prometheus-data
+  alertmanager_data:
+    name: openprint-alertmanager-data
+  grafana_data:
+    name: openprint-grafana-data

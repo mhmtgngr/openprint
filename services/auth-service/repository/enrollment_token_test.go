@@ -11,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/openprint/openprint/internal/testutil"
 )
 
 // testDB holds the test database connection and cleanup function.
@@ -55,8 +57,26 @@ func setupEnrollmentTokenTestDBFull(t *testing.T) *testDB {
 		return nil
 	}
 
+	// Ensure uuid-ossp extension is available (required for gen_random_uuid)
+	if _, err := pool.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""); err != nil {
+		pool.Close()
+		t.Skipf("failed to create uuid-ossp extension: %v", err)
+		return nil
+	}
+
+	// Create the enrollment_tokens table using the migration system
+	if err := testutil.CreateSchema(ctx, pool); err != nil {
+		pool.Close()
+		t.Skipf("schema setup: %v", err)
+		return nil
+	}
+
 	// Clean up test data from previous runs to avoid duplicate key errors
-	_, _ = pool.Exec(ctx, "DELETE FROM enrollment_tokens WHERE token LIKE 'test-%' OR token LIKE 'find-%' OR token LIKE 'valid-%' OR token LIKE 'expired-%' OR token LIKE 'revoke-%' OR token LIKE 'max-%' OR token LIKE 'org-%' OR token LIKE 'increment-%' OR token LIKE 'list-%' OR token LIKE 'other-%'")
+	if _, err := pool.Exec(ctx, "DELETE FROM enrollment_tokens WHERE token LIKE 'test-%' OR token LIKE 'find-%' OR token LIKE 'valid-%' OR token LIKE 'expired-%' OR token LIKE 'revoke-%' OR token LIKE 'max-%' OR token LIKE 'org-%' OR token LIKE 'increment-%' OR token LIKE 'list-%' OR token LIKE 'other-%'"); err != nil {
+		pool.Close()
+		t.Skipf("failed to clean up test data: %v", err)
+		return nil
+	}
 
 	// Cleanup function to close the pool
 	cleanup := func() {

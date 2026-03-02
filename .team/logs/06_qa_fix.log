@@ -1,36 +1,54 @@
-All QA issues have been fixed. Here's a summary of the changes:
+All blocking and critical issues have been fixed and tests are passing. Here's a summary of the fixes:
 
-## Fixed Issues
+## Summary of Fixes
 
-### 1. **Added build tag to integration tests** (`tests/integration/api_test.go`)
-   - Added `//go:build integration` and `// +build integration` build tags
-   - Integration tests now only run with `-tags=integration` flag
-   - No longer run during `go test -short`
+### 1. **WebSocket Authentication** (BLOCKING → FIXED)
+- **File**: `services/notification-service/websocket/handler.go`
+- **Fixes**:
+  - Added JWT validation requirement - connections without valid tokens are rejected
+  - Added `JWTManager` and `AllowedOrigins` to `HandlerConfig`
+  - Implemented proper origin validation with hostname matching
+  - Extract `org_id` from validated JWT token claims
+  - Reject anonymous/random user ID generation
 
-### 2. **Fixed nil pointer panic** (`tests/integration/api_test.go`)
-   - Added `connectDB()` helper that safely handles connection errors
-   - Added `cleanupDB()` helper for safe cleanup code
-   - Fixed all 7 instances of `conn, _ := pgx.Connect()` that ignored errors
-   - Changed cleanup code to use safe helpers that won't panic
+### 2. **Context Keys Consolidation** (BLOCKING → FIXED)
+- **New File**: `internal/shared/context/keys.go`
+- **Fixes**:
+  - Created single source of truth for all context key constants
+  - Exported `ContextKey` type for use across packages
+  - Updated `internal/shared/middleware/auth.go`, `internal/auth/jwt/tenant_claims.go`, and `internal/multi-tenant/context.go` to import and use shared keys
 
-### 3. **Created testing documentation** (`docs/testing.md`)
-   - Comprehensive testing guide with unit/integration test instructions
-   - Environment setup documentation
-   - Test utility usage examples
-   - Coverage targets and CI/CD integration
+### 3. **Scan Mismatch in OrganizationUser** (BLOCKING → FIXED)
+- **File**: `services/auth-service/repository/organization_user.go`
+- **Fixes**:
+  - Added `Email` and `Name` fields to `OrganizationUser` struct
+  - Updated `ListByOrganization` scan to include these new fields
 
-### 4. **Created testutil package** (`tests/testutil/`)
-   - New shared testing utilities package with HTTP, DB, and general helpers
-   - Achieved **72.2% test coverage** (exceeds 70% target)
-   - Includes: `TestHTTPClient`, `SetupTestDB`, `InTransaction`, `WaitForCondition`, etc.
+### 4. **Organization TenantID and RLS Policy** (BLOCKING → FIXED)
+- **File**: `services/auth-service/repository/organization.go`
+- **Fixes**:
+  - Fixed `CreateTenantPolicy` to use correct column reference (organizations ARE tenants, so they don't have a tenant_id column)
+  - Updated RLS policy to filter by organization `id` with platform admin bypass
 
-### 5. **Added migration validation** (`scripts/test-env.sh`)
-   - New `check_migrations()` function validates migration files
-   - Verifies each `.up.sql` has a corresponding `.down.sql`
-   - Checks for empty migration files
-   - Integrated into `make test-env` and `make test-env-setup`
+### 5. **Platform Admin Role Handling** (MAJOR → FIXED)
+- **File**: `internal/multi-tenant/middleware.go`
+- **Fixes**:
+  - Moved role mapping before early return for platform admins
+  - Platform admins with an org_id now properly get tenant context set
 
-### 6. **Verified all tests pass**
-   - `go test ./...` passes successfully
-   - Integration tests properly excluded from unit test runs
-   - testutil package coverage at 72.2%
+### 6. **SQL Injection Prevention** (MAJOR → FIXED)
+- **File**: `internal/multi-tenant/repository.go`
+- **Fixes**:
+  - Created `validateSQLIdentifier()`, `validateTableName()`, and `quoteIdentifier()` functions
+  - Added table name whitelist
+  - Updated `EnableForTable`, `DisableForTable`, `CreateTenantPolicy`, `CreateTenantPolicyWithAdmin` to validate and quote identifiers
+
+### 7. **Input Validation** (MAJOR → FIXED)
+- **File**: `services/auth-service/repository/organization.go`
+- **Fixes**:
+  - Added validation for `name` (required)
+  - Added validation for `slug` format (lowercase alphanumeric, hyphens, underscores only)
+- **File**: `services/auth-service/repository/quota.go`
+- **Fixes**:
+  - Added validation for all quota fields (`MaxPrinters`, `MaxStorageGB`, `MaxJobsPerMonth`, `MaxUsers` - must be >= 0)
+  - Added validation for `AlertThreshold` (must be 0-100)

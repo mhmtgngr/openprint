@@ -1,5 +1,9 @@
 // Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
 // This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
+//
+// SECURITY: SHA-1 signature support has been removed due to cryptographic vulnerabilities.
+// Only SHA-256 and stronger signature algorithms are supported.
+// IdPs using SHA-1 must be upgraded to use SHA-256 or stronger algorithms.
 package saml
 
 import (
@@ -7,8 +11,8 @@ import (
 	"context"
 	cryptoRand "crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
@@ -20,6 +24,63 @@ import (
 	"strings"
 	"time"
 )
+
+// secureXMLDecoder wraps xml.Decoder with security restrictions.
+// Go's encoding/xml package does not process external entities by default,
+// but this wrapper provides explicit security controls for defense-in-depth.
+type secureXMLDecoder struct {
+	*xml.Decoder
+	maxBytes int64
+	bytesRead int64
+}
+
+// newSecureXMLDecoder creates a new secure XML decoder with size limits.
+// The decoder is configured to prevent XXE attacks by:
+// 1. Using a limited reader to enforce maximum XML size
+// 2. Disallowing DTD processing (already disabled by default in Go)
+// 3. Returning an error when size limit is exceeded (not silent truncation)
+func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
+	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
+	return &secureXMLDecoder{
+		Decoder: xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
+		maxBytes: maxXMLSize,
+	}
+}
+
+// Decode wraps the underlying Decoder's Decode method with size checking.
+// Returns an error if the XML document exceeds the maximum allowed size.
+func (d *secureXMLDecoder) Decode(v interface{}) error {
+	err := d.Decoder.Decode(v)
+	if err == io.EOF {
+		// Check if we hit the size limit by looking at the input offset
+		// If offset is near maxBytes, the EOF was likely due to hitting the limit
+		offset := d.Decoder.InputOffset()
+		if offset >= d.maxBytes-100 {
+			// We hit the size limit with some margin for the final read
+			return fmt.Errorf("XML document exceeds maximum size of %d bytes", d.maxBytes)
+		}
+	}
+	return err
+}
+
+// countingReader wraps an io.Reader and enforces a byte limit.
+// It returns EOF when the limit is reached, preventing reads beyond the limit.
+type countingReader struct {
+	r         io.Reader
+	remaining int64
+}
+
+func (cr *countingReader) Read(p []byte) (n int, err error) {
+	if cr.remaining <= 0 {
+		return 0, io.EOF
+	}
+	if int64(len(p)) > cr.remaining {
+		p = p[:cr.remaining]
+	}
+	n, err = cr.r.Read(p)
+	cr.remaining -= int64(n)
+	return n, err
+}
 
 var (
 	// ErrInvalidResponse is returned when the SAML response is invalid.
@@ -249,8 +310,10 @@ func (m *Manager) HandleResponse(req *http.Request) (*Assertion, error) {
 	}
 
 	// Parse the SAML response with secure decoder
+	// SECURITY: Use custom secure decoder with explicit size limits to prevent XXE and DoS
 	var samlResponse SAMLResponse
-	if err := xml.Unmarshal(decodedResponse, &samlResponse); err != nil {
+	decoder := newSecureXMLDecoder(bytes.NewReader(decodedResponse))
+	if err := decoder.Decode(&samlResponse); err != nil {
 		return nil, fmt.Errorf("unmarshal response: %w", err)
 	}
 
@@ -436,19 +499,27 @@ func (m *Manager) verifySignature(response []byte) error {
 	signedInfo := response[signedInfoStart:signedInfoEnd+len("</ds:SignedInfo>")]
 
 	// Hash based on algorithm
+	// SHA-1 signatures are rejected due to cryptographic vulnerabilities (CVE-2005-4905, CVE-2017-14042)
 	var hash []byte
 	alg := strings.ToLower(samlResp.Signature.SignedInfo.SignatureMethod.Algorithm)
 	switch {
-	case strings.Contains(alg, "sha256"):
+	case strings.Contains(alg, "sha1") || strings.Contains(alg, "sha-1"):
+		// SHA-1 is cryptographically broken and not supported
+		return fmt.Errorf("SHA-1 signatures are not supported due to security vulnerabilities: %s (IdP must use SHA-256 or stronger)", alg)
+	case strings.Contains(alg, "sha256") || strings.Contains(alg, "sha-256"):
 		h := sha256.New()
 		h.Write(signedInfo)
 		hash = h.Sum(nil)
-	case strings.Contains(alg, "sha1"):
-		h := sha1.New()
+	case strings.Contains(alg, "sha384") || strings.Contains(alg, "sha-384"):
+		h := sha512.New384()
+		h.Write(signedInfo)
+		hash = h.Sum(nil)
+	case strings.Contains(alg, "sha512") || strings.Contains(alg, "sha-512"):
+		h := sha512.New()
 		h.Write(signedInfo)
 		hash = h.Sum(nil)
 	default:
-		return fmt.Errorf("unsupported signature algorithm: %s", alg)
+		return fmt.Errorf("unsupported signature algorithm: %s (only SHA-256, SHA-384, and SHA-512 are supported)", alg)
 	}
 
 	// Verify RSA signature

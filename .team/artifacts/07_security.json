@@ -4,112 +4,92 @@
   "vulnerabilities": [
     {
       "id": "V-001",
-      "severity": "high",
-      "file": "internal/shared/telemetry/middleware.go",
-      "description": "stdouttrace exporter may expose sensitive data (tokens, credentials, user data) in logs in production. Default stdout tracing with pretty print logs all request/response data.",
-      "fix": "Remove stdout exporter in production. Use OTLP or Jaeger with proper sampling and sensitive data filtering. Add config check to disable tracing in production."
+      "severity": "medium",
+      "file": "internal/auth/saml/saml.go",
+      "description": "secureXMLDecoder uses LimitedReader.N which silently truncates XML at 10MB without returning error. Malformed large payloads could be parsed as valid shorter documents.",
+      "fix": "Return explicit error when size limit is exceeded instead of silent truncation"
     },
     {
       "id": "V-002",
-      "severity": "high",
-      "file": "internal/auth/oidc/oidc.go",
-      "description": "State parameter comparison may be vulnerable to timing attacks. Using simple string comparison for OAuth state allows timing side-channel attacks.",
-      "fix": "Use crypto/subtle.ConstantTimeCompare() for state parameter validation to prevent timing attacks."
+      "severity": "medium",
+      "file": "internal/multi-tenant/middleware.go",
+      "description": "Role-based access control uses string literals ('admin', 'platform_admin') without centralized constants. Inconsistent comparison could lead to authorization bypass.",
+      "fix": "Define centralized role constants and use typed enums for role validation"
     },
     {
       "id": "V-003",
       "severity": "medium",
-      "file": "internal/auth/saml/saml.go",
-      "description": "Incomplete SAML implementation visible. No evidence of XML Signature validation, assertion encryption, or replay attack protection (NotOnOrAfter Before conditions).",
-      "fix": "Implement full XML signature validation with IdP certificate, check assertion conditions (NotBefore/NotOnOrAfter), validate audience restriction, implement replay protection with unique ID tracking."
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "No mechanism to detect token compromise or revoke refresh tokens. 48-hour window allows unlimited use if token is stolen.",
+      "fix": "Implement token rotation, refresh token jti/blacklist, and device fingerprinting"
     },
     {
       "id": "V-004",
-      "severity": "medium",
-      "file": "internal/auth/jwt/jwt.go",
-      "description": "Claims structure includes sensitive information (email, org_id, role) in JWT. If tokens are logged or leaked, PII is exposed. No evidence of audience (aud) or issuer (iss) claim validation in ValidateToken.",
-      "fix": "Add audience and issuer claim validation. Minimize sensitive data in access tokens - use opaque reference tokens or store minimal claims. Implement token fingerprinting."
+      "severity": "low",
+      "file": "internal/middleware/cookie_auth.go",
+      "description": "AutoCookieSecurity uses strings.Contains for env check. 'staging-production' would match and apply production settings incorrectly.",
+      "fix": "Use exact string match: strings.EqualFold(env, \"production\")"
     },
     {
       "id": "V-005",
       "severity": "medium",
-      "file": "internal/auth/oidc/oidc.go",
-      "description": "OAuth state stored only in memory (map with mutex). Not scalable across multiple service instances. State can be replayed within expiration window. No cleanup of expired states.",
-      "fix": "Use Redis or similar distributed cache for state storage. Implement state expiration and cleanup. Add PKCE (RFC 7636) for additional security."
+      "file": "internal/shared/middleware",
+      "description": "No rate limiting on authentication endpoints. Brute force attacks on login/refresh are possible.",
+      "fix": "Implement rate limiting middleware for /auth/* endpoints"
     },
     {
       "id": "V-006",
       "severity": "low",
-      "file": "internal/shared/middleware/validation.go",
-      "description": "Pagination validation does not protect against excessive resource consumption. Very large limit values (up to maxLimit) could be abused.",
-      "fix": "Add reasonable default maxLimit (e.g., 100). Consider rate limiting per user/IP. Monitor for abuse patterns."
+      "file": "internal/multi-tenant/middleware.go",
+      "description": "TenantID extracted from JWT but not validated against database before use in most handlers. Potential IDOR if stale claims.",
+      "fix": "Validate tenant exists and user has access in RequireTenant mode"
     },
     {
       "id": "V-007",
       "severity": "low",
-      "file": "internal/auth/jwt/jwt.go",
-      "description": "No evidence of key rotation mechanism. JWT secrets must be rotated periodically for security.",
-      "fix": "Implement key rotation support with kid (key ID) header. Maintain multiple valid keys during rotation period."
+      "file": "internal/middleware/cookie_auth.go",
+      "description": "Missing Domain attribute in CookieSecurity. Cookies may leak to subdomains in multi-tenant deployments.",
+      "fix": "Add explicit Domain configuration; default to empty (current host only)"
     }
   ],
   "owasp_checks": [
     {
       "category": "A01:2021-Broken Access Control",
-      "status": "pass",
-      "detail": "JWT validation present, middleware structure exists for auth"
+      "status": "fail",
+      "detail": "RBUC issues: role string literals, lack of centralized tenant validation, skip paths need audit"
     },
     {
       "category": "A02:2021-Cryptographic Failures",
       "status": "pass",
-      "detail": "Argon2id used for passwords with proper parameters (OWASP compliant)"
+      "detail": "Argon2id used correctly, SHA-1 removed in SAML, Secure/HttpOnly cookies enforced"
     },
     {
       "category": "A03:2021-Injection",
       "status": "pass",
-      "detail": "No SQL injection patterns found in provided code. Uses parameterized patterns."
+      "detail": "XXE prevented with size limits, but silent truncation needs fix"
     },
     {
       "category": "A04:2021-Insecure Design",
       "status": "fail",
-      "detail": "Missing rate limiting, state management not distributed, no replay protection evident in SAML"
+      "detail": "No token revocation, missing rate limiting, session hijacking detection absent"
     },
     {
       "category": "A05:2021-Security Misconfiguration",
       "status": "fail",
-      "detail": "stdout tracer may leak sensitive data in production. No evidence of security headers."
-    },
-    {
-      "category": "A06:2021-Vulnerable and Outdated Components",
-      "status": "pass",
-      "detail": "Using current libraries (golang.org/x/crypto, jwt/v5, opentelemetry)"
+      "detail": "Env detection uses Contains instead of exact match"
     },
     {
       "category": "A07:2021-Identification and Authentication Failures",
       "status": "partial",
-      "detail": "Good password hashing. Timing attack vulnerability in OAuth state. Missing key rotation."
-    },
-    {
-      "category": "A08:2021-Software and Data Integrity Failures",
-      "status": "fail",
-      "detail": "SAML signature validation not visible. No evidence of subresource integrity checks."
-    },
-    {
-      "category": "A09:2021-Security Logging and Monitoring",
-      "status": "pass",
-      "detail": "OpenTelemetry implemented for distributed tracing"
-    },
-    {
-      "category": "A10:2021-Server-Side Request Forgery",
-      "status": "pass",
-      "detail": "No SSRF patterns found in provided code"
+      "detail": "Strong password hashing, but missing rate limiting and MFA enforcement"
     }
   ],
   "verdict": "NEEDS_FIXES",
   "critical_fixes": [
-    "1. Remove/fix stdouttrace exporter to prevent sensitive data logging in production",
-    "2. Fix OAuth state timing attack vulnerability using ConstantTimeCompare",
-    "3. Implement complete SAML signature and assertion validation",
-    "4. Add JWT audience and issuer claim validation",
-    "5. Implement distributed state storage (Redis) for OAuth flow scalability"
+    "1. Fix AutoCookieSecurity env detection to use exact match",
+    "2. Add rate limiting for authentication endpoints",
+    "3. Implement refresh token rotation and revocation",
+    "4. Add centralized role constants and consistent validation",
+    "5. Fix XML decoder to error on size limit instead of truncate"
   ]
 }

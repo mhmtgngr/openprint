@@ -1,0 +1,2 @@
+services/storage-service/handler/document_tenant.go:16:2: no required module provides package github.com/openprint/openprint/services/storage-service/repository; to add it:
+	go get github.com/openprint/openprint/services/storage-service/repository

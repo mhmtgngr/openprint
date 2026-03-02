@@ -118,29 +118,38 @@ CREATE INDEX idx_push_notifications_device ON push_notifications(device_id);
 CREATE INDEX idx_push_notifications_status ON push_notifications(sent_at, failed_at) WHERE sent_at IS NULL AND failed_at IS NULL;
 
 -- API Keys Table (for developer portal)
+-- Note: api_keys table is created in migration 000011 with org_id column
+-- This section adds additional columns if needed
 
-CREATE TABLE IF NOT EXISTS api_keys (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    key_hash VARCHAR(64) NOT NULL UNIQUE,
-    key_prefix VARCHAR(8) NOT NULL,
-    scopes TEXT[] NOT NULL DEFAULT ARRAY['read', 'write'],
-    is_active BOOLEAN DEFAULT true,
-    expires_at TIMESTAMPTZ,
-    rate_limit INTEGER DEFAULT 60,
-    created_by VARCHAR(255),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    last_used_at TIMESTAMPTZ
-);
+-- Add new columns to api_keys if they don't exist
+DO $$
+BEGIN
+    -- Add key_prefix if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'key_prefix') THEN
+        ALTER TABLE api_keys ADD COLUMN key_prefix VARCHAR(8);
+    END IF;
 
-CREATE INDEX idx_api_keys_org ON api_keys(organization_id);
-CREATE INDEX idx_api_keys_prefix ON api_keys(key_prefix);
-CREATE INDEX idx_api_keys_active ON api_keys(organization_id, is_active) WHERE is_active = true;
+    -- Add rate_limit if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'rate_limit') THEN
+        ALTER TABLE api_keys ADD COLUMN rate_limit INTEGER DEFAULT 60;
+    END IF;
 
-CREATE TRIGGER update_api_keys_updated_at BEFORE UPDATE ON api_keys
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    -- Add created_by if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'created_by') THEN
+        ALTER TABLE api_keys ADD COLUMN created_by VARCHAR(255);
+    END IF;
+
+    -- Add updated_at if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'updated_at') THEN
+        ALTER TABLE api_keys ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+    END IF;
+
+    -- Create trigger for updated_at if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.triggers WHERE trigger_name = 'update_api_keys_updated_at') THEN
+        CREATE TRIGGER update_api_keys_updated_at BEFORE UPDATE ON api_keys
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
 -- API Usage Logs Table (for rate limiting and analytics)
 
@@ -160,25 +169,21 @@ CREATE INDEX idx_api_usage_logs_org ON api_usage_logs(organization_id);
 CREATE INDEX idx_api_usage_logs_created ON api_usage_logs(created_at);
 
 -- Webhooks Table
+-- Note: webhooks table is created in migration 000012 with org_id column
+-- This section adds additional columns if needed
 
-CREATE TABLE IF NOT EXISTS webhooks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    url VARCHAR(2048) NOT NULL,
-    secret VARCHAR(255) NOT NULL DEFAULT uuid_generate_v4()::text,
-    events TEXT[] NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    headers JSONB,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+DO $$
+BEGIN
+    -- Add secret if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'webhooks' AND column_name = 'secret') THEN
+        ALTER TABLE webhooks ADD COLUMN secret VARCHAR(255) NOT NULL DEFAULT uuid_generate_v4()::text;
+    END IF;
 
-CREATE INDEX idx_webhooks_org ON webhooks(organization_id);
-CREATE INDEX idx_webhooks_active ON webhooks(organization_id, is_active) WHERE is_active = true;
-
-CREATE TRIGGER update_webhooks_updated_at BEFORE UPDATE ON webhooks
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    -- Add headers if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'webhooks' AND column_name = 'headers') THEN
+        ALTER TABLE webhooks ADD COLUMN headers JSONB;
+    END IF;
+END $$;
 
 -- Audit Logs Table
 

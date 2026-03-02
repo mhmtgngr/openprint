@@ -1,0 +1,153 @@
+# AlertManager configuration for OpenPrint monitoring.
+# This config defines how alerts are routed and sent.
+
+global:
+  # Global SMTP configuration for email notifications
+  smtp_smarthost: 'localhost:25'
+  smtp_from: 'alertmanager@openprint.local'
+  smtp_require_tls: false
+
+  # Slack API configuration (optional)
+  # slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+# Route configuration - defines how alerts are grouped and routed
+route:
+  # Default receiver for all alerts
+  receiver: 'default'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+
+  # Wait time before sending first notification for a new group
+  group_wait: 10s
+
+  # Wait time before sending notification about new alerts for an existing group
+  group_interval: 30s
+
+  # Wait time before sending notification after an alert is resolved
+  repeat_interval: 4h
+
+  # Child routes with specific routing rules
+  routes:
+    # Critical alerts go to critical receiver immediately
+    - match:
+        severity: critical
+      receiver: 'critical'
+      group_wait: 10s
+      repeat_interval: 15m
+
+    # Security alerts go to security receiver
+    - match:
+        category: security
+      receiver: 'security'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # Performance alerts are less urgent
+    - match:
+        category: performance
+      receiver: 'performance'
+      group_wait: 5m
+      repeat_interval: 2h
+
+    # Capacity alerts for planning
+    - match:
+        category: capacity
+      receiver: 'capacity'
+      group_wait: 10m
+      repeat_interval: 4h
+
+# Receivers define where notifications are sent
+receivers:
+  # Default receiver - logs alerts
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts'
+        send_resolved: true
+
+  # Critical alerts - email and webhook
+  - name: 'critical'
+    email_configs:
+      - to: 'oncall@openprint.local'
+        headers:
+          Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
+        html: '{{ template "email.default.html" . }}'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts'
+        send_resolved: true
+
+  # Security alerts - email to security team
+  - name: 'security'
+    email_configs:
+      - to: 'security@openprint.local'
+        headers:
+          Subject: '[SECURITY] {{ .GroupLabels.alertname }}'
+
+  # Performance alerts - different email
+  - name: 'performance'
+    email_configs:
+      - to: 'performance@openprint.local'
+        headers:
+          Subject: '[PERFORMANCE] {{ .GroupLabels.alertname }}'
+
+  # Capacity alerts - for planning team
+  - name: 'capacity'
+    email_configs:
+      - to: 'capacity@openprint.local'
+        headers:
+          Subject: '[CAPACITY] {{ .GroupLabels.alertname }}'
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # Inhibit warning alerts if critical is firing for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service', 'instance']
+
+  # Inhibit HighLatency if CriticalLatency is firing
+  - source_match:
+      alertname: 'CriticalLatency'
+    target_match:
+      alertname: 'HighLatency'
+    equal: ['service_name']
+
+  # Inhibit HighErrorRate if CriticalErrorRate is firing
+  - source_match:
+      alertname: 'CriticalErrorRate'
+    target_match:
+      alertname: 'HighErrorRate'
+    equal: ['service_name']
+
+# Templates for notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Time intervals for routing (optional)
+# Note: These can be referenced in routes using active_time_intervals or mute_time_intervals
+time_intervals:
+  - name: 'business_hours'
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '17:00'
+        weekdays: ['monday:friday']
+
+  - name: 'off_hours'
+    time_intervals:
+      # Evening hours on weekdays (17:00 to midnight)
+      - times:
+          - start_time: '17:00'
+            end_time: '23:59'
+        weekdays: ['monday:friday']
+      # Early morning hours on weekdays (midnight to 09:00)
+      - times:
+          - start_time: '00:00'
+            end_time: '09:00'
+        weekdays: ['monday:friday']
+      # All day weekends
+      - weekdays: ['saturday', 'sunday']
+
+# Note: Silences are managed via Alertmanager API or Web UI, not in config file.
+# POST to /api/v2/silences to create silences programmatically.

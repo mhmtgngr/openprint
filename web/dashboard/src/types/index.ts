@@ -9,9 +9,10 @@ export interface User {
   emailVerified: boolean;
   pageQuotaMonthly?: number;
   createdAt: string;
+  isPlatformAdmin?: boolean;
 }
 
-export type UserRole = 'user' | 'admin' | 'owner';
+export type UserRole = 'user' | 'admin' | 'owner' | 'platform_admin';
 
 export interface AuthTokens {
   accessToken: string;
@@ -42,11 +43,45 @@ export interface Organization {
   name: string;
   slug: string;
   plan: OrganizationPlan;
-  settings: Record<string, unknown>;
+  settings: OrganizationSettings;
   maxUsers: number;
   maxPrinters: number;
   createdAt: string;
+  // Multi-tenancy extensions
+  displayName?: string;
+  status?: OrganizationStatus;
+  quotas?: ResourceQuota;
+  currentUserCount?: number;
+  currentPrinterCount?: number;
 }
+
+export interface OrganizationSettings {
+  branding?: {
+    logoUrl?: string;
+    primaryColor?: string;
+    customDomain?: string;
+  };
+  security?: {
+    requireMFA?: boolean;
+    passwordMinLength?: number;
+    sessionTimeoutMinutes?: number;
+  };
+  [key: string]: unknown;
+}
+
+export interface ResourceQuota {
+  maxUsers: number;
+  maxPrinters: number;
+  maxStorageGB: number;
+  maxJobsPerMonth: number;
+  currentUserCount: number;
+  currentPrinterCount: number;
+  currentStorageGB: number;
+  currentJobsThisMonth: number;
+  quotaResetDate: string;
+}
+
+export type OrganizationStatus = 'active' | 'suspended' | 'deleted' | 'trial';
 
 export type OrganizationPlan = 'free' | 'pro' | 'enterprise';
 
@@ -292,6 +327,9 @@ export interface InviteUserRequest {
 
 export interface UpdateOrganizationRequest {
   name?: string;
+  displayName?: string;
+  status?: OrganizationStatus;
+  plan?: OrganizationPlan;
   settings?: Record<string, unknown>;
 }
 
@@ -459,3 +497,9 @@ export interface UpdateEmailConfigRequest {
   maxAttachments?: number;
   allowedFileTypes?: string[];
 }
+
+// Re-export observability types
+export * from './observability';
+
+// Re-export organization types for multi-tenancy
+export * from './organization';

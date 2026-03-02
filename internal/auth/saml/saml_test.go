@@ -2,6 +2,9 @@
 package saml
 
 import (
+	"bytes"
+	"encoding/xml"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -448,5 +451,150 @@ func TestSAMLConditions(t *testing.T) {
 
 	if conditions.NotBefore != "2024-01-01T00:00:00Z" {
 		t.Error("SAMLConditions NotBefore not set correctly")
+	}
+}
+
+func TestSecureXMLDecoder_ValidXML(t *testing.T) {
+	validXML := `<?xml version="1.0" encoding="UTF-8"?>
+<Response xmlns="urn:oasis:names:tc:SAML:2.0:protocol" ID="test" Version="2.0">
+	<Issuer>https://idp.example.com</Issuer>
+</Response>`
+
+	decoder := newSecureXMLDecoder(strings.NewReader(validXML))
+	var response SAMLResponse
+	err := decoder.Decode(&response)
+
+	if err != nil {
+		t.Errorf("Decode() valid XML should succeed, got error: %v", err)
+	}
+	if response.ID != "test" {
+		t.Errorf("Decode() ID = %v, want test", response.ID)
+	}
+}
+
+func TestSecureXMLDecoder_SizeLimit(t *testing.T) {
+	// Create XML that exceeds the 10MB limit
+	// We'll create a smaller test by using a mock reader with a small limit
+	smallLimitDecoder := func(r io.Reader, limit int64) *secureXMLDecoder {
+		return &secureXMLDecoder{
+			Decoder: xml.NewDecoder(&countingReader{r: r, remaining: limit}),
+			maxBytes: limit,
+		}
+	}
+
+	// Create XML that's larger than our test limit
+	largeXML := `<?xml version="1.0" encoding="UTF-8"?>
+<Response xmlns="urn:oasis:names:tc:SAML:2.0:protocol" ID="test" Version="2.0">
+	<Issuer>https://idp.example.com</Issuer>`
+	for i := 0; i < 1000; i++ {
+		largeXML += `<Extension>Very long extension data to exceed the size limit</Extension>`
+	}
+	largeXML += `</Response>`
+
+	// Use a small limit to trigger the error
+	testLimit := int64(100) // 100 bytes
+	decoder := smallLimitDecoder(strings.NewReader(largeXML), testLimit)
+	var response SAMLResponse
+	err := decoder.Decode(&response)
+
+	if err == nil {
+		t.Error("Decode() should return error for XML exceeding size limit")
+	}
+}
+
+func TestCountingReader_RespectsLimit(t *testing.T) {
+	data := make([]byte, 1000) // 1000 bytes of data
+	for i := range data {
+		data[i] = 'x'
+	}
+
+	tests := []struct {
+		name         string
+		limit        int64
+		expectRead   int
+		expectFirstEOF bool // Whether first Read returns EOF
+	}{
+		{"read within limit", 500, 500, false},
+		{"read at limit", 1000, 1000, false}, // First read exhausts data, returns all bytes
+		{"read beyond limit", 100, 100, false}, // First read hits limit, returns 100 bytes
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader := &countingReader{
+				r:         bytes.NewReader(data),
+				remaining: tt.limit,
+			}
+
+			buf := make([]byte, 2000)
+			n, err := reader.Read(buf)
+
+			if n != tt.expectRead {
+				t.Errorf("Read() returned %d bytes, want %d", n, tt.expectRead)
+			}
+
+			if tt.expectFirstEOF && err != io.EOF {
+				t.Errorf("Read() should return EOF, got %v", err)
+			}
+			if !tt.expectFirstEOF && err != nil {
+				t.Errorf("Read() should not return EOF on first read, got %v", err)
+			}
+
+			// Second read should return EOF when limit is exhausted
+			n2, err2 := reader.Read(buf)
+			if tt.limit <= 1000 {
+				if err2 != io.EOF {
+					t.Errorf("Second Read() should return EOF when limit exhausted, got %v (n=%d)", err2, n2)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateXMLSecurity(t *testing.T) {
+	tests := []struct {
+		name      string
+		xmlData   string
+		wantError bool
+	}{
+		{
+			name:    "valid SAML response",
+			xmlData: `<?xml version="1.0"?><Response xmlns="urn:oasis:names:tc:SAML:2.0:protocol"><Issuer>test</Issuer></Response>`,
+			wantError: false,
+		},
+		{
+			name:      "XXE attack with entity",
+			xmlData:   `<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><foo>&xxe;</foo>`,
+			wantError: true,
+		},
+		{
+			name:      "XXE attack with DOCTYPE",
+			xmlData:   `<?xml version="1.0"?><!DOCTYPE foo PUBLIC "-//foo//bar" "http://example.com/foo.dtd"><foo></foo>`,
+			wantError: true,
+		},
+		{
+			name:      "XXE attack with system",
+			xmlData:   `<?xml version="1.0"?><foo><system>file:///etc/passwd</system></foo>`,
+			wantError: true,
+		},
+		{
+			name:      "XXE attack with xi:include",
+			xmlData:   `<?xml version="1.0"?><foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include href="file:///etc/passwd"/></foo>`,
+			wantError: true,
+		},
+		{
+			name:    "XML exceeds maximum size",
+			xmlData: string(make([]byte, 11*1024*1024)), // 11MB
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateXMLSecurity([]byte(tt.xmlData))
+			if (err != nil) != tt.wantError {
+				t.Errorf("validateXMLSecurity() error = %v, wantError %v", err, tt.wantError)
+			}
+		})
 	}
 }

@@ -19,8 +19,8 @@ RUN npm run build
 # Final stage - use nginx to serve static files and proxy API
 FROM nginx:alpine
 
-# Install dumb-init and tools for DNS fix
-RUN apk add --no-cache dumb-init tzdata bind-tools
+# Install dumb-init, curl for health checks, and tools for DNS fix
+RUN apk add --no-cache dumb-init tzdata bind-tools curl
 
 # Copy nginx config
 COPY deployments/docker/nginx-dashboard.conf /etc/nginx/conf.d/default.conf
@@ -37,7 +37,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD curl -f http://localhost:3000/ || exit 1
 
 # Use dumb-init and our entrypoint script to handle DNS + signals properly
 ENTRYPOINT ["dumb-init", "--", "/docker-entrypoint.sh"]

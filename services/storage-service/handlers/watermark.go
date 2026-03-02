@@ -602,12 +602,15 @@ func (h *WatermarkHandler) applyPDFWatermark(content []byte, template *Watermark
 		}
 	} else if _, err := exec.LookPath("gs"); err == nil {
 		// Use ghostscript
+		opacityStr := fmt.Sprintf("%.2f", template.Opacity)
+		_ = opacityStr // Format for potential future use
 		cmd := exec.Command("gs",
 			"-dBATCH", "-dNOPAUSE", "-q", "-sDEVICE=pdfwrite",
-			"-c", fmt.Sprintf("<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
-			"-f", watermarkFile,
-			"-f", inputFile,
+			"-c",
+			fmt.Sprintf("<</Install {%.2f setfillconstantcolor}>> setpagedevice", template.Opacity),
 			"-sOutputFile="+outputFile,
+			watermarkFile,
+			inputFile,
 		)
 		if err := cmd.Run(); err != nil {
 			return nil, fmt.Errorf("ghostscript failed: %w", err)
@@ -641,7 +644,7 @@ func (h *WatermarkHandler) createWatermarkPDF(filename string, template *Waterma
 
 	if template.Type == "text" && template.Content != "" {
 		// Create a simple text watermark PDF
-		content.WriteString("1 0 obj<</Type/Page/MediaBox[0 0 612 792]/Contents 2 0 R/Resources<<>>/Parent 3 0 R>>endobj\n")
+		content.WriteString(fmt.Sprintf("1 0 obj<</Type/Page/MediaBox[0 0 612 792]/Contents 2 0 R/Resources<<>>/Parent 3 0 R>>endobj\n"))
 		content.WriteString(fmt.Sprintf("2 0 obj<</Length %d>>stream\n", len(template.Content)+100))
 		// Simple text stream
 		content.WriteString(fmt.Sprintf("BT\n/F1 24 Tf\n100 700 Td\n(%s) Tj\nET\n", template.Content))

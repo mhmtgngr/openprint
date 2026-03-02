@@ -307,9 +307,11 @@ func determineActionAndResource(method, path string) (string, string) {
 
 	// Extract resource from path
 	parts := splitPath(path)
-	resource := "unknown"
+	var resource string
 	if len(parts) > 0 {
 		resource = parts[0]
+	} else {
+		resource = "unknown"
 	}
 
 	return action, resource

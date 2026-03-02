@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	sharedmiddleware "github.com/openprint/openprint/internal/shared/middleware"
+	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
-	handler "github.com/openprint/openprint/services/api-gateway/handlers"
+	gatewayhandlers "github.com/openprint/openprint/services/api-gateway/handlers"
 	gatewaymiddleware "github.com/openprint/openprint/services/api-gateway/middleware"
 )
 
@@ -61,14 +61,35 @@ func main() {
 	}
 	defer db.Close()
 
-	// Create service URLs
-	authServiceURL, _ := url.Parse(cfg.AuthServiceURL)
-	jobServiceURL, _ := url.Parse(cfg.JobServiceURL)
-	registryServiceURL, _ := url.Parse(cfg.RegistryServiceURL)
-	storageServiceURL, _ := url.Parse(cfg.StorageServiceURL)
-	notificationServiceURL, _ := url.Parse(cfg.NotificationServiceURL)
-	analyticsServiceURL, _ := url.Parse(cfg.AnalyticsServiceURL)
-	organizationServiceURL, _ := url.Parse(cfg.OrganizationServiceURL)
+	// Create service URLs with proper error handling
+	authServiceURL, err := url.Parse(cfg.AuthServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid AUTH_SERVICE_URL: %v", err)
+	}
+	jobServiceURL, err := url.Parse(cfg.JobServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid JOB_SERVICE_URL: %v", err)
+	}
+	registryServiceURL, err := url.Parse(cfg.RegistryServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid REGISTRY_SERVICE_URL: %v", err)
+	}
+	storageServiceURL, err := url.Parse(cfg.StorageServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid STORAGE_SERVICE_URL: %v", err)
+	}
+	notificationServiceURL, err := url.Parse(cfg.NotificationServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid NOTIFICATION_SERVICE_URL: %v", err)
+	}
+	analyticsServiceURL, err := url.Parse(cfg.AnalyticsServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid ANALYTICS_SERVICE_URL: %v", err)
+	}
+	organizationServiceURL, err := url.Parse(cfg.OrganizationServiceURL)
+	if err != nil {
+		log.Fatalf("Invalid ORGANIZATION_SERVICE_URL: %v", err)
+	}
 
 	// Create reverse proxies
 	authProxy := createReverseProxy(authServiceURL, "auth-service")
@@ -80,7 +101,7 @@ func main() {
 	organizationProxy := createReverseProxy(organizationServiceURL, "organization-service")
 
 	// Create handlers
-	devHandler := handler.NewDeveloperHandler(db, cfg.JWTSecret)
+	devHandler := gatewayhandlers.NewDeveloperHandler(db, cfg.JWTSecret)
 
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()
@@ -124,13 +145,13 @@ func main() {
 	mux.HandleFunc("/api/v1/organizations/", withServiceProxy(organizationProxy, "organization"))
 
 	// Build middleware chain
-	middlewareChain := sharedmiddleware.Chain(
-		sharedmiddleware.LoggingMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
-		sharedmiddleware.RecoveryMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
-		sharedmiddleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization"}),
-		sharedmiddleware.RateLimitMiddleware(60, 1*time.Minute),
+	middlewareChain := middleware.Chain(
+		middleware.LoggingMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
+		middleware.RecoveryMiddleware(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags)),
+		middleware.CORSMiddleware([]string{"*"}, []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, []string{"Content-Type", "Authorization"}),
+		middleware.RateLimitMiddleware(60, 1*time.Minute),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
-		sharedmiddleware.SecurityHeadersMiddleware(),
+		middleware.SecurityHeadersMiddleware(),
 		gatewaymiddleware.APIKeyMiddleware(db, []string{"/health", "/api/v1/docs"}),
 	)
 

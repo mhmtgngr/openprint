@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/storage-service/storage"
 )
 
@@ -26,6 +27,9 @@ type Config struct {
 	Backend       storage.Backend
 	DB            *pgxpool.Pool
 	MaxUploadSize int64
+	Metrics       *prometheus.Metrics
+	ServiceName   string
+	StorageBackend string
 }
 
 // Handler provides storage service HTTP handlers.
@@ -33,14 +37,28 @@ type Handler struct {
 	backend       storage.Backend
 	db            *pgxpool.Pool
 	maxUploadSize int64
+	metrics       *prometheus.Metrics
+	serviceName   string
+	storageBackend string
 }
 
 // New creates a new handler instance.
 func New(cfg Config) *Handler {
+	serviceName := cfg.ServiceName
+	if serviceName == "" {
+		serviceName = "storage-service"
+	}
+	storageBackend := cfg.StorageBackend
+	if storageBackend == "" {
+		storageBackend = "local"
+	}
 	return &Handler{
-		backend:       cfg.Backend,
-		db:            cfg.DB,
-		maxUploadSize: cfg.MaxUploadSize,
+		backend:        cfg.Backend,
+		db:             cfg.DB,
+		maxUploadSize:  cfg.MaxUploadSize,
+		metrics:        cfg.Metrics,
+		serviceName:    serviceName,
+		storageBackend: storageBackend,
 	}
 }
 
@@ -123,6 +141,11 @@ func (h *Handler) createDocument(w http.ResponseWriter, r *http.Request, ctx con
 		h.backend.Delete(ctx, storagePath)
 		respondError(w, apperrors.Wrap(err, "failed to store metadata", http.StatusInternalServerError))
 		return
+	}
+
+	// Record storage metrics
+	if h.metrics != nil {
+		prometheus.RecordStorageMetric(h.metrics, h.serviceName, h.storageBackend, metadata.ContentType, "store", metadata.Size)
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
@@ -274,6 +297,11 @@ func (h *Handler) getDocument(w http.ResponseWriter, r *http.Request, ctx contex
 	if err != nil {
 		respondError(w, apperrors.Wrap(err, "failed to retrieve file", http.StatusInternalServerError))
 		return
+	}
+
+	// Record retrieval metrics
+	if h.metrics != nil {
+		prometheus.RecordStorageMetric(h.metrics, h.serviceName, h.storageBackend, "", "retrieve", int64(len(content)))
 	}
 
 	// Set headers

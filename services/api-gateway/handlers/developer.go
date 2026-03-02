@@ -708,7 +708,7 @@ func (h *DeveloperHandler) testWebhook(w http.ResponseWriter, r *http.Request, c
 // Repository methods
 
 func (h *DeveloperHandler) storeAPIKey(ctx context.Context, key *APIKey) error {
-	initTable(ctx, h.db, "api_keys")
+	h.initTable(ctx, "api_keys")
 
 	query := `
 		INSERT INTO api_keys (
@@ -832,7 +832,7 @@ func (h *DeveloperHandler) getUsageStats(ctx context.Context, orgID, apiKeyID, s
 }
 
 func (h *DeveloperHandler) storeWebhook(ctx context.Context, webhook *Webhook) error {
-	initTable(ctx, h.db, "webhooks")
+	h.initTable(ctx, "webhooks")
 
 	query := `
 		INSERT INTO webhooks (
@@ -926,7 +926,7 @@ func (h *DeveloperHandler) sendWebhookRequest(ctx context.Context, webhook *Webh
 
 // Helper functions
 
-func initTable(ctx context.Context, db *pgxpool.Pool, tableName string) {
+func (h *DeveloperHandler) initTable(ctx context.Context, tableName string) {
 	var createSQL string
 	switch tableName {
 	case "api_keys":
@@ -972,7 +972,7 @@ func initTable(ctx context.Context, db *pgxpool.Pool, tableName string) {
 	}
 
 	if createSQL != "" {
-		db.Exec(ctx, createSQL)
+		h.db.Exec(ctx, createSQL)
 	}
 }
 

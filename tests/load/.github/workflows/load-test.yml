@@ -1,0 +1,260 @@
+# GitHub Actions workflow for load testing
+# FR-010: CI Integration for performance testing
+
+name: Load Tests
+
+on:
+  push:
+    branches: [main, develop, 'load-test-*']
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily load tests at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'baseline'
+        type: choice
+        options:
+          - baseline
+          - full
+          - smoke
+      target_env:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - local
+          - staging
+          - production
+
+env:
+  K6_VERSION: '0.51.0'
+
+jobs:
+  setup:
+    name: Setup Test Environment
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule' || github.repository == 'openprint/openprint'
+    outputs:
+      baseline-exists: ${{ steps.check-baseline.outputs.exists }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for baseline
+        id: check-baseline
+        run: |
+          if [ -f .baseline/metrics.json ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+  baseline-tests:
+    name: Baseline Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: github.event.inputs.test_type != 'smoke'
+    strategy:
+      matrix:
+        service: [auth, registry, job, storage, notification]
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        run: |
+          curl https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz -L | tar xvz
+          sudo mv k6-${K6_VERSION}-linux-amd64/k6 /usr/local/bin/
+
+      - name: Start test environment
+        run: |
+          cd tests/load
+          docker-compose -f docker-compose.test.yml up -d
+          echo "Waiting for services to be ready..."
+          sleep 30
+
+      - name: Run ${{ matrix.service }} baseline
+        run: |
+          cd tests/load
+          k6 run --out json=reports/${{ matrix.service }}-raw.json \
+            scenarios/${{ matrix.service }}/baseline.js
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-baseline-results
+          path: tests/load/reports/${{ matrix.service }}-raw.json
+
+      - name: Compare with baseline
+        if: needs.setup.outputs.baseline-exists == 'true'
+        run: |
+          node scripts/compare-baselines.js \
+            --current reports/${{ matrix.service }}-raw.json \
+            --baseline .baseline/metrics.json \
+            --service ${{ matrix.service }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd tests/load
+          docker-compose -f docker-compose.test.yml down -v
+
+  regression-tests:
+    name: Regression Tests
+    runs-on: ubuntu-latest
+    needs: [setup, baseline-tests]
+    if: github.event.inputs.test_type == 'full' || github.event_name == 'schedule'
+    strategy:
+      matrix:
+        scenario:
+          - auth-concurrent-users
+          - registry-heartbeat
+          - job-submit
+          - storage-upload
+          - notification-websocket
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        run: |
+          curl https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz -L | tar xvz
+          sudo mv k6-${K6_VERSION}-linux-amd64/k6 /usr/local/bin/
+
+      - name: Start test environment
+        run: |
+          cd tests/load
+          docker-compose -f docker-compose.test.yml up -d
+          sleep 30
+
+      - name: Run ${{ matrix.scenario }}
+        run: |
+          cd tests/load
+          k6 run --out json=reports/${{ matrix.scenario }}-raw.json \
+            scenarios/${{ matrix.scenario }}.js 2>&1 | tee reports/${{ matrix.scenario }}-output.txt
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.scenario }}-results
+          path: |
+            tests/load/reports/${{ matrix.scenario }}-raw.json
+            tests/load/reports/${{ matrix.scenario }}-output.txt
+
+      - name: Check for regressions
+        run: |
+          node scripts/compare-baselines.js \
+            --current reports/${{ matrix.scenario }}-raw.json \
+            --baseline .baseline/metrics.json \
+            --tolerance 0.1
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd tests/load
+          docker-compose -f docker-compose.test.yml down -v
+
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'smoke' || github.event.inputs.test_type == ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        run: |
+          curl https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz -L | tar xvz
+          sudo mv k6-${K6_VERSION}-linux-amd64/k6 /usr/local/bin/
+
+      - name: Run smoke tests
+        run: |
+          cd tests/load
+          npm run test:smoke
+
+  update-baseline:
+    name: Update Baseline
+    runs-on: ubuntu-latest
+    needs: [baseline-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: tests/load/reports
+
+      - name: Generate baseline
+        run: |
+          node scripts/generate-baseline.js
+
+      - name: Commit baseline
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .baseline/metrics.json
+          git commit -m "Update performance baseline [skip ci]"
+          git push
+
+  publish-results:
+    name: Publish Test Results
+    runs-on: ubuntu-latest
+    needs: [baseline-tests, regression-tests]
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: tests/load/reports
+
+      - name: Generate HTML report
+        run: |
+          cd tests/load
+          npm run report:html
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-report
+          path: tests/load/reports/*.html
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('tests/load/reports/summary.json', 'utf8');
+            const data = JSON.parse(report);
+
+            const body = `
+            ## Load Test Results
+            ### Summary
+            | Service | P95 (ms) | P99 (ms) | Success Rate |
+            |---------|-----------|-----------|--------------|
+            | Auth | ${data.auth?.p95 || 'N/A'} | ${data.auth?.p99 || 'N/A'} | ${((data.auth?.success_rate || 0) * 100).toFixed(1)}% |
+            | Registry | ${data.registry?.p95 || 'N/A'} | ${data.registry?.p99 || 'N/A'} | ${((data.registry?.success_rate || 0) * 100).toFixed(1)}% |
+            | Job | ${data.job?.p95 || 'N/A'} | ${data.job?.p99 || 'N/A'} | ${((data.job?.success_rate || 0) * 100).toFixed(1)}% |
+            | Storage | ${data.storage?.p95 || 'N/A'} | ${data.storage?.p99 || 'N/A'} | ${((data.storage?.success_rate || 0) * 100).toFixed(1)}% |
+            | Notification | ${data.notification?.p95 || 'N/A'} | ${data.notification?.p99 || 'N/A'} | ${((data.notification?.success_rate || 0) * 100).toFixed(1)}% |
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

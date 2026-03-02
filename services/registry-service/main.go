@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/openprint/openprint/internal/auth/jwt"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/registry-service/handler"
 	"github.com/openprint/openprint/services/registry-service/repository"
 )
@@ -23,6 +25,7 @@ import (
 // Config holds service configuration.
 type Config struct {
 	ServerAddr       string
+	MetricsPort      int
 	DatabaseURL      string
 	JWTSecret        string
 	JaegerEndpoint   string
@@ -36,7 +39,42 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Initialize telemetry
+	// Initialize Prometheus metrics registry
+	registry, err := prometheus.NewRegistry(prometheus.DefaultConfig(cfg.ServiceName))
+	if err != nil {
+		log.Fatalf("Failed to create Prometheus registry: %v", err)
+	}
+	prometheus.SetRegistry(registry)
+	metrics := prometheus.NewMetrics(registry)
+
+	// Start metrics server on dedicated port
+	metricsPort := cfg.MetricsPort
+	if metricsPort == 0 {
+		metricsPort = prometheus.GetDefaultMetricsPort(cfg.ServiceName)
+	}
+	metricsServer, err := prometheus.StartMetricsServer(registry, metricsPort)
+	if err != nil {
+		log.Fatalf("Failed to start metrics server: %v", err)
+	}
+	defer func() {
+		if err := metricsServer.Shutdown(ctx); err != nil {
+			log.Printf("Metrics server shutdown error: %v", err)
+		}
+	}()
+
+	// Wrap database with metrics collector
+	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+	prometheus.WrapPgxPool(db, registry, prometheus.DBConfig{
+		ServiceName: cfg.ServiceName,
+		DBName:      "openprint",
+		DBSystem:    prometheus.DBSystemPostgreSQL,
+	})
+
+	// Initialize telemetry (tracing)
 	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
 	if err != nil {
 		log.Printf("Warning: failed to initialize tracer: %v", err)
@@ -45,23 +83,18 @@ func main() {
 		defer shutdown(ctx)
 	}
 
-	// Connect to PostgreSQL
-	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
 	// Initialize repositories
 	agentRepo := repository.NewAgentRepository(db)
 	printerRepo := repository.NewPrinterRepository(db)
 	mappingRepo := repository.NewUserPrinterMappingRepository(db)
 
-	// Create handlers
+	// Create handlers with metrics
 	h := handler.New(handler.Config{
 		AgentRepo:        agentRepo,
 		PrinterRepo:      printerRepo,
 		HeartbeatTimeout: cfg.HeartbeatTimeout,
+		Metrics:          metrics,
+		ServiceName:      cfg.ServiceName,
 	})
 
 	// Create user-printer mapping handler
@@ -92,7 +125,7 @@ func main() {
 	mux.HandleFunc("/user-printer-mappings/", mappingHandler.MappingHandler)
 	mux.HandleFunc("/user-printer-mappings", mappingHandler.MappingsHandler)
 
-	// Build middleware chain: logging -> recovery -> auth -> telemetry -> security headers -> handler
+	// Build middleware chain: logging -> recovery -> auth -> metrics -> telemetry -> security headers -> handler
 	// For registry service, we also support API key authentication for agents
 	middlewareChain := middleware.Chain(
 		middleware.LoggingMiddleware(log.New(os.Stdout, "[REGISTRY] ", log.LstdFlags)),
@@ -100,7 +133,13 @@ func main() {
 		middleware.AuthMiddleware(middleware.JWTConfig{
 			SecretKey:  cfg.JWTSecret,
 			JWTManager: jwtManager,
-			SkipPaths:  []string{"/health", "/agents/register", "/printers/register", "/user-printer-mappings/resolve"}, // Allow agent/printer registration and username resolution
+			SkipPaths:  []string{"/health", "/agents", "/printers", "/user-printer-mappings"}, // Allow agent and printer endpoints
+		}),
+		middleware.MetricsMiddleware(middleware.MetricsMiddlewareConfig{
+			Registry:           registry,
+			ServiceName:        cfg.ServiceName,
+			SkipPaths:          []string{"/health"},
+			ExcludeStaticFiles: true,
 		}),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
 		middleware.SecurityHeadersMiddleware(),
@@ -122,7 +161,7 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("%s listening on %s", cfg.ServiceName, cfg.ServerAddr)
+		log.Printf("%s listening on %s (metrics on :%d)", cfg.ServiceName, cfg.ServerAddr, metricsPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -153,12 +192,23 @@ func loadConfig() *Config {
 
 	return &Config{
 		ServerAddr:       getEnv("SERVER_ADDR", ":8002"),
+		MetricsPort:      getEnvInt("METRICS_PORT", 0), // 0 = use default
 		DatabaseURL:      getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		JWTSecret:        jwtSecret,
 		JaegerEndpoint:   getEnv("JAEGER_ENDPOINT", ""),
 		ServiceName:      getEnv("SERVICE_NAME", "registry-service"),
 		HeartbeatTimeout: 5 * time.Minute,
 	}
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		var intVal int
+		if _, err := fmt.Sscanf(value, "%d", &intVal); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
 }
 
 func getEnv(key, defaultValue string) string {
@@ -169,12 +219,14 @@ func getEnv(key, defaultValue string) string {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"healthy","service":"registry-service"}`))
+	if r.Method == http.MethodGet {
+		w.Write([]byte(`{"status":"healthy","service":"registry-service"}`))
+	}
 }

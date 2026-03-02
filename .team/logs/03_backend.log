@@ -1,89 +1,44 @@
-All backend files from the design specification have been implemented. Here's a summary of what was created:
+I have implemented the comprehensive multi-tenancy backend for the OpenPrint project. Here's a summary of all the files created:
 
-## Job Service Handlers
+## Core Multi-Tenant Package (`internal/multi-tenant/`)
+1. **context.go** - Tenant context types and context management
+2. **middleware.go** - Tenant context propagation middleware
+3. **repository.go** - Repository helpers for tenant-scoped queries with RLS support
+4. **quota.go** - Resource quota checking and enforcement
+5. **audit.go** - Tenant-scoped audit logging
 
-1. **`services/job-service/handlers/quota.go`** - Print quota management endpoints
-   - Check quota availability
-   - List/set/delete quotas
-   - Quota history and summary
-   - Repository: `quota_repository.go`
+## JWT Tenant Support
+6. **internal/auth/jwt/tenant_claims.go** - Extended JWT claims for tenant information
 
-2. **`services/job-service/handlers/cost.go`** - Cost calculation endpoints
-   - Cost configuration management
-   - Calculate job costs
-   - Cost reports by period/user/printer
-   - Budget allocation tracking
-   - Repository: `cost_repository.go`
+## Auth Service (Organization Management)
+### Repositories:
+7. **services/auth-service/repository/organization.go** - Organization data access with RLS
+8. **services/auth-service/repository/quota.go** - Quota configuration and usage tracking
+9. **services/auth-service/repository/organization_user.go** - Organization membership management
 
-3. **`services/job-service/handlers/secure_release.go`** - Secure print release endpoints
-   - Hold jobs for secure release
-   - Release with PIN/card/NFC
-   - Release station management
-   - Repository: `secure_release_repository.go`
+### Handlers:
+10. **services/auth-service/handler/organization.go** - Organization CRUD operations
+11. **services/auth-service/handler/quota.go** - Quota management endpoints
+12. **services/auth-service/handler/organization_user.go** - Organization user management
+13. **services/auth-service/handler/usage_report.go** - Resource usage reports and analytics
 
-4. **`services/job-service/handlers/reports.go`** - Advanced reporting endpoints
-   - Usage summaries
-   - Top users/printers
-   - Department reports
-   - Environmental impact reports
-   - Trend data and exports
-   - Repository: `reports_repository.go`
-
-## Storage Service Handlers
-
-5. **`services/storage-service/handlers/watermark.go`** - Document watermarking endpoints
-   - Watermark template management
-   - Apply watermarks to documents
-   - Batch operations
-   - Repository: `watermark_repository.go`
-
-## Auth Service Handlers
-
-6. **`services/auth-service/handlers/sessions.go`** - httpOnly cookie support
-   - Login with cookies
-   - Token refresh via cookies
-   - Session management
-   - Revoke sessions
-
-## Middleware
-
-7. **`internal/middleware/cookie_auth.go`** - Cookie authentication middleware
-   - Authenticate from httpOnly cookies
-   - Fallback to Authorization header
-   - CORS with credentials support
-
-## Registry Service Handlers
-
-8. **`services/registry-service/handlers/mobile.go`** - Mobile app support endpoints
-   - Device registration
-   - Printer pairing via codes
-   - Nearby printers discovery
-   - Push notifications
-
-## API Gateway
-
-9. **`services/api-gateway/main.go`** - API Gateway service
-   - Unified API entry point
-   - Reverse proxy to all services
-   - Request routing
-
-10. **`services/api-gateway/handlers/developer.go`** - Developer portal endpoints
-    - API key management
-    - Usage statistics
-    - Webhook management
-    - API documentation
-
-11. **`services/api-gateway/middleware/rate_limit.go`** - Rate limiting middleware
-12. **`services/api-gateway/middleware/audit.go`** - Audit logging middleware
+## Other Services (Tenant Context Integration)
+14. **services/registry-service/handler/printer_tenant.go** - Tenant-scoped printer operations
+15. **services/registry-service/repository/printer_tenant.go** - Printer repository with tenant filtering
+16. **services/job-service/handler/job_tenant.go** - Job operations with quota checks
+17. **services/job-service/repository/job_tenant.go** - Job repository with tenant support
+18. **services/storage-service/handler/document_tenant.go** - Tenant-scoped document storage
+19. **services/notification-service/handler/notification_tenant.go** - Tenant-scoped WebSocket notifications
 
 ## Database Migrations
+20. **migrations/000034_add_multi_tenant_support.up.sql** - Multi-tenant schema with RLS policies
+21. **migrations/000034_add_multi_tenant_support.down.sql** - Rollback migration
 
-13. **`migrations/000027_create_watermark_templates.up.sql`** - Watermark templates and related tables
-    - Watermark templates
-    - Budget allocations
-    - Scheduled reports
-    - Mobile devices
-    - Push notifications
-    - API keys and usage logs
-    - Webhooks and audit logs
-14. **`migrations/000027_create_watermark_templates.down.sql`** - Rollback migration
+## Key Features Implemented:
+- **PostgreSQL Row-Level Security (RLS)** for automatic tenant data isolation
+- **Tenant context propagation** via request context
+- **Resource quota enforcement** (printers, storage, jobs, users)
+- **Organization management** (CRUD, user management, ownership transfer)
+- **Tenant-scoped audit logging**
+- **Usage reporting** and alerts
+- **Platform admin bypass** for cross-tenant operations

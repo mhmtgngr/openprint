@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/job-service/processor"
 	"github.com/openprint/openprint/services/job-service/repository"
 )
@@ -48,6 +49,8 @@ type Config struct {
 	JobRepo     Repository
 	HistoryRepo HistoryRepository
 	Processor   Processor
+	Metrics     *prometheus.Metrics
+	ServiceName string
 }
 
 // Handler provides job service HTTP handlers.
@@ -55,14 +58,22 @@ type Handler struct {
 	jobRepo     Repository
 	historyRepo HistoryRepository
 	processor   Processor
+	metrics     *prometheus.Metrics
+	serviceName string
 }
 
 // New creates a new handler instance.
 func New(cfg Config) *Handler {
+	serviceName := cfg.ServiceName
+	if serviceName == "" {
+		serviceName = "job-service"
+	}
 	return &Handler{
 		jobRepo:     cfg.JobRepo,
 		historyRepo: cfg.HistoryRepo,
 		processor:   cfg.Processor,
+		metrics:     cfg.Metrics,
+		serviceName: serviceName,
 	}
 }
 
@@ -160,6 +171,19 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request, ctx context.
 	if err := h.jobRepo.Create(ctx, job); err != nil {
 		respondError(w, apperrors.Wrap(err, "failed to create job", http.StatusInternalServerError))
 		return
+	}
+
+	// Record job creation metric
+	orgID := ""
+	if job != nil {
+		// Extract org ID from job context if available
+		orgID = "" // Would need to be set on job
+	}
+	if h.metrics != nil {
+		h.metrics.Business.JobsCreatedTotal.WithLabelValues(
+			h.serviceName,
+			orgID,
+		).Inc()
 	}
 
 	// Add to processor queue
@@ -450,6 +474,35 @@ func (h *Handler) JobStatusHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)
+
+	// Record job status metrics
+	if h.metrics != nil {
+		orgID := "" // Would extract from job
+		duration := float64(0)
+		if !job.StartedAt.IsZero() {
+			duration = time.Since(job.StartedAt).Seconds()
+		}
+
+		switch req.Status {
+		case "completed":
+			h.metrics.Business.JobsCompletedTotal.WithLabelValues(
+				h.serviceName,
+				orgID,
+			).Inc()
+			if duration > 0 {
+				h.metrics.Business.JobProcessingDuration.WithLabelValues(
+					h.serviceName,
+					orgID,
+				).Observe(duration)
+			}
+		case "failed":
+			h.metrics.Business.JobsFailedTotal.WithLabelValues(
+				h.serviceName,
+				orgID,
+				"",
+			).Inc()
+		}
+	}
 
 	respondJSON(w, http.StatusOK, jobToResponse(job))
 }

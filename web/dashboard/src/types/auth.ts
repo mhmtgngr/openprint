@@ -10,9 +10,10 @@ export interface User {
   emailVerified: boolean;
   pageQuotaMonthly?: number;
   createdAt: string;
+  isPlatformAdmin?: boolean;
 }
 
-export type UserRole = 'user' | 'admin' | 'owner';
+export type UserRole = 'user' | 'admin' | 'owner' | 'platform_admin';
 
 export interface AuthTokens {
   accessToken: string;

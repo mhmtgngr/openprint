@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -40,6 +40,35 @@ export default defineConfig({
   },
   css: {
     postcss: './postcss.config.js',
+    modules: {
+      localsConvention: 'camelCase',
+    },
+  },
+  build: {
+    target: 'es2020',
+    minify: 'esbuild',
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core vendor chunks - using object syntax to avoid circular dependencies
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-state': ['@tanstack/react-query', 'zustand'],
+          'vendor-charts': ['recharts'],
+          'vendor-utils': ['date-fns'],
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) {
+            return 'assets/css/[name]-[hash][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+      },
+    },
+    cssCodeSplit: true,
   },
   test: {
     globals: true,
@@ -47,5 +76,36 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     tsconfig: './tsconfig.test.json',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/mockData.ts',
+        '**/dist/**',
+        '**/e2e/**',
+        '**/types/**',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
+    },
   },
-});
+  ...(mode === 'analyze' && {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: undefined,
+        },
+      },
+    },
+  }),
+}));

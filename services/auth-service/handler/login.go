@@ -10,6 +10,7 @@ import (
 
 	"github.com/openprint/openprint/internal/auth/jwt"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 )
 
 const (
@@ -20,9 +21,10 @@ const (
 // Login handles user login.
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	authMethod := "password"
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", 405)
 		return
 	}
 
@@ -31,33 +33,48 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, apperrors.Wrap(err, "invalid request body", http.StatusBadRequest))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "invalid request body", 400))
 		return
 	}
 
 	// Validate input
 	if err := validateLoginRequest(&req); err != nil {
-		respondError(w, apperrors.Wrap(err, "invalid input", http.StatusBadRequest))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "invalid input", 400))
 		return
 	}
 
 	// Find user
 	user, err := h.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		respondError(w, apperrors.New("invalid credentials", http.StatusUnauthorized))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.New("invalid credentials", 401))
 		return
 	}
 
 	// Verify password
 	valid, err := h.passwordHasher.Verify(req.Password, user.Password)
 	if err != nil || !valid {
-		respondError(w, apperrors.New("invalid credentials", http.StatusUnauthorized))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.New("invalid credentials", 401))
 		return
 	}
 
 	// Check if user is active
 	if !user.IsActive {
-		respondError(w, apperrors.New("account is disabled", http.StatusForbidden))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.New("account is disabled", 403))
 		return
 	}
 
@@ -82,14 +99,25 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		scopes,
 	)
 	if err != nil {
-		respondError(w, apperrors.Wrap(err, "failed to generate tokens", http.StatusInternalServerError))
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "failed to generate tokens", 500))
 		return
 	}
 
 	// Store refresh token
-	if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, 7*24*time.Hour); err != nil {
-		respondError(w, apperrors.Wrap(err, "failed to store session", http.StatusInternalServerError))
+	if err := h.sessionRepo.Store(ctx, user.ID, refreshToken, jwt.MaxRefreshDuration); err != nil {
+		if h.metrics != nil {
+			prometheus.RecordAuthFailure(h.metrics, h.serviceName, authMethod)
+		}
+		respondError(w, apperrors.Wrap(err, "failed to store session", 500))
 		return
+	}
+
+	// Record successful login
+	if h.metrics != nil {
+		prometheus.RecordAuthSuccess(h.metrics, h.serviceName, authMethod, user.Role)
 	}
 
 	name := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
@@ -97,7 +125,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		name = user.Email
 	}
 
-	respondJSON(w, http.StatusOK, LoginResponse{
+	respondJSON(w, 200, LoginResponse{
 		UserID:       user.ID,
 		Email:        user.Email,
 		Name:         name,

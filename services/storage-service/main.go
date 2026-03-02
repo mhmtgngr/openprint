@@ -17,6 +17,7 @@ import (
 	"github.com/openprint/openprint/internal/auth/jwt"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/storage-service/handler"
 	"github.com/openprint/openprint/services/storage-service/storage"
 )
@@ -24,6 +25,7 @@ import (
 // Config holds service configuration.
 type Config struct {
 	ServerAddr       string
+	MetricsPort      int
 	DatabaseURL      string
 	S3Endpoint       string
 	S3Bucket         string
@@ -43,7 +45,30 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Initialize telemetry
+	// Initialize Prometheus metrics registry
+	registry, err := prometheus.NewRegistry(prometheus.DefaultConfig(cfg.ServiceName))
+	if err != nil {
+		log.Fatalf("Failed to create Prometheus registry: %v", err)
+	}
+	prometheus.SetRegistry(registry)
+	metrics := prometheus.NewMetrics(registry)
+
+	// Start metrics server on dedicated port
+	metricsPort := cfg.MetricsPort
+	if metricsPort == 0 {
+		metricsPort = prometheus.GetDefaultMetricsPort(cfg.ServiceName)
+	}
+	metricsServer, err := prometheus.StartMetricsServer(registry, metricsPort)
+	if err != nil {
+		log.Fatalf("Failed to start metrics server: %v", err)
+	}
+	defer func() {
+		if err := metricsServer.Shutdown(ctx); err != nil {
+			log.Printf("Metrics server shutdown error: %v", err)
+		}
+	}()
+
+	// Initialize telemetry (tracing)
 	shutdown, err := telemetry.InitTracer(cfg.ServiceName, "1.0.0", cfg.JaegerEndpoint)
 	if err != nil {
 		log.Printf("Warning: failed to initialize tracer: %v", err)
@@ -59,8 +84,16 @@ func main() {
 	}
 	defer db.Close()
 
+	// Wrap database with metrics collector
+	prometheus.WrapPgxPool(db, registry, prometheus.DBConfig{
+		ServiceName: cfg.ServiceName,
+		DBName:      "openprint",
+		DBSystem:    prometheus.DBSystemPostgreSQL,
+	})
+
 	// Initialize storage backend
 	var backend storage.Backend
+	var storageBackend string
 	if cfg.S3Endpoint != "" {
 		backend, err = storage.NewS3Backend(storage.S3Config{
 			Endpoint:  cfg.S3Endpoint,
@@ -69,9 +102,11 @@ func main() {
 			SecretKey: cfg.S3SecretKey,
 			Region:    cfg.S3Region,
 		})
+		storageBackend = "s3"
 	} else {
 		// Fall back to local filesystem storage
 		backend, err = storage.NewLocalStorage("/tmp/openprint/storage")
+		storageBackend = "local"
 	}
 
 	if err != nil {
@@ -86,11 +121,14 @@ func main() {
 		}
 	}
 
-	// Create handlers
+	// Create handlers with metrics
 	h := handler.New(handler.Config{
 		Backend:       backend,
 		DB:            db,
 		MaxUploadSize: cfg.MaxUploadSize,
+		Metrics:       metrics,
+		ServiceName:   cfg.ServiceName,
+		StorageBackend: storageBackend,
 	})
 
 	// Create JWT manager for authentication
@@ -111,7 +149,7 @@ func main() {
 	mux.HandleFunc("/upload", h.UploadHandler)
 	mux.HandleFunc("/download/", h.DownloadHandler)
 
-	// Build middleware chain: logging -> recovery -> auth -> telemetry -> security headers -> handler
+	// Build middleware chain: logging -> recovery -> auth -> metrics -> telemetry -> security headers -> handler
 	middlewareChain := middleware.Chain(
 		middleware.LoggingMiddleware(log.New(os.Stdout, "[STORAGE] ", log.LstdFlags)),
 		middleware.RecoveryMiddleware(log.New(os.Stdout, "[STORAGE] ", log.LstdFlags)),
@@ -119,6 +157,12 @@ func main() {
 			SecretKey:  cfg.JWTSecret,
 			JWTManager: jwtManager,
 			SkipPaths:  []string{"/health"},
+		}),
+		middleware.MetricsMiddleware(middleware.MetricsMiddlewareConfig{
+			Registry:           registry,
+			ServiceName:        cfg.ServiceName,
+			SkipPaths:          []string{"/health"},
+			ExcludeStaticFiles: true,
 		}),
 		telemetry.HTTPMiddleware(cfg.ServiceName),
 		middleware.SecurityHeadersMiddleware(),
@@ -140,7 +184,7 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("%s listening on %s", cfg.ServiceName, cfg.ServerAddr)
+		log.Printf("%s listening on %s (metrics on :%d)", cfg.ServiceName, cfg.ServerAddr, metricsPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -171,6 +215,7 @@ func loadConfig() *Config {
 
 	return &Config{
 		ServerAddr:     getEnv("SERVER_ADDR", ":8004"),
+		MetricsPort:    getEnvInt("METRICS_PORT", 0), // 0 = use default
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		S3Endpoint:     getEnv("S3_ENDPOINT", ""),
 		S3Bucket:       getEnv("S3_BUCKET", "openprint-documents"),
@@ -203,12 +248,14 @@ func getEnvInt(key string, defaultValue int) int {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"healthy","service":"storage-service"}`))
+	if r.Method == http.MethodGet {
+		w.Write([]byte(`{"status":"healthy","service":"storage-service"}`))
+	}
 }

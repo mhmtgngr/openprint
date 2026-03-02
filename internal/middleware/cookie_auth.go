@@ -1,11 +1,49 @@
 // Package middleware provides HTTP middleware for cookie-based authentication.
+//
+// SECURITY CONSIDERATIONS FOR COOKIES:
+//
+// This package provides secure cookie helpers that enforce the following security attributes:
+//
+// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
+//    interception on the network. Always use Secure=true in production.
+//
+// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
+//    protecting against XSS attacks that attempt to steal session tokens.
+//
+// 3. SameSite Attribute - Controls cross-site cookie behavior:
+//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
+//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
+//    - SameSiteNone: Allows cross-site requests; requires Secure=true
+//
+// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
+//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
+//
+// USAGE EXAMPLE:
+//
+//	// Recommended: Use AutoCookieSecurity for environment-aware settings
+//	security := middleware.AutoCookieSecurity()
+//	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
+//
+//	// On logout:
+//	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
+//
+// PRODUCTION DEPLOYMENT:
+//
+// For production, ensure ENV=production or GO_ENV=production is set.
+// AutoCookieSecurity will automatically apply secure settings (Secure+HttpOnly).
+//
+// Alternatively, explicitly use ProductionCookieSecurity():
+//
+//	security := middleware.ProductionCookieSecurity()
 package middleware
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/openprint/openprint/internal/auth/jwt"
 )
@@ -15,17 +53,169 @@ const (
 	SessionCookieName = "openprint_session"
 	// RefreshCookieName is the name of the refresh token cookie
 	RefreshCookieName = "openprint_refresh"
+
+	UserIDKey  contextKey = "user_id"
+	EmailKey   contextKey = "email"
+	OrgIDKey   contextKey = "org_id"
+	RoleKey    contextKey = "role"
+	ScopesKey  contextKey = "scopes"
+	TokenKey   contextKey = "token"
 )
 
-// Additional context keys for authentication (beyond those in validation.go).
-const (
-	UserIDKey contextKey = "user_id"
-	EmailKey  contextKey = "email"
-	OrgIDKey  contextKey = "org_id"
-	RoleKey   contextKey = "role"
-	ScopesKey contextKey = "scopes"
-	TokenKey  contextKey = "token"
-)
+// CookieSecurityConfig defines security attributes for session cookies.
+// These settings help prevent XSS and CSRF attacks.
+type CookieSecurityConfig struct {
+	// Secure ensures the cookie is only sent over HTTPS.
+	// Should always be true in production.
+	Secure bool
+
+	// HttpOnly prevents JavaScript from accessing the cookie,
+	// protecting against XSS attacks.
+	HttpOnly bool
+
+	// SameSite controls cross-site request handling.
+	// - SameSiteStrict: Prevents CSRF, may break some navigation flows
+	// - SameSiteLax: Balanced security, allows navigation from external sites
+	// - SameSiteNone: Allows cross-site (requires Secure=true)
+	SameSite http.SameSite
+
+	// Domain specifies the cookie domain. If empty, defaults to current host.
+	Domain string
+
+	// Path limits the cookie to a specific path. If empty, applies to entire site.
+	Path string
+}
+
+// DefaultCookieSecurity returns secure cookie settings for production use.
+// These settings prioritize security while maintaining reasonable usability.
+func DefaultCookieSecurity() *CookieSecurityConfig {
+	return &CookieSecurityConfig{
+		Secure:   true,  // Always use HTTPS in production
+		HttpOnly: true,  // Prevent XSS access
+		SameSite: http.SameSiteLaxMode, // Balance CSRF protection with usability
+		Path:     "/",
+	}
+}
+
+// ProductionCookieSecurity returns secure cookie settings for production environments.
+// This function enforces security regardless of build tags and is the recommended way
+// to get cookie security settings for production deployments.
+//
+// SECURITY: In production, cookies MUST use Secure=true and HttpOnly=true to prevent:
+// - Session hijacking via network interception (Secure flag)
+// - XSS attacks stealing session tokens (HttpOnly flag)
+func ProductionCookieSecurity() *CookieSecurityConfig {
+	return &CookieSecurityConfig{
+		Secure:   true,  // REQUIRED: Only send cookies over HTTPS
+		HttpOnly: true,  // REQUIRED: Prevent JavaScript access
+		SameSite: http.SameSiteStrictMode, // Stricter CSRF protection for production
+		Path:     "/",
+	}
+}
+
+// DevelopmentCookieSecurity returns settings for local development.
+// These settings allow HTTP and relaxed same-site policies for testing.
+//
+// WARNING: These settings MUST NOT be used in production deployments.
+func DevelopmentCookieSecurity() *CookieSecurityConfig {
+	return &CookieSecurityConfig{
+		Secure:   false, // Allow HTTP locally
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	}
+}
+
+// IsProductionEnv detects if the application is running in a production environment.
+// It checks environment variables and connection security.
+//
+// Production is detected when:
+// - ENV=production is set, OR
+// - GO_ENV=production is set, OR
+// - The request is over HTTPS (when called from a request context)
+//
+// For use outside of request handling, use EnvIsProduction() instead.
+func IsProductionEnv() bool {
+	env := strings.ToLower(strings.TrimSpace(getEnv("ENV", "")))
+	goEnv := strings.ToLower(strings.TrimSpace(getEnv("GO_ENV", "")))
+	return env == "production" || goEnv == "production"
+}
+
+// EnvIsProduction detects if the current environment is production.
+// This is a simple check that doesn't depend on HTTP context.
+func EnvIsProduction() bool {
+	return IsProductionEnv()
+}
+
+// AutoCookieSecurity returns appropriate cookie security settings based on the environment.
+// In production, it returns ProductionCookieSecurity().
+// In development, it returns DevelopmentCookieSecurity().
+//
+// This is the RECOMMENDED way to get cookie security settings as it automatically
+// adapts to the environment.
+func AutoCookieSecurity() *CookieSecurityConfig {
+	if EnvIsProduction() {
+		return ProductionCookieSecurity()
+	}
+	return DevelopmentCookieSecurity()
+}
+
+// getEnv retrieves an environment variable or returns the default value.
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+// SetSessionCookie sets a session cookie with appropriate security flags.
+// This helper ensures consistent security attributes across all cookie operations.
+//
+// Example:
+//
+//	cfg := middleware.DefaultCookieSecurity()
+//	middleware.SetSessionCookie(w, "session_token", tokenValue, 15*time.Minute, cfg)
+func SetSessionCookie(w http.ResponseWriter, name, value string, maxAge time.Duration, security *CookieSecurityConfig) {
+	if security == nil {
+		security = DefaultCookieSecurity()
+	}
+
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     security.Path,
+		Domain:   security.Domain,
+		Expires:  time.Now().Add(maxAge),
+		MaxAge:   int(maxAge.Seconds()),
+		Secure:   security.Secure,
+		HttpOnly: security.HttpOnly,
+		SameSite: security.SameSite,
+	}
+
+	http.SetCookie(w, cookie)
+}
+
+// ClearSessionCookie removes a session cookie by setting it to expire immediately.
+// This should be called on logout to invalidate the session.
+func ClearSessionCookie(w http.ResponseWriter, name string, security *CookieSecurityConfig) {
+	if security == nil {
+		security = DefaultCookieSecurity()
+	}
+
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    "",
+		Path:     security.Path,
+		Domain:   security.Domain,
+		Expires:  time.Unix(1, 0), // Far past date
+		MaxAge:   -1,
+		Secure:   security.Secure,
+		HttpOnly: security.HttpOnly,
+		SameSite: security.SameSite,
+	}
+
+	http.SetCookie(w, cookie)
+}
 
 // CookieAuthConfig holds cookie authentication configuration.
 type CookieAuthConfig struct {

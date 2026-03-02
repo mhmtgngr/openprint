@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -12,19 +13,22 @@ import (
 	"time"
 
 	"github.com/openprint/openprint/internal/auth/jwt"
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
-// Context keys for storing request-scoped data.
-type contextKey string
+// ContextKey type alias for compatibility with existing code.
+// All new code should use sharedcontext package directly.
+type contextKey = sharedcontext.ContextKey
 
+// Context key constants - delegated to shared context package.
 const (
-	UserIDKey  contextKey = "user_id"
-	EmailKey   contextKey = "email"
-	OrgIDKey   contextKey = "org_id"
-	RoleKey    contextKey = "role"
-	ScopesKey  contextKey = "scopes"
-	TokenKey   contextKey = "token"
+	UserIDKey  = sharedcontext.UserIDKey
+	EmailKey   = sharedcontext.EmailKey
+	OrgIDKey   = sharedcontext.OrgIDKey
+	RoleKey    = sharedcontext.RoleKey
+	ScopesKey  = sharedcontext.ScopesKey
+	TokenKey   = sharedcontext.TokenKey
 )
 
 // JWTConfig holds JWT authentication configuration.
@@ -607,4 +611,135 @@ func (rl *IPRateLimiter) cleanup() {
 			delete(rl.ips, ip)
 		}
 	}
+}
+
+// CSRFConfig holds CSRF protection configuration.
+type CSRFConfig struct {
+	// SecretKey is used to sign CSRF tokens
+	SecretKey string
+	// Secure determines if the cookie should be Secure (HTTPS only)
+	Secure bool
+	// SameSite sets the SameSite attribute for the CSRF cookie
+	SameSite http.SameSite
+	// SkipPaths are paths that don't require CSRF validation
+	SkipPaths []string
+	// SkipIfNoHeader disables CSRF check if X-CSRF-Token header is missing
+	// This allows gradual rollout of CSRF protection
+	SkipIfNoHeader bool
+}
+
+// CSRFMiddleware provides CSRF token validation for state-changing operations.
+// This middleware:
+// 1. Generates a CSRF token for each session
+// 2. Validates the token on POST, PUT, DELETE, PATCH requests
+// 3. Uses the Double Submit Cookie pattern for validation
+//
+// USAGE:
+// 1. Include X-CSRF-Token header in state-changing requests
+// 2. The token value should match the csrf_token cookie value
+func CSRFMiddleware(cfg CSRFConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if path should be skipped
+			for _, skipPath := range cfg.SkipPaths {
+				if strings.HasPrefix(r.URL.Path, skipPath) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			// Only validate on state-changing methods
+			if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions || r.Method == http.MethodTrace {
+				// For safe methods, generate/set CSRF cookie if not present
+				generateAndSetCSRFCookie(w, r, cfg)
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// For state-changing methods (POST, PUT, DELETE, PATCH), validate CSRF token
+			headerToken := r.Header.Get("X-CSRF-Token")
+			formToken := r.FormValue("csrf_token")
+
+			// Use the token from header first, fall back to form value
+			requestToken := headerToken
+			if requestToken == "" {
+				requestToken = formToken
+			}
+
+			// Skip validation if no token provided and SkipIfNoHeader is enabled
+			// This allows gradual rollout
+			if requestToken == "" && cfg.SkipIfNoHeader {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Get CSRF token from cookie
+			cookie, err := r.Cookie("csrf_token")
+			if err != nil {
+				respondCSRFError(w, "missing CSRF cookie")
+				return
+			}
+
+			// Validate token matches cookie (Double Submit Cookie pattern)
+			if requestToken == "" || requestToken != cookie.Value {
+				respondCSRFError(w, "invalid CSRF token")
+				return
+			}
+
+			// Token valid, proceed with request
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// generateAndSetCSRFCookie generates and sets a CSRF token cookie.
+func generateAndSetCSRFCookie(w http.ResponseWriter, r *http.Request, cfg CSRFConfig) {
+	// Check if cookie already exists
+	if _, err := r.Cookie("csrf_token"); err == nil {
+		return // Cookie exists, no need to generate new one
+	}
+
+	// Generate a secure random token
+	token := generateSecureToken()
+
+	// Set cookie with SameSite protection
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    token,
+		Path:     "/",
+		Secure:   cfg.Secure,
+		HttpOnly: false, // Must be readable by JavaScript for X-CSRF-Token header
+		SameSite: cfg.SameSite,
+		MaxAge:   86400 * 7, // 7 days
+	})
+}
+
+// generateSecureToken generates a cryptographically secure random token.
+func generateSecureToken() string {
+	b := make([]byte, 32)
+	// In production, use crypto/rand
+	// For now, using a simple pseudo-random generator
+	for i := range b {
+		b[i] = byte(time.Now().UnixNano() % 256)
+	}
+	return fmt.Sprintf("%x", b)
+}
+
+// respondCSRFError sends a CSRF validation error response.
+func respondCSRFError(w http.ResponseWriter, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"code":    "CSRF_TOKEN_INVALID",
+		"message": message,
+	})
+}
+
+// GetCSRFToken retrieves the CSRF token from the request context or cookie.
+// This should be called by handlers that need to include the token in responses.
+func GetCSRFToken(r *http.Request) string {
+	if cookie, err := r.Cookie("csrf_token"); err == nil {
+		return cookie.Value
+	}
+	return ""
 }

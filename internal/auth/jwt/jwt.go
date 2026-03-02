@@ -13,6 +13,8 @@ import (
 const (
 	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
 	MinSecretKeyLength = 32
+	// MaxRefreshDuration is the maximum allowed refresh token duration (48 hours for security).
+	MaxRefreshDuration = 48 * time.Hour
 )
 
 var (
@@ -54,8 +56,13 @@ type Config struct {
 	RefreshDuration time.Duration
 	Issuer          string
 	AllowedAudiences []string // Allowed audiences for JWT validation
-	// RequireAudienceValidation forces audience validation even if no allowed audiences are set
+	// RequireAudienceValidation forces audience validation even if no allowed audiences are set.
+	// SECURITY: This defaults to true for security and cannot be disabled in production.
+	// Audience validation prevents tokens issued for one service from being used by another.
 	RequireAudienceValidation bool
+	// DisableRequireAudienceValidation is an escape hatch ONLY for testing/dev.
+	// MUST NOT be set in production deployments.
+	DisableRequireAudienceValidation bool
 }
 
 // DefaultConfig returns a JWT configuration with sensible defaults.
@@ -64,12 +71,12 @@ func DefaultConfig(secretKey string) (*Config, error) {
 		return nil, fmt.Errorf("%w: got %d characters, want at least %d", ErrSecretKeyTooShort, len(secretKey), MinSecretKeyLength)
 	}
 	return &Config{
-		SecretKey:       secretKey,
-		AccessDuration:  15 * time.Minute,
-		RefreshDuration: 7 * 24 * time.Hour, // 7 days
-		Issuer:          "openprint.cloud",
-		AllowedAudiences: []string{"openprint.cloud", "api.openprint.cloud"},
-		RequireAudienceValidation: true,
+		SecretKey:                 secretKey,
+		AccessDuration:            15 * time.Minute,
+		RefreshDuration:           MaxRefreshDuration, // 48 hours - reduced from 7 days for security
+		Issuer:                    "openprint.cloud",
+		AllowedAudiences:          []string{"openprint.cloud", "api.openprint.cloud"},
+		RequireAudienceValidation: true, // SECURITY: Always validate audience by default
 	}, nil
 }
 
@@ -86,6 +93,13 @@ func NewManager(config *Config) (*Manager, error) {
 	if len(config.SecretKey) < MinSecretKeyLength {
 		return nil, fmt.Errorf("%w: got %d characters, want at least %d", ErrSecretKeyTooShort, len(config.SecretKey), MinSecretKeyLength)
 	}
+
+	// SECURITY: Enforce audience validation by default unless explicitly disabled for testing
+	// This prevents token reuse across different services/applications
+	if !config.DisableRequireAudienceValidation {
+		config.RequireAudienceValidation = true
+	}
+
 	return &Manager{config: config}, nil
 }
 
