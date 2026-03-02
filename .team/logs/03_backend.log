@@ -1,29 +1,60 @@
-The comprehensive observability implementation for OpenPrint is now complete. Here's a summary of what was verified and in place:
+The comprehensive observability stack has been successfully implemented. Here's a summary:
 
-## Observability Stack - Complete
+## Implementation Summary
 
-### 1. Prometheus Metrics Integration
-- **registry-service**: Integrated with metrics for agent registration, heartbeats, and printer status
-- **job-service**: Integrated with job queue metrics, processing duration, and completion tracking
-- **storage-service**: Integrated with document upload/download, storage size, and backend metrics
-- **notification-service**: Integrated with WebSocket connection tracking and message metrics
+### 1. Docker Configuration Updates (`deployments/docker/docker-compose.yml`)
+- Added metrics ports for all services (9091-9095)
+- Configured Jaeger endpoint for distributed tracing (`jaeger:4317`)
+- Added environment variables for metrics and tracing (`ENABLE_METRICS`, `ENABLE_TRACING`, `ENVIRONMENT`)
 
-### 2. Grafana Dashboards (`/deployments/docker/grafana/provisioning/dashboards/openprint/`)
-- **service-health.json**: Service uptime, request rate, error rate
-- **business-kpis.json**: Job throughput, processing duration, authentication rate, WebSocket connections, storage size, printer registry
-- **database-performance.json**: DB connections, pool utilization, query duration, query rate, errors, transactions
-- **request-throughput.json**: Request rate (RPS), latency percentiles, status codes, in-flight requests, response size
+### 2. Prometheus Configuration (`deployments/docker/prometheus/prometheus.yml`)
+- Updated service discovery targets to use Docker network names:
+  - `auth-service:9091`
+  - `registry-service:9092`
+  - `job-service:9093`
+  - `storage-service:9094`
+  - `notification-service:9095`
+- Commented out optional exporters (node-exporter, cadvisor) for optional use
 
-### 3. Prometheus Configuration
-- **prometheus.yml**: Service discovery for all 5 services on ports 9091-9095, plus PostgreSQL, Redis, Node Exporter, cAdvisor
-- **alerts.yml**: Comprehensive alerting rules for service health, performance, database, authentication, job processing, storage, WebSocket, and resources
+### 3. Business Metrics Integration (Already Complete)
+All services have business metrics integrated:
+- **auth-service**: AuthSuccess, AuthFailure metrics
+- **registry-service**: PrinterRegistered, PrinterHeartbeats metrics
+- **job-service**: JobsCreated, JobsCompleted, JobsFailed, JobProcessingDuration metrics
+- **storage-service**: DocumentsStored, DocumentsRetrieved, DocumentStorageSize metrics
+- **notification-service**: WebSocketConnectionsActive metrics
 
-### 4. AlertManager Configuration
-- **config.yml**: Routing by severity (critical, security, performance, capacity), email/webhook receivers, inhibition rules, business hours intervals
+### 4. Existing Telemetry Infrastructure
+The following was already implemented:
+- **Prometheus Registry** (`internal/shared/telemetry/prometheus/registry.go`)
+- **HTTP Metrics** (`internal/shared/telemetry/prometheus/metrics.go`)
+- **Database Metrics** (`internal/shared/telemetry/prometheus/db.go`)
+- **Redis Metrics** (`internal/shared/telemetry/prometheus/redis.go`)
+- **Business Metrics** (`internal/shared/telemetry/prometheus/business.go`)
+- **Metrics Server** (`internal/shared/telemetry/prometheus/server.go`)
+- **Jaeger Tracing** (`internal/shared/telemetry/jaeger/config.go`)
+- **HTTP Middleware** (`internal/shared/middleware/metrics.go`)
+- **Grafana Dashboards** (service-health, request-throughput, database-performance, business-kpis)
+- **AlertManager Configuration**
+- **Prometheus Alert Rules**
 
-### 5. Docker Compose Stack
-- Prometheus (port 9090), AlertManager (9093), Grafana (3001), Jaeger (16686)
-- All monitoring services on `openprint-network` with persistent volumes
+### 5. Database Migrations
+Observability tables already exist (`migrations/001_create_observability_tables.up.sql`):
+- `observability_metrics` - Historical metric data
+- `alert_history` - Alert tracking
+- `quota_usage` - Quota tracking
+- `audit_log_enrichment` - Trace context for audit logs
+- `service_performance_daily` - Daily performance aggregates
+- `sla_compliance` - SLA tracking
 
-### 6. Distributed Tracing
-- **Jaeger config package** (`/internal/shared/telemetry/jaeger/config.go`) with environment-based sampling
+### Observability Stack Endpoints
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001
+- **AlertManager**: http://localhost:9093
+- **Jaeger UI**: http://localhost:16686
+- **Service Metrics**:
+  - auth-service: http://localhost:9091/metrics
+  - registry-service: http://localhost:9092/metrics
+  - job-service: http://localhost:9093/metrics
+  - storage-service: http://localhost:9094/metrics
+  - notification-service: http://localhost:9095/metrics

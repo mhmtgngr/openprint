@@ -12,7 +12,7 @@ require (
 
 	// Observability dependencies
 	github.com/prometheus/client_golang v1.20.5
-	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.57.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.0

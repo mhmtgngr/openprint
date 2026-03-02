@@ -56,13 +56,18 @@ services:
     container_name: openprint-auth-service
     environment:
       SERVER_ADDR: ":8001"
+      METRICS_PORT: "9091"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: auth-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18001:8001"
+      - "9091:9091"
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,12 +91,17 @@ services:
     container_name: openprint-registry-service
     environment:
       SERVER_ADDR: ":8002"
+      METRICS_PORT: "9092"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: registry-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8002:8002"
+      - "9092:9092"
     depends_on:
       postgres:
         condition: service_healthy
@@ -115,14 +125,19 @@ services:
     container_name: openprint-job-service
     environment:
       SERVER_ADDR: ":8003"
+      METRICS_PORT: "9093"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: job-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       PROCESSOR_WORKERS: 10
     ports:
       - "8003:8003"
+      - "9093:9093"
     depends_on:
       postgres:
         condition: service_healthy
@@ -150,6 +165,7 @@ services:
     container_name: openprint-storage-service
     environment:
       SERVER_ADDR: ":8004"
+      METRICS_PORT: "9094"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_BUCKET: ${S3_BUCKET:-openprint-documents}
@@ -158,11 +174,15 @@ services:
       S3_REGION: ${S3_REGION:-us-east-1}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: storage-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       MAX_UPLOAD_MB: 100
     ports:
       - "8004:8004"
+      - "9094:9094"
     volumes:
       - storage_data:/data/storage
     depends_on:
@@ -188,12 +208,17 @@ services:
     container_name: openprint-notification-service
     environment:
       SERVER_ADDR: ":8005"
+      METRICS_PORT: "9095"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: notification-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18005:8005"
+      - "9095:9095"
     depends_on:
       postgres:
         condition: service_healthy

@@ -33,7 +33,7 @@ scrape_configs:
   # OpenPrint Auth Service
   - job_name: 'auth-service'
     static_configs:
-      - targets: ['host.docker.internal:9091']
+      - targets: ['auth-service:9091']
         labels:
           service: 'auth-service'
           component: 'authentication'
@@ -45,7 +45,7 @@ scrape_configs:
   # OpenPrint Registry Service
   - job_name: 'registry-service'
     static_configs:
-      - targets: ['host.docker.internal:9092']
+      - targets: ['registry-service:9092']
         labels:
           service: 'registry-service'
           component: 'printer-registry'
@@ -57,7 +57,7 @@ scrape_configs:
   # OpenPrint Job Service
   - job_name: 'job-service'
     static_configs:
-      - targets: ['host.docker.internal:9093']
+      - targets: ['job-service:9093']
         labels:
           service: 'job-service'
           component: 'job-processing'
@@ -69,7 +69,7 @@ scrape_configs:
   # OpenPrint Storage Service
   - job_name: 'storage-service'
     static_configs:
-      - targets: ['host.docker.internal:9094']
+      - targets: ['storage-service:9094']
         labels:
           service: 'storage-service'
           component: 'document-storage'
@@ -81,7 +81,7 @@ scrape_configs:
   # OpenPrint Notification Service
   - job_name: 'notification-service'
     static_configs:
-      - targets: ['host.docker.internal:9095']
+      - targets: ['notification-service:9095']
         labels:
           service: 'notification-service'
           component: 'websocket-notifications'
@@ -90,37 +90,41 @@ scrape_configs:
         target_label: instance
         replacement: 'notification-service'
 
-  # PostgreSQL Exporter (if using postgres_exporter)
-  - job_name: 'postgresql'
-    static_configs:
-      - targets: ['postgres:5432']
-        labels:
-          service: 'postgres'
-          component: 'database'
+  # PostgreSQL Exporter (if using postgres_exporter) - optional
+  # Uncomment when using postgres_exporter sidecar
+  # - job_name: 'postgresql'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #       labels:
+  #         service: 'postgres'
+  #         component: 'database'
 
-  # Redis Exporter (if using redis_exporter)
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis:6379']
-        labels:
-          service: 'redis'
-          component: 'cache'
+  # Redis Exporter (if using redis_exporter) - optional
+  # Uncomment when using redis_exporter sidecar
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+  #         component: 'cache'
 
-  # Node Exporter (for host metrics)
-  - job_name: 'node'
-    static_configs:
-      - targets: ['host.docker.internal:9100']
-        labels:
-          service: 'node-exporter'
-          component: 'infrastructure'
+  # Node Exporter (for host metrics) - optional
+  # Uncomment when using node-exporter
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
+  #       labels:
+  #         service: 'node-exporter'
+  #         component: 'infrastructure'
 
-  # cAdvisor (for container metrics)
-  - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['host.docker.internal:8080']
-        labels:
-          service: 'cadvisor'
-          component: 'containers'
+  # cAdvisor (for container metrics) - optional
+  # Uncomment when using cadvisor
+  # - job_name: 'cadvisor'
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']
+  #       labels:
+  #         service: 'cadvisor'
+  #         component: 'containers'
 
 # Storage configuration
 storage:
