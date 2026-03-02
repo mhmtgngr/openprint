@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/openprint/openprint/internal/auth/roles"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/middleware"
 )
@@ -45,8 +46,10 @@ func TenantMiddleware(cfg MiddlewareConfig) func(http.Handler) http.Handler {
 			// Check if this is a platform admin only path
 			for _, adminPath := range cfg.PlatformAdminPaths {
 				if strings.HasPrefix(r.URL.Path, adminPath) {
-					role := middleware.GetRole(r)
-					if role != "admin" && role != "platform_admin" {
+					userRole := middleware.GetRole(r)
+					// Use centralized role validation for security
+					parsedRole, err := roles.Parse(userRole)
+					if err != nil || !parsedRole.IsPlatformAdmin() {
 						respondForbidden(w, "platform admin access required")
 						return
 					}
@@ -100,8 +103,15 @@ func extractFromJWT(r *http.Request) (tenantID, tenantName string, role Role, is
 	}
 
 	// Map JWT role to tenant role - do this first for all users
-	switch userRole {
-	case "admin", "platform_admin":
+	// Use centralized role validation to prevent authorization bypass
+	parsedRole, err := roles.Parse(userRole)
+	if err != nil {
+		// If role parsing fails, default to least privilege
+		parsedRole = roles.RoleOrgUser
+	}
+
+	switch parsedRole {
+	case roles.RoleAdmin, roles.RolePlatformAdmin:
 		role = RolePlatformAdmin
 		isPlatformAdmin = true
 		// For platform admins, org_id may be empty for platform-level operations
@@ -112,13 +122,13 @@ func extractFromJWT(r *http.Request) (tenantID, tenantName string, role Role, is
 		}
 		// Platform admin accessing a specific organization - continue with tenant context
 		tenantID = orgID
-	case "org_admin":
+	case roles.RoleOrgAdmin:
 		role = RoleOrgAdmin
 		isPlatformAdmin = false
-	case "user", "org_user":
+	case roles.RoleUser, roles.RoleOrgUser:
 		role = RoleOrgUser
 		isPlatformAdmin = false
-	case "viewer", "org_viewer":
+	case roles.RoleViewer, roles.RoleOrgViewer:
 		role = RoleOrgViewer
 		isPlatformAdmin = false
 	default:
@@ -161,9 +171,10 @@ func RequirePlatformAdmin(skipPaths ...string) func(http.Handler) http.Handler {
 
 			ctx := r.Context()
 
-			// Check if user is platform admin
-			role := middleware.GetRole(r)
-			if role != "admin" && role != "platform_admin" {
+			// Check if user is platform admin using centralized role validation
+			userRole := middleware.GetRole(r)
+			parsedRole, err := roles.Parse(userRole)
+			if err != nil || !parsedRole.IsPlatformAdmin() {
 				respondForbidden(w, "platform admin access required")
 				return
 			}
@@ -189,21 +200,21 @@ func RequireOrgAdmin(skipPaths ...string) func(http.Handler) http.Handler {
 				}
 			}
 
-			role := middleware.GetRole(r)
-
-			// Platform admins can access
-			if role == "admin" || role == "platform_admin" {
-				next.ServeHTTP(w, r)
+			// Use centralized role validation
+			userRole := middleware.GetRole(r)
+			parsedRole, err := roles.Parse(userRole)
+			if err != nil {
+				respondForbidden(w, "organization admin access required")
 				return
 			}
 
-			// Org admins can access
-			if role == "org_admin" {
-				next.ServeHTTP(w, r)
+			// Check if user has org admin privileges (includes platform admins)
+			if !parsedRole.IsOrgAdmin() {
+				respondForbidden(w, "organization admin access required")
 				return
 			}
 
-			respondForbidden(w, "organization admin access required")
+			next.ServeHTTP(w, r)
 		})
 	}
 }

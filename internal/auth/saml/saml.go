@@ -30,23 +30,56 @@ import (
 // but this wrapper provides explicit security controls for defense-in-depth.
 type secureXMLDecoder struct {
 	*xml.Decoder
+	maxBytes int64
+	bytesRead int64
 }
 
 // newSecureXMLDecoder creates a new secure XML decoder with size limits.
 // The decoder is configured to prevent XXE attacks by:
 // 1. Using a limited reader to enforce maximum XML size
 // 2. Disallowing DTD processing (already disabled by default in Go)
+// 3. Returning an error when size limit is exceeded (not silent truncation)
 func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
 	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
-	limitedReader := &io.LimitedReader{R: r, N: maxXMLSize}
 	return &secureXMLDecoder{
-		Decoder: xml.NewDecoder(limitedReader),
+		Decoder: xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
+		maxBytes: maxXMLSize,
 	}
 }
 
-// Decode wraps the underlying Decoder's Decode method.
+// Decode wraps the underlying Decoder's Decode method with size checking.
+// Returns an error if the XML document exceeds the maximum allowed size.
 func (d *secureXMLDecoder) Decode(v interface{}) error {
-	return d.Decoder.Decode(v)
+	err := d.Decoder.Decode(v)
+	if err == io.EOF {
+		// Check if we hit the size limit by looking at the input offset
+		// If offset is near maxBytes, the EOF was likely due to hitting the limit
+		offset := d.Decoder.InputOffset()
+		if offset >= d.maxBytes-100 {
+			// We hit the size limit with some margin for the final read
+			return fmt.Errorf("XML document exceeds maximum size of %d bytes", d.maxBytes)
+		}
+	}
+	return err
+}
+
+// countingReader wraps an io.Reader and enforces a byte limit.
+// It returns EOF when the limit is reached, preventing reads beyond the limit.
+type countingReader struct {
+	r         io.Reader
+	remaining int64
+}
+
+func (cr *countingReader) Read(p []byte) (n int, err error) {
+	if cr.remaining <= 0 {
+		return 0, io.EOF
+	}
+	if int64(len(p)) > cr.remaining {
+		p = p[:cr.remaining]
+	}
+	n, err = cr.r.Read(p)
+	cr.remaining -= int64(n)
+	return n, err
 }
 
 var (

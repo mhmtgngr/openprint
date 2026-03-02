@@ -28,11 +28,16 @@
       "e2e": "skipped"
     },
     "qa": {
+      "status": "done",
+      "_updated": "2026-03-02T03:25:42.303579",
+      "verdict": "NEEDS_FIXES"
+    },
+    "security": {
       "status": "running",
-      "_updated": "2026-03-02T03:14:32.825357"
+      "_updated": "2026-03-02T03:25:42.392196"
     }
   },
   "project": "Enhance multi-tenancy support across all services. Implement row-level security in PostgreSQL for data isolation. Add organization_id filtering to all queries in repository layers. Create tenant context middleware that extracts organization from JWT and propagates through request context. Add tenant provisioning workflows for new organizations. Implement resource quotas per tenant (max printers, storage limits, job throughput). Add admin panel for organization management. Ensure all services respect tenant boundaries in APIs and background jobs. Document tenant isolation guarantees.",
   "branch": "team/enhance-multi-tenancy-support-across-all-1772414503",
-  "current_phase": "qa"
+  "current_phase": "security"
 }
