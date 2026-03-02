@@ -397,3 +397,181 @@ export class PrintReleasePage extends BasePage {
     await this.goto('/print-release');
   }
 }
+
+/**
+ * Metrics Dashboard Page Object
+ */
+export class MetricsDashboardPage extends BasePage {
+  readonly heading: Locator;
+  readonly timeRangeButtons: Locator;
+  readonly serviceButtons: Locator;
+  readonly autoRefreshButton: Locator;
+  readonly metricCards: Locator;
+  readonly requestRateChart: Locator;
+  readonly errorRateChart: Locator;
+  readonly latencyChart: Locator;
+  readonly serviceHealthGrid: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /metrics dashboard/i });
+    this.timeRangeButtons = page.locator('button').filter({
+      hasText: /5 min|15 min|30 min|1 hour|3 hours|6 hours|12 hours|24 hours/i,
+    });
+    this.serviceButtons = page.locator('button').filter({
+      hasText: /all services|auth-service|registry-service|job-service|storage-service|notification-service/i,
+    });
+    this.autoRefreshButton = page.locator('button').filter({ hasText: /auto-refresh/i }).or(
+      page.locator('button[title*="Auto-refresh"]')
+    );
+    this.metricCards = page.locator('.grid').locator('.rounded-xl');
+    this.requestRateChart = page.locator('.bg-white').filter({ hasText: /request rate/i });
+    this.errorRateChart = page.locator('.bg-white').filter({ hasText: /error rate/i });
+    this.latencyChart = page.locator('.bg-white').filter({ hasText: /p95 latency/i });
+    this.serviceHealthGrid = page.locator('.bg-white').filter({ hasText: /service health/i });
+  }
+
+  async navigate() {
+    await this.goto('/metrics');
+  }
+
+  async selectTimeRange(range: string) {
+    await this.page.getByRole('button', { name: range }).click();
+  }
+
+  async selectService(service: string) {
+    await this.page.getByRole('button', { name: service }).click();
+  }
+
+  async toggleAutoRefresh() {
+    await this.autoRefreshButton.click();
+  }
+
+  async getServiceHealthStatus(serviceName: string): Promise<string | null> {
+    const serviceCard = this.serviceHealthGrid.locator('.bg-white').filter({ hasText: serviceName });
+    const statusElement = serviceCard.locator('[class*="rounded"]').filter({ hasText: /healthy|degraded|unhealthy/i });
+    return await statusElement.textContent();
+  }
+}
+
+/**
+ * Monitoring Page Object
+ */
+export class MonitoringPage extends BasePage {
+  readonly heading: Locator;
+  readonly tabs: Locator;
+  readonly alertsTab: Locator;
+  readonly servicesTab: Locator;
+  readonly silencesTab: Locator;
+  readonly autoRefreshButton: Locator;
+  readonly refreshButton: Locator;
+  readonly summaryCards: Locator;
+  readonly alertPanel: Locator;
+  readonly serviceHealthList: Locator;
+  readonly silencesList: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /monitoring/i });
+    this.tabs = page.locator('nav').locator('button');
+    this.alertsTab = page.getByRole('button', { name: /alerts/i });
+    this.servicesTab = page.getByRole('button', { name: /services/i });
+    this.silencesTab = page.getByRole('button', { name: /silences/i });
+    this.autoRefreshButton = page.locator('button').filter({ hasText: /auto-refresh/i }).or(
+      page.locator('button[title*="Auto-refresh"]')
+    );
+    this.refreshButton = page.getByRole('button', { name: /refresh/i });
+    this.summaryCards = page.locator('.grid').locator('.rounded-xl');
+    this.alertPanel = page.locator('.bg-white').filter({ hasText: /alerts/i });
+    this.serviceHealthList = page.locator('.space-y-6');
+    this.silencesList = page.locator('.space-y-4');
+  }
+
+  async navigate() {
+    await this.goto('/monitoring');
+  }
+
+  async selectTab(tab: 'alerts' | 'services' | 'silences') {
+    await this.page.getByRole('button', { name: new RegExp(tab, 'i') }).click();
+  }
+
+  async toggleAutoRefresh() {
+    await this.autoRefreshButton.click();
+  }
+
+  async refresh() {
+    await this.refreshButton.click();
+  }
+
+  async getFiringAlertsCount(): Promise<number> {
+    const card = this.summaryCards.nth(1);
+    const text = await card.textContent() || '';
+    const match = text.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+  }
+}
+
+/**
+ * ObservabilityHub Page Object (Tracing)
+ */
+export class ObservabilityHubPage extends BasePage {
+  readonly heading: Locator;
+  readonly tabs: Locator;
+  readonly searchTab: Locator;
+  readonly traceTab: Locator;
+  readonly summaryTab: Locator;
+  readonly timeRangeButtons: Locator;
+  readonly serviceFilter: Locator;
+  readonly openJaegerButton: Locator;
+  readonly openGrafanaButton: Locator;
+  readonly autoRefreshButton: Locator;
+  readonly summaryCards: Locator;
+  readonly traceSearch: Locator;
+  readonly traceViewer: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.heading = page.getByRole('heading', { name: /observability hub/i });
+    this.tabs = page.locator('nav').locator('button');
+    this.searchTab = page.getByRole('button', { name: /search traces/i });
+    this.traceTab = page.getByRole('button', { name: /view trace/i });
+    this.summaryTab = page.getByRole('button', { name: /summary/i });
+    this.timeRangeButtons = page.locator('button').filter({
+      hasText: /1 hour|3 hours|6 hours|12 hours|24 hours|7 days/i,
+    });
+    this.serviceFilter = page.locator('select').or(page.getByLabel(/service/i));
+    this.openJaegerButton = page.getByRole('link', { name: /open jaeger/i });
+    this.openGrafanaButton = page.getByRole('link', { name: /open grafana/i });
+    this.autoRefreshButton = page.locator('button').filter({ hasText: /auto-refresh/i }).or(
+      page.locator('button[title*="Auto-refresh"]')
+    );
+    this.summaryCards = page.locator('.grid').locator('.rounded-xl');
+    this.traceSearch = page.locator('.bg-white').filter({ hasText: /search traces/i });
+    this.traceViewer = page.locator('.bg-white').filter({ hasText: /trace spans/i });
+  }
+
+  async navigate() {
+    await this.goto('/observability');
+  }
+
+  async selectTab(tab: 'search' | 'trace' | 'summary') {
+    await this.page.getByRole('button', { name: new RegExp(tab, 'i') }).click();
+  }
+
+  async selectService(service: string) {
+    await this.serviceFilter.selectOption(service);
+  }
+
+  async selectTimeRange(range: string) {
+    await this.page.getByRole('button', { name: range }).click();
+  }
+
+  async toggleAutoRefresh() {
+    await this.autoRefreshButton.click();
+  }
+
+  async searchTrace(query: string) {
+    await this.page.getByPlaceholder(/search by operation/i).fill(query);
+    await this.page.getByRole('button', { name: /search/i }).click();
+  }
+}
