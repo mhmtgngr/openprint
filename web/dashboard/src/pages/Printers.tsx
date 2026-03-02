@@ -12,9 +12,10 @@ export const Printers = () => {
   const [newPrinterName, setNewPrinterName] = useState('');
   const [newPrinterAgent, setNewPrinterAgent] = useState('');
 
-  const { data: printers, isLoading } = useQuery({
+  const { data: printers, isLoading, error, isError } = useQuery({
     queryKey: ['printers'],
     queryFn: () => printersApi.list(),
+    staleTime: 10000, // Consider printers data fresh for 10 seconds
   });
 
   const createMutation = useMutation({
@@ -161,7 +162,31 @@ export const Printers = () => {
       </div>
 
       {/* Printer Grid */}
-      {isLoading ? (
+      {isError ? (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Error loading printers
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                {error instanceof Error ? error.message : 'Failed to load printers. Please try again.'}
+              </p>
+              <button
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['printers'] })}
+                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div

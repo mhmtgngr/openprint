@@ -1,16 +1,9 @@
-Done. Changes made:
+**ALREADY_DONE**
 
-1. **Added configurable variables** (lines 95-97):
-   - `HEALTH_CHECK_PATH="${HEALTH_CHECK_PATH:-/health}"`
-   - `HEALTH_CHECK_TIMEOUT="${HEALTH_CHECK_TIMEOUT:-5}"`
-   - `SKIP_HEALTH_CHECK="${SKIP_HEALTH_CHECK:-false}"`
+The `phase_deploy` function (lines 1240-1289) contains only one grep/head pipe, and it **already has `|| true`** applied:
 
-2. **Added `--skip-health-check` flag parsing** (line 2511)
+```bash
+for cname in $(podman ps -a --format '{{.Names}}' 2>/dev/null | grep "$PROJECT_NAME" | head -10 || true);
+```
 
-3. **Updated 4 curl health check calls**:
-   - `docker_up()` (line 677): uses `${HEALTH_CHECK_PATH}` and `${HEALTH_CHECK_TIMEOUT}`
-   - `phase_deploy()` smoke test (line 1184): uses variables
-   - `run_demo()` initial check (line 2206): uses variables  
-   - `run_demo()` report generation (line 2225): uses variables
-
-All respect `SKIP_HEALTH_CHECK` to skip health endpoints when needed.
+No changes needed - the pipe is already protected with error handling.

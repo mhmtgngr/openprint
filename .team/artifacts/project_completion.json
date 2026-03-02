@@ -1,23 +1,23 @@
 {
-  "timestamp": "2026-02-28T20:21:43.216812",
-  "completion_pct": 68,
+  "timestamp": "2026-03-02T19:24:22.689279",
+  "completion_pct": 74,
   "pr_ready": true,
   "dimension_scores": {
-    "backend_files": 92,
+    "backend_files": 100,
     "frontend_files": 0,
     "tests": 100,
-    "endpoints": 0,
+    "endpoints": 33,
     "migrations": 100,
     "build": 100,
     "tests_pass": 100,
     "docker": 100
   },
   "counts": {
-    "backend_files": "23/25",
-    "frontend_files": "0/7",
-    "tests": "49/29",
-    "endpoints": "0/10",
-    "migrations": "54/10",
+    "backend_files": "42/20",
+    "frontend_files": "0/18",
+    "tests": "100/19",
+    "endpoints": "6/18",
+    "migrations": "70/15",
     "todos": 20,
     "build": true,
     "tests_pass": true
@@ -26,244 +26,273 @@
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000001_create_users_table.up.sql",
-      "description": "Create migration: migrations/000001_create_users_table.up.sql",
-      "sql": "CREATE TABLE users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    email VARCHAR(255) UNIQUE NOT NULL,\n    password_hash VARCHAR(255),\n    full_name VARCHAR(255),\n    role VARCHAR(50) DEFAULT"
+      "item": "migrations/001_create_organizations_table.up.sql",
+      "description": "Create migration: migrations/001_create_organizations_table.up.sql",
+      "sql": "CREATE TABLE organizations (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    slug VARCHAR(100) UNIQUE NOT NULL,\n    status VARCHAR(20) NOT NULL DEFAULT 'active' "
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000002_create_printers_table.up.sql",
-      "description": "Create migration: migrations/000002_create_printers_table.up.sql",
-      "sql": "CREATE TABLE printers (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    agent_id VARCHAR(255) UNIQUE NOT NULL,\n    ip_address INET,\n    status VARCHAR(50) DEFAUL"
+      "item": "migrations/002_create_quotas_table.up.sql",
+      "description": "Create migration: migrations/002_create_quotas_table.up.sql",
+      "sql": "CREATE TABLE quotas (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    resource_type VARCHAR(50) NOT NULL CHECK "
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000003_create_jobs_table.up.sql",
-      "description": "Create migration: migrations/000003_create_jobs_table.up.sql",
-      "sql": "CREATE TABLE print_jobs (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    document_id UUID NOT NULL REFERENCES documents(id),\n "
+      "item": "migrations/003_create_usage_tracking_table.up.sql",
+      "description": "Create migration: migrations/003_create_usage_tracking_table.up.sql",
+      "sql": "CREATE TABLE resource_usage (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    resource_type VARCHAR(50) NOT NUL"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000004_create_documents_table.up.sql",
-      "description": "Create migration: migrations/000004_create_documents_table.up.sql",
-      "sql": "CREATE TABLE documents (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    filename VARCHAR(255) NOT NULL,\n    storage_key VARCHAR(255) UNIQUE NOT NULL,\n    content_type VARCHAR(100),\n    size_by"
+      "item": "migrations/004_create_organization_users_table.up.sql",
+      "description": "Create migration: migrations/004_create_organization_users_table.up.sql",
+      "sql": "CREATE TABLE organization_users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    user_id UUID NOT NULL REFEREN"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000005_create_quotas_table.up.sql",
-      "description": "Create migration: migrations/000005_create_quotas_table.up.sql",
-      "sql": "CREATE TABLE quotas (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    period_type VARCHAR(50) DEFAULT 'monthly',\n    pag"
+      "item": "migrations/005_add_tenant_to_users.up.sql",
+      "description": "Create migration: migrations/005_add_tenant_to_users.up.sql",
+      "sql": "ALTER TABLE users ADD COLUMN default_organization_id UUID REFERENCES organizations(id);\nALTER TABLE users ADD CONSTRAINT users_default_organization_fkey FOREIGN KEY (default_organization_id) REFERENCE"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000006_create_policies_table.up.sql",
-      "description": "Create migration: migrations/000006_create_policies_table.up.sql",
-      "sql": "CREATE TABLE policies (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    description TEXT,\n    rules JSONB NOT NULL,\n    priority INTEGER DEFAULT 0,\n    enabled B"
+      "item": "migrations/006_add_tenant_to_printers.up.sql",
+      "description": "Create migration: migrations/006_add_tenant_to_printers.up.sql",
+      "sql": "ALTER TABLE printers ADD COLUMN organization_id UUID NOT NULL REFERENCES organizations(id);\nALTER TABLE printers ADD CONSTRAINT printers_organization_fkey FOREIGN KEY (organization_id) REFERENCES orga"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000007_create_policy_assignments_table.up.sql",
-      "description": "Create migration: migrations/000007_create_policy_assignments_table.up.sql",
-      "sql": "CREATE TABLE policy_assignments (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    policy_id UUID NOT NULL REFERENCES policies(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id) ON DEL"
+      "item": "migrations/007_add_tenant_to_jobs.up.sql",
+      "description": "Create migration: migrations/007_add_tenant_to_jobs.up.sql",
+      "sql": "ALTER TABLE jobs ADD COLUMN organization_id UUID NOT NULL REFERENCES organizations(id);\nALTER TABLE jobs ADD CONSTRAINT jobs_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000008_create_sessions_table.up.sql",
-      "description": "Create migration: migrations/000008_create_sessions_table.up.sql",
-      "sql": "CREATE TABLE sessions (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    token_hash VARCHAR(255) UNIQUE NOT NULL,\n    expires_at"
+      "item": "migrations/008_add_tenant_to_documents.up.sql",
+      "description": "Create migration: migrations/008_add_tenant_to_documents.up.sql",
+      "sql": "ALTER TABLE documents ADD COLUMN organization_id UUID NOT NULL REFERENCES organizations(id);\nALTER TABLE documents ADD CONSTRAINT documents_organization_fkey FOREIGN KEY (organization_id) REFERENCES o"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000009_create_release_history_table.up.sql",
-      "description": "Create migration: migrations/000009_create_release_history_table.up.sql",
-      "sql": "CREATE TABLE release_history (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    job_id UUID NOT NULL REFERENCES print_jobs(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id),\n    relea"
+      "item": "migrations/009_add_tenant_to_agents.up.sql",
+      "description": "Create migration: migrations/009_add_tenant_to_agents.up.sql",
+      "sql": "ALTER TABLE agents ADD COLUMN organization_id UUID REFERENCES organizations(id);\nALTER TABLE agents ADD CONSTRAINT agents_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) O"
     },
     {
       "type": "migration",
       "priority": "critical",
-      "item": "migrations/000010_create_analytics_events_table.up.sql",
-      "description": "Create migration: migrations/000010_create_analytics_events_table.up.sql",
-      "sql": "CREATE TABLE analytics_events (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    event_type VARCHAR(100) NOT NULL,\n    user_id UUID REFERENCES users(id),\n    printer_id UUID REFERENCES printers("
+      "item": "migrations/010_create_tenant_audit_logs.up.sql",
+      "description": "Create migration: migrations/010_create_tenant_audit_logs.up.sql",
+      "sql": "CREATE TABLE tenant_audit_logs (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users("
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/011_enable_rls.up.sql",
+      "description": "Create migration: migrations/011_enable_rls.up.sql",
+      "sql": "ALTER TABLE printers ENABLE ROW LEVEL SECURITY;\nALTER TABLE jobs ENABLE ROW LEVEL SECURITY;\nALTER TABLE documents ENABLE ROW LEVEL SECURITY;\nALTER TABLE agents ENABLE ROW LEVEL SECURITY;\nALTER TABLE o"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/012_rls_policies.up.sql",
+      "description": "Create migration: migrations/012_rls_policies.up.sql",
+      "sql": "CREATE POLICY printers_tenant_isolation ON printers\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY jobs_tenant_isolation ON jobs\n    USING (organiza"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/013_default_organization.up.sql",
+      "description": "Create migration: migrations/013_default_organization.up.sql",
+      "sql": "INSERT INTO organizations (id, name, slug, status, billing_plan) VALUES\n('00000000-0000-0000-0000-000000000001', 'Default Organization', 'default', 'active', 'standard')\nON CONFLICT (slug) DO NOTHING;"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/014_migrate_existing_data.up.sql",
+      "description": "Create migration: migrations/014_migrate_existing_data.up.sql",
+      "sql": "-- Update existing records to belong to default organization\nUPDATE printers SET organization_id = '00000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;\nALTER TABLE printers ALTER COLU"
+    },
+    {
+      "type": "migration",
+      "priority": "critical",
+      "item": "migrations/015_quota_alerts_table.up.sql",
+      "description": "Create migration: migrations/015_quota_alerts_table.up.sql",
+      "sql": "CREATE TABLE quota_alerts (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    resource_type VARCHAR(50) NOT NULL,"
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "internal/testutil/go.mod",
-      "description": "Separate module for test utilities to avoid circular dependencies",
-      "key_functions": []
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "internal/testutil/postgres.go",
-      "description": "PostgreSQL testcontainer setup with test database creation",
+      "item": "services/auth-service/handler/organization.go",
+      "description": "Organization CRUD handlers for platform admin",
       "key_functions": [
-        "SetupPostgreSQL",
-        "TeardownPostgreSQL",
-        "CreateTestDatabase",
-        "GetTestDSN",
-        "TruncateTables"
+        "CreateOrganization",
+        "ListOrganizations",
+        "GetOrganization",
+        "UpdateOrganization",
+        "SuspendOrganization",
+        "DeleteOrganization"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/auth-service/internal/handler/jwt_test.go",
-      "description": "Update auth service JWT tests to use testutil",
+      "item": "services/auth-service/handler/quota.go",
+      "description": "Quota management handlers",
       "key_functions": [
-        "TestGenerateToken",
-        "TestValidateToken",
-        "TestExpiredToken"
+        "SetQuota",
+        "GetQuota",
+        "ListQuotas",
+        "GetUsage",
+        "ResetUsage"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/job-service/internal/processor/queue_test.go",
-      "description": "Update job service tests to use testutil Redis",
+      "item": "services/auth-service/handler/organization_user.go",
+      "description": "Organization user management handlers",
       "key_functions": [
-        "TestJobEnqueue",
-        "TestJobDequeue",
-        "TestJobPriority"
+        "AddUserToOrganization",
+        "RemoveUserFromOrganization",
+        "UpdateUserRole",
+        "ListOrganizationUsers",
+        "InviteUser"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/storage-service/internal/storage/s3_test.go",
-      "description": "Update storage service tests to use testutil S3",
+      "item": "services/storage-service/handler/document.go",
+      "description": "Add tenant-scoped document storage with quota enforcement",
       "key_functions": [
-        "TestUploadDocument",
-        "TestDownloadDocument",
-        "TestDeleteDocument"
+        "UploadDocument",
+        "GetDocument",
+        "DeleteDocument",
+        "ListDocuments",
+        "GetStorageUsage"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/registry-service/internal/registry/printer_test.go",
-      "description": "Update registry service tests to use testutil PostgreSQL",
+      "item": "services/storage-service/repository/document.go",
+      "description": "Tenant-scoped document metadata operations",
       "key_functions": [
-        "TestRegisterPrinter",
-        "TestHeartbeat",
-        "TestGetPrinter"
+        "Create",
+        "GetByID",
+        "List",
+        "Delete",
+        "GetTenantStorageUsage"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/notification-service/internal/hub/websocket_test.go",
-      "description": "Update notification service tests to use testutil",
+      "item": "services/notification-service/handler/notification.go",
+      "description": "Tenant-scoped notification delivery",
       "key_functions": [
-        "TestWebSocketConnection",
-        "TestBroadcast",
-        "TestSubscribe"
+        "SendNotification",
+        "BroadcastToOrganization",
+        "GetUserNotifications"
       ]
     },
     {
       "type": "backend",
       "priority": "high",
-      "item": "services/auth-service/internal/handler/mfa_test.go",
-      "description": "Test MFA/Smart card authentication (market-driven feature)",
+      "item": "services/auth-service/handler/usage_report.go",
+      "description": "Resource usage trends and reporting endpoints",
       "key_functions": [
-        "TestGenerateMFAToken",
-        "TestValidateMFAToken",
-        "TestSmartCardAuth"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "services/job-service/internal/quota/manager_test.go",
-      "description": "Test print quota and cost management (market-driven feature)",
-      "key_functions": [
-        "TestCheckQuota",
-        "TestDeductQuota",
-        "TestQuotaExceeded"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "services/job-service/internal/policy/engine_test.go",
-      "description": "Test print policy engine (market-driven feature)",
-      "key_functions": [
-        "TestEvaluatePolicy",
-        "TestColorPrintingPolicy",
-        "TestDuplexPolicy"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "services/job-service/internal/release/secure_test.go",
-      "description": "Test secure print release service (market-driven feature)",
-      "key_functions": [
-        "TestReleaseWithPIN",
-        "TestReleaseWithCard",
-        "TestReleaseHistory"
-      ]
-    },
-    {
-      "type": "backend",
-      "priority": "high",
-      "item": "services/analytics-service/internal/reporting/aggregator_test.go",
-      "description": "Test analytics and reporting (market-driven feature)",
-      "key_functions": [
-        "TestGenerateReport",
-        "TestAggregateUsage",
-        "TestCostAnalysis"
+        "GetUsageReport",
+        "GetUsageTrends",
+        "GetQuotaAlerts"
       ]
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/test/utils/testServer.ts",
-      "description": "MSW-based mock server for frontend testing"
+      "item": "web/dashboard/src/pages/admin/OrganizationForm.tsx",
+      "description": "Create/edit organization form"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/test/utils/fixtures.ts",
-      "description": "Shared test fixtures for frontend components"
+      "item": "web/dashboard/src/components/organization/UsageChart.tsx",
+      "description": "Resource usage trends visualization"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/test/utils/render.tsx",
-      "description": "Custom render function with providers for React Testing Library"
+      "item": "web/dashboard/src/components/organization/UserList.tsx",
+      "description": "Organization users management table"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/features/auth/tests/mfa.test.tsx",
-      "description": "MFA component tests (market-driven feature)"
+      "item": "web/dashboard/src/components/organization/OrganizationSwitcher.tsx",
+      "description": "Dropdown for users with multiple organizations"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/features/jobs/tests/quota.test.tsx",
-      "description": "Print quota UI tests (market-driven feature)"
+      "item": "web/dashboard/src/api/organization.ts",
+      "description": "API client for organization endpoints"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/features/analytics/tests/reports.test.tsx",
-      "description": "Analytics dashboard tests (market-driven feature)"
+      "item": "web/dashboard/src/api/quota.ts",
+      "description": "API client for quota operations"
     },
     {
       "type": "frontend",
       "priority": "high",
-      "item": "web/dashboard/src/features/release/tests/secureRelease.test.tsx",
-      "description": "Secure print release UI tests (market-driven feature)"
+      "item": "web/dashboard/src/api/organizationUser.ts",
+      "description": "API client for user management"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "web/dashboard/src/hooks/useOrganization.ts",
+      "description": "Custom hook for organization data"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "web/dashboard/src/hooks/useQuota.ts",
+      "description": "Custom hook for quota and usage data"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "web/dashboard/src/components/layout/TenantBanner.tsx",
+      "description": "Visual indicator of current tenant context"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "web/dashboard/src/routes/organizationRoutes.tsx",
+      "description": "Route definitions for organization pages"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "web/dashboard/src/pages/organization/Settings.tsx",
+      "description": "Organization settings page for org admins"
+    },
+    {
+      "type": "frontend",
+      "priority": "high",
+      "item": "web/dashboard/src/components/audit/AuditLogTable.tsx",
+      "description": "Tenant-scoped audit log viewer"
     },
     {
       "type": "todos",

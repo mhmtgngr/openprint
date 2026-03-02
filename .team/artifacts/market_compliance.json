@@ -2,7 +2,7 @@
   "results": [
     {
       "title": "Claude search",
-      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"System and Organization Controls (SOC) 2 Type 2\",\n      \"content\": \"SOC 2 Type 2 is an internal control report created by AICPA to examine services provided by service organizations. It evaluates controls based on Trust Services Criteria for Security, Availability, Processing Integrity, Confidentiality, and Privacy. The attestation is performed under SSAE No. 18 standards and addresses requirements from Cloud Security Alliance (CSA) Cloud Controls Matrix (CCM). Organizations must undergo rigorous third-party examinations by independent AICPA accredited CPA firms.\",\n      \"url\": \"https://learn.microsoft.com/en-us/compliance/regulatory/offering-soc-2\"\n    },\n    {\n      \"title\": \"ISO/IEC 27001:2022 - Key Changes and Requirements\",\n      \"content\": \"ISO/IEC 27001:2022 introduces significant changes: Annex A controls reduced from 114 to 93, reorganized into 4 themes (Organizational-37 controls, People-8 controls, Physical-14 controls, Technolo",
+      "content": "",
       "url": ""
     }
   ]
