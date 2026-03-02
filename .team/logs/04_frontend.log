@@ -1,33 +1,60 @@
-I've successfully implemented all the missing frontend components and updated the application. Here's a summary:
+I have successfully implemented all the frontend observability components for the OpenPrint dashboard. Here's a summary of what was created:
 
-## Completed Tasks
+## Components Created
 
-### New Frontend Pages Created
+### 1. **RealTimeMetricsChart** (`RealTimeMetricsChart.tsx`)
+- Live metric visualization with auto-refresh
+- Supports custom PromQL queries
+- Includes `MultiMetricsChart` variant for multiple metrics
+- Fallback to mock data when Prometheus is unavailable
+- Configurable colors, time ranges, and refresh intervals
 
-| Page | Route | Description |
-|------|-------|-------------|
-| **Compliance** | `/compliance` | FedRAMP, HIPAA, GDPR, SOC 2 compliance tracking with audit logs, reports, data retention, and security settings |
-| **Microsoft365** | `/microsoft365` | Microsoft 365 integration with Azure AD sync, shared mailboxes, and email-to-print configuration |
-| **SecurePrint** | `/secure-print` | PIN-based secure print release with queue management and configuration |
-| **PoliciesEngine** | `/policy-engine` | Advanced print policy builder with conditions, actions, and templates |
+### 2. **PrometheusQueryBuilder** (`PrometheusQueryBuilder.tsx`)
+- Interactive PromQL query builder with library of common queries
+- Query categories: HTTP Metrics, Database Metrics, Redis Metrics, System Resources
+- Quick templates for common alert rules
+- Result display with formatted tables
+- Includes `CompactQueryRunner` for embedding in other components
 
-### Updated Files
-- **`App.tsx`**: Added routes for the 4 new pages
-- **`router/index.tsx`**: Added navigation menu items
+### 3. **AlertRulesManager** (`AlertRulesManager.tsx`)
+- Create, edit, delete, and toggle alert rules
+- Pre-built templates for common scenarios (High Error Rate, High Latency, Service Down, etc.)
+- Severity levels: Critical, Warning, Info, None
+- Duration presets and custom PromQL queries
+- Annotation templates for alert messages
 
-### Verification
-- ✅ Type checking passes (`npm run type-check`)
-- ✅ Build succeeds (`npm run build`)
-- ✅ E2E test helpers already exist in `frontend/e2e/pages/`:
-  - `CompliancePage.ts` - Comprehensive page object for compliance tests
-  - `Microsoft365Page.ts` - M365 integration testing
-  - `SecurePrintPage.ts` - Print release testing
-  - `PoliciesPage.ts` - Policy engine testing
+### 4. **ServiceDependencyGraph** (`ServiceDependencyGraph.tsx`)
+- Canvas-based visualization of service dependencies
+- Interactive nodes with click-to-view details
+- Status-based coloring (healthy/degraded/unhealthy)
+- Dependency edges between services
+- Includes `DependencyGraphLegend` component
 
-### E2E Test Files (Already Present)
-- `compliance.spec.ts` - 709 lines of compliance tests
-- `microsoft365.spec.ts` - M365 integration tests
-- `secure-print.spec.ts` - Secure print tests
-- `policies-engine.spec.ts` - Policy engine tests
+### 5. **LogViewer** (`LogViewer.tsx`)
+- Real-time log viewing with auto-scroll
+- Log level filtering (debug/info/warn/error)
+- Service filtering
+- Search functionality
+- Expandable log entries with stack traces and fields
+- Includes `generateMockLogs()` helper for development
 
-All components follow the existing patterns in the codebase using React hooks, Tailwind CSS for styling, and TanStack Query for data fetching.
+## Files Created/Modified
+
+**Created:**
+- `/web/dashboard/src/components/observability/RealTimeMetricsChart.tsx`
+- `/web/dashboard/src/components/observability/PrometheusQueryBuilder.tsx`
+- `/web/dashboard/src/components/observability/AlertRulesManager.tsx`
+- `/web/dashboard/src/components/observability/ServiceDependencyGraph.tsx`
+- `/web/dashboard/src/components/observability/LogViewer.tsx`
+- `/web/dashboard/e2e/tests/observability-components.spec.ts`
+
+**Modified:**
+- `/web/dashboard/src/components/observability/index.ts` - Added exports for new components
+- `/web/dashboard/src/components/icons/index.tsx` - Added missing icons (ChevronDown, ChevronRight, Play, BookOpen)
+
+All components:
+- Follow the existing design patterns (Tailwind CSS, dark mode support)
+- Include TypeScript types
+- Have proper error handling and loading states
+- Include E2E test coverage
+- Pass TypeScript type checking

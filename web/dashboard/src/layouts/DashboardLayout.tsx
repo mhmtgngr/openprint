@@ -7,6 +7,9 @@ import {
   FolderIcon,
   CogIcon,
   LogoutIcon,
+  MetricsIcon,
+  BellIcon,
+  PulseIcon,
 } from '@/components/icons';
 
 interface NavItem {
@@ -21,6 +24,9 @@ const navItems: NavItem[] = [
   { path: '/printers', icon: PrinterIcon, label: 'Devices', roles: ['user', 'admin', 'owner'] },
   { path: '/jobs', icon: DocumentIcon, label: 'Jobs', roles: ['user', 'admin', 'owner'] },
   { path: '/documents', icon: FolderIcon, label: 'Documents', roles: ['user', 'admin', 'owner'] },
+  { path: '/metrics', icon: MetricsIcon, label: 'Metrics', roles: ['admin', 'owner'] },
+  { path: '/monitoring', icon: BellIcon, label: 'Monitoring', roles: ['admin', 'owner'] },
+  { path: '/observability', icon: PulseIcon, label: 'Tracing', roles: ['admin', 'owner'] },
   { path: '/settings', icon: CogIcon, label: 'Settings', roles: ['user', 'admin', 'owner'] },
 ];
 

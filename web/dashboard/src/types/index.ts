@@ -459,3 +459,6 @@ export interface UpdateEmailConfigRequest {
   maxAttachments?: number;
   allowedFileTypes?: string[];
 }
+
+// Re-export observability types
+export * from './observability';

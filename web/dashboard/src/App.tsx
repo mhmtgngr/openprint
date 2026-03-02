@@ -27,6 +27,9 @@ const Compliance = lazy(() => import('./pages/Compliance').then(m => ({ default:
 const Microsoft365 = lazy(() => import('./pages/Microsoft365').then(m => ({ default: m.Microsoft365 })));
 const SecurePrint = lazy(() => import('./pages/SecurePrint').then(m => ({ default: m.SecurePrint })));
 const PoliciesEngine = lazy(() => import('./pages/PoliciesEngine').then(m => ({ default: m.PoliciesEngine })));
+const MetricsDashboard = lazy(() => import('./pages/MetricsDashboard').then(m => ({ default: m.MetricsDashboard })));
+const Monitoring = lazy(() => import('./pages/Monitoring').then(m => ({ default: m.Monitoring })));
+const ObservabilityHub = lazy(() => import('./pages/ObservabilityHub').then(m => ({ default: m.ObservabilityHub })));
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoadingFallback />}>
@@ -286,6 +289,36 @@ function App() {
             <AdminRoute>
               <SuspenseWrapper>
                 <PoliciesEngine />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/metrics"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <MetricsDashboard />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/monitoring"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <Monitoring />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/observability"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <ObservabilityHub />
               </SuspenseWrapper>
             </AdminRoute>
           }
