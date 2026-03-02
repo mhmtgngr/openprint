@@ -1,304 +1,683 @@
-REQUIREMENTS: {
- "project_name": "OpenPrint Observability Stack",
- "summary": "Implement comprehensive monitoring with Prometheus metrics, Grafana dashboards, and Jaeger distributed tracing across all OpenPrint microservices",
- "functional_requirements": [
-  {
-   "id": "FR-001",
-   "title": "Prometheus Client Integration"
-  },
-  {
-   "id": "FR-002",
-   "title": "HTTP Metrics Middleware"
-  },
-  {
-   "id": "FR-003",
-   "title": "Database Metrics Collector"
-  },
-  {
-   "id": "FR-004",
-   "title": "Redis Metrics Collector"
-  },
-  {
-   "id": "FR-005",
-   "title": "Business Metrics Definition"
-  },
-  {
-   "id": "FR-006",
-   "title": "Metrics Endpoint Security"
-  },
-  {
-   "id": "FR-007",
-   "title": "Grafana Dashboard Provisioning"
-  },
-  {
-   "id": "FR-008",
-   "title": "Prometheus Alerting Rules"
-  },
-  {
-   "id": "FR-009",
-   "title": "AlertManager Configuration"
-  },
-  {
-   "id": "FR-010",
-   "title": "Docker Compose Monitoring Stack"
-  },
-  {
-   "id": "FR-011",
-   "title": "Jaeger Distributed Tracing"
-  },
-  {
-   "id": "FR-012",
-   "title": "Service Discovery Configuration"
-  },
-  {
-   "id": "FR-M013",
-   "title": "Secure Print Release Stations"
-  },
-  {
-   "id": "FR-M014",
-   "title": "Mobile Apps (iOS/Android)"
-  },
-  {
-   "id": "FR-M015",
-   "title": "Cost Allocation & Quota Management"
-  },
-  {
-   "id": "FR-M016",
-   "title": "Print Policies Engine"
-  },
-  {
-   "id": "FR-M017",
-   "title": "Cross-Platform Desktop Client"
-  }
- ],
- "affected_services": [
-  "auth-service",
-  "registry-service",
-  "job-service",
-  "storage-service",
-  "notification-service",
-  "internal/shared/telemetry",
-  "internal/shared/middleware",
-  "deployments/docker"
- ],
- "implementation_phases": [
-  {
-   "phase": 1,
-   "name": "Shared Telemetry Infrastructure",
-   "tasks": [
-    "Create internal/shared/telemetry/prometheus package with metric registry initialization",
-    "Add prometheus/client_golang dependency to go.mod",
-    "Create HTTP metrics middleware for request tracking",
-    "Create database m
-CHANGES:  .../video.webm                                     |  Bin 3683 -> 0 bytes
- .../error-context.md                               |   74 -
- .../test-failed-1.png                              |  Bin 61582 -> 0 bytes
- .../video.webm                                     |  Bin 178916 -> 0 bytes
- .../test-failed-1.png                              |  Bin 17707 -> 0 bytes
- .../video.webm                                     |  Bin 8245 -> 0 bytes
- .../test-failed-1.png                              |  Bin 17878 -> 0 bytes
- .../test-failed-1.png                              |  Bin 10629 -> 0 bytes
- .../video.webm                                     |  Bin 4475 -> 0 bytes
- .../test-failed-1.png                              |  Bin 13466 -> 0 bytes
- .../error-context.md                               |   29 -
- .../test-failed-1.png                              |  Bin 17707 -> 0 bytes
- .../video.webm                                     |  Bin 7932 -> 0 bytes
- .../test-failed-1.png                              |  Bin 17878 -> 0 bytes
- 5281 files changed, 26727 insertions(+), 43393 deletions(-)
-FILES: internal/shared/middleware/metrics.go
-internal/shared/middleware/metrics_test.go
-internal/shared/telemetry/jaeger/config.go
-internal/shared/telemetry/prometheus/business.go
-internal/shared/telemetry/prometheus/business_test.go
-internal/shared/telemetry/prometheus/db.go
-internal/shared/telemetry/prometheus/db_test.go
-internal/shared/telemetry/prometheus/labels.go
-internal/shared/telemetry/prometheus/labels_test.go
-internal/shared/telemetry/prometheus/metrics.go
-internal/shared/telemetry/prometheus/metrics_test.go
-internal/shared/telemetry/prometheus/redis.go
-internal/shared/telemetry/prometheus/redis_test.go
-internal/shared/telemetry/prometheus/registry.go
-internal/shared/telemetry/prometheus/registry_test.go
-internal/shared/telemetry/prometheus/server.go
-internal/shared/telemetry/prometheus/server_test.go
-internal/shared/telemetry/prometheus/service.go
-internal/shared/telemetry/prometheus/service_test.go
-services/auth-service/handler/http.go
-CODE: 
---- internal/shared/middleware/metrics.go ---
-// Package middleware provides HTTP middleware for metrics collection.
-// This middleware integrates with Prometheus to track HTTP request metrics.
+AUTH CODE: 
+--- internal/middleware/cookie_auth.go ---
+// Package middleware provides HTTP middleware for cookie-based authentication.
+//
+// SECURITY CONSIDERATIONS FOR COOKIES:
+//
+// This package provides secure cookie helpers that enforce the following security attributes:
+//
+// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
+//    interception on the network. Always use Secure=true in production.
+//
+// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
+//    protecting against XSS attacks that attempt to steal session tokens.
+//
+// 3. SameSite Attribute - Controls cross-site cookie behavior:
+//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
+//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
+//    - SameSiteNone: Allows cross-site requests; requires Secure=true
+//
+// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
+//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
+//
+// USAGE EXAMPLE:
+//
+//	// Recommended: Use AutoCookieSecurity for environment-aware settings
+//	security := middleware.AutoCookieSecurity()
+//	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
+//
+//	// On logout:
+//	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
+//
+// PRODUCTION DEPLOYMENT:
+//
+// For production, ensure ENV=production or GO_ENV=production is set.
+// AutoCookieSecurity will automatically apply secure settings (Secure+HttpOnly).
+//
+// Alternatively, explicitly use ProductionCookieSecurity():
+//
+//	security := middleware.ProductionCookieSecurity()
 package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
+	"github.com/openprint/openprint/internal/auth/jwt"
 )
 
-// MetricsMiddlewareConfig holds configuration for the metrics middleware.
-type MetricsMiddlewareConfig struct {
-	// Registry is the Prometheus registry to use for metrics.
-	Registry *prometheus.Registry
+const (
+	// SessionCookieName is the name of the session cookie
+	SessionCookieName = "openprint_session"
+	// RefreshCookieName is the name of the refresh token cookie
+	RefreshCookieName = "openprint_refresh"
 
-	// ServiceName is the name of the service.
-	ServiceName string
+	UserIDKey  contextKey = "user_id"
+	EmailKey   contextKey = "email"
+	OrgIDKey   contextKey = "org_id"
+	RoleKey    contextKey = "role"
+--- internal/middleware/cookie_auth_test.go ---
+// Package middleware provides tests for cookie authentication middleware.
+package middleware
 
-	// SkipPaths is a list of paths to skip tracking.
-	SkipPaths []string
+import (
+	"net/http"
+	"os"
+	"testing"
+	"time"
+)
 
-	// ExcludeStaticFiles indicates whether to exclude static file requests.
-	ExcludeStaticFiles bool
+func TestDefaultCookieSecurity(t *testing.T) {
+	security := DefaultCookieSecurity()
+
+	if !security.Secure {
+		t.Error("DefaultCookieSecurity() should set Secure=true")
+	}
+	if !security.HttpOnly {
+		t.Error("DefaultCookieSecurity() should set HttpOnly=true")
+	}
+	if security.SameSite != http.SameSiteLaxMode {
+		t.Errorf("DefaultCookieSecurity() SameSite = %v, want SameSiteLaxMode", security.SameSite)
+	}
+	if security.Path != "/" {
+		t.Errorf("DefaultCookieSecurity() Path = %v, want /", security.Path)
+	}
 }
 
-// MetricsMiddleware returns HTTP middleware that records Prometheus metrics for all requests.
-// It tracks request count, duration, response size, and in-flight requests.
-func MetricsMiddleware(cfg MetricsMiddlewareConfig) func(http.Handler) http.Handler {
-	metrics := prometheus.NewMetrics(cfg.Registry)
+func TestProductionCookieSecurity(t *testing.T) {
+	security := ProductionCookieSecurity()
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check if path should be skipped
-			if shouldSkipPath(r.URL.Path, cfg.SkipPaths, cfg.ExcludeStaticFiles) {
-				next.ServeHTTP(w, r)
-				return
-			}
+	if !security.Secure {
+		t.Error("ProductionCookieSecurity() MUST set Secure=true")
+	}
+	if !security.HttpOnly {
+		t.Error("ProductionCookieSecurity() MUST set HttpOnly=true")
+	}
+	if security.SameSite != http.SameSiteStrictMode {
+		t.Errorf("ProductionCookieSecurity() SameSite = %v, want SameSiteStrictMode for stricter CSRF protection", security.SameSite)
+	}
+	if security.Path != "/" {
+		t.Errorf("ProductionCookieSecurity() Path = %v, want /", security.Path)
+	}
+}
 
-			// Get normalized path (replace IDs with placeholders)
-			path := normalizePath(r.URL.Path)
-			if path == "" {
-				path = "/"
-			}
+func TestDevelopmentCookieSecurity(t *testing.T) {
+	security := DevelopmentCookieSecurity()
 
-			// Track in-flight requests
-			metrics.HTTP.RequestsInFlight.WithLabelValues(
-				cfg.ServiceName,
-				r.Method,
-				path,
-			).Inc()
+	if security.Secure {
+		t.Error("DevelopmentCookieSecurity() should allow HTTP (Secure=false)")
+	}
+	if !security.HttpOnly {
+		t.Error("DevelopmentCookieSecurity() should still set HttpOnly=true")
+	}
+	if security.SameSite != http.SameSiteLaxMode {
+		t.Errorf("DevelopmentCookieSecurity() SameSite = %v, want SameSiteLaxMode", security.SameSite)
+	}
+}
 
-			// Wrap response writer to capture status and size
-			rw := &metricsResponseWriter{
-				ResponseWriter: w,
-				status:         http.StatusOK, // Default status
-			}
+func TestEnvIsProduction(t *testing.T) {
+	// Save original env values
+--- internal/agent/types.go ---
+// Package agent provides shared types for Windows Print Agent communication.
+package agent
 
-			// Record start time
-			start := time.Now()
+import (
+	"encoding/json"
+	"time"
+)
 
-			// Call next handler
-			next.ServeHTTP(rw, r)
+// PrinterConnectionType represents how a printer is connected.
+type PrinterConnectionType string
 
-			// Calculate duration
-			duration := time.Since(start).Seconds()
+const (
+	// ConnectionLocal indicates a locally connected printer (USB, LPT, etc.)
+	ConnectionLocal PrinterConnectionType = "local"
+	// ConnectionNetwork indicates a network-connected printer
+	ConnectionNetwork PrinterConnectionType = "network"
+	// ConnectionShared indicates a shared printer from another machine
+	ConnectionShared PrinterConnectionType = "shared"
+	// ConnectionWSD indicates a Web Services for Devices printer
+	ConnectionWSD PrinterConnectionType = "wsd"
+	// ConnectionLPD indicates a Line Printer Daemon printer
+	ConnectionLPD PrinterConnectionType = "lpd"
+)
 
-			// Record metrics
-			statusLabel := prometheus.HTTPStatusLabel(rw.status)
-			method := r.Method
+// PrinterStatus represents the current status of a printer.
+type PrinterStatus string
 
-			// Total requests counter
-			metrics.HTTP.RequestsTotal.WithLabelValues(
-				cfg.ServiceName,
-				method,
-				path,
-				statusLabel,
---- internal/shared/middleware/metrics_test.go ---
-// Package middleware provides tests for metrics collection middleware.
-package middleware
+const (
+	// PrinterStatusIdle indicates the printer is ready and idle
+	PrinterStatusIdle PrinterStatus = "idle"
+	// PrinterStatusPrinting indicates the printer is currently printing
+	PrinterStatusPrinting PrinterStatus = "printing"
+	// PrinterStatusBusy indicates the printer is busy
+	PrinterStatusBusy PrinterStatus = "busy"
+	// PrinterStatusOffline indicates the printer is offline
+	PrinterStatusOffline PrinterStatus = "offline"
+	// PrinterStatusError indicates the printer has an error
+	PrinterStatusError PrinterStatus = "error"
+	// PrinterStatusOutOfPaper indicates the printer is out of paper
+	PrinterStatusOutOfPaper PrinterStatus = "out_of_paper"
+	// PrinterStatusLowToner indicates the printer has low toner
+	PrinterStatusLowToner PrinterStatus = "low_toner"
+	// PrinterStatusDoorOpen indicates the printer door is open
+	PrinterStatusDoorOpen PrinterStatus = "door_open"
+)
+
+// AgentStatus represents the current status of an agent.
+type AgentStatus string
+
+const (
+	// AgentStatusOnline indicates the agent is online and operational
+	AgentStatusOnline AgentStatus = "online"
+	// AgentStatusOffline indicates the agent is offline
+	AgentStatusOffline AgentStatus = "offline"
+	// AgentStatusError indicates the agent has encountered an error
+	AgentStatusError AgentStatus = "error"
+	// AgentStatusMaintenance indicates the agent is under maintenance
+	AgentStatusMaintenance AgentStatus = "maintenance"
+	// AgentStatusInitializing indicates the agent is initializing
+	AgentStatusInitializing AgentStatus = "initializing"
+--- internal/auth/password/password.go ---
+// Package password provides secure password hashing using Argon2id.
+package password
+
+import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"strings"
+
+	"golang.org/x/crypto/argon2"
+)
+
+var (
+	// ErrMismatchedHashAndPassword is returned when a password doesn't match its hash.
+	ErrMismatchedHashAndPassword = errors.New("password does not match")
+	// ErrInvalidHashFormat is returned when the hash format is invalid.
+	ErrInvalidHashFormat = errors.New("invalid hash format")
+	// ErrInvalidHashVersion is returned when the hash version is not supported.
+	ErrInvalidHashVersion = errors.New("invalid hash version")
+)
+
+// Hash represents a password hash with its parameters.
+type Hash struct {
+	Version  int
+	Memory   uint32
+	Time     uint32
+	Threads  uint8
+	KeyLen   uint32
+	SaltLen  uint32
+	Salt     []byte
+	Hash     []byte
+}
+
+// String returns the string representation of the hash.
+func (h *Hash) String() string {
+	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
+		h.Version,
+		h.Memory,
+		h.Time,
+		h.Threads,
+		base64.RawStdEncoding.EncodeToString(h.Salt),
+		base64.RawStdEncoding.EncodeToString(h.Hash),
+	)
+}
+
+// Default parameters for Argon2id (OWASP recommendations as of 2024).
+var (
+	// DefaultMemory is the default memory cost in KiB (64 MiB).
+	DefaultMemory = uint32(64 * 1024)
+	// DefaultIterations is the default number of iterations.
+	DefaultIterations = uint32(3)
+	// DefaultThreads is the default parallelism degree.
+	DefaultThreads = uint8(4)
+	// DefaultKeyLen is the default derived key length in bytes.
+	DefaultKeyLen = uint32(32)
+	// DefaultSaltLen is the default salt length in bytes.
+	DefaultSaltLen = uint32(16)
+)
+--- internal/auth/password/password_test.go ---
+// Package password provides tests for secure password hashing using Argon2id.
+package password
+
+import (
+	"strings"
+	"testing"
+
+	"golang.org/x/crypto/argon2"
+)
+
+func TestDefaultParameters(t *testing.T) {
+	if DefaultMemory != 64*1024 {
+		t.Errorf("DefaultMemory = %d, want %d", DefaultMemory, 64*1024)
+	}
+	if DefaultIterations != 3 {
+		t.Errorf("DefaultIterations = %d, want %d", DefaultIterations, 3)
+	}
+	if DefaultThreads != 4 {
+		t.Errorf("DefaultThreads = %d, want %d", DefaultThreads, 4)
+	}
+	if DefaultKeyLen != 32 {
+		t.Errorf("DefaultKeyLen = %d, want %d", DefaultKeyLen, 32)
+	}
+	if DefaultSaltLen != 16 {
+		t.Errorf("DefaultSaltLen = %d, want %d", DefaultSaltLen, 16)
+	}
+}
+
+func TestNewHasher(t *testing.T) {
+	memory := uint32(32 * 1024)
+	time := uint32(2)
+	threads := uint8(2)
+	keyLen := uint32(24)
+	saltLen := uint32(12)
+
+	hasher := NewHasher(memory, time, threads, keyLen, saltLen)
+
+	if hasher.memory != memory {
+		t.Errorf("NewHasher() memory = %d, want %d", hasher.memory, memory)
+	}
+	if hasher.time != time {
+		t.Errorf("NewHasher() time = %d, want %d", hasher.time, time)
+	}
+	if hasher.threads != threads {
+		t.Errorf("NewHasher() threads = %d, want %d", hasher.threads, threads)
+	}
+	if hasher.keyLen != keyLen {
+		t.Errorf("NewHasher() keyLen = %d, want %d", hasher.keyLen, keyLen)
+	}
+	if hasher.saltLen != saltLen {
+		t.Errorf("NewHasher() saltLen = %d, want %d", hasher.saltLen, saltLen)
+	}
+}
+
+func TestDefaultHasher(t *testing.T) {
+	hasher := DefaultHasher()
+
+	if hasher.memory != DefaultMemory {
+		t.Errorf("DefaultHasher() memory = %d, want %d", hasher.memory, DefaultMemory)
+	}
+--- internal/auth/saml/saml.go ---
+// Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
+// This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
+//
+// SECURITY: SHA-1 signature support has been removed due to cryptographic vulnerabilities.
+// Only SHA-256 and stronger signature algorithms are supported.
+// IdPs using SHA-1 must be upgraded to use SHA-256 or stronger algorithms.
+package saml
+
+import (
+	"bytes"
+	"context"
+	cryptoRand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/sha512"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/xml"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// secureXMLDecoder wraps xml.Decoder with security restrictions.
+// Go's encoding/xml package does not process external entities by default,
+// but this wrapper provides explicit security controls for defense-in-depth.
+type secureXMLDecoder struct {
+	*xml.Decoder
+}
+
+// newSecureXMLDecoder creates a new secure XML decoder with size limits.
+// The decoder is configured to prevent XXE attacks by:
+// 1. Using a limited reader to enforce maximum XML size
+// 2. Disallowing DTD processing (already disabled by default in Go)
+func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
+	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
+	limitedReader := &io.LimitedReader{R: r, N: maxXMLSize}
+	return &secureXMLDecoder{
+		Decoder: xml.NewDecoder(limitedReader),
+	}
+}
+
+// Decode wraps the underlying Decoder's Decode method.
+func (d *secureXMLDecoder) Decode(v interface{}) error {
+	return d.Decoder.Decode(v)
+}
+
+var (
+	// ErrInvalidResponse is returned when the SAML response is invalid.
+	ErrInvalidResponse = errors.New("invalid SAML response")
+	// ErrMissingAttribute is returned when a required attribute is missing.
+	ErrMissingAttribute = errors.New("missing required SAML attribute")
+	// ErrInvalidSignature is returned when the signature is invalid.
+	ErrInvalidSignature = errors.New("invalid SAML signature")
+	ErrNotConfigured  = errors.New("SAML not configured")
+)
+--- internal/auth/saml/saml_test.go ---
+// Package saml provides tests for SAML 2.0 SSO integration.
+package saml
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+)
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &Config{
+			EntityID: "https://sp.example.com",
+			SSOURL:   "https://idp.example.com/sso",
+			ACSURL:   "https://sp.example.com/acs",
+			SLOURL:   "https://idp.example.com/slo",
+		}
+
+		mgr, err := NewManager(cfg)
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+		}
+	})
+
+	t.Run("nil config", func(t *testing.T) {
+		_, err := NewManager(nil)
+		if err == nil {
+			t.Error("NewManager(nil) should return error")
+		}
+	})
+}
+
+func TestManager_Metadata(t *testing.T) {
+	cfg := &Config{
+		EntityID:     "https://sp.example.com",
+		SSOURL:       "https://idp.example.com/sso",
+		ACSURL:       "https://sp.example.com/acs",
+		SLOResponseURL: "https://sp.example.com/slo",
+	}
+
+	mgr, err := NewManager(cfg)
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+
+	metadata, err := mgr.Metadata()
+	if err != nil {
+		t.Fatalf("Metadata() error = %v", err)
+	}
+
+	if len(metadata) == 0 {
+		t.Fatal("Metadata() returned empty bytes")
+--- internal/auth/jwt/jwt_test.go ---
+// Package jwt provides tests for JWT token generation and validation.
+package jwt
+
+import (
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+func TestDefaultConfig(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		secret := "this-is-a-secure-secret-key-32-chars-long"
+		cfg, err := DefaultConfig(secret)
+
+		if err != nil {
+			t.Fatalf("DefaultConfig() error = %v", err)
+		}
+		if cfg.SecretKey != secret {
+			t.Errorf("DefaultConfig() SecretKey = %v, want %v", cfg.SecretKey, secret)
+		}
+		if cfg.AccessDuration != 15*time.Minute {
+			t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
+		}
+		if cfg.RefreshDuration != MaxRefreshDuration {
+			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, MaxRefreshDuration)
+		}
+		if cfg.Issuer != "openprint.cloud" {
+			t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)
+		}
+	})
+
+	t.Run("secret key too short", func(t *testing.T) {
+		shortSecret := "short"
+		_, err := DefaultConfig(shortSecret)
+
+		if err == nil {
+			t.Error("DefaultConfig() with short secret should return error")
+		}
+		if !errors.Is(err, ErrSecretKeyTooShort) {
+			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
+	})
+}
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+		mgr, err := NewManager(cfg)
+
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+--- internal/auth/jwt/jwt.go ---
+// Package jwt provides JWT token generation and validation for OpenPrint authentication.
+package jwt
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+const (
+	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
+	MinSecretKeyLength = 32
+	// MaxRefreshDuration is the maximum allowed refresh token duration (48 hours for security).
+	MaxRefreshDuration = 48 * time.Hour
+)
+
+var (
+	// ErrInvalidToken is returned when a token is invalid.
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrExpiredToken is returned when a token has expired.
+	ErrExpiredToken = errors.New("token expired")
+	// ErrInvalidSigningMethod is returned when the signing method is invalid.
+	ErrInvalidSigningMethod = errors.New("invalid signing method")
+	// ErrSecretKeyTooShort is returned when the secret key is too short.
+	ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
+)
+
+// Claims represents the JWT claims structure.
+type Claims struct {
+	UserID    string   `json:"user_id"`
+	Email     string   `json:"email"`
+	OrgID     string   `json:"org_id,omitempty"`
+	Role      string   `json:"role"`
+	TokenType string   `json:"token_type"` // "access" or "refresh"
+	Scopes    []string `json:"scopes,omitempty"`
+	jwt.RegisteredClaims
+}
+
+// TokenType represents the type of JWT token.
+type TokenType string
+
+const (
+	// AccessTokenType is for short-lived access tokens.
+	AccessTokenType TokenType = "access"
+	// RefreshTokenType is for long-lived refresh tokens.
+	RefreshTokenType TokenType = "refresh"
+)
+
+// Config holds JWT configuration.
+type Config struct {
+	SecretKey       string
+	AccessDuration  time.Duration
+	RefreshDuration time.Duration
+	Issuer          string
+	AllowedAudiences []string // Allowed audiences for JWT validation
+	// RequireAudienceValidation forces audience validation even if no allowed audiences are set.
+	// SECURITY: This defaults to true for security and cannot be disabled in production.
+--- internal/auth/oidc/oidc_test.go ---
+// Package oidc provides tests for OpenID Connect (OIDC) and OAuth2 integration.
+package oidc
 
 import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
-	"time"
 
-	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 )
 
-func TestMetricsMiddlewareConfig(t *testing.T) {
-	cfg := prometheus.Config{ServiceName: "test-service"}
-	reg, err := prometheus.NewRegistry(cfg)
-	require.NoError(t, err)
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &Config{
+			ProviderType: ProviderGoogle,
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			RedirectURL:  "https://example.com/callback",
+		}
 
-	middlewareCfg := MetricsMiddlewareConfig{
-		Registry:           reg,
-		ServiceName:        "test-service",
-		SkipPaths:          []string{"/skip", "/health"},
-		ExcludeStaticFiles: true,
-	}
-
-	assert.Equal(t, reg, middlewareCfg.Registry)
-	assert.Equal(t, "test-service", middlewareCfg.ServiceName)
-	assert.Equal(t, []string{"/skip", "/health"}, middlewareCfg.SkipPaths)
-	assert.True(t, middlewareCfg.ExcludeStaticFiles)
-}
-
-func TestMetricsMiddleware(t *testing.T) {
-	cfg := prometheus.Config{ServiceName: "test-middleware"}
-	reg, err := prometheus.NewRegistry(cfg)
-	require.NoError(t, err)
-
-	middlewareCfg := MetricsMiddlewareConfig{
-		Registry:    reg,
-		ServiceName: "test-middleware",
-	}
-
-	mw := MetricsMiddleware(middlewareCfg)
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		mgr, err := NewManager(context.Background(), cfg)
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+		}
 	})
 
-	t.Run("records successful request", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/test", nil)
-		w := httptest.NewRecorder()
-
-		mw(handler).ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, "OK", w.Body.String())
+	t.Run("nil config", func(t *testing.T) {
+		_, err := NewManager(context.Background(), nil)
+		if err == nil {
+			t.Error("NewManager(nil) should return error")
+		}
 	})
 
-	t.Run("records status code", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusNotFound)
-		})
+	t.Run("missing client ID", func(t *testing.T) {
+		cfg := &Config{
+			ProviderType: ProviderGoogle,
+			RedirectURL:  "https://example.com/callback",
+		}
 
-		req := httptest.NewRequest("GET", "/api/notfound", nil)
-		w := httptest.NewRecorder()
-
-		mw(handler).ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusNotFound, w.Code)
+		_, err := NewManager(context.Background(), cfg)
+		if err == nil {
+			t.Error("NewManager() without ClientID should return error")
+		}
 	})
 
-	t.Run("records different methods", func(t *testing.T) {
-		methods := []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
-
-		for _, method := range methods {
-			req := httptest.NewRequest(method, "/api/resource", nil)
-			w := httptest.NewRecorder()
---- internal/shared/telemetry/jaeger/config.go ---
-// Package jaeger provides Jaeger distributed tracing configuration and initialization.
-// This package integrates with OpenTelemetry to provide tracing capabilities.
-package jaeger
+	t.Run("default scopes", func(t *testing.T) {
+		cfg := &Config{
+			ProviderType: ProviderGoogle,
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			RedirectURL:  "https://example.com/callback",
+HANDLERS: 
+--- internal/shared/telemetry/middleware_test.go ---
+// Package telemetry provides tests for OpenTelemetry tracing and instrumentation.
+package telemetry
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"go.opentelemetry.io/otel/trace"
+)
+
+func TestInitTracer(t *testing.T) {
+	t.Run("no jaeger endpoint returns noop tracer", func(t *testing.T) {
+		shutdown, err := InitTracer("test-service", "1.0.0", "")
+
+		if err != nil {
+			t.Errorf("InitTracer() error = %v", err)
+		}
+		if shutdown == nil {
+			t.Error("InitTracer() shutdown should not be nil")
+		}
+
+		// Call shutdown to clean up
+		ctx := context.Background()
+		if err := shutdown(ctx); err != nil {
+			t.Errorf("shutdown() error = %v", err)
+		}
+	})
+
+	t.Run("with jaeger endpoint creates stdout tracer", func(t *testing.T) {
+		// Note: This test may fail if the environment doesn't support stdout tracer properly
+		// In a CI environment, this might need adjustment
+		shutdown, err := InitTracer("test-service", "1.0.0", "stdout")
+
+		if err != nil {
+			t.Logf("InitTracer() with stdout produced error (may be expected in some environments): %v", err)
+		}
+		if shutdown != nil {
+			ctx := context.Background()
+			shutdown(ctx)
+		}
+	})
+}
+
+func TestMiddleware(t *testing.T) {
+	t.Run("middleware creates span", func(t *testing.T) {
+--- internal/shared/telemetry/middleware.go ---
+// Package telemetry provides OpenTelemetry tracing and instrumentation for all services.
+package telemetry
+
+import (
+	"bufio"
+	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -307,225 +686,30 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Config holds Jaeger tracing configuration.
-type Config struct {
-	// ServiceName is the name of the service (e.g., "auth-service").
-	ServiceName string
+const (
+	// ServiceNameKey is the attribute key for service name.
+	ServiceNameKey = attribute.Key("service.name")
+	// ServiceVersionKey is the attribute key for service version.
+	ServiceVersionKey = attribute.Key("service.version")
+	// ServiceInstanceIDKey is the attribute key for service instance ID.
+	ServiceInstanceIDKey = attribute.Key("service.instance.id")
+)
 
-	// ServiceVersion is the version of the service.
-	ServiceVersion string
+// Tracer is a global tracer instance.
+var Tracer trace.Tracer
 
-	// Endpoint is the Jaeger or OTLP endpoint.
-	// Examples: "localhost:4317", "jaeger:4317", "http://localhost:14268/api/traces"
-	Endpoint string
-
-	// Environment is the deployment environment (production, staging, development).
-	Environment string
-
-	// SampleRate is the trace sampling rate (0.0 to 1.0).
-	// If 0, uses defaults based on environment.
-	SampleRate float64
-
-	// EnableTracing enables or disables tracing.
-	EnableTracing bool
-}
-
-// DefaultConfig returns a default Jaeger configuration.
-func DefaultConfig(serviceName string) Config {
-	return Config{
-		ServiceName:    serviceName,
-		ServiceVersion: os.Getenv("SERVICE_VERSION"),
-		Endpoint:       os.Getenv("JAEGER_ENDPOINT"),
-		Environment:    os.Getenv("ENVIRONMENT"),
-		SampleRate:     0, // Use environment-based defaults
-		EnableTracing:  getEnvBool("ENABLE_TRACING", false),
-	}
-}
-
-// getEnvBool reads a boolean environment variable.
-func getEnvBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		return strings.ToLower(value) == "true" || value == "1"
-	}
-	return defaultValue
-}
-
-// InitTracer initializes the OpenTelemetry tracer with Jaeger/OTLP exporter.
-// Returns a shutdown function that should be called during graceful shutdown.
-func InitTracer(cfg Config) (func(context.Context) error, error) {
+// InitTracer initializes the OpenTelemetry tracer with OTLP/Jaeger exporter.
+// In production, configure OTEL_EXPORTER_OTLP_ENDPOINT or JAEGER_ENDPOINT.
+// For development without a collector, tracing is disabled (noop tracer).
+func InitTracer(serviceName, serviceVersion, jaegerEndpoint string) (func(context.Context) error, error) {
 	ctx := context.Background()
 
-	// If tracing is disabled, return a no-op shutdown function
-	if !cfg.EnableTracing {
-		return func(ctx context.Context) error { return nil }, nil
+	// Check for OTLP endpoint environment variable
+	otlpEndpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if otlpEndpoint == "" {
+		otlpEndpoint = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
 	}
 
-	// Set default values
-	if cfg.ServiceVersion == "" {
-		cfg.ServiceVersion = "1.0.0"
-	}
-	if cfg.Environment == "" {
-		cfg.Environment = "production"
-	}
---- internal/shared/telemetry/prometheus/business.go ---
-// Package prometheus provides helper functions for recording business-specific metrics.
-package prometheus
-
-import (
-	"time"
-)
-
-// RecordJobCreated records a new print job creation.
-func RecordJobCreated(metrics *Metrics, serviceName, orgID string) {
-	metrics.Business.JobsCreatedTotal.WithLabelValues(
-		serviceName,
-		orgID,
-	).Inc()
-}
-
-// RecordJobCompleted records a successful print job completion.
-func RecordJobCompleted(metrics *Metrics, serviceName, orgID string, duration time.Duration) {
-	metrics.Business.JobsCompletedTotal.WithLabelValues(
-		serviceName,
-		orgID,
-	).Inc()
-
-	if duration > 0 {
-		metrics.Business.JobProcessingDuration.WithLabelValues(
-			serviceName,
-			orgID,
-		).Observe(duration.Seconds())
-	}
-}
-
-// RecordJobFailed records a failed print job.
-func RecordJobFailed(metrics *Metrics, serviceName, orgID, errorCode string) {
-	metrics.Business.JobsFailedTotal.WithLabelValues(
-		serviceName,
-		orgID,
-		errorCode,
-	).Inc()
-}
-
-// RecordAuthSuccess records a successful authentication.
-func RecordAuthSuccess(metrics *Metrics, serviceName, authMethod, role string) {
-	metrics.Business.AuthSuccessTotal.WithLabelValues(
-		serviceName,
-		authMethod,
-		role,
-	).Inc()
-}
-
-// RecordAuthFailure records a failed authentication.
-func RecordAuthFailure(metrics *Metrics, serviceName, authMethod string) {
-	metrics.Business.AuthFailureTotal.WithLabelValues(
-		serviceName,
-		authMethod,
-	).Inc()
-}
-
-// RecordPrinterRegistered records a new printer registration.
-func RecordPrinterRegistered(metrics *Metrics, serviceName, orgID string) {
-	metrics.Business.PrintersRegisteredTotal.WithLabelValues(
-		serviceName,
-		orgID,
-	).Inc()
-}
-
-// RecordPrinterHeartbeat records a printer heartbeat.
-func RecordPrinterHeartbeat(metrics *Metrics, serviceName, orgID string) {
-	metrics.Business.PrinterHeartbeatsTotal.WithLabelValues(
-		serviceName,
-		orgID,
-	).Inc()
-}
-
-// RecordDocumentStored records a document storage operation.
-func RecordDocumentStored(metrics *Metrics, serviceName, backend, docType string, size int64) {
-	metrics.Business.DocumentsStoredTotal.WithLabelValues(
-		serviceName,
-		backend,
-		docType,
-	).Inc()
---- internal/shared/telemetry/prometheus/business_test.go ---
-// Package prometheus provides tests for business metrics.
-package prometheus
-
-import (
-	"testing"
-	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-func TestRecordJobCreated(t *testing.T) {
-	cfg := Config{ServiceName: "test-record-job"}
-	reg, err := NewRegistry(cfg)
-	require.NoError(t, err)
-
-	metrics := NewMetrics(reg)
-
-	RecordJobCreated(metrics, "test-service", "org-123")
-
-	// Metric should be recorded
-	labels := prometheus.Labels{
-		LabelServiceName: "test-service",
-		LabelOrgID:       "org-123",
-	}
-
-	// Check via direct metric access
-	var metric dto.Metric
-	err = metrics.Business.JobsCreatedTotal.With(labels).Write(&metric)
-	assert.NoError(t, err)
-	assert.Equal(t, float64(1), metric.Counter.GetValue())
-}
-
-func TestRecordJobCompleted(t *testing.T) {
-	cfg := Config{ServiceName: "test-job-complete"}
-	reg, err := NewRegistry(cfg)
-	require.NoError(t, err)
-
-	metrics := NewMetrics(reg)
-
-	duration := 30 * time.Second
-
-	RecordJobCompleted(metrics, "test-service", "org-456", duration)
-
-	// Both completed count and duration should be recorded
-	labels := prometheus.Labels{
-		LabelServiceName: "test-service",
-		LabelOrgID:       "org-456",
-	}
-
-	var metric dto.Metric
-	err = metrics.Business.JobsCompletedTotal.With(labels).Write(&metric)
-	assert.NoError(t, err)
-	assert.Equal(t, float64(1), metric.Counter.GetValue())
-}
-
-func TestRecordJobCompleted_ZeroDuration(t *testing.T) {
-	cfg := Config{ServiceName: "test-job-zero-dur"}
-	reg, err := NewRegistry(cfg)
-	require.NoError(t, err)
-
-	metrics := NewMetrics(reg)
-
-	RecordJobCompleted(metrics, "test-service", "org-789", 0)
-
-	// Should only increment counter, not record duration
-	labels := prometheus.Labels{
-		LabelServiceName: "test-service",
-		LabelOrgID:       "org-789",
-	}
-
-	var metric dto.Metric
-	err = metrics.Business.JobsCompletedTotal.With(labels).Write(&metric)
-	assert.NoError(t, err)
-	assert.Equal(t, float64(1), metric.Counter.GetValue())
-}
-
-func TestRecordJobFailed(t *testing.T) {
-Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.
+	var exporter tracesdk.SpanExporter
+	var err error
+Check: SQL injection, XSS, CSRF, insecure JWT, weak crypto, missing auth, IDOR, data exposure. Be thorough.

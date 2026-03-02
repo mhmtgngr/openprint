@@ -1,9 +1,19 @@
-The build completed successfully. The output shows:
+Fixed both issues:
 
-**Dashboard Build Summary:**
-- Frontend built with Vite in 7.56s
-- Total bundle size: ~782 KB (gzipped: ~213 KB)
-- nginx:alpine base image with curl, dumb-init, and tzdata installed
-- Image tagged: `localhost/docker_dashboard:latest`
+**1. Prometheus** (`deployments/docker/prometheus/prometheus.yml`):
+- Removed invalid `storage` section (lines 129-135)
+- Storage path is already set via docker-compose command: `--storage.tsdb.path=/prometheus`
 
-All services are now healthy and running properly.
+**2. Alertmanager** (`deployments/docker/alertmanager/config.yml`):
+- Fixed `off_hours` interval that crossed midnight (17:00 → 09:00)
+- Split into two valid intervals:
+  - Evening: 17:00-23:59 on weekdays
+  - Morning: 00:00-09:00 on weekdays
+  - Plus all-day weekends
+
+You can restart the services:
+
+```bash
+cd deployments/docker
+docker-compose restart prometheus alertmanager
+```

@@ -3254,3 +3254,386 @@ exit code: 0
 podman run --name=openprint-dashboard -d --requires=openprint-postgres,openprint-auth-service,openprint-storage-service,openprint-registry-service,openprint-redis,openprint-job-service,openprint-notification-service --label io.podman.compose.config-hash=73e2a30b7abd3b0c6f59f49838c8a3ffc1ddc6b7b2524603df556ea32db7f48c --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=dashboard -e NODE_ENV=production -e VITE_API_BASE_URL=http://localhost:8001 --net openprint-network --network-alias dashboard -p 3000:3000 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:3000/ --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_dashboard
 c7c3d64a6f38cbdba9a29edb15988f0c0abe13dfc7bf6d6b8fc16daa5b32e480
 exit code: 0
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_auth-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_registry-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_storage-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_notification-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_job-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_dashboard']
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=docker', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+recreating: ...
+** excluding:  set()
+podman stop -t 10 openprint-dashboard
+openprint-dashboard
+exit code: 0
+podman stop -t 10 openprint-job-service
+openprint-job-service
+exit code: 0
+podman stop -t 10 openprint-notification-service
+openprint-notification-service
+exit code: 0
+podman stop -t 10 openprint-storage-service
+openprint-storage-service
+exit code: 0
+podman stop -t 10 openprint-registry-service
+openprint-registry-service
+exit code: 0
+podman stop -t 10 openprint-auth-service
+openprint-auth-service
+exit code: 0
+podman stop -t 10 openprint-jaeger
+Error: no container with name or ID "openprint-jaeger" found: no such container
+exit code: 125
+podman stop -t 10 openprint-grafana
+Error: no container with name or ID "openprint-grafana" found: no such container
+exit code: 125
+podman stop -t 10 openprint-alertmanager
+Error: no container with name or ID "openprint-alertmanager" found: no such container
+exit code: 125
+podman stop -t 10 openprint-prometheus
+Error: no container with name or ID "openprint-prometheus" found: no such container
+exit code: 125
+podman stop -t 10 openprint-redis
+openprint-redis
+exit code: 0
+podman stop -t 10 openprint-postgres
+openprint-postgres
+exit code: 0
+podman rm openprint-dashboard
+openprint-dashboard
+exit code: 0
+podman rm openprint-job-service
+openprint-job-service
+exit code: 0
+podman rm openprint-notification-service
+openprint-notification-service
+exit code: 0
+podman rm openprint-storage-service
+openprint-storage-service
+exit code: 0
+podman rm openprint-registry-service
+openprint-registry-service
+exit code: 0
+podman rm openprint-auth-service
+openprint-auth-service
+exit code: 0
+podman rm openprint-jaeger
+Error: no container with ID or name "openprint-jaeger" found: no such container
+exit code: 1
+podman rm openprint-grafana
+Error: no container with ID or name "openprint-grafana" found: no such container
+exit code: 1
+podman rm openprint-alertmanager
+Error: no container with ID or name "openprint-alertmanager" found: no such container
+exit code: 1
+podman rm openprint-prometheus
+Error: no container with ID or name "openprint-prometheus" found: no such container
+exit code: 1
+podman rm openprint-redis
+openprint-redis
+exit code: 0
+podman rm openprint-postgres
+openprint-postgres
+exit code: 0
+recreating: done
+
+
+podman volume inspect openprint-postgres-data || podman volume create openprint-postgres-data
+['podman', 'volume', 'inspect', 'openprint-postgres-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-postgres -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=postgres -e POSTGRES_DB=openprint -e POSTGRES_USER=openprint -e POSTGRES_PASSWORD=openprint -e PGDATA=/var/lib/postgresql/data/pgdata -v openprint-postgres-data:/var/lib/postgresql/data -v /home/cmit/openprint/deployments/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro --net openprint-network --network-alias postgres --restart unless-stopped --healthcheck-command /bin/sh -c 'pg_isready -U openprint -d openprint' --healthcheck-interval 10s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 5 postgres:16-alpine
+413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f
+exit code: 0
+podman volume inspect openprint-redis-data || podman volume create openprint-redis-data
+['podman', 'volume', 'inspect', 'openprint-redis-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-redis -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=redis -v openprint-redis-data:/data --net openprint-network --network-alias redis --restart unless-stopped --healthcheck-command /bin/sh -c redis-cli' '-a' 'openprint' 'ping --healthcheck-interval 10s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 5 redis:7-alpine redis-server --appendonly yes --requirepass openprint
+752f28254747745a3df5a5dfeae2d77b2438582031fc350df786501c38e7f8b0
+exit code: 0
+podman volume inspect openprint-prometheus-data || podman volume create openprint-prometheus-data
+['podman', 'volume', 'inspect', 'openprint-prometheus-data']
+Error: no such volume openprint-prometheus-data
+['podman', 'volume', 'create', '--label', 'io.podman.compose.project=docker', '--label', 'com.docker.compose.project=docker', 'openprint-prometheus-data']
+['podman', 'volume', 'inspect', 'openprint-prometheus-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-prometheus -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=prometheus -v /home/cmit/openprint/deployments/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro -v /home/cmit/openprint/deployments/docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro -v openprint-prometheus-data:/prometheus --net openprint-network --network-alias prometheus -p 9090:9090 --restart unless-stopped prom/prometheus:v2.53.0 --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles --web.enable-lifecycle --web.external-url=http://localhost:9090
+Resolving "prom/prometheus" using unqualified-search registries (/etc/containers/registries.conf)
+Trying to pull docker.io/prom/prometheus:v2.53.0...
+Getting image source signatures
+Copying blob sha256:fbd390d3bd00c03e99a22c160a6ffaf643a5294a8579da3d4fee588d50e22590
+Copying blob sha256:9fa9226be034e47923c0457d916aa68474cdfb23af8d4525e9baeebc4760977a
+Copying blob sha256:ea63b2e6315f83ce1e203395310f1940e5fa2091163170588bfb0a40d6ed62e0
+Copying blob sha256:1617e25568b2231fdd0d5caff63b06f6f7738d8d961f031c80e47d35aaec9733
+Copying blob sha256:3ecda1bfd07b0c64b73bb6ee5f14bf621dbf2c56afabec6842a38f0215d73b64
+Copying blob sha256:ac9f4de4b762bf6547a5a0a123bc6b1f7a54b7d0724573bffc2148cd30bb919e
+Copying blob sha256:9b1ac15ef728e26e433b1e2d137f38d3cde734e52f6efa4f779193a9a1d089a5
+Copying blob sha256:8682f304eb8045a678fdc88cd276eb565281384e9413094e414ec5c6869685dc
+Copying blob sha256:5fbafe078afc1291c430b6f4951d7a08ae9b32ffe003b230688ed67485888394
+Copying blob sha256:7fb53fd2ae103f1462614a90c2fd72e83299b171c3d9a4eb8f11da49be929a19
+Copying blob sha256:592798bd36838527c3ee6f6789bde3d395b736f9f32026e068104e0b2b77147b
+Copying blob sha256:473fdc983780db9fbd8626a7614216f033fbe93fc9a7b6b6302d03eece90d0e9
+Copying config sha256:b74abbcc4eacb3d527068947f32a07fb952f32cf7a0c5ad01cae5313e544b527
+Writing manifest to image destination
+128b3b1ed4c4dfbadb78a6ed6cc39683919e0f712db6cf112ffaac8422f5b8b5
+exit code: 0
+podman volume inspect openprint-alertmanager-data || podman volume create openprint-alertmanager-data
+['podman', 'volume', 'inspect', 'openprint-alertmanager-data']
+Error: no such volume openprint-alertmanager-data
+['podman', 'volume', 'create', '--label', 'io.podman.compose.project=docker', '--label', 'com.docker.compose.project=docker', 'openprint-alertmanager-data']
+['podman', 'volume', 'inspect', 'openprint-alertmanager-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-alertmanager -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=alertmanager -v /home/cmit/openprint/deployments/docker/alertmanager/config.yml:/etc/alertmanager/config.yml:ro -v openprint-alertmanager-data:/alertmanager --net openprint-network --network-alias alertmanager -p 9093:9093 --restart unless-stopped prom/alertmanager:v0.27.0 --config.file=/etc/alertmanager/config.yml --storage.path=/alertmanager --web.external-url=http://localhost:9093
+99ef90bb2990207063b51daa80120e36268006c95be10064ace29e3e86512425
+exit code: 0
+podman volume inspect openprint-grafana-data || podman volume create openprint-grafana-data
+['podman', 'volume', 'inspect', 'openprint-grafana-data']
+Error: no such volume openprint-grafana-data
+['podman', 'volume', 'create', '--label', 'io.podman.compose.project=docker', '--label', 'com.docker.compose.project=docker', 'openprint-grafana-data']
+['podman', 'volume', 'inspect', 'openprint-grafana-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-grafana -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=grafana -e GF_SECURITY_ADMIN_USER=admin -e GF_SECURITY_ADMIN_PASSWORD=admin -e GF_INSTALL_PLUGINS= -e GF_SERVER_ROOT_URL=http://localhost:3001 -e GF_USERS_ALLOW_SIGN_UP=false -v openprint-grafana-data:/var/lib/grafana -v /home/cmit/openprint/deployments/docker/grafana/provisioning:/etc/grafana/provisioning:ro --net openprint-network --network-alias grafana -p 3001:3000 --restart unless-stopped grafana/grafana:11.1.0
+Resolving "grafana/grafana" using unqualified-search registries (/etc/containers/registries.conf)
+Trying to pull docker.io/grafana/grafana:11.1.0...
+Getting image source signatures
+Copying blob sha256:e6c38e6d3adda264fc410424886771b4e9bc850f3f739ce654bb044b7cf7d3e7
+Copying blob sha256:4abcf20661432fb2d719aaf90656f55c287f8ca915dc1c92ec14ff61e67fbaf8
+Copying blob sha256:706651a94df68983fe45d98df8517acbd6989469c2fa4ad157d4f62764e2e3f5
+Copying blob sha256:33e0a01314ccb9b66f034370f23012db1c5de25fdf7273fd399c34596a90b9f7
+Copying blob sha256:c0e05c86127ee39dfc6c7e7abf18eae0109be1b77b6f1f8b77fea21649aed86b
+Copying blob sha256:f8b444c6ff4017beae300fd42cbe34d05ce56cf4ba32c91703f56b3a61d1b56e
+Copying blob sha256:6ca01427385edd6fbfabf7655c6c0ff719629d7da13707c4a32b3e8b985a7d30
+Copying blob sha256:e35e8e85e24dc228be398dea30f6b80159f8d836b8d537ce10903ce25033d185
+Copying blob sha256:d0bef95bc6b29ec2648fa2a03ebd59ca97358dae6cde12c02b2b4e95d9d84931
+Copying blob sha256:af860903a445a0a90581e323fd6734bf4b3d5d34509be24a88f53c0e41143c94
+Copying config sha256:c42c21cd0ebcba484f61742f2e9367473bdf052b3d688a391008fa3bc997d1f6
+Writing manifest to image destination
+86e22016e22bc8f1c622721980ceaf6a146535a246d2eb16b71fbe813e8119ea
+exit code: 0
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-jaeger -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=jaeger -e COLLECTOR_OTLP_ENABLED=true --net openprint-network --network-alias jaeger -p 16686:16686 -p 14268:14268 -p 14250:14250 -p 6831:6831/udp -p 6832:6832/udp --restart unless-stopped jaegertracing/all-in-one:1.58
+Resolving "jaegertracing/all-in-one" using unqualified-search registries (/etc/containers/registries.conf)
+Trying to pull docker.io/jaegertracing/all-in-one:1.58...
+Getting image source signatures
+Copying blob sha256:d25f557d7f31bf7acfac935859b5153da41d13c41f2b468d16f729a5b883634f
+Copying blob sha256:10af0c1435241f7e23f355057c24e7c2e9c476484ab097c3fe9c8c2ccaab4302
+Copying blob sha256:4afe71626bd61517cf63b226e45857127c839cb2b4bfede02916054b544315e9
+Copying blob sha256:0d8ff8e3f84d8079d75ca376065698b7c7fc447e9c3e8b4bf9952624dfb9e3ff
+Copying blob sha256:a922ee66b81eaf05f44a51b93997c541423a33b5e059a71150e54f7b87810022
+Copying config sha256:5b9687e087ca3c1cc390d3b4bafce5ca484d3a6548cf815494b6af80b2e6a17b
+Writing manifest to image destination
+07460b04ede0c7888292eb6998743d9dea73bfcf7c2c274bb5c2c607179d6c09
+exit code: 0
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-auth-service -d --requires=openprint-postgres,openprint-redis --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=auth-service -e SERVER_ADDR=:8001 -e METRICS_PORT=9091 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e REDIS_URL=redis://:openprint@redis:6379 -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=auth-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development --net openprint-network --network-alias auth-service -p 18001:8001 -p 9091:9091 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8001/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_auth-service
+Error: rootlessport listen tcp 0.0.0.0:9091: bind: address already in use
+exit code: 126
+podman start openprint-auth-service
+Error: unable to start container "5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9": rootlessport listen tcp 0.0.0.0:9091: bind: address already in use
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-registry-service -d --requires=openprint-auth-service,openprint-postgres,openprint-redis --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=registry-service -e SERVER_ADDR=:8002 -e METRICS_PORT=9092 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=registry-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development --net openprint-network --network-alias registry-service -p 8002:8002 -p 9092:9092 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8002/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_registry-service
+Error: generating dependency graph for container bf3e6e59d1240991124663516f3ddbd658fa7d3f02b652fa423af60a3ee6d9dd: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 127
+podman start openprint-registry-service
+Error: unable to start container "bf3e6e59d1240991124663516f3ddbd658fa7d3f02b652fa423af60a3ee6d9dd": generating dependency graph for container bf3e6e59d1240991124663516f3ddbd658fa7d3f02b652fa423af60a3ee6d9dd: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 752f28254747745a3df5a5dfeae2d77b2438582031fc350df786501c38e7f8b0 not found in input list: no such container
+exit code: 125
+podman volume inspect openprint-storage-data || podman volume create openprint-storage-data
+['podman', 'volume', 'inspect', 'openprint-storage-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-storage-service -d --requires=openprint-auth-service,openprint-postgres,openprint-redis --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=storage-service -e SERVER_ADDR=:8004 -e METRICS_PORT=9094 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e S3_ENDPOINT= -e S3_BUCKET=openprint-documents -e S3_ACCESS_KEY= -e S3_SECRET_KEY= -e S3_REGION=us-east-1 -e ENCRYPTION_KEY= -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=storage-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development -e MAX_UPLOAD_MB=100 -v openprint-storage-data:/data/storage --net openprint-network --network-alias storage-service -p 8004:8004 -p 9094:9094 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8004/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_storage-service
+Error: generating dependency graph for container 18e1991cf14523b17618a43ce0e73339f354840ce674e686e77077e12eafe1cc: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 127
+podman start openprint-storage-service
+Error: unable to start container "18e1991cf14523b17618a43ce0e73339f354840ce674e686e77077e12eafe1cc": generating dependency graph for container 18e1991cf14523b17618a43ce0e73339f354840ce674e686e77077e12eafe1cc: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-notification-service -d --requires=openprint-auth-service,openprint-postgres,openprint-redis --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=notification-service -e SERVER_ADDR=:8005 -e METRICS_PORT=9095 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e REDIS_URL=redis://:openprint@redis:6379 -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=notification-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development --net openprint-network --network-alias notification-service -p 18005:8005 -p 9095:9095 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8005/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_notification-service
+Error: generating dependency graph for container 9b7b06007d281c85a859d6b56f0e2a19def311837ec002f658162662019924a0: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 127
+podman start openprint-notification-service
+Error: unable to start container "9b7b06007d281c85a859d6b56f0e2a19def311837ec002f658162662019924a0": generating dependency graph for container 9b7b06007d281c85a859d6b56f0e2a19def311837ec002f658162662019924a0: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-job-service -d --requires=openprint-auth-service,openprint-registry-service,openprint-postgres,openprint-redis --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=job-service -e SERVER_ADDR=:8003 -e METRICS_PORT=9093 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e REDIS_URL=redis://:openprint@redis:6379 -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=job-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development -e PROCESSOR_WORKERS=10 --net openprint-network --network-alias job-service -p 8003:8003 -p 9093:9093 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8003/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_job-service
+Error: generating dependency graph for container 9a2394dccad944a0488ee18224f727b4871b0134ed312a8fbdd8a3b2012f086b: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 127
+podman start openprint-job-service
+Error: unable to start container "9a2394dccad944a0488ee18224f727b4871b0134ed312a8fbdd8a3b2012f086b": generating dependency graph for container 9a2394dccad944a0488ee18224f727b4871b0134ed312a8fbdd8a3b2012f086b: container 5ddd3d2147d45d56332d82022ab0bed92dc7d0f6c9bf5b2c437eb53ecbccd7b9 depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-dashboard -d --requires=openprint-auth-service,openprint-job-service,openprint-notification-service,openprint-registry-service,openprint-postgres,openprint-redis,openprint-storage-service --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=dashboard -e NODE_ENV=production -e VITE_API_BASE_URL=http://localhost:8001 --net openprint-network --network-alias dashboard -p 3000:3000 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:3000/ --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_dashboard
+Error: generating dependency graph for container 2b73947b728018ce584dc35ce1cc2b076f5e4179840d5ddd33504458f41416b4: container 9a2394dccad944a0488ee18224f727b4871b0134ed312a8fbdd8a3b2012f086b depends on container 413e80c1dba57d959ec69cbae3d80fec976c048c779615c8b40631c1c37e347f not found in input list: no such container
+exit code: 127
+podman start openprint-dashboard
+Error: unable to start container "2b73947b728018ce584dc35ce1cc2b076f5e4179840d5ddd33504458f41416b4": generating dependency graph for container 2b73947b728018ce584dc35ce1cc2b076f5e4179840d5ddd33504458f41416b4: container 18e1991cf14523b17618a43ce0e73339f354840ce674e686e77077e12eafe1cc depends on container 752f28254747745a3df5a5dfeae2d77b2438582031fc350df786501c38e7f8b0 not found in input list: no such container
+exit code: 125
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_auth-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_registry-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_storage-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_notification-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_job-service']
+['podman', 'inspect', '-t', 'image', '-f', '{{.Id}}', 'docker_dashboard']
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=docker', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+recreating: ...
+** excluding:  set()
+podman stop -t 10 openprint-dashboard
+Error: no container with name or ID "openprint-dashboard" found: no such container
+exit code: 125
+podman stop -t 10 openprint-job-service
+Error: no container with name or ID "openprint-job-service" found: no such container
+exit code: 125
+podman stop -t 10 openprint-notification-service
+Error: no container with name or ID "openprint-notification-service" found: no such container
+exit code: 125
+podman stop -t 10 openprint-storage-service
+Error: no container with name or ID "openprint-storage-service" found: no such container
+exit code: 125
+podman stop -t 10 openprint-registry-service
+Error: no container with name or ID "openprint-registry-service" found: no such container
+exit code: 125
+podman stop -t 10 openprint-auth-service
+Error: no container with name or ID "openprint-auth-service" found: no such container
+exit code: 125
+podman stop -t 10 openprint-jaeger
+Error: no container with name or ID "openprint-jaeger" found: no such container
+exit code: 125
+podman stop -t 10 openprint-grafana
+Error: no container with name or ID "openprint-grafana" found: no such container
+exit code: 125
+podman stop -t 10 openprint-alertmanager
+Error: no container with name or ID "openprint-alertmanager" found: no such container
+exit code: 125
+podman stop -t 10 openprint-prometheus
+Error: no container with name or ID "openprint-prometheus" found: no such container
+exit code: 125
+podman stop -t 10 openprint-redis
+Error: no container with name or ID "openprint-redis" found: no such container
+exit code: 125
+podman stop -t 10 openprint-postgres
+Error: no container with name or ID "openprint-postgres" found: no such container
+exit code: 125
+podman rm openprint-dashboard
+Error: no container with ID or name "openprint-dashboard" found: no such container
+exit code: 1
+podman rm openprint-job-service
+Error: no container with ID or name "openprint-job-service" found: no such container
+exit code: 1
+podman rm openprint-notification-service
+Error: no container with ID or name "openprint-notification-service" found: no such container
+exit code: 1
+podman rm openprint-storage-service
+Error: no container with ID or name "openprint-storage-service" found: no such container
+exit code: 1
+podman rm openprint-registry-service
+Error: no container with ID or name "openprint-registry-service" found: no such container
+exit code: 1
+podman rm openprint-auth-service
+Error: no container with ID or name "openprint-auth-service" found: no such container
+exit code: 1
+podman rm openprint-jaeger
+Error: no container with ID or name "openprint-jaeger" found: no such container
+exit code: 1
+podman rm openprint-grafana
+Error: no container with ID or name "openprint-grafana" found: no such container
+exit code: 1
+podman rm openprint-alertmanager
+Error: no container with ID or name "openprint-alertmanager" found: no such container
+exit code: 1
+podman rm openprint-prometheus
+Error: no container with ID or name "openprint-prometheus" found: no such container
+exit code: 1
+podman rm openprint-redis
+Error: no container with ID or name "openprint-redis" found: no such container
+exit code: 1
+podman rm openprint-postgres
+Error: no container with ID or name "openprint-postgres" found: no such container
+exit code: 1
+recreating: done
+
+
+podman volume inspect openprint-postgres-data || podman volume create openprint-postgres-data
+['podman', 'volume', 'inspect', 'openprint-postgres-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-postgres -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=postgres -e POSTGRES_DB=openprint -e POSTGRES_USER=openprint -e POSTGRES_PASSWORD=openprint -e PGDATA=/var/lib/postgresql/data/pgdata -v openprint-postgres-data:/var/lib/postgresql/data -v /home/cmit/openprint/deployments/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro --net openprint-network --network-alias postgres --restart unless-stopped --healthcheck-command /bin/sh -c 'pg_isready -U openprint -d openprint' --healthcheck-interval 10s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 5 postgres:16-alpine
+917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570
+exit code: 0
+podman volume inspect openprint-redis-data || podman volume create openprint-redis-data
+['podman', 'volume', 'inspect', 'openprint-redis-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-redis -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=redis -v openprint-redis-data:/data --net openprint-network --network-alias redis --restart unless-stopped --healthcheck-command /bin/sh -c redis-cli' '-a' 'openprint' 'ping --healthcheck-interval 10s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 5 redis:7-alpine redis-server --appendonly yes --requirepass openprint
+edb749170b0e5147edffc6a2871a729d14ba54557e0b50306e0de78f5fb19ab8
+exit code: 0
+podman volume inspect openprint-prometheus-data || podman volume create openprint-prometheus-data
+['podman', 'volume', 'inspect', 'openprint-prometheus-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-prometheus -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=prometheus -v /home/cmit/openprint/deployments/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro -v /home/cmit/openprint/deployments/docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro -v openprint-prometheus-data:/prometheus --net openprint-network --network-alias prometheus -p 9090:9090 --restart unless-stopped prom/prometheus:v2.53.0 --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles --web.enable-lifecycle --web.external-url=http://localhost:9090
+40a41e2c40be80430b6738e90b06bcd2ceca3df9264cf15c73feed3416bd8d05
+exit code: 0
+podman volume inspect openprint-alertmanager-data || podman volume create openprint-alertmanager-data
+['podman', 'volume', 'inspect', 'openprint-alertmanager-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-alertmanager -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=alertmanager -v /home/cmit/openprint/deployments/docker/alertmanager/config.yml:/etc/alertmanager/config.yml:ro -v openprint-alertmanager-data:/alertmanager --net openprint-network --network-alias alertmanager -p 9093:9093 --restart unless-stopped prom/alertmanager:v0.27.0 --config.file=/etc/alertmanager/config.yml --storage.path=/alertmanager --web.external-url=http://localhost:9093
+54557b54446527ea360d752709f68a4c600ff7256cc77f030af0c26ffc0a7808
+exit code: 0
+podman volume inspect openprint-grafana-data || podman volume create openprint-grafana-data
+['podman', 'volume', 'inspect', 'openprint-grafana-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-grafana -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=grafana -e GF_SECURITY_ADMIN_USER=admin -e GF_SECURITY_ADMIN_PASSWORD=admin -e GF_INSTALL_PLUGINS= -e GF_SERVER_ROOT_URL=http://localhost:3001 -e GF_USERS_ALLOW_SIGN_UP=false -v openprint-grafana-data:/var/lib/grafana -v /home/cmit/openprint/deployments/docker/grafana/provisioning:/etc/grafana/provisioning:ro --net openprint-network --network-alias grafana -p 3001:3000 --restart unless-stopped grafana/grafana:11.1.0
+be0d81fd3cf2d4b8856c92e254d3d046bd62b3c5f5e2693bfa9e30adc428497d
+exit code: 0
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-jaeger -d --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=jaeger -e COLLECTOR_OTLP_ENABLED=true --net openprint-network --network-alias jaeger -p 16686:16686 -p 14268:14268 -p 14250:14250 -p 6831:6831/udp -p 6832:6832/udp --restart unless-stopped jaegertracing/all-in-one:1.58
+7841854c4795832b4ea54d59a3623d7dfbabcaea3e2079e9570ad9337dc6ec97
+exit code: 0
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-auth-service -d --requires=openprint-postgres,openprint-redis --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=auth-service -e SERVER_ADDR=:8001 -e METRICS_PORT=9091 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e REDIS_URL=redis://:openprint@redis:6379 -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=auth-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development --net openprint-network --network-alias auth-service -p 18001:8001 -p 9091:9091 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8001/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_auth-service
+Error: rootlessport listen tcp 0.0.0.0:9091: bind: address already in use
+exit code: 126
+podman start openprint-auth-service
+Error: unable to start container "7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244": rootlessport listen tcp 0.0.0.0:9091: bind: address already in use
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-registry-service -d --requires=openprint-auth-service,openprint-redis,openprint-postgres --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=registry-service -e SERVER_ADDR=:8002 -e METRICS_PORT=9092 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=registry-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development --net openprint-network --network-alias registry-service -p 8002:8002 -p 9092:9092 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8002/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_registry-service
+Error: generating dependency graph for container 6200dc408c798313befc46c6facc8d2a5cc7ae0895da9fa5e9809319b3130c25: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 127
+podman start openprint-registry-service
+Error: unable to start container "6200dc408c798313befc46c6facc8d2a5cc7ae0895da9fa5e9809319b3130c25": generating dependency graph for container 6200dc408c798313befc46c6facc8d2a5cc7ae0895da9fa5e9809319b3130c25: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 125
+podman volume inspect openprint-storage-data || podman volume create openprint-storage-data
+['podman', 'volume', 'inspect', 'openprint-storage-data']
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-storage-service -d --requires=openprint-auth-service,openprint-redis,openprint-postgres --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=storage-service -e SERVER_ADDR=:8004 -e METRICS_PORT=9094 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e S3_ENDPOINT= -e S3_BUCKET=openprint-documents -e S3_ACCESS_KEY= -e S3_SECRET_KEY= -e S3_REGION=us-east-1 -e ENCRYPTION_KEY= -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=storage-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development -e MAX_UPLOAD_MB=100 -v openprint-storage-data:/data/storage --net openprint-network --network-alias storage-service -p 8004:8004 -p 9094:9094 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8004/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_storage-service
+Error: generating dependency graph for container 4decfa8075b3c71faba679dd8c3359c6790d4859eefa8bca3084c9534b2431bc: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 127
+podman start openprint-storage-service
+Error: unable to start container "4decfa8075b3c71faba679dd8c3359c6790d4859eefa8bca3084c9534b2431bc": generating dependency graph for container 4decfa8075b3c71faba679dd8c3359c6790d4859eefa8bca3084c9534b2431bc: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-notification-service -d --requires=openprint-auth-service,openprint-redis,openprint-postgres --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=notification-service -e SERVER_ADDR=:8005 -e METRICS_PORT=9095 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e REDIS_URL=redis://:openprint@redis:6379 -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=notification-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development --net openprint-network --network-alias notification-service -p 18005:8005 -p 9095:9095 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8005/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_notification-service
+Error: generating dependency graph for container f48fa0b051940e6ee2902810eae608ac358ff1e42dae2be3d68c44d97b83abbc: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container edb749170b0e5147edffc6a2871a729d14ba54557e0b50306e0de78f5fb19ab8 not found in input list: no such container
+exit code: 127
+podman start openprint-notification-service
+Error: unable to start container "f48fa0b051940e6ee2902810eae608ac358ff1e42dae2be3d68c44d97b83abbc": generating dependency graph for container f48fa0b051940e6ee2902810eae608ac358ff1e42dae2be3d68c44d97b83abbc: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-job-service -d --requires=openprint-auth-service,openprint-registry-service,openprint-redis,openprint-postgres --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=job-service -e SERVER_ADDR=:8003 -e METRICS_PORT=9093 -e DATABASE_URL=postgres://openprint:openprint@postgres:5432/openprint -e REDIS_URL=redis://:openprint@redis:6379 -e JWT_SECRET=change-this-secret-in-production-min-32-chars -e JAEGER_ENDPOINT=jaeger:4317 -e SERVICE_NAME=job-service -e ENABLE_TRACING=true -e ENABLE_METRICS=true -e ENVIRONMENT=development -e PROCESSOR_WORKERS=10 --net openprint-network --network-alias job-service -p 8003:8003 -p 9093:9093 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:8003/health --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_job-service
+Error: generating dependency graph for container 54d4eb31403ee7aab4a485c7c7171fbaa18287dba76324076dcdd955791ff545: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 127
+podman start openprint-job-service
+Error: unable to start container "54d4eb31403ee7aab4a485c7c7171fbaa18287dba76324076dcdd955791ff545": generating dependency graph for container 54d4eb31403ee7aab4a485c7c7171fbaa18287dba76324076dcdd955791ff545: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 125
+['podman', 'network', 'exists', 'openprint-network']
+podman run --name=openprint-dashboard -d --requires=openprint-auth-service,openprint-registry-service,openprint-job-service,openprint-notification-service,openprint-redis,openprint-postgres,openprint-storage-service --label io.podman.compose.config-hash=981d63846d276ba2df3aa890032b71caef4727a6e8027d3c60eb48d7c53d5f6a --label io.podman.compose.project=docker --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@docker.service --label com.docker.compose.project=docker --label com.docker.compose.project.working_dir=/home/cmit/openprint/deployments/docker --label com.docker.compose.project.config_files=deployments/docker/docker-compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=dashboard -e NODE_ENV=production -e VITE_API_BASE_URL=http://localhost:8001 --net openprint-network --network-alias dashboard -p 3000:3000 --restart unless-stopped --healthcheck-command /bin/sh -c curl' '-f' 'http://localhost:3000/ --healthcheck-interval 30s --healthcheck-timeout 5s --healthcheck-start-period 10s --healthcheck-retries 3 docker_dashboard
+Error: generating dependency graph for container 3065903e4cda987551ce92e020a0b7733d7b5fcd48a10f347213e6169028fcfd: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 127
+podman start openprint-dashboard
+Error: unable to start container "3065903e4cda987551ce92e020a0b7733d7b5fcd48a10f347213e6169028fcfd": generating dependency graph for container 3065903e4cda987551ce92e020a0b7733d7b5fcd48a10f347213e6169028fcfd: container 7fd9e0a78bef063144ef6c53252819d09e7cf9b2bc4d4385178acc7a12747244 depends on container 917ffa8042fd312db7f544ab8a63cb25f04d06f866b180ede20b33ba0ae9b570 not found in input list: no such container
+exit code: 125

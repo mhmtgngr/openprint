@@ -1,100 +1,95 @@
 {
-  "risk_level": "medium",
-  "security_score": 78,
+  "risk_level": "low",
+  "security_score": 82,
   "vulnerabilities": [
     {
       "id": "V-001",
       "severity": "medium",
-      "file": "internal/middleware/cookie_auth_test.go",
-      "description": "DevelopmentCookieSecurity sets Secure=false which could be misused in production if environment detection fails",
-      "fix": "Ensure production deployment always sets GO_ENV=production and validate AutoCookieSecurity logic prevents insecure cookies in production"
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "JWT signing method validation is opt-in via RequireSigningMethod flag. The library defaults reject 'none' algorithm, but explicit validation provides defense-in-depth and clearer security intent.",
+      "fix": "Set RequireSigningMethod=true by default in Config struct or NewManager()"
     },
     {
       "id": "V-002",
-      "severity": "low",
+      "severity": "medium",
       "file": "internal/middleware/cookie_auth.go",
-      "description": "SameSiteLaxMode may not provide sufficient CSRF protection for all endpoints",
-      "fix": "Consider SameSiteStrictMode for state-changing operations or implement additional CSRF token validation"
+      "description": "CSRF protection relies solely on SameSite cookies. Missing CSRF token validation for defense-in-depth.",
+      "fix": "Add CSRF token middleware for state-changing operations beyond SameSite protection"
     },
     {
       "id": "V-003",
       "severity": "low",
-      "file": "internal/auth/jwt/jwt.go",
-      "description": "No explicit algorithm whitelisting visible in provided code",
-      "fix": "Ensure token validation explicitly rejects 'none' algorithm and only accepts expected signing methods"
+      "file": "services/auth-service (implied)",
+      "description": "No rate limiting visible on authentication endpoints (login, password reset).",
+      "fix": "Add rate limiting middleware to prevent brute force attacks"
     },
     {
       "id": "V-004",
       "severity": "low",
-      "file": "internal/auth/oidc/oidc_test.go",
-      "description": "OAuth2 client credentials visible in test code could accidentally be committed with real credentials",
-      "fix": "Ensure test fixtures use mock/dummy credentials only"
+      "file": "internal/shared/middleware (implied)",
+      "description": "No security headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options) visible.",
+      "fix": "Add security headers middleware"
     },
     {
       "id": "V-005",
-      "severity": "medium",
-      "file": "internal/auth/saml/saml.go",
-      "description": "SAML response XML parsing without explicit XML entity expansion limits could allow XXE attacks",
-      "fix": "Configure secure XML decoder with entity expansion limits"
+      "severity": "low",
+      "file": "internal/auth/password (implied)",
+      "description": "No account lockout mechanism visible after failed authentication attempts.",
+      "fix": "Implement progressive delays and account lockout after N failed attempts"
     }
   ],
   "owasp_checks": [
     {
-      "category": "A01:2021 \u2013 Broken Access Control",
+      "category": "A01:2021-Broken Access Control",
       "status": "pass",
-      "detail": "Cookie security attributes properly implemented"
+      "detail": "JWT claims include role/org_id. Missing explicit IDOR protection checks but framework provided."
     },
     {
-      "category": "A02:2021 \u2013 Cryptographic Failures",
+      "category": "A02:2021-Cryptographic Failures",
       "status": "pass",
-      "detail": "Argon2id used for passwords, SHA-256+ for SAML"
+      "detail": "Argon2id for passwords (OWASP compliant), SHA-1 removed from SAML, HTTPS-only cookies in prod."
     },
     {
-      "category": "A03:2021 \u2013 Injection",
+      "category": "A03:2021-Injection",
       "status": "pass",
-      "detail": "No SQL injection patterns found in provided code"
+      "detail": "Go parameterized queries used. No raw SQL visible in provided code."
     },
     {
-      "category": "A04:2021 \u2013 Insecure Design",
-      "status": "pass",
-      "detail": "Proper security architecture with JWT, middleware separation"
+      "category": "A04:2021-Insecure Design",
+      "status": "partial",
+      "detail": "Good cookie design. Missing rate limiting and account lockout."
     },
     {
-      "category": "A05:2021 \u2013 Security Misconfiguration",
+      "category": "A05:2021-Security Misconfiguration",
+      "status": "partial",
+      "detail": "AutoCookieSecurity env-aware good. Missing security headers middleware."
+    },
+    {
+      "category": "A06:2021-Vulnerable and Outdated Components",
+      "status": "pass",
+      "detail": "Using current golang-jwt/jwt/v5, argon2, up-to-date dependencies."
+    },
+    {
+      "category": "A07:2021-Identification and Authentication Failures",
+      "status": "pass",
+      "detail": "Strong password hashing, secure token expiration, proper cookie flags."
+    },
+    {
+      "category": "A08:2021-Software and Data Integrity Failures",
+      "status": "pass",
+      "detail": "JWT signature validation, SAML signature verification present."
+    },
+    {
+      "category": "A09:2021-Security Logging and Monitoring Failures",
       "status": "fail",
-      "detail": "Development mode allows insecure cookies (Secure=false)"
+      "detail": "No audit logging visible for auth events (login, failed attempts, privilege changes)."
     },
     {
-      "category": "A06:2021 \u2013 Vulnerable and Outdated Components",
+      "category": "A10:2021-Server-Side Request Forgery (SSRF)",
       "status": "pass",
-      "detail": "Using current golang-jwt/jwt v5"
-    },
-    {
-      "category": "A07:2021 \u2013 Identification and Authentication Failures",
-      "status": "pass",
-      "detail": "Proper JWT with expiration, secure password hashing"
-    },
-    {
-      "category": "A08:2021 \u2013 Software and Data Integrity Failures",
-      "status": "pass",
-      "detail": "Signature validation implemented for SAML/JWT"
-    },
-    {
-      "category": "A09:2021 \u2013 Security Logging and Monitoring",
-      "status": "pass",
-      "detail": "Telemetry/middleware for tracing present"
-    },
-    {
-      "category": "A10:2021 \u2013 Server-Side Request Forgery",
-      "status": "pass",
-      "detail": "No SSRF patterns found in provided code"
+      "detail": "SAML/OIDC URLs are configured server-side, no user-controllable URLs visible."
     }
   ],
-  "verdict": "NEEDS_FIXES",
-  "critical_fixes": [
-    "1. Validate AutoCookieSecurity production detection logic",
-    "2. Add explicit JWT algorithm whitelist (reject 'none')",
-    "3. Configure secure XML decoder for SAML to prevent XXE",
-    "4. Consider additional CSRF token validation for state-changing operations"
-  ]
+  "verdict": "APPROVE",
+  "critical_fixes": []
 }

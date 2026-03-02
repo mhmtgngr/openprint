@@ -125,6 +125,7 @@ templates:
   - '/etc/alertmanager/templates/*.tmpl'
 
 # Time intervals for routing (optional)
+# Note: These can be referenced in routes using active_time_intervals or mute_time_intervals
 time_intervals:
   - name: 'business_hours'
     time_intervals:
@@ -135,10 +136,17 @@ time_intervals:
 
   - name: 'off_hours'
     time_intervals:
+      # Evening hours on weekdays (17:00 to midnight)
       - times:
           - start_time: '17:00'
+            end_time: '23:59'
+        weekdays: ['monday:friday']
+      # Early morning hours on weekdays (midnight to 09:00)
+      - times:
+          - start_time: '00:00'
             end_time: '09:00'
         weekdays: ['monday:friday']
+      # All day weekends
       - weekdays: ['saturday', 'sunday']
 
 # Silence management (can be updated via API)
