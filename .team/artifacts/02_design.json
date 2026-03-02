@@ -1,381 +1,606 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Use prometheus/client_golang for metrics collection with custom registry per service",
-      "rationale": "Standard Go Prometheus client, provides histogram/counter/gauge primitives, enables efficient scraping on separate metrics port"
+      "decision": "PostgreSQL Row-Level Security (RLS) for tenant data isolation",
+      "rationale": "Provides database-level enforcement of tenant isolation, preventing cross-tenant data leakage even if application logic fails. PostgreSQL 16 has mature RLS support with performance optimizations."
     },
     {
-      "decision": "Expose /metrics endpoint on port 9090 separate from service HTTP port",
-      "rationale": "Isolates metrics traffic from application traffic, allows security rules specifically for metrics endpoints, prevents port conflicts"
+      "decision": "Tenant context propagation via request context",
+      "rationale": "Eliminates need to pass organization_id through every function call. Middleware extracts tenant from JWT claims and stores in context, automatically used by repository layers."
     },
     {
-      "decision": "Implement middleware-based HTTP metrics collection",
-      "rationale": "Non-invasive pattern, automatically captures all HTTP endpoints, consistent across all microservices"
+      "decision": "Centralized multi-tenant internal package",
+      "rationale": "Shared tenant logic (context extraction, middleware, repository helpers) across all microservices ensures consistency and reduces code duplication."
     },
     {
-      "decision": "Use OpenTelemetry for distributed tracing with Jaeger backend",
-      "rationale": "Vendor-neutral standard, already exists in internal/shared/telemetry, provides trace context propagation across services"
+      "decision": "Resource quota enforcement at service layer with database tracking",
+      "rationale": "Allows real-time quota checking before resource allocation while maintaining audit trail. Database-level constraints prevent quota overflow."
     },
     {
-      "decision": "Grafana dashboard provisioning via filesystem",
-      "rationale": "Infrastructure-as-code approach, dashboards version controlled, automatic loading on container start"
+      "decision": "Organization-scoped audit logs",
+      "rationale": "Meets compliance requirements (US-009) and enables per-tenant auditing without cross-tenant data exposure."
     },
     {
-      "decision": "Redis metrics via go-redis/redis/extra/redisotel",
-      "rationale": "Native integration with go-redis v8+, provides command duration, connection pool metrics, and error tracking"
-    },
-    {
-      "decision": "Database metrics via sqlstats wrapper",
-      "rationale": "Standard database/sql instrumentation, tracks connection pool, query latency, and row counts without code changes"
+      "decision": "Redis tenant-scoped job queues",
+      "rationale": "Separate queue keys per tenant (e.g., jobs:{tenant_id}) ensures background jobs automatically respect tenant boundaries (US-006)."
     }
   ],
   "backend_tasks": [
     {
       "order": 1,
-      "file": "go.mod",
-      "action": "modify",
-      "purpose": "Add Prometheus and instrumentation dependencies",
+      "file": "internal/multi-tenant/context.go",
+      "action": "create",
+      "purpose": "Define tenant context types and context key management",
       "key_functions": [
-        "require"
+        "GetTenantID",
+        "SetTenantID",
+        "MustGetTenantID",
+        "TenantContext"
       ]
     },
     {
       "order": 2,
-      "file": "internal/shared/telemetry/prometheus/registry.go",
+      "file": "internal/multi-tenant/middleware.go",
       "action": "create",
-      "purpose": "Create Prometheus metric registry with custom labels",
+      "purpose": "Extract tenant from JWT and propagate through request context",
       "key_functions": [
-        "NewRegistry",
-        "GetRegistry",
-        "MustRegister"
+        "TenantMiddleware",
+        "ExtractTenantFromToken",
+        "RequireTenant"
       ]
     },
     {
       "order": 3,
-      "file": "internal/shared/telemetry/prometheus/metrics.go",
+      "file": "internal/multi-tenant/repository.go",
       "action": "create",
-      "purpose": "Define standard metric types (HTTP, DB, Redis, Business)",
+      "purpose": "Helper functions for repository layers to auto-filter by tenant",
       "key_functions": [
-        "NewHTTPMetrics",
-        "NewDBMetrics",
-        "NewRedisMetrics",
-        "NewBusinessMetrics"
+        "ApplyTenantScope",
+        "TenantScopedQuery",
+        "WithTenantRetry"
       ]
     },
     {
       "order": 4,
-      "file": "internal/shared/telemetry/prometheus/labels.go",
+      "file": "internal/multi-tenant/quota.go",
       "action": "create",
-      "purpose": "Define standard label names and values",
+      "purpose": "Resource quota checking and enforcement logic",
       "key_functions": [
-        "LabelNames",
-        "LabelValues"
+        "CheckQuota",
+        "IncrementUsage",
+        "DecrementUsage",
+        "GetUsage",
+        "QuotaType"
       ]
     },
     {
       "order": 5,
-      "file": "internal/shared/middleware/metrics.go",
+      "file": "services/auth-service/handler/organization.go",
       "action": "create",
-      "purpose": "HTTP middleware for request/response metrics collection",
+      "purpose": "Organization CRUD handlers for platform admin",
       "key_functions": [
-        "MetricsMiddleware",
-        "trackRequest"
+        "CreateOrganization",
+        "ListOrganizations",
+        "GetOrganization",
+        "UpdateOrganization",
+        "SuspendOrganization",
+        "DeleteOrganization"
       ]
     },
     {
       "order": 6,
-      "file": "internal/shared/telemetry/prometheus/db.go",
+      "file": "services/auth-service/handler/quota.go",
       "action": "create",
-      "purpose": "Database metrics collector wrapper",
+      "purpose": "Quota management handlers",
       "key_functions": [
-        "WrapDB",
-        "RecordDBStats"
+        "SetQuota",
+        "GetQuota",
+        "ListQuotas",
+        "GetUsage",
+        "ResetUsage"
       ]
     },
     {
       "order": 7,
-      "file": "internal/shared/telemetry/prometheus/redis.go",
+      "file": "services/auth-service/handler/organization_user.go",
       "action": "create",
-      "purpose": "Redis metrics collector integration",
+      "purpose": "Organization user management handlers",
       "key_functions": [
-        "WrapRedisClient",
-        "RecordRedisStats"
+        "AddUserToOrganization",
+        "RemoveUserFromOrganization",
+        "UpdateUserRole",
+        "ListOrganizationUsers",
+        "InviteUser"
       ]
     },
     {
       "order": 8,
-      "file": "internal/shared/telemetry/prometheus/business.go",
+      "file": "services/auth-service/repository/organization.go",
       "action": "create",
-      "purpose": "Business-specific metric definitions",
+      "purpose": "Organization data access layer with RLS support",
       "key_functions": [
-        "RecordJobCreated",
-        "RecordJobCompleted",
-        "RecordAuthSuccess",
-        "RecordPrinterHeartbeat",
-        "RecordDocumentStored"
+        "Create",
+        "GetByID",
+        "List",
+        "Update",
+        "Delete",
+        "GetByOwnerID"
       ]
     },
     {
       "order": 9,
-      "file": "internal/shared/telemetry/prometheus/server.go",
+      "file": "services/auth-service/repository/quota.go",
       "action": "create",
-      "purpose": "Dedicated metrics HTTP server",
+      "purpose": "Quota data access layer",
       "key_functions": [
-        "StartMetricsServer",
-        "Shutdown"
+        "Create",
+        "GetByOrganizationID",
+        "Update",
+        "List",
+        "CheckAndIncrement",
+        "GetCurrentUsage"
       ]
     },
     {
       "order": 10,
-      "file": "services/auth-service/main.go",
-      "action": "modify",
-      "purpose": "Integrate Prometheus metrics server and middleware",
+      "file": "services/auth-service/repository/organization_user.go",
+      "action": "create",
+      "purpose": "Organization membership data access",
       "key_functions": [
-        "initMetrics",
-        "main"
+        "AddUser",
+        "RemoveUser",
+        "GetUserRole",
+        "UpdateRole",
+        "ListUsers",
+        "GetUserOrganizations"
       ]
     },
     {
       "order": 11,
-      "file": "services/auth-service/internal/handler/auth.go",
+      "file": "internal/auth/jwt/tenant_claims.go",
       "action": "modify",
-      "purpose": "Add auth-specific business metrics",
+      "purpose": "Add organization_id and role claims to JWT tokens",
       "key_functions": [
-        "Login",
-        "Logout",
-        "RecordAuthMetrics"
+        "WithTenantClaims",
+        "GetTenantFromClaims",
+        "TenantClaims"
       ]
     },
     {
       "order": 12,
-      "file": "services/registry-service/main.go",
+      "file": "services/registry-service/handler/printer.go",
       "action": "modify",
-      "purpose": "Integrate Prometheus metrics server and middleware",
+      "purpose": "Add tenant context to printer registration and queries",
       "key_functions": [
-        "initMetrics",
-        "main"
+        "RegisterPrinter",
+        "ListPrinters",
+        "GetPrinter",
+        "UpdatePrinter",
+        "DeletePrinter"
       ]
     },
     {
       "order": 13,
-      "file": "services/registry-service/internal/handler/printer.go",
+      "file": "services/registry-service/repository/printer.go",
       "action": "modify",
-      "purpose": "Add printer registry business metrics",
+      "purpose": "Apply tenant scoping to all printer queries",
       "key_functions": [
-        "RegisterPrinter",
-        "Heartbeat",
-        "RecordRegistryMetrics"
+        "Create",
+        "GetByID",
+        "List",
+        "Update",
+        "Delete",
+        "RegisterHeartbeat"
       ]
     },
     {
       "order": 14,
-      "file": "services/job-service/main.go",
+      "file": "services/job-service/handler/job.go",
       "action": "modify",
-      "purpose": "Integrate Prometheus metrics server and middleware",
+      "purpose": "Add tenant context to job operations and quota checks",
       "key_functions": [
-        "initMetrics",
-        "main"
+        "CreateJob",
+        "ListJobs",
+        "GetJob",
+        "UpdateJobStatus",
+        "CancelJob"
       ]
     },
     {
       "order": 15,
-      "file": "services/job-service/internal/processor/queue.go",
+      "file": "services/job-service/processor/processor.go",
       "action": "modify",
-      "purpose": "Add job queue metrics (pending, processing, failed)",
+      "purpose": "Include tenant context in job queue messages and processing",
       "key_functions": [
-        "Enqueue",
-        "Dequeue",
-        "RecordQueueMetrics"
+        "EnqueueJob",
+        "ProcessJob",
+        "GetTenantContext",
+        "ValidateTenantAccess"
       ]
     },
     {
       "order": 16,
-      "file": "services/storage-service/main.go",
+      "file": "services/storage-service/handler/document.go",
       "action": "modify",
-      "purpose": "Integrate Prometheus metrics server and middleware",
+      "purpose": "Add tenant-scoped document storage with quota enforcement",
       "key_functions": [
-        "initMetrics",
-        "main"
+        "UploadDocument",
+        "GetDocument",
+        "DeleteDocument",
+        "ListDocuments",
+        "GetStorageUsage"
       ]
     },
     {
       "order": 17,
-      "file": "services/storage-service/internal/handler/document.go",
+      "file": "services/storage-service/repository/document.go",
       "action": "modify",
-      "purpose": "Add storage business metrics",
+      "purpose": "Tenant-scoped document metadata operations",
       "key_functions": [
-        "StoreDocument",
-        "RetrieveDocument",
-        "RecordStorageMetrics"
+        "Create",
+        "GetByID",
+        "List",
+        "Delete",
+        "GetTenantStorageUsage"
       ]
     },
     {
       "order": 18,
-      "file": "services/notification-service/main.go",
+      "file": "services/notification-service/handler/notification.go",
       "action": "modify",
-      "purpose": "Integrate Prometheus metrics server and middleware",
+      "purpose": "Tenant-scoped notification delivery",
       "key_functions": [
-        "initMetrics",
-        "main"
+        "SendNotification",
+        "BroadcastToOrganization",
+        "GetUserNotifications"
       ]
     },
     {
       "order": 19,
-      "file": "services/notification-service/internal/hub/websocket.go",
-      "action": "modify",
-      "purpose": "Add WebSocket connection metrics",
+      "file": "internal/multi-tenant/audit.go",
+      "action": "create",
+      "purpose": "Tenant-scoped audit logging",
       "key_functions": [
-        "Connect",
-        "Disconnect",
-        "Broadcast",
-        "RecordWebSocketMetrics"
+        "LogTenantEvent",
+        "GetTenantAuditLogs",
+        "AuditEventType"
       ]
     },
     {
       "order": 20,
-      "file": "internal/shared/telemetry/jaeger/config.go",
+      "file": "services/auth-service/handler/usage_report.go",
       "action": "create",
-      "purpose": "Jaeger tracing configuration and initialization",
+      "purpose": "Resource usage trends and reporting endpoints",
       "key_functions": [
-        "InitTracer",
-        "Shutdown",
-        "ConfigureExporter"
+        "GetUsageReport",
+        "GetUsageTrends",
+        "GetQuotaAlerts"
       ]
-    },
-    {
-      "order": 21,
-      "file": "deployments/docker/prometheus/prometheus.yml",
-      "action": "create",
-      "purpose": "Prometheus configuration with service discovery",
-      "key_functions": []
-    },
-    {
-      "order": 22,
-      "file": "deployments/docker/prometheus/alerts.yml",
-      "action": "create",
-      "purpose": "Alerting rules for all services",
-      "key_functions": []
-    },
-    {
-      "order": 23,
-      "file": "deployments/docker/alertmanager/config.yml",
-      "action": "create",
-      "purpose": "AlertManager routing and receiver configuration",
-      "key_functions": []
-    },
-    {
-      "order": 24,
-      "file": "deployments/docker/grafana/provisioning/datasources/prometheus.yml",
-      "action": "create",
-      "purpose": "Grafana Prometheus datasource provisioning",
-      "key_functions": []
-    },
-    {
-      "order": 25,
-      "file": "deployments/docker/grafana/provisioning/dashboards/dashboard.yml",
-      "action": "create",
-      "purpose": "Grafana dashboard provisioning configuration",
-      "key_functions": []
-    },
-    {
-      "order": 26,
-      "file": "deployments/docker/grafana/provisioning/dashboards/service-health.json",
-      "action": "create",
-      "purpose": "Service health dashboard JSON",
-      "key_functions": []
-    },
-    {
-      "order": 27,
-      "file": "deployments/docker/grafana/provisioning/dashboards/request-throughput.json",
-      "action": "create",
-      "purpose": "Request throughput and latency dashboard",
-      "key_functions": []
-    },
-    {
-      "order": 28,
-      "file": "deployments/docker/grafana/provisioning/dashboards/database-performance.json",
-      "action": "create",
-      "purpose": "Database connection and query performance dashboard",
-      "key_functions": []
-    },
-    {
-      "order": 29,
-      "file": "deployments/docker/grafana/provisioning/dashboards/business-kpis.json",
-      "action": "create",
-      "purpose": "Business metrics (jobs, auth, storage) dashboard",
-      "key_functions": []
-    },
-    {
-      "order": 30,
-      "file": "deployments/docker/docker-compose.yml",
-      "action": "modify",
-      "purpose": "Add monitoring stack services",
-      "key_functions": []
     }
   ],
   "frontend_tasks": [
     {
       "order": 1,
-      "file": "web/dashboard/src/components/observability/MetricsPanel.tsx",
+      "file": "web/dashboard/src/types/organization.ts",
       "action": "create",
-      "purpose": "React component for displaying live metrics"
+      "purpose": "TypeScript types for organization entities",
+      "key_functions": [
+        "Organization",
+        "Quota",
+        "Usage",
+        "OrganizationUser",
+        "TenantContext"
+      ]
     },
     {
       "order": 2,
-      "file": "web/dashboard/src/components/observability/GrafanaEmbed.tsx",
+      "file": "web/dashboard/src/contexts/TenantContext.tsx",
       "action": "create",
-      "purpose": "Grafana dashboard iframe embed component"
+      "purpose": "React context for tenant state management",
+      "key_functions": [
+        "TenantProvider",
+        "useTenant",
+        "TenantContextType"
+      ]
     },
     {
       "order": 3,
-      "file": "web/dashboard/src/pages/observability/ObservabilityPage.tsx",
+      "file": "web/dashboard/src/pages/admin/OrganizationsList.tsx",
       "action": "create",
-      "purpose": "Main observability page with metric tabs"
+      "purpose": "Organizations list page for platform admin",
+      "key_functions": [
+        "OrganizationsList",
+        "useOrganizations",
+        "OrganizationActions"
+      ]
     },
     {
       "order": 4,
-      "file": "web/dashboard/src/pages/observability/SystemHealthPage.tsx",
+      "file": "web/dashboard/src/pages/admin/OrganizationDetail.tsx",
       "action": "create",
-      "purpose": "Service health status page with real-time indicators"
+      "purpose": "Organization detail page with tabs",
+      "key_functions": [
+        "OrganizationDetail",
+        "OverviewTab",
+        "UsersTab",
+        "QuotasTab",
+        "AuditTab"
+      ]
     },
     {
       "order": 5,
-      "file": "web/dashboard/src/services/observability.ts",
+      "file": "web/dashboard/src/pages/admin/OrganizationForm.tsx",
       "action": "create",
-      "purpose": "API client for metrics and health data"
+      "purpose": "Create/edit organization form",
+      "key_functions": [
+        "OrganizationForm",
+        "validateOrganization",
+        "submitOrganization"
+      ]
     },
     {
       "order": 6,
-      "file": "web/dashboard/src/types/observability.ts",
+      "file": "web/dashboard/src/components/organization/QuotaCard.tsx",
       "action": "create",
-      "purpose": "TypeScript types for observability data"
+      "purpose": "Display quota vs usage with progress bars",
+      "key_functions": [
+        "QuotaCard",
+        "UsageProgress",
+        "QuotaAlert"
+      ]
     },
     {
       "order": 7,
-      "file": "web/dashboard/src/routes.tsx",
-      "action": "modify",
-      "purpose": "Add observability routes"
+      "file": "web/dashboard/src/components/organization/UsageChart.tsx",
+      "action": "create",
+      "purpose": "Resource usage trends visualization",
+      "key_functions": [
+        "UsageChart",
+        "TimeRangeSelector",
+        "UsageData"
+      ]
+    },
+    {
+      "order": 8,
+      "file": "web/dashboard/src/components/organization/UserList.tsx",
+      "action": "create",
+      "purpose": "Organization users management table",
+      "key_functions": [
+        "UserList",
+        "UserRoleSelect",
+        "RemoveUserButton",
+        "InviteUserModal"
+      ]
+    },
+    {
+      "order": 9,
+      "file": "web/dashboard/src/components/organization/OrganizationSwitcher.tsx",
+      "action": "create",
+      "purpose": "Dropdown for users with multiple organizations",
+      "key_functions": [
+        "OrganizationSwitcher",
+        "switchOrganization",
+        "UserOrganizations"
+      ]
+    },
+    {
+      "order": 10,
+      "file": "web/dashboard/src/api/organization.ts",
+      "action": "create",
+      "purpose": "API client for organization endpoints",
+      "key_functions": [
+        "createOrganization",
+        "listOrganizations",
+        "getOrganization",
+        "updateOrganization",
+        "deleteOrganization"
+      ]
+    },
+    {
+      "order": 11,
+      "file": "web/dashboard/src/api/quota.ts",
+      "action": "create",
+      "purpose": "API client for quota operations",
+      "key_functions": [
+        "getQuotas",
+        "setQuota",
+        "getUsage",
+        "getUsageReport"
+      ]
+    },
+    {
+      "order": 12,
+      "file": "web/dashboard/src/api/organizationUser.ts",
+      "action": "create",
+      "purpose": "API client for user management",
+      "key_functions": [
+        "listUsers",
+        "addUser",
+        "removeUser",
+        "updateRole",
+        "inviteUser"
+      ]
+    },
+    {
+      "order": 13,
+      "file": "web/dashboard/src/hooks/useOrganization.ts",
+      "action": "create",
+      "purpose": "Custom hook for organization data",
+      "key_functions": [
+        "useOrganization",
+        "useOrganizations",
+        "useOrganizationUsers",
+        "useOrganizationQuotas"
+      ]
+    },
+    {
+      "order": 14,
+      "file": "web/dashboard/src/hooks/useQuota.ts",
+      "action": "create",
+      "purpose": "Custom hook for quota and usage data",
+      "key_functions": [
+        "useQuota",
+        "useUsage",
+        "useUsageReport",
+        "useQuotaAlerts"
+      ]
+    },
+    {
+      "order": 15,
+      "file": "web/dashboard/src/components/layout/TenantBanner.tsx",
+      "action": "create",
+      "purpose": "Visual indicator of current tenant context",
+      "key_functions": [
+        "TenantBanner",
+        "OrganizationName",
+        "TenantBadge"
+      ]
+    },
+    {
+      "order": 16,
+      "file": "web/dashboard/src/routes/organizationRoutes.tsx",
+      "action": "create",
+      "purpose": "Route definitions for organization pages",
+      "key_functions": [
+        "organizationRoutes",
+        "ProtectedOrganizationRoute"
+      ]
+    },
+    {
+      "order": 17,
+      "file": "web/dashboard/src/pages/organization/Settings.tsx",
+      "action": "create",
+      "purpose": "Organization settings page for org admins",
+      "key_functions": [
+        "OrganizationSettings",
+        "GeneralSettings",
+        "DangerZone"
+      ]
+    },
+    {
+      "order": 18,
+      "file": "web/dashboard/src/components/audit/AuditLogTable.tsx",
+      "action": "create",
+      "purpose": "Tenant-scoped audit log viewer",
+      "key_functions": [
+        "AuditLogTable",
+        "FilterAuditLogs",
+        "ExportAuditLogs"
+      ]
     }
   ],
   "database_migrations": [
     {
-      "file": "migrations/001_create_observability_tables.up.sql",
-      "sql": "CREATE TABLE observability_metrics (\n    id BIGSERIAL PRIMARY KEY,\n    service_name VARCHAR(100) NOT NULL,\n    metric_name VARCHAR(255) NOT NULL,\n    metric_value DECIMAL(20,6) NOT NULL,\n    labels JSONB,\n    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\nCREATE INDEX idx_observability_metrics_service ON observability_metrics(service_name, recorded_at);\nCREATE INDEX idx_observability_metrics_name ON observability_metrics(metric_name, recorded_at);\n\nCREATE TABLE alert_history (\n    id BIGSERIAL PRIMARY KEY,\n    alert_name VARCHAR(255) NOT NULL,\n    alert_severity VARCHAR(50) NOT NULL,\n    service_name VARCHAR(100) NOT NULL,\n    message TEXT,\n    fired_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    resolved_at TIMESTAMPTZ,\n    status VARCHAR(50) NOT NULL DEFAULT 'firing'\n);\nCREATE INDEX idx_alert_history_fired ON alert_history(fired_at DESC);\n\nCREATE TABLE quota_usage (\n    id BIGSERIAL PRIMARY KEY,\n    user_id UUID NOT NULL,\n    organization_id UUID NOT NULL,\n    quota_type VARCHAR(50) NOT NULL,\n    usage_count BIGINT NOT NULL DEFAULT 0,\n    quota_limit BIGINT NOT NULL,\n    period_start TIMESTAMPTZ NOT NULL,\n    period_end TIMESTAMPTZ NOT NULL,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(user_id, quota_type, period_start)\n);\nCREATE INDEX idx_quota_usage_user ON quota_usage(user_id, period_start);\nCREATE INDEX idx_quota_usage_org ON quota_usage(organization_id, period_start);"
+      "file": "migrations/001_create_organizations_table.up.sql",
+      "sql": "CREATE TABLE organizations (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    slug VARCHAR(100) UNIQUE NOT NULL,\n    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'deleted')),\n    billing_email VARCHAR(255),\n    billing_plan VARCHAR(50) DEFAULT 'standard',\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    deleted_at TIMESTAMPTZ\n);\nCREATE INDEX idx_organizations_slug ON organizations(slug);\nCREATE INDEX idx_organizations_status ON organizations(status);"
+    },
+    {
+      "file": "migrations/002_create_quotas_table.up.sql",
+      "sql": "CREATE TABLE quotas (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    resource_type VARCHAR(50) NOT NULL CHECK (resource_type IN ('printers', 'storage_gb', 'jobs_monthly', 'users')),\n    limit_value BIGINT NOT NULL,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(organization_id, resource_type)\n);\nCREATE INDEX idx_quotas_organization_id ON quotas(organization_id);"
+    },
+    {
+      "file": "migrations/003_create_usage_tracking_table.up.sql",
+      "sql": "CREATE TABLE resource_usage (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    resource_type VARCHAR(50) NOT NULL,\n    current_value BIGINT NOT NULL DEFAULT 0,\n    period_start TIMESTAMPTZ NOT NULL,\n    period_end TIMESTAMPTZ,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(organization_id, resource_type, period_start)\n);\nCREATE INDEX idx_resource_usage_org_period ON resource_usage(organization_id, period_start);"
+    },
+    {
+      "file": "migrations/004_create_organization_users_table.up.sql",
+      "sql": "CREATE TABLE organization_users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    role VARCHAR(50) NOT NULL CHECK (role IN ('owner', 'admin', 'member', 'viewer')),\n    invited_by UUID REFERENCES users(id),\n    joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(organization_id, user_id)\n);\nCREATE INDEX idx_org_users_org_id ON organization_users(organization_id);\nCREATE INDEX idx_org_users_user_id ON organization_users(user_id);"
+    },
+    {
+      "file": "migrations/005_add_tenant_to_users.up.sql",
+      "sql": "ALTER TABLE users ADD COLUMN default_organization_id UUID REFERENCES organizations(id);\nALTER TABLE users ADD CONSTRAINT users_default_organization_fkey FOREIGN KEY (default_organization_id) REFERENCES organizations(id) ON DELETE SET NULL;\nCREATE INDEX idx_users_default_org ON users(default_organization_id);"
+    },
+    {
+      "file": "migrations/006_add_tenant_to_printers.up.sql",
+      "sql": "ALTER TABLE printers ADD COLUMN organization_id UUID NOT NULL REFERENCES organizations(id);\nALTER TABLE printers ADD CONSTRAINT printers_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;\nCREATE INDEX idx_printers_organization_id ON printers(organization_id);\nALTER TABLE printers ALTER COLUMN organization_id DROP NOT NULL; -- Temporary for migration"
+    },
+    {
+      "file": "migrations/007_add_tenant_to_jobs.up.sql",
+      "sql": "ALTER TABLE jobs ADD COLUMN organization_id UUID NOT NULL REFERENCES organizations(id);\nALTER TABLE jobs ADD CONSTRAINT jobs_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;\nCREATE INDEX idx_jobs_organization_id ON jobs(organization_id);"
+    },
+    {
+      "file": "migrations/008_add_tenant_to_documents.up.sql",
+      "sql": "ALTER TABLE documents ADD COLUMN organization_id UUID NOT NULL REFERENCES organizations(id);\nALTER TABLE documents ADD CONSTRAINT documents_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;\nCREATE INDEX idx_documents_organization_id ON documents(organization_id);\nCREATE INDEX idx_documents_org_storage ON documents(organization_id, size_bytes);"
+    },
+    {
+      "file": "migrations/009_add_tenant_to_agents.up.sql",
+      "sql": "ALTER TABLE agents ADD COLUMN organization_id UUID REFERENCES organizations(id);\nALTER TABLE agents ADD CONSTRAINT agents_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL;\nCREATE INDEX idx_agents_organization_id ON agents(organization_id);"
+    },
+    {
+      "file": "migrations/010_create_tenant_audit_logs.up.sql",
+      "sql": "CREATE TABLE tenant_audit_logs (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    user_id UUID REFERENCES users(id),\n    action VARCHAR(100) NOT NULL,\n    resource_type VARCHAR(50),\n    resource_id UUID,\n    old_values JSONB,\n    new_values JSONB,\n    ip_address INET,\n    user_agent TEXT,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\nCREATE INDEX idx_audit_logs_org_id ON tenant_audit_logs(organization_id, created_at DESC);\nCREATE INDEX idx_audit_logs_user_id ON tenant_audit_logs(user_id, created_at DESC);"
+    },
+    {
+      "file": "migrations/011_enable_rls.up.sql",
+      "sql": "ALTER TABLE printers ENABLE ROW LEVEL SECURITY;\nALTER TABLE jobs ENABLE ROW LEVEL SECURITY;\nALTER TABLE documents ENABLE ROW LEVEL SECURITY;\nALTER TABLE agents ENABLE ROW LEVEL SECURITY;\nALTER TABLE organization_users ENABLE ROW LEVEL SECURITY;\nALTER TABLE resource_usage ENABLE ROW LEVEL SECURITY;\nALTER TABLE quotas ENABLE ROW LEVEL SECURITY;\nALTER TABLE tenant_audit_logs ENABLE ROW LEVEL SECURITY;"
+    },
+    {
+      "file": "migrations/012_rls_policies.up.sql",
+      "sql": "CREATE POLICY printers_tenant_isolation ON printers\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY jobs_tenant_isolation ON jobs\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY documents_tenant_isolation ON documents\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY agents_tenant_isolation ON agents\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID OR organization_id IS NULL);\n\nCREATE POLICY org_users_tenant_isolation ON organization_users\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY resource_usage_tenant_isolation ON resource_usage\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY quotas_tenant_isolation ON quotas\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);\n\nCREATE POLICY audit_logs_tenant_isolation ON tenant_audit_logs\n    USING (organization_id = current_setting('app.current_tenant_id', true)::UUID);"
+    },
+    {
+      "file": "migrations/013_default_organization.up.sql",
+      "sql": "INSERT INTO organizations (id, name, slug, status, billing_plan) VALUES\n('00000000-0000-0000-0000-000000000001', 'Default Organization', 'default', 'active', 'standard')\nON CONFLICT (slug) DO NOTHING;\n\nINSERT INTO quotas (organization_id, resource_type, limit_value) VALUES\n('00000000-0000-0000-0000-000000000001', 'printers', 1000),\n('00000000-0000-0000-0000-000000000001', 'storage_gb', 1000),\n('00000000-0000-0000-0000-000000000001', 'jobs_monthly', 100000),\n('00000000-0000-0000-0000-000000000001', 'users', 100)\nON CONFLICT (organization_id, resource_type) DO NOTHING;"
+    },
+    {
+      "file": "migrations/014_migrate_existing_data.up.sql",
+      "sql": "-- Update existing records to belong to default organization\nUPDATE printers SET organization_id = '00000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;\nALTER TABLE printers ALTER COLUMN organization_id SET NOT NULL;\n\nUPDATE jobs SET organization_id = '00000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;\nALTER TABLE jobs ALTER COLUMN organization_id SET NOT NULL;\n\nUPDATE documents SET organization_id = '00000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;\nALTER TABLE documents ALTER COLUMN organization_id SET NOT NULL;\n\nUPDATE agents SET organization_id = '00000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;\n\n-- Update users default organization\nUPDATE users SET default_organization_id = '00000000-0000-0000-0000-000000000001' WHERE default_organization_id IS NULL;"
+    },
+    {
+      "file": "migrations/015_quota_alerts_table.up.sql",
+      "sql": "CREATE TABLE quota_alerts (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,\n    resource_type VARCHAR(50) NOT NULL,\n    threshold_percent INT NOT NULL CHECK (threshold_percent BETWEEN 0 AND 100),\n    last_sent_at TIMESTAMPTZ,\n    is_enabled BOOLEAN NOT NULL DEFAULT true,\n    UNIQUE(organization_id, resource_type, threshold_percent)\n);\nCREATE INDEX idx_quota_alerts_org_id ON quota_alerts(organization_id);"
     }
   ],
   "api_contracts": [
     {
+      "method": "POST",
+      "path": "/api/v1/admin/organizations",
+      "request": {
+        "name": "string",
+        "slug": "string",
+        "billing_email": "string?",
+        "billing_plan": "string?",
+        "quotas": {
+          "printers": 1000,
+          "storage_gb": 100,
+          "jobs_monthly": 10000,
+          "users": 50
+        }
+      },
+      "response": {
+        "id": "uuid",
+        "name": "string",
+        "slug": "string",
+        "status": "active",
+        "created_at": "timestamp"
+      },
+      "status_codes": [
+        201,
+        400,
+        401,
+        403,
+        409
+      ]
+    },
+    {
       "method": "GET",
-      "path": "/api/v1/observability/metrics",
+      "path": "/api/v1/admin/organizations",
       "request": {},
       "response": {
-        "metrics": {
-          "service_name": "string",
-          "http_requests_total": "number",
-          "http_request_duration_seconds": "number",
-          "db_connections_active": "number",
-          "redis_commands_total": "number"
-        }
+        "organizations": [
+          {
+            "id": "uuid",
+            "name": "string",
+            "status": "string",
+            "created_at": "timestamp",
+            "usage": {
+              "printers": 10,
+              "storage_gb": 25
+            }
+          }
+        ],
+        "total": 100,
+        "page": 1
       },
       "status_codes": [
         200,
@@ -385,39 +610,311 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/observability/health",
+      "path": "/api/v1/admin/organizations/:id",
       "request": {},
       "response": {
-        "services": [
+        "id": "uuid",
+        "name": "string",
+        "slug": "string",
+        "status": "string",
+        "billing_email": "string",
+        "billing_plan": "string",
+        "quotas": [
           {
-            "name": "auth-service",
-            "status": "healthy",
-            "uptime": "10m30s"
+            "resource_type": "printers",
+            "limit": 1000,
+            "used": 50,
+            "percentage": 5
+          }
+        ],
+        "created_at": "timestamp"
+      },
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/organizations/:id",
+      "request": {
+        "name": "string?",
+        "status": "string?",
+        "billing_email": "string?"
+      },
+      "response": {
+        "id": "uuid",
+        "name": "string",
+        "status": "string",
+        "updated_at": "timestamp"
+      },
+      "status_codes": [
+        200,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/organizations/:id",
+      "request": {},
+      "response": {
+        "message": "Organization deleted"
+      },
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/organizations/:id/quotas",
+      "request": {
+        "resource_type": "printers",
+        "limit_value": 1000
+      },
+      "response": {
+        "id": "uuid",
+        "organization_id": "uuid",
+        "resource_type": "printers",
+        "limit_value": 1000
+      },
+      "status_codes": [
+        201,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/organizations/:id/quotas/:resource_type",
+      "request": {
+        "limit_value": 2000
+      },
+      "response": {
+        "id": "uuid",
+        "resource_type": "printers",
+        "limit_value": 2000,
+        "updated_at": "timestamp"
+      },
+      "status_codes": [
+        200,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/:id/usage",
+      "request": {},
+      "response": {
+        "printers": {
+          "used": 50,
+          "limit": 1000,
+          "percentage": 5
+        },
+        "storage_gb": {
+          "used": 25,
+          "limit": 100,
+          "percentage": 25
+        },
+        "jobs_monthly": {
+          "used": 1500,
+          "limit": 10000,
+          "percentage": 15
+        },
+        "users": {
+          "used": 10,
+          "limit": 50,
+          "percentage": 20
+        }
+      },
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/:id/usage/trends",
+      "request": {
+        "period": "7d|30d|90d"
+      },
+      "response": {
+        "resource_type": "printers",
+        "data": [
+          {
+            "date": "2025-01-01",
+            "value": 45
           },
           {
-            "name": "registry-service",
-            "status": "healthy",
-            "uptime": "10m28s"
+            "date": "2025-01-02",
+            "value": 47
           }
         ]
       },
       "status_codes": [
         200,
-        503
+        401,
+        403,
+        404
       ]
     },
     {
       "method": "GET",
-      "path": "/api/v1/observability/alerts",
+      "path": "/api/v1/organizations/:id/users",
       "request": {},
       "response": {
-        "alerts": [
+        "users": [
           {
-            "id": "string",
+            "id": "uuid",
             "name": "string",
-            "severity": "critical|warning|info",
-            "status": "firing|resolved",
-            "fired_at": "timestamp"
+            "email": "string",
+            "role": "admin",
+            "joined_at": "timestamp"
+          }
+        ],
+        "total": 10
+      },
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/:id/users",
+      "request": {
+        "user_id": "uuid",
+        "role": "member"
+      },
+      "response": {
+        "id": "uuid",
+        "organization_id": "uuid",
+        "user_id": "uuid",
+        "role": "member",
+        "joined_at": "timestamp"
+      },
+      "status_codes": [
+        201,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/organizations/:id/users/:user_id",
+      "request": {
+        "role": "admin"
+      },
+      "response": {
+        "id": "uuid",
+        "role": "admin",
+        "updated_at": "timestamp"
+      },
+      "status_codes": [
+        200,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/organizations/:id/users/:user_id",
+      "request": {},
+      "response": {
+        "message": "User removed from organization"
+      },
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organizations/:id/invite",
+      "request": {
+        "email": "string",
+        "role": "viewer"
+      },
+      "response": {
+        "invite_id": "uuid",
+        "email": "string",
+        "expires_at": "timestamp"
+      },
+      "status_codes": [
+        201,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organizations/:id/audit-logs",
+      "request": {
+        "page": 1,
+        "limit": 50,
+        "action": "string?",
+        "resource_type": "string?"
+      },
+      "response": {
+        "logs": [
+          {
+            "id": "uuid",
+            "action": "create",
+            "resource_type": "printer",
+            "resource_id": "uuid",
+            "user_name": "string",
+            "created_at": "timestamp",
+            "changes": {
+              "field": "value"
+            }
+          }
+        ],
+        "total": 500,
+        "page": 1
+      },
+      "status_codes": [
+        200,
+        401,
+        403,
+        404
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/organizations",
+      "request": {},
+      "response": {
+        "organizations": [
+          {
+            "id": "uuid",
+            "name": "string",
+            "slug": "string",
+            "role": "admin",
+            "is_default": true
           }
         ]
       },
@@ -427,235 +924,325 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/api/v1/user/switch-organization",
+      "request": {
+        "organization_id": "uuid"
+      },
+      "response": {
+        "message": "Organization switched",
+        "organization_id": "uuid"
+      },
+      "status_codes": [
+        200,
+        400,
+        401,
+        403,
+        404
+      ]
+    },
+    {
       "method": "GET",
-      "path": "/api/v1/quota/:userId",
+      "path": "/api/v1/organizations/:id/alerts",
       "request": {},
       "response": {
-        "user_id": "string",
-        "quotas": [
+        "alerts": [
           {
-            "type": "prints_per_month",
-            "used": 1250,
-            "limit": 5000,
-            "reset_date": "2026-04-01"
+            "resource_type": "storage_gb",
+            "threshold_percent": 80,
+            "current_percent": 85,
+            "last_triggered": "timestamp"
           }
         ]
       },
       "status_codes": [
         200,
+        401,
+        403,
         404
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/quota/:userId/check",
-      "request": {
-        "quota_type": "string",
-        "amount": 1
-      },
-      "response": {
-        "allowed": true,
-        "remaining": 3750
-      },
-      "status_codes": [
-        200,
-        400
       ]
     }
   ],
   "test_plan": {
     "unit_tests": [
       {
-        "file": "internal/shared/telemetry/prometheus/registry_test.go",
+        "file": "internal/multi-tenant/context_test.go",
         "cases": [
-          "NewRegistry creates valid registry",
-          "GetRegistry returns same instance",
-          "MustRegister panics on duplicate",
-          "Concurrent registration is safe"
+          "GetTenantID returns tenant from context",
+          "SetTenantID sets tenant in context",
+          "MustGetTenantID panics when no tenant"
         ]
       },
       {
-        "file": "internal/shared/middleware/metrics_test.go",
+        "file": "internal/multi-tenant/middleware_test.go",
         "cases": [
-          "Middleware records successful requests",
-          "Middleware records failed requests",
-          "Middleware tracks request duration",
-          "Middleware records response codes"
+          "TenantMiddleware extracts tenant from JWT",
+          "TenantMiddleware sets tenant in context",
+          "RequireTenant returns 401 when no tenant"
         ]
       },
       {
-        "file": "internal/shared/telemetry/prometheus/db_test.go",
+        "file": "internal/multi-tenant/quota_test.go",
         "cases": [
-          "WrapDB adds metrics collector",
-          "DB stats are recorded",
-          "Connection pool metrics are accurate"
+          "CheckQuota returns true when under limit",
+          "CheckQuota returns false when at limit",
+          "IncrementUsage increases usage",
+          "DecrementUsage decreases usage"
         ]
       },
       {
-        "file": "internal/shared/telemetry/prometheus/business_test.go",
+        "file": "services/auth-service/repository/organization_test.go",
         "cases": [
-          "RecordJobCreated increments counter",
-          "RecordAuthSuccess records auth method",
-          "RecordPrinterHeartbeat includes labels"
+          "Create inserts organization",
+          "GetByID returns organization",
+          "List returns paginated organizations",
+          "Update modifies organization",
+          "Delete soft deletes organization"
         ]
       },
       {
-        "file": "services/job-service/internal/processor/queue_test.go",
+        "file": "services/auth-service/repository/quota_test.go",
         "cases": [
-          "Enqueue increments queue metric",
-          "Dequeue decrements queue metric",
-          "Failed job increments error metric"
+          "Create inserts quota",
+          "GetByOrganizationID returns all quotas",
+          "CheckAndIncrement atomically checks and increments",
+          "GetCurrentUsage calculates current usage"
         ]
       },
       {
-        "file": "internal/shared/telemetry/jaeger/config_test.go",
+        "file": "services/auth-service/repository/organization_user_test.go",
         "cases": [
-          "InitTracer creates valid tracer",
-          "Shutdown flushes spans",
-          "ConfigureExporter sets endpoint"
+          "AddUser inserts user role",
+          "GetUserRole returns user role",
+          "UpdateRole modifies user role",
+          "RemoveUser deletes user role",
+          "ListUsers returns all users"
+        ]
+      },
+      {
+        "file": "services/registry-service/repository/printer_test.go",
+        "cases": [
+          "Create respects tenant context",
+          "List only returns tenant printers",
+          "GetByID rejects cross-tenant access"
+        ]
+      },
+      {
+        "file": "services/job-service/repository/job_test.go",
+        "cases": [
+          "CreateJob checks quota before creating",
+          "CreateJob respects tenant context",
+          "ListJobs only returns tenant jobs"
+        ]
+      },
+      {
+        "file": "services/storage-service/repository/document_test.go",
+        "cases": [
+          "UploadDocument checks storage quota",
+          "GetDocument rejects cross-tenant access",
+          "GetTenantStorageUsage calculates correctly"
         ]
       }
     ],
     "e2e_tests": [
       {
-        "name": "Prometheus metrics endpoint accessible",
+        "name": "organization_crud_flow",
         "steps": [
-          "Start all services with metrics enabled",
-          "curl http://localhost:9091/metrics",
-          "Verify response contains go_memstats_*",
-          "Verify response contains http_requests_total"
+          "Create organization via API",
+          "Verify organization in database",
+          "Update organization details",
+          "Suspend organization",
+          "Verify suspended status",
+          "Delete organization",
+          "Verify deletion"
         ]
       },
       {
-        "name": "Service metrics scraping",
+        "name": "quota_enforcement",
         "steps": [
-          "Start Prometheus service",
-          "Wait 30 seconds",
-          "Query Prometheus for up{job='auth-service'}",
-          "Verify metric exists with value 1"
+          "Create organization with printer quota of 5",
+          "Register 5 printers successfully",
+          "Attempt to register 6th printer",
+          "Receive 429 quota exceeded error",
+          "Remove one printer",
+          "Register new printer successfully"
         ]
       },
       {
-        "name": "Grafana dashboard loads",
+        "name": "tenant_isolation",
         "steps": [
-          "Start Grafana service",
-          "Open http://localhost:3001",
-          "Login with admin credentials",
-          "Navigate to Service Health dashboard",
-          "Verify panels display data"
+          "Create organization A and B",
+          "Add user to organization A",
+          "User creates printer in org A",
+          "User attempts to access org B printer",
+          "Receive 403 forbidden error",
+          "Switch user to org B admin",
+          "User can now access org B printers"
         ]
       },
       {
-        "name": "Alert firing test",
+        "name": "organization_user_management",
         "steps": [
-          "Inject high error rate in auth-service",
-          "Wait 5 minutes",
-          "Check AlertManager UI for alert",
-          "Verify alert notification in logs"
+          "Org admin invites user",
+          "User receives invite",
+          "User accepts invite",
+          "User appears in org user list",
+          "Org admin updates user role",
+          "User permissions change accordingly",
+          "Org admin removes user",
+          "User loses access"
         ]
       },
       {
-        "name": "Distributed tracing test",
+        "name": "quota_alerts",
         "steps": [
-          "Enable Jaeger tracing",
-          "Make authenticated request to job-service",
-          "Make request that calls storage-service",
-          "Query Jaeger UI for trace",
-          "Verify trace spans across services"
+          "Set quota alert at 80%",
+          "Use resources to 79%",
+          "No alert sent",
+          "Use resources to 81%",
+          "Alert sent to org admins",
+          "Alert last_sent_at updated"
         ]
       },
       {
-        "name": "Quota enforcement test",
+        "name": "audit_log_isolation",
         "steps": [
-          "Set user quota to 100 prints/month",
-          "Submit 100 print jobs",
-          "Submit 101st print job",
-          "Verify request rejected with 429",
-          "Verify quota_exceeded metric emitted"
+          "Perform actions in org A",
+          "Perform actions in org B",
+          "Query org A audit logs",
+          "Only org A events returned",
+          "Query org B audit logs",
+          "Only org B events returned"
+        ]
+      },
+      {
+        "name": "multi_org_user",
+        "steps": [
+          "User belongs to multiple orgs",
+          "Call GET /user/organizations",
+          "Return all orgs with user roles",
+          "Switch to organization B",
+          "JWT claims updated to org B",
+          "Subsequent calls use org B context"
+        ]
+      },
+      {
+        "name": "storage_quota_enforcement",
+        "steps": [
+          "Set storage quota to 1GB",
+          "Upload 500MB document successfully",
+          "Upload 600MB document successfully",
+          "Attempt 500MB upload",
+          "Receive 507 quota exceeded error"
+        ]
+      },
+      {
+        "name": "suspended_organization",
+        "steps": [
+          "Suspend organization",
+          "Users cannot create new jobs",
+          "Existing jobs paused",
+          "Admin reactivates organization",
+          "Jobs resume"
+        ]
+      },
+      {
+        "name": "rls_policies",
+        "steps": [
+          "Connect to database as app user",
+          "Set tenant context to org A",
+          "Query printers table",
+          "Only org A printers returned",
+          "Attempt to insert printer for org B",
+          "RLS policy blocks insert"
         ]
       }
     ]
   },
   "security_notes": [
-    "/metrics endpoint should not require authentication within trusted network but should be firewalled from public internet",
-    "Consider adding basic auth or bearer token for metrics endpoint in multi-tenant deployments",
-    "Prometheus data contains sensitive information about request patterns - secure appropriately",
-    "Jaeger traces may contain user data - implement trace sampling and data retention policies",
-    "AlertManager webhooks should use TLS and HMAC signature verification",
-    "Grafana should use strong admin passwords and integrate with auth-service for SSO",
-    "Business metrics should exclude PII in labels to avoid storing personal data in Prometheus"
+    "All database queries must use RLS policies as defense-in-depth",
+    "JWT tokens must include organization_id claim signed by server",
+    "Tenant context must be validated on every service boundary",
+    "Quota checks must be atomic to prevent race conditions",
+    "Audit logs must be written before any data modification",
+    "Organization owners can only be transferred, not removed",
+    "Default organization cannot be deleted",
+    "Sensitive operations require re-authentication",
+    "API responses must not leak existence of other organizations",
+    "Rate limiting must be applied per-organization",
+    "Admin bypass of RLS must require explicit privileges",
+    "S3 documents must be prefixed with organization_id for isolation",
+    "Background jobs must inherit tenant context from job queue message",
+    "WebSocket connections must validate tenant on subscription",
+    "Audit logs for cross-admin actions must be immutable"
   ],
   "docker_changes": [
-    "Add prometheus service on port 9090 with volumes for config and data",
-    "Add alertmanager service on port 9093 with volume for config",
-    "Add grafana service on port 3001 with volumes for config, dashboards, and data",
-    "Add network 'monitoring' to isolate monitoring stack",
-    "Add environment variables for PROMETHEUS_RETENTION_TIME, ALERTMANAGER_TIMEOUT, GRAFANA_ADMIN_PASSWORD",
-    "Update all service health checks to include metrics endpoint",
-    "Add loki service for log aggregation (optional)",
-    "Add tempo service for trace storage (optional)"
+    "Add postgres-init script to set up RLS policies",
+    "Add environment variable DEFAULT_ORGANIZATION_ID",
+    "Update health checks to include tenant context validation",
+    "Add quota monitoring sidecar container",
+    "Add database migration for existing data to default organization"
   ],
   "market_driven_features": [
     {
-      "feature": "Secure Print Release Stations",
-      "priority": "critical",
-      "implementation": "FR-M013: Add print_release_service microservice with QR code generation, NFC authentication, and station management endpoints",
-      "metrics": [
-        "print_release_requests_total",
-        "print_release_duration_seconds",
-        "print_release_auth_failures_total"
-      ]
+      "feature": "Per-organization cost allocation and tracking",
+      "source": "PaperCut MF/NG",
+      "description": "Track print costs by department/organization with detailed reporting, enabling chargeback to business units."
     },
     {
-      "feature": "Mobile Apps (iOS/Android)",
-      "priority": "high",
-      "implementation": "FR-M014: Create mobile-specific GraphQL API with push notifications, add mobile_app_analytics dashboard",
-      "metrics": [
-        "mobile_active_users",
-        "mobile_push_notifications_sent",
-        "mobile_api_requests_total"
-      ]
+      "feature": "Secure print release with per-organization queues",
+      "source": "PaperCut MF/NG",
+      "description": "Users release print jobs at any device within their organization, with authentication required."
     },
     {
-      "feature": "Cost Allocation & Quota Management",
-      "priority": "high",
-      "implementation": "FR-M015: Implement quota-engine microservice with PostgreSQL backing, add quota_check middleware to job-service",
-      "metrics": [
-        "quota_enforcement_total",
-        "quota_exceeded_total",
-        "cost_per_page_by_department"
-      ]
+      "feature": "Multi-site organization support",
+      "source": "Printix",
+      "description": "Organizations can have multiple sites/branches with hierarchical management and centralized reporting."
     },
     {
-      "feature": "Print Policies Engine",
-      "priority": "high",
-      "implementation": "FR-M016: Create policy-engine with rule evaluation (ACL, time-based, color restrictions), integrate with job-service",
-      "metrics": [
-        "policy_evaluations_total",
-        "policy_denials_total",
-        "policy_rules_active"
-      ]
+      "feature": "Mobile printing with organization-scoped access",
+      "source": "Printix",
+      "description": "Mobile users can print to their organization's printers from anywhere, respecting tenant boundaries."
     },
     {
-      "feature": "Environmental Impact Reporting",
-      "priority": "medium",
-      "implementation": "Add carbon footprint metrics, paper usage tracking, trees saved calculation",
-      "metrics": [
-        "total_pages_printed",
-        "estimated_co2_saved",
-        "paper_equivalent_trees",
-        "energy_consumption_kwh"
-      ]
+      "feature": "Advanced security with dynamic watermarks",
+      "source": "\u5b89\u4f01\u795e",
+      "description": "Organization-configurable dynamic watermarks on documents including user name, timestamp, and organization."
     },
     {
-      "feature": "Real-time Job Status Updates",
-      "priority": "high",
-      "implementation": "Enhanced WebSocket notifications with progress percentages, eta calculation",
-      "metrics": [
-        "websocket_active_connections",
-        "job_status_update_latency",
-        "notification_delivery_success_rate"
-      ]
+      "feature": "Print approval workflows",
+      "source": "\u5b89\u4f01\u795e",
+      "description": "Per-organization configurable approval workflows for large print jobs or sensitive documents."
+    },
+    {
+      "feature": "Sensitive content filtering",
+      "source": "\u5b89\u4f01\u795e",
+      "description": "Organization can configure rules to detect and flag sensitive content (SSN, confidential) in print jobs."
+    },
+    {
+      "feature": "Comprehensive per-organization audit logs",
+      "source": "\u5b89\u4f01\u795e",
+      "description": "Detailed audit trail per organization including user actions, document access, and admin changes."
+    },
+    {
+      "feature": "Hardware integration with organization groups",
+      "source": "HP JetAdvantage",
+      "description": "Printers automatically assigned to organization based on network/location with manual override."
+    },
+    {
+      "feature": "Performance optimization per organization",
+      "source": "HP JetAdvantage",
+      "description": "Organizations can configure print optimization settings (quality vs speed defaults)."
+    },
+    {
+      "feature": "Workflow automation per organization",
+      "source": "Canon/UniFlow",
+      "description": "Organizations define custom print routing rules based on document type, user, or printer capabilities."
+    },
+    {
+      "feature": "Document security with organization encryption keys",
+      "source": "Ricoh/PriPort",
+      "description": "Each organization can have optional encryption keys for stored documents with key rotation support."
     }
   ]
 }

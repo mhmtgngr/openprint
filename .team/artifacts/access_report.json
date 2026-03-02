@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-02T01:18:08.623689",
+  "generated_at": "2026-03-02T01:21:37.783962",
   "project": "openprint",
   "server": {
     "hostname": "cmit",
@@ -41,7 +41,8 @@
       3001,
       9090,
       9091,
-      9092
+      9092,
+      9093
     ]
   },
   "client_connection": {
