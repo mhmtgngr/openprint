@@ -2,7 +2,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -178,8 +177,6 @@ func (h *ViolationsHandler) GetViolationStats(w http.ResponseWriter, r *http.Req
 
 // ClearOldViolations handles cleanup of old violation logs.
 func (h *ViolationsHandler) ClearOldViolations(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return

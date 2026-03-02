@@ -1,23 +1,23 @@
 All Go compilation errors have been fixed. Here's a summary of the changes:
 
-**Files Removed** (incomplete/conflicting tenant-related files):
-- `services/storage-service/handler/document_tenant.go` - missing `repository` package
-- `services/job-service/repository/job_tenant.go` - schema mismatches with `PrintJob` type
-- `services/job-service/handler/job_tenant.go` - duplicate declarations
-- `services/notification-service/handler/notification_tenant.go` - undefined `Handler` type
-- `services/registry-service/handler/printer_tenant.go` - duplicate methods
-- `services/auth-service/handler/organization.go` - missing `auditLogger` field
-- `services/auth-service/handler/organization_user.go` - duplicate `splitPath` function
-- `services/auth-service/handler/quota.go` - missing `auditLogger` field
-- `services/auth-service/handler/usage_report.go` - missing dependencies
+**Fixed files:**
 
-**Files Fixed**:
-- `services/notification-service/websocket/handler.go` - aliased `gorilla/websocket` import to avoid package name shadowing
-- `internal/multi-tenant/repository.go:74` - added missing closing brace for `Args()` function
-- `internal/multi-tenant/audit.go:445` - removed duplicate `contextKey` type declaration
-- `internal/multi-tenant/middleware.go:93` - removed unused `ctx` variable
-- `internal/multi-tenant/middleware.go:205` - renamed `RequireTenantAccess` to `RequireTenantAccessMiddleware`
-- `services/auth-service/repository/quota.go:273` - fixed `multi_tenant` typo → `multitenant`
-- `services/job-service/handler/job_tenant.go` - added `strings` import, removed duplicate import at end
-- `services/registry-service/handler/printer_tenant.go` - added `strings` import, removed duplicate import at end
-- `services/auth-service/handler/usage_report.go` - added `fmt` import, removed duplicate import at end
+1. **internal/shared/ratelimit/print_quota.go** - Added missing `mu sync.RWMutex` field to `PrintQuotaState` struct
+
+2. **internal/shared/ratelimit/redis.go** - Added `encoding/json` import, fixed `GetJSON()` to use `json.Unmarshal`, changed `Pipeline()` return type to `redis.Pipeliner`
+
+3. **internal/shared/ratelimit/limiter.go** - Removed unused redis import, added `GetCircuitBreaker()` and `GetRepository()` methods
+
+4. **internal/middleware/ratelimit.go** - Removed duplicate context import, fixed `apperrors.New()` calls with proper status codes
+
+5. **internal/middleware/validation.go** - Removed duplicate `getClientIP` function and unused `net` import
+
+6. **services/auth-service/handlers/ratelimit.go** - Added `pgx` import, removed unused `context` import
+
+7. **services/auth-service/handlers/violations.go** - Removed unused `context` import and unused `ctx` variable
+
+8. **services/auth-service/handlers/circuit_breaker.go** - Removed unused `context` import
+
+9. **services/auth-service/handlers/trusted_clients.go** - Removed unused `context` import
+
+`go build ./...` completes successfully with no errors.

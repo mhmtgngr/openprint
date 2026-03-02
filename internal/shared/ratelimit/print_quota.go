@@ -19,6 +19,7 @@ type PrintQuotaManager struct {
 
 // PrintQuotaState tracks the state of a print quota.
 type PrintQuotaState struct {
+	mu                sync.RWMutex
 	EntityID          string
 	EntityType        string // "user" or "organization"
 	QuotaType         string // "pages", "jobs", "color_pages", "duplex_pages"

@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -161,7 +162,7 @@ func (r *RedisClient) GetJSON(ctx context.Context, key string, dest interface{})
 	if err != nil {
 		return err
 	}
-	return r.client.JSONGet(ctx, key, ".").Scan(dest)
+	return json.Unmarshal([]byte(val), dest)
 }
 
 // SetJSON stores a JSON value.
@@ -215,7 +216,7 @@ func (r *RedisClient) GetAllHash(ctx context.Context, key string) (map[string]st
 }
 
 // Pipeline returns a Redis pipeline for batched operations.
-func (r *RedisClient) Pipeline() redis.Pipeline {
+func (r *RedisClient) Pipeline() redis.Pipeliner {
 	return r.client.Pipeline()
 }
 

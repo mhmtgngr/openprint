@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -348,30 +347,6 @@ func RateLimitMiddleware(config RateLimiterConfig) func(http.Handler) http.Handl
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-// getClientIP extracts the client IP from the request.
-func getClientIP(r *http.Request) string {
-	// Check X-Forwarded-For header first
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		// Take the first IP from the list
-		if idx := strings.Index(xff, ","); idx != -1 {
-			return strings.TrimSpace(xff[:idx])
-		}
-		return xff
-	}
-
-	// Check X-Real-IP header
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return xri
-	}
-
-	// Fall back to RemoteAddr
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return ip
 }
 
 // RequestSizeLimitConfig holds request size limits configuration.

@@ -2,7 +2,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/ratelimit"

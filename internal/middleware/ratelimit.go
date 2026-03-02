@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openprint/openprint/internal/shared/context"
 	sharedcontext "github.com/openprint/openprint/internal/shared/context"
 	"github.com/openprint/openprint/internal/shared/ratelimit"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
@@ -445,12 +444,12 @@ func GetCircuitBreakerStatus(cfg *RateLimitConfig) map[string]interface{} {
 // ResetCircuitBreakerForPath resets the circuit breaker for a specific path.
 func ResetCircuitBreakerForPath(cfg *RateLimitConfig, path string) error {
 	if cfg.Limiter == nil {
-		return apperrors.New("rate limiter not configured")
+		return apperrors.New("rate limiter not configured", http.StatusInternalServerError)
 	}
 
 	cb := cfg.Limiter.GetCircuitBreaker()
 	if cb == nil {
-		return apperrors.New("circuit breaker not enabled")
+		return apperrors.New("circuit breaker not enabled", http.StatusServiceUnavailable)
 	}
 
 	return cb.Reset(path)
@@ -459,12 +458,12 @@ func ResetCircuitBreakerForPath(cfg *RateLimitConfig, path string) error {
 // OpenCircuitBreaker forcibly opens a circuit breaker.
 func OpenCircuitBreaker(cfg *RateLimitConfig, path string, duration time.Duration) error {
 	if cfg.Limiter == nil {
-		return apperrors.New("rate limiter not configured")
+		return apperrors.New("rate limiter not configured", http.StatusInternalServerError)
 	}
 
 	cb := cfg.Limiter.GetCircuitBreaker()
 	if cb == nil {
-		return apperrors.New("circuit breaker not enabled")
+		return apperrors.New("circuit breaker not enabled", http.StatusServiceUnavailable)
 	}
 
 	cb.ForceOpen(path, duration)

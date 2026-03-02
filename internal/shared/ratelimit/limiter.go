@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 // Limiter is the main rate limiter using sliding window algorithm.
@@ -378,6 +376,16 @@ func (l *Limiter) Close() error {
 		return l.redis.Close()
 	}
 	return nil
+}
+
+// GetCircuitBreaker returns the circuit breaker instance.
+func (l *Limiter) GetCircuitBreaker() *CircuitBreaker {
+	return l.circuit
+}
+
+// GetRepository returns the repository instance.
+func (l *Limiter) GetRepository() *Repository {
+	return l.repository
 }
 
 // generateID generates a unique ID for violations.
