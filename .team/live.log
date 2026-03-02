@@ -3020,3 +3020,46 @@ Success Rate: 0%
 [1;33m[03:43:34][0m   ✗ :9094
 [1;33m[03:43:34][0m   ✗ :9095
 [0;35m[03:43:37][0m [1;37m🐳 DevOps[0m Working...
+[0;35m[03:44:27][0m [1;37m🐳 DevOps[0m ✓ Committed
+[0;32m[03:44:27][0m   🐳 Building (1/6): auth-service
+[0;32m[03:44:39][0m   ✓ Built: auth-service (12s)
+[0;32m[03:44:39][0m   🐳 Building (2/6): dashboard
+[0;32m[03:44:51][0m   ✓ Built: dashboard (12s)
+[0;32m[03:44:51][0m   🐳 Building (3/6): job-service
+[0;32m[03:45:04][0m   ✓ Built: job-service (13s)
+[0;32m[03:45:04][0m   🐳 Building (4/6): notification-service
+[0;32m[03:45:16][0m   ✓ Built: notification-service (12s)
+[0;32m[03:45:16][0m   🐳 Building (5/6): registry-service
+[0;32m[03:45:28][0m   ✓ Built: registry-service (12s)
+[0;32m[03:45:28][0m   🐳 Building (6/6): storage-service
+[0;32m[03:45:40][0m   ✓ Built: storage-service (12s)
+[0;32m[03:45:40][0m   Docker: 6/6 built, 0 failed
+[0;32m[03:45:48][0m   🚀 Starting services...
+[0;32m[03:45:48][0m   🔧 Checking for stale containers...
+[1;33m[03:46:23][0m   ⚠️  Dependency errors detected, recreating containers...
+[1;33m[03:47:40][0m   ✗ :14250
+[1;33m[03:47:40][0m   ✗ :14268
+[1;33m[03:47:40][0m   ✗ :15432
+[1;33m[03:47:40][0m   ✗ :16379
+[0;32m[03:47:40][0m   ✓ :16686
+[1;33m[03:47:40][0m   ✗ :18001
+[1;33m[03:47:40][0m   ✗ :18005
+[1;33m[03:47:40][0m   ✗ :3000
+[0;32m[03:47:40][0m   ✓ :3001
+[1;33m[03:47:40][0m   ✗ :6831
+[1;33m[03:47:40][0m   ✗ :6832
+[1;33m[03:47:40][0m   ✗ :8002
+[1;33m[03:47:40][0m   ✗ :8003
+[1;33m[03:47:40][0m   ✗ :8004
+[1;33m[03:47:40][0m   ✗ :9090
+[1;33m[03:47:40][0m   ✗ :9091
+[1;33m[03:47:40][0m   ✗ :9092
+[1;33m[03:47:40][0m   ✗ :9093
+[1;33m[03:47:40][0m   ✗ :9094
+[1;33m[03:47:40][0m   ✗ :9095
+[0;32m[03:47:40][0m   Health: 2/20
+[0;32m[03:47:40][0m 
+[0;32m[03:47:40][0m   📡 Generating access report...
+[0;32m[03:47:40][0m   🌐 External Access URL: http://192.168.31.76:3000
+[0;32m[03:47:40][0m   📄 Full report: /home/cmit/openprint/.team/artifacts/access_report.json
+[0;35m[03:47:40][0m [1;37m🧪 Tester[0m Running Playwright...
