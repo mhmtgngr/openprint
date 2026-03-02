@@ -305,7 +305,7 @@ func (p *Processor) GetStats(ctx context.Context) (*Stats, error) {
 	failed, _ := p.jobRepo.CountByStatus(ctx, "failed")
 
 	stats.Queued = queued
-	stats.Processing = processing
+	stats.Processing = processing + pendingAgent
 	stats.Pending = pendingAgent
 	stats.Completed = completed
 	stats.Failed = failed

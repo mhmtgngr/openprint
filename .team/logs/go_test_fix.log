@@ -1,11 +1,12 @@
-All Go tests pass. Fixed the following migration issues:
+All tests pass now. 
 
-**migrations/000022_create_print_quotas.up.sql:**
-- Quoted reserved keyword `limit` as `"limit"` (column definition and function reference)
+**Fixed:** `TestProcessor_Stats` in `services/job-service/processor/processor_test.go`
 
-**migrations/000024_create_secure_release.up.sql:**
-- Removed foreign key `REFERENCES printers(id)` from array column `assigned_printers UUID[]` (PostgreSQL doesn't support FKs on arrays)
-
-**migrations/000026_create_analytics.up.sql:**
-- Moved `COALESCE`-based UNIQUE constraints to separate unique indexes (can't use functions in inline UNIQUE constraints)
-- Quoted reserved keywords `date` and `month` as `"date"`, `"month"`
+The test expected `stats.Processing` to include both "processing" and "pending_agent" job counts, but `GetStats` was only counting "processing" jobs. Changed line 308 in `processor.go` from:
+```go
+stats.Processing = processing
+```
+to:
+```go
+stats.Processing = processing + pendingAgent
+```
