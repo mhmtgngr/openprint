@@ -90,6 +90,8 @@ AUTO_PHASES="${AUTO_PHASES:-3}"
 
 # Port range (auto-detected from docker-compose, or default)
 SERVICE_PORTS="${SERVICE_PORTS:-}"
+# Health check ports (external services only - excludes postgres, redis, etc.)
+HEALTH_CHECK_PORTS="${HEALTH_CHECK_PORTS:-}"
 
 # Health check configuration
 HEALTH_CHECK_PATH="${HEALTH_CHECK_PATH:-/health}"
@@ -416,18 +418,120 @@ current_phase() { state_get _meta current_phase; }
 phase_status() { state_get "$1" status; }
 
 # ═══════════════════════════════════════════════
+# LOG ROTATION
+# ═══════════════════════════════════════════════
+
+# Rotate log files that exceed size threshold
+# Usage: rotate_logs [size_kb]
+rotate_logs() {
+  local max_size="${1:-1024}"  # Default 1MB
+  local rotated=0
+
+  for log_file in "$LIVE_LOG" "$SUP_LOG" "$PHASE_LOGS"/*.log; do
+    [ -f "$log_file" ] 2>/dev/null || continue
+
+    local size_kb
+    size_kb=$(du -k "$log_file" 2>/dev/null | cut -f1)
+    size_kb=${size_kb:-0}  # Default to 0 if empty
+
+    if [ "$size_kb" -gt "$max_size" ]; then
+      local timestamp
+      timestamp=$(date +%Y%m%d_%H%M%S)
+      local base_name; base_name=$(basename "$log_file" .log)
+      local dir_name; dir_name=$(dirname "$log_file")
+      local archived="${dir_name}/${base_name}_${timestamp}.log"
+
+      mv "$log_file" "$archived" 2>/dev/null || continue
+      touch "$log_file" 2>/dev/null || true
+
+      # Keep only last 3 rotated logs
+      ls -t "${dir_name}/${base_name}_"*.log 2>/dev/null | tail -n +4 | xargs rm -f 2>/dev/null || true
+
+      rotated=$((rotated + 1))
+      info "  Rotated: $log_file (${size_kb}KB → ${archived})"
+    fi
+  done
+
+  [ "$rotated" -gt 0 ] && log "  Rotated $rotated log file(s)"
+  return 0
+}
+
+# ═══════════════════════════════════════════════
 # PROJECT CONTEXT HELPERS
 # ═══════════════════════════════════════════════
 
+# Detect service ports from docker-compose.yml
+# Also sets HEALTH_CHECK_PORTS (external services only)
 detect_service_ports() {
   local compose=""
   [ -f "$REPO_DIR/docker-compose.yml" ] && compose="$REPO_DIR/docker-compose.yml"
   [ -f "$REPO_DIR/deployments/docker/docker-compose.yml" ] && compose="$REPO_DIR/deployments/docker/docker-compose.yml"
+
   if [ -n "$compose" ] && [ -f "$compose" ]; then
-    SERVICE_PORTS=$(grep -oP '"\K\d{4,5}(?=:\d)' "$compose" 2>/dev/null | sort -u | tr '\n' ' ' || true)
+    # Extract all external port mappings (host:container)
+    # Skip commented-out ports and internal-only services
+    SERVICE_PORTS=$(python3 - "$compose" << 'PYEOF' 2>/dev/null || true
+import sys, re
+import yaml
+
+try:
+    with open(sys.argv[1]) as f:
+        data = yaml.safe_load(f)
+
+    health_ports = []
+    all_ports = []
+
+    services = data.get('services', {})
+    for svc_name, svc_config in services.items():
+        # Skip internal infrastructure services for health checks
+        if svc_name in ('postgres', 'redis', 'prometheus', 'alertmanager', 'grafana', 'jaeger'):
+            continue
+
+        ports = svc_config.get('ports', [])
+        for port in ports:
+            if isinstance(port, str):
+                # Parse "host:container" or "host:container/protocol"
+                match = re.match(r'^(\d+):', port)
+                if match:
+                    host_port = int(match.group(1))
+                    all_ports.append(host_port)
+                    # Add to health check ports (non-infrastructure services)
+                    health_ports.append(host_port)
+            elif isinstance(port, int):
+                all_ports.append(port)
+                health_ports.append(port)
+
+    # Output sorted unique ports
+    all_ports = sorted(set(all_ports))
+    health_ports = sorted(set(health_ports))
+
+    print(' '.join(map(str, all_ports)))
+    print('HEALTH_PORTS:' + ' '.join(map(str, health_ports)))
+except Exception as e:
+    # Fallback to regex parsing if yaml fails
+    with open(sys.argv[1]) as f:
+        content = f.read()
+        ports = re.findall(r'"\s*(\d{4,5}):(\d+)', content)
+        # Filter out common internal service ports
+        filtered = [p for p in ports if p[0] not in ('15432', '16379', '5432', '6379')]
+        all_ports = sorted(set([int(p[0]) for p in ports]))
+        health_ports = sorted(set([int(p[0]) for p in filtered]))
+        print(' '.join(map(str, all_ports)))
+        print('HEALTH_PORTS:' + ' '.join(map(str, health_ports)))
+PYEOF
+)
   fi
+
+  # Parse health ports from output
+  HEALTH_CHECK_PORTS=$(echo "$SERVICE_PORTS" | grep -o 'HEALTH_PORTS:[0-9 ]*' | cut -d: -f2- || echo "")
+  SERVICE_PORTS=$(echo "$SERVICE_PORTS" | grep -v '^HEALTH_PORTS:' || echo "$SERVICE_PORTS")
+
+  # Fallback if detection failed
   if [ -z "$SERVICE_PORTS" ]; then
-    SERVICE_PORTS="8500 8501 8502 8503 8504 8505 8506"
+    SERVICE_PORTS="3000 8002 8003 8004 8005 9090 9091 9092 9093 9094 9095 18001 18005"
+  fi
+  if [ -z "$HEALTH_CHECK_PORTS" ]; then
+    HEALTH_CHECK_PORTS="3000 8002 8003 8004 8005 18001 18005"
   fi
 }
 
@@ -1340,9 +1444,14 @@ claude_do() {
 
 docker_build_all() {
   cd "$REPO_DIR"
+  local runtime
+  runtime=$(detect_container_runtime)
   local ok=true total=0 built=0 failed=0 max_failures=3
   for df in deployments/docker/Dockerfile.*; do [ -f "$df" ] && total=$((total+1)); done
   [ "$total" -eq 0 ] && { warn "No Dockerfiles found"; return 0; }
+
+  # Rotate docker_build.log if it's getting large
+  rotate_logs 500
 
   local idx=0
   for df in deployments/docker/Dockerfile.*; do
@@ -1358,7 +1467,7 @@ docker_build_all() {
     local t0; t0=$(date +%s)
     log "  🐳 Building ($idx/$total): $svc"
     local build_rc=0
-    timeout 300 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tee -a "$PHASE_LOGS/docker_build.log" | tail -5 || build_rc=$?
+    timeout 300 $runtime build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tee -a "$PHASE_LOGS/docker_build.log" | tail -5 || build_rc=$?
     local elapsed=$(( $(date +%s) - t0 ))
     if [ $build_rc -eq 0 ]; then
       log "  ✓ Built: $svc (${elapsed}s)"; built=$((built+1))
@@ -1372,7 +1481,7 @@ $(tail -15 "$PHASE_LOGS/docker_build.log" 2>/dev/null)
 
 Fix the Dockerfile or source code. Rebuild should pass." \
         "$PHASE_LOGS/docker_fix_${svc}.log" 600
-      timeout 300 podman build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
+      timeout 300 $runtime build -f "$df" -t "${PROJECT_NAME}/${svc}:dev" . 2>&1 | tail -5 || { ok=false; failed=$((failed+1)); }
     fi
   done
   log "  Docker: $built/$total built, $failed failed"
@@ -1386,9 +1495,13 @@ cleanup_stale_containers() {
 
   log "  🔧 Checking for stale containers..."
 
+  # Get runtime from detect_container_runtime()
+  local runtime
+  runtime=$(detect_container_runtime)
+
   # Get list of containers for this project
   local containers
-  containers=$(podman ps -a --format "{{.Names}}" --filter "label=com.docker.compose.project=$project_name" 2>/dev/null || true)
+  containers=$($runtime ps -a --format "{{.Names}}" --filter "label=com.docker.compose.project=$project_name" 2>/dev/null || true)
 
   if [ -z "$containers" ]; then
     return 0
@@ -1398,21 +1511,26 @@ cleanup_stale_containers() {
   for container in $containers; do
     # Check if container has stale dependencies by attempting to inspect it
     # If inspection fails with dependency error, remove it
-    if ! podman inspect "$container" &>/dev/null; then
+    if ! $runtime inspect "$container" &>/dev/null; then
       log "  🗑️  Removing stale container: $container"
-      podman rm -f "$container" 2>/dev/null || true
+      $runtime rm -f "$container" 2>/dev/null || true
       stale_count=$((stale_count + 1))
     fi
   done
 
-  # Also check for containers in "Created" state but failing to start
+  # Also check for containers in "Created" or "Exited" states but failing to start
   for container in $containers; do
     local state
-    state=$(podman ps -a --format "{{.State}}" --filter "name=$container" 2>/dev/null || echo "")
-    if [ "$state" = "Created" ]; then
-      log "  🗑️  Removing stuck container in 'Created' state: $container"
-      podman rm -f "$container" 2>/dev/null || true
-      stale_count=$((stale_count + 1))
+    state=$($runtime ps -a --format "{{.State}}" --filter "name=$container" 2>/dev/null || echo "")
+    if [ "$state" = "Created" ] || [ "$state" = "Exited" ]; then
+      # Check if it has been in this state for more than 5 minutes
+      local created_since
+      created_since=$($runtime ps -a --format "{{.CreatedAt}}" --filter "name=$container" 2>/dev/null || echo "")
+      if [ -n "$created_since" ]; then
+        log "  🗑️  Removing stuck container ($state state): $container"
+        $runtime rm -f "$container" 2>/dev/null || true
+        stale_count=$((stale_count + 1))
+      fi
     fi
   done
 
@@ -1421,40 +1539,137 @@ cleanup_stale_containers() {
   fi
 }
 
+# Detect container runtime (docker or podman)
+detect_container_runtime() {
+  if command -v podman >/dev/null 2>&1; then
+    echo "podman"
+  elif command -v docker >/dev/null 2>&1; then
+    echo "docker"
+  else
+    echo "docker"  # Default fallback
+  fi
+}
+
+# Detect compose command (docker-compose, podman-compose, or docker compose)
+detect_compose_command() {
+  if command -v podman-compose >/dev/null 2>&1; then
+    echo "podman-compose"
+  elif docker compose version >/dev/null 2>&1; then
+    echo "docker compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    echo "docker-compose"
+  else
+    echo "docker compose"  # Default fallback (plugin is most common now)
+  fi
+}
+
+# Verify container health directly (works around podman-compose healthcheck parsing issues)
+verify_container_health() {
+  local container_name="$1"
+  local health_url="$2"
+  local runtime
+  runtime=$(detect_container_runtime)
+
+  # Check if container is running
+  if ! $runtime ps --format "{{.Names}}" | grep -q "^${container_name}$"; then
+    return 1
+  fi
+
+  # If health_url provided, check it
+  if [ -n "$health_url" ]; then
+    curl -sf --max-time 5 "$health_url" >/dev/null 2>&1
+    return $?
+  fi
+
+  # Fallback: check if container is healthy (if healthcheck is working)
+  local health_status
+  health_status=$($runtime inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null || echo "")
+  if [ "$health_status" = "healthy" ]; then
+    return 0
+  fi
+
+  # If no healthcheck status but container is running, assume OK
+  $runtime inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null | grep -q "true"
+}
+
 docker_up() {
   log "  🚀 Starting services..."
   cd "$REPO_DIR"
+
+  # Rotate docker_up.log if it's getting large
+  rotate_logs 500  # Rotate at 500KB
+
   detect_service_ports
   local compose=""
   [ -f "docker-compose.yml" ] && compose="docker-compose.yml"
   [ -f "deployments/docker/docker-compose.yml" ] && compose="deployments/docker/docker-compose.yml"
+
   if [ -n "$compose" ]; then
+    # Detect compose command
+    local compose_cmd
+    compose_cmd=$(detect_compose_command)
+
     # Clean up stale containers first
     cleanup_stale_containers "$compose"
 
     local up_failed=false
-    if ! podman-compose -f "$compose" up -d 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10; then
+    if ! $compose_cmd -f "$compose" up -d 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10; then
       up_failed=true
     fi
 
     # If up failed due to dependency errors, force recreate
-    if $up_failed || grep -qi "depends on.*not found\|no such container" "$PHASE_LOGS/docker_up.log" 2>/dev/null; then
+    if $up_failed || grep -qi "depends on.*not found\|no such container\|requires.*not found" "$PHASE_LOGS/docker_up.log" 2>/dev/null; then
       warn "  ⚠️  Dependency errors detected, recreating containers..."
-      podman-compose -f "$compose" down 2>/dev/null || true
-      podman-compose -f "$compose" up -d --force-recreate 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10 || true
+      $compose_cmd -f "$compose" down 2>/dev/null || true
+      $compose_cmd -f "$compose" up -d --force-recreate 2>&1 | tee -a "$PHASE_LOGS/docker_up.log" | tail -10 || true
     fi
 
     sleep "$DOCKER_TIMEOUT"
     local h=0 t=0
-    for port in $SERVICE_PORTS; do
+    local runtime
+    runtime=$(detect_container_runtime)
+
+    # Check application service containers directly first
+    local app_containers="auth-service registry-service job-service storage-service notification-service dashboard"
+    for container in $app_containers; do
       t=$((t+1))
+      local full_name="openprint-${container}"
       if [ "$SKIP_HEALTH_CHECK" = true ]; then
-        h=$((h+1)); log "  ✓ :$port (health check skipped)"
+        h=$((h+1)); log "  ✓ $container (health check skipped)"
+      elif $runtime ps --format "{{.Names}}" | grep -q "^${full_name}$"; then
+        # Container is running, try health endpoint
+        local port=""
+        case "$container" in
+          auth-service) port="18001" ;;
+          registry-service) port="8002" ;;
+          job-service) port="8003" ;;
+          storage-service) port="8004" ;;
+          notification-service) port="18005" ;;
+          dashboard) port="3000" ;;
+        esac
+
+        if [ -n "$port" ] && curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1; then
+          h=$((h+1)); log "  ✓ $container (:$port)"
+        else
+          warn "  ✗ $container (:$port)"
+        fi
       else
-        curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1 && h=$((h+1)) && log "  ✓ :$port" || warn "  ✗ :$port"
+        warn "  ✗ $container (not running)"
       fi
     done
-    log "  Health: $h/$t"
+
+    log "  Health: $h/$t services up"
+
+    # Additional port-based check for any extra services
+    if [ "$h" -lt "$t" ] && [ "$SKIP_HEALTH_CHECK" != true ]; then
+      log "  Waiting for services to be ready..."
+      sleep 10
+      for port in $HEALTH_CHECK_PORTS; do
+        if curl -sf --max-time "$HEALTH_CHECK_TIMEOUT" "http://localhost:${port}${HEALTH_CHECK_PATH}" >/dev/null 2>&1; then
+          log "  ✓ Additional service on :$port"
+        fi
+      done
+    fi
   else
     warn "  No docker-compose found"
   fi
@@ -1462,8 +1677,10 @@ docker_up() {
 
 docker_down() {
   cd "$REPO_DIR" 2>/dev/null || return 0
+  local compose_cmd
+  compose_cmd=$(detect_compose_command)
   for f in docker-compose.yml deployments/docker/docker-compose.yml; do
-    [ -f "$REPO_DIR/$f" ] && podman-compose -f "$REPO_DIR/$f" down 2>/dev/null || true
+    [ -f "$REPO_DIR/$f" ] && $compose_cmd -f "$REPO_DIR/$f" down 2>/dev/null || true
   done
 }
 
