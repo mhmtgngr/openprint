@@ -1,5 +1,4 @@
-REQUIREMENTS (enriched with market research):
-{
+REQUIREMENTS: {
  "project_name": "OpenPrint Observability Stack",
  "summary": "Implement comprehensive monitoring with Prometheus metrics, Grafana dashboards, and Jaeger distributed tracing across all OpenPrint microservices",
  "functional_requirements": [
@@ -90,292 +89,443 @@ REQUIREMENTS (enriched with market research):
     "Create internal/shared/telemetry/prometheus package with metric registry initialization",
     "Add prometheus/client_golang dependency to go.mod",
     "Create HTTP metrics middleware for request tracking",
-    "Create database metrics collector for sql.DB instrumentation",
-    "Create Redis metrics collector for go-redis instrumentation",
-    "Add unit tests for all telemetry components"
-   ]
-  },
-  {
-   "phase": 2,
-   "name": "Service Metrics Integration",
-   "tasks": [
-    "Integrate telemetry package into auth-service",
-    "Integrate telemetry package into registry-service",
-    "Integrate telemetry package into job-service",
-    "Integrate telemetry package into storage-service",
-    "Integrate telemetry package into notification-service",
-    "Define business-specific metrics for each service",
-    "Add /metrics endpoint to each service on port 9090",
-    "Verify metrics collection via curl"
-   ]
-  },
-  {
-   "phase": 3,
-   "name": "Monitoring Stack Deployment",
-   "tasks": [
-    "Add Prometheus service to docker-compose with persistent volume",
-    "Add AlertManager service to docker-compose",
-    "Add Grafana service to docker-compose with persistent volume",
-    "Configure Prometheus scrape targets for all services",
-    "Configure Prometheus data retention policy",
-    "Add environment variables for monitoring configuration"
-   ]
-  },
-  {
-   "phase": 4,
-   "name": "Grafana Dashboards",
-   "tasks": [
-    "Create Service Health dashboard configuration",
-    "Create Request Throughput dashboard configuration",
-    "Create Database Performance dashboard configuration",
-    "Create Redis Operations dashboard configuration",
-    "Create Business KPIs dashboard configuration",
-    "Set up Grafana provisioning for automatic dashboard loading",
-    "Configure Prometheus data source in Grafana"
-   ]
-  },
-  {
-   "phase": 5,
-   "name": "Alerting Rules",
-   "tasks": [
-    "Define high error rate alert (5% for 5 minutes)",
-    "Define service down alert (2 minutes unreachable)",
-    "Define queue backlog alert (1000+ pending jobs)",
-    "Define Redis connection exhaustion alert",
-    "Define disk space alert (80% used)",
-    "Configure AlertManager routing and receivers",
-    "Test alert firing
+    "Create database m
+CHANGES:  .../video.webm                                     |  Bin 3683 -> 0 bytes
+ .../error-context.md                               |   74 -
+ .../test-failed-1.png                              |  Bin 61582 -> 0 bytes
+ .../video.webm                                     |  Bin 178916 -> 0 bytes
+ .../test-failed-1.png                              |  Bin 17707 -> 0 bytes
+ .../video.webm                                     |  Bin 8245 -> 0 bytes
+ .../test-failed-1.png                              |  Bin 17878 -> 0 bytes
+ .../test-failed-1.png                              |  Bin 10629 -> 0 bytes
+ .../video.webm                                     |  Bin 4475 -> 0 bytes
+ .../test-failed-1.png                              |  Bin 13466 -> 0 bytes
+ .../error-context.md                               |   29 -
+ .../test-failed-1.png                              |  Bin 17707 -> 0 bytes
+ .../video.webm                                     |  Bin 7932 -> 0 bytes
+ .../test-failed-1.png                              |  Bin 17878 -> 0 bytes
+ 5281 files changed, 26727 insertions(+), 43393 deletions(-)
+FILES: internal/shared/middleware/metrics.go
+internal/shared/middleware/metrics_test.go
+internal/shared/telemetry/jaeger/config.go
+internal/shared/telemetry/prometheus/business.go
+internal/shared/telemetry/prometheus/business_test.go
+internal/shared/telemetry/prometheus/db.go
+internal/shared/telemetry/prometheus/db_test.go
+internal/shared/telemetry/prometheus/labels.go
+internal/shared/telemetry/prometheus/labels_test.go
+internal/shared/telemetry/prometheus/metrics.go
+internal/shared/telemetry/prometheus/metrics_test.go
+internal/shared/telemetry/prometheus/redis.go
+internal/shared/telemetry/prometheus/redis_test.go
+internal/shared/telemetry/prometheus/registry.go
+internal/shared/telemetry/prometheus/registry_test.go
+internal/shared/telemetry/prometheus/server.go
+internal/shared/telemetry/prometheus/server_test.go
+internal/shared/telemetry/prometheus/service.go
+internal/shared/telemetry/prometheus/service_test.go
+services/auth-service/handler/http.go
+CODE: 
+--- internal/shared/middleware/metrics.go ---
+// Package middleware provides HTTP middleware for metrics collection.
+// This middleware integrates with Prometheus to track HTTP request metrics.
+package middleware
 
-MARKET ANALYSIS:
-{
- "competitor_summary": [
-  {
-   "name": "PaperCut",
-   "strengths": [
-    "70,000+ organizations globally",
-    "Cross-platform support (Windows/Linux/Mac/Chromebook/Android/iOS)",
-    "Print tracking, charging, and scan management",
-    "Secure print release workflows",
-    "Award-winning platform"
-   ],
-   "weaknesses": [
-    "Traditional on-premises focus",
-    "Higher cost structure",
-    "Complex deployment"
-   ],
-   "pricing_model": "Per-user/printer licensing with annual fees"
-  },
-  {
-   "name": "AWS Print Service",
-   "strengths": [
-    "Global compliance standards",
-    "Cloud-native scalability",
-    "AWS ecosystem integration",
-    "High availability"
-   ],
-   "weaknesses": [
-    "AWS vendor lock-in",
-    "Limited print-specific features",
-    "Complex configuration"
-   ],
-   "pricing_model": "Pay-as-you-go cloud consumption"
-  },
-  {
-   "name": "Microsoft Azure Print",
-   "strengths": [
-    "Microsoft 365 ecosystem bundling",
-    "Enterprise penetration",
-    "Integration with Intune",
-    "Familiar admin interface"
-   ],
-   "weaknesses": [
-    "Windows-centric",
-    "Limited cross-platform support",
-    "Dependent on Azure infrastructure"
-   ],
-   "pricing_model": "Included in Microsoft 365/enterprise agreements"
-  },
-  {
-   "name": "HP JetAdvantage",
-   "strengths": [
-    "HP hardware optimization",
-    "Hardware-software integration",
-    "Enterprise support"
-   ],
-   "weaknesses": [
-    "HP hardware lock-in",
-    "Limited multi-vendor support",
-    "Less flexible deployment"
-   ],
-   "pricing_model": "Hardware-bundled or standalone licensing"
-  },
-  {
-   "name": "Printix",
-   "strengths": [
-    "Cloud-native architecture",
-    "Simple deployment",
-    "Modern UI",
-    "Strong security"
-   ],
-   "weaknesses": [
-    "Smaller market presence",
-    "Fewer enterprise features",
-    "Limited third-party integrations"
-   ],
-   "pricing_model": "Subscription-based per user/month"
-  },
-  {
-   "name": "Alibaba Cloud Print",
-   "strengths": [
-    "China mark
+import (
+	"context"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
-PROJECT CONTEXT (from CLAUDE.md):
-# OpenPrint Cloud
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
+)
 
-OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.
+// MetricsMiddlewareConfig holds configuration for the metrics middleware.
+type MetricsMiddlewareConfig struct {
+	// Registry is the Prometheus registry to use for metrics.
+	Registry *prometheus.Registry
 
-## Project Overview
+	// ServiceName is the name of the service.
+	ServiceName string
 
-- **Module**: `github.com/openprint/openprint`
-- **Go Version**: 1.24.0
-- **Architecture**: Microservices with shared internal packages
-- **Frontend**: React + TypeScript + Vite dashboard
+	// SkipPaths is a list of paths to skip tracking.
+	SkipPaths []string
 
-## Architecture
+	// ExcludeStaticFiles indicates whether to exclude static file requests.
+	ExcludeStaticFiles bool
+}
 
-### Services
+// MetricsMiddleware returns HTTP middleware that records Prometheus metrics for all requests.
+// It tracks request count, duration, response size, and in-flight requests.
+func MetricsMiddleware(cfg MetricsMiddlewareConfig) func(http.Handler) http.Handler {
+	metrics := prometheus.NewMetrics(cfg.Registry)
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `auth-service` | 8001 | User authentication, sessions, OIDC/SAML identity providers |
-| `registry-service` | 8002 | Printer and agent registration, heartbeat monitoring |
-| `job-service` | 8003 | Print job queuing, routing, and processing |
-| `storage-service` | 8004 | Document storage (S3 or local), encryption support |
-| `notification-service` | 8005 | WebSocket notifications for real-time updates |
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if path should be skipped
+			if shouldSkipPath(r.URL.Path, cfg.SkipPaths, cfg.ExcludeStaticFiles) {
+				next.ServeHTTP(w, r)
+				return
+			}
 
-### Internal Packages
+			// Get normalized path (replace IDs with placeholders)
+			path := normalizePath(r.URL.Path)
+			if path == "" {
+				path = "/"
+			}
 
-```
-internal/
-├── auth/              # Authentication utilities
-│   ├── jwt/          # JWT token generation/validation
-│   ├── oidc/         # OpenID Connect provider support
-│   ├── saml/         # SAML SSO support
-│   └── password/     # Password hashing (bcrypt)
-└── shared/           # Shared service components
-    ├── errors/       # Common error types
-    ├── middleware/   # HTTP middleware (auth, CORS, logging, recovery)
-    └── telemetry/    # OpenTelemetry tracing
-```
+			// Track in-flight requests
+			metrics.HTTP.RequestsInFlight.WithLabelValues(
+				cfg.ServiceName,
+				r.Method,
+				path,
+			).Inc()
 
-### Infrastructure
+			// Wrap response writer to capture status and size
+			rw := &metricsResponseWriter{
+				ResponseWriter: w,
+				status:         http.StatusOK, // Default status
+			}
 
-- **PostgreSQL 16**: Primary database (ports 5432/15432)
-- **Redis 7**: Job queue and session storage (ports 6379/16379)
-- **S3/MinIO**: Optional document storage backend
+			// Record start time
+			start := time.Now()
 
-## Development Commands
+			// Call next handler
+			next.ServeHTTP(rw, r)
 
-### Go Services
+			// Calculate duration
+			duration := time.Since(start).Seconds()
 
-```bash
-# Run tests
-go test ./...
+			// Record metrics
+			statusLabel := prometheus.HTTPStatusLabel(rw.status)
+			method := r.Method
 
-# Run tests with coverage
-go test -cover ./...
+			// Total requests counter
+			metrics.HTTP.RequestsTotal.WithLabelValues(
+				cfg.ServiceName,
+				method,
+				path,
+				statusLabel,
+--- internal/shared/middleware/metrics_test.go ---
+// Package middleware provides tests for metrics collection middleware.
+package middleware
 
-# Run tests for specific package
-go test ./services/auth-service/...
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
 
-# Build all services
-go build ./...
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
-# Build specific service
-go build ./services/auth-service
-```
+func TestMetricsMiddlewareConfig(t *testing.T) {
+	cfg := prometheus.Config{ServiceName: "test-service"}
+	reg, err := prometheus.NewRegistry(cfg)
+	require.NoError(t, err)
 
-### Dashboard (TypeScript/React)
+	middlewareCfg := MetricsMiddlewareConfig{
+		Registry:           reg,
+		ServiceName:        "test-service",
+		SkipPaths:          []string{"/skip", "/health"},
+		ExcludeStaticFiles: true,
+	}
 
-```bash
-cd web/dashboard
+	assert.Equal(t, reg, middlewareCfg.Registry)
+	assert.Equal(t, "test-service", middlewareCfg.ServiceName)
+	assert.Equal(t, []string{"/skip", "/health"}, middlewareCfg.SkipPaths)
+	assert.True(t, middlewareCfg.ExcludeStaticFiles)
+}
 
-# Install dependencies
-npm install
+func TestMetricsMiddleware(t *testing.T) {
+	cfg := prometheus.Config{ServiceName: "test-middleware"}
+	reg, err := prometheus.NewRegistry(cfg)
+	require.NoError(t, err)
 
-# Development server
-npm run dev
+	middlewareCfg := MetricsMiddlewareConfig{
+		Registry:    reg,
+		ServiceName: "test-middleware",
+	}
 
-# Type checking
-npm run type-check    # or: npx tsc --noEmit
+	mw := MetricsMiddleware(middlewareCfg)
 
-# Run tests
-npm run test
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 
-# Build for production
-npm run build
+	t.Run("records successful request", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/test", nil)
+		w := httptest.NewRecorder()
 
-# Lint
-npm run lint
-```
+		mw(handler).ServeHTTP(w, req)
 
-## Docker Deployment
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "OK", w.Body.String())
+	})
 
-### Quick Start
+	t.Run("records status code", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		})
 
-```bash
-cd deployments/docker
-docker-compose up -d
-```
+		req := httptest.NewRequest("GET", "/api/notfound", nil)
+		w := httptest.NewRecorder()
 
-### Environment Variables
+		mw(handler).ServeHTTP(w, req)
 
-Create a `.env` file (see `.env.example`):
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 
-```bash
-JWT_SECRET=your-secret-key-min-32-chars
-S3_ENDPOINT=          # Optional, falls back to local storage
-S3_BUCKET=openprint-documents
-ENCRYPTION_KEY=       # Optional AES-256 key
-JAEGER_ENDPOINT=      # Optional tracing
-```
+	t.Run("records different methods", func(t *testing.T) {
+		methods := []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
 
-### Service Ports (Docker)
+		for _, method := range methods {
+			req := httptest.NewRequest(method, "/api/resource", nil)
+			w := httptest.NewRecorder()
+--- internal/shared/telemetry/jaeger/config.go ---
+// Package jaeger provides Jaeger distributed tracing configuration and initialization.
+// This package integrates with OpenTelemetry to provide tracing capabilities.
+package jaeger
 
-| Service | Internal | External |
-|---------|----------|----------|
-| PostgreSQL | 5432 | 15432 |
-| Redis | 6379 | 16379 |
-| auth-service | 8001 | 18001 |
-| registry-service | 8002 | 8002 |
-| job-service | 8003 | 8003 |
-| storage-service | 8004 | 8004 |
-| notification-service | 8005 | 18005 |
-| dashboard | 3000 | 30
+import (
+	"context"
+	"fmt"
+	"os"
+	"strings"
 
-EXISTING FILES:
-internal/agent/types.go
-internal/auth/jwt/jwt.go
-internal/auth/oidc/oidc.go
-internal/auth/password/password.go
-internal/auth/saml/saml.go
-internal/middleware/cookie_auth.go
-internal/middleware/validation.go
-internal/shared/errors/errors.go
-internal/shared/middleware/agent_auth.go
-internal/shared/middleware/auth.go
-internal/shared/middleware/validation.go
-internal/shared/telemetry/middleware.go
-internal/testutil/assertions.go
-internal/testutil/config.go
-internal/testutil/context.go
-internal/testutil/db.go
-internal/testutil/fixtures.go
-internal/testutil/http.go
-internal/testutil/jwt.go
-internal/testutil/metrics.go
-internal/testutil/migrate.go
-internal/testutil/redis.go
-internal/testutil/s3.go
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.31.0"
+	"go.opentelemetry.io/otel/trace"
+)
 
-Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
+// Config holds Jaeger tracing configuration.
+type Config struct {
+	// ServiceName is the name of the service (e.g., "auth-service").
+	ServiceName string
+
+	// ServiceVersion is the version of the service.
+	ServiceVersion string
+
+	// Endpoint is the Jaeger or OTLP endpoint.
+	// Examples: "localhost:4317", "jaeger:4317", "http://localhost:14268/api/traces"
+	Endpoint string
+
+	// Environment is the deployment environment (production, staging, development).
+	Environment string
+
+	// SampleRate is the trace sampling rate (0.0 to 1.0).
+	// If 0, uses defaults based on environment.
+	SampleRate float64
+
+	// EnableTracing enables or disables tracing.
+	EnableTracing bool
+}
+
+// DefaultConfig returns a default Jaeger configuration.
+func DefaultConfig(serviceName string) Config {
+	return Config{
+		ServiceName:    serviceName,
+		ServiceVersion: os.Getenv("SERVICE_VERSION"),
+		Endpoint:       os.Getenv("JAEGER_ENDPOINT"),
+		Environment:    os.Getenv("ENVIRONMENT"),
+		SampleRate:     0, // Use environment-based defaults
+		EnableTracing:  getEnvBool("ENABLE_TRACING", false),
+	}
+}
+
+// getEnvBool reads a boolean environment variable.
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		return strings.ToLower(value) == "true" || value == "1"
+	}
+	return defaultValue
+}
+
+// InitTracer initializes the OpenTelemetry tracer with Jaeger/OTLP exporter.
+// Returns a shutdown function that should be called during graceful shutdown.
+func InitTracer(cfg Config) (func(context.Context) error, error) {
+	ctx := context.Background()
+
+	// If tracing is disabled, return a no-op shutdown function
+	if !cfg.EnableTracing {
+		return func(ctx context.Context) error { return nil }, nil
+	}
+
+	// Set default values
+	if cfg.ServiceVersion == "" {
+		cfg.ServiceVersion = "1.0.0"
+	}
+	if cfg.Environment == "" {
+		cfg.Environment = "production"
+	}
+--- internal/shared/telemetry/prometheus/business.go ---
+// Package prometheus provides helper functions for recording business-specific metrics.
+package prometheus
+
+import (
+	"time"
+)
+
+// RecordJobCreated records a new print job creation.
+func RecordJobCreated(metrics *Metrics, serviceName, orgID string) {
+	metrics.Business.JobsCreatedTotal.WithLabelValues(
+		serviceName,
+		orgID,
+	).Inc()
+}
+
+// RecordJobCompleted records a successful print job completion.
+func RecordJobCompleted(metrics *Metrics, serviceName, orgID string, duration time.Duration) {
+	metrics.Business.JobsCompletedTotal.WithLabelValues(
+		serviceName,
+		orgID,
+	).Inc()
+
+	if duration > 0 {
+		metrics.Business.JobProcessingDuration.WithLabelValues(
+			serviceName,
+			orgID,
+		).Observe(duration.Seconds())
+	}
+}
+
+// RecordJobFailed records a failed print job.
+func RecordJobFailed(metrics *Metrics, serviceName, orgID, errorCode string) {
+	metrics.Business.JobsFailedTotal.WithLabelValues(
+		serviceName,
+		orgID,
+		errorCode,
+	).Inc()
+}
+
+// RecordAuthSuccess records a successful authentication.
+func RecordAuthSuccess(metrics *Metrics, serviceName, authMethod, role string) {
+	metrics.Business.AuthSuccessTotal.WithLabelValues(
+		serviceName,
+		authMethod,
+		role,
+	).Inc()
+}
+
+// RecordAuthFailure records a failed authentication.
+func RecordAuthFailure(metrics *Metrics, serviceName, authMethod string) {
+	metrics.Business.AuthFailureTotal.WithLabelValues(
+		serviceName,
+		authMethod,
+	).Inc()
+}
+
+// RecordPrinterRegistered records a new printer registration.
+func RecordPrinterRegistered(metrics *Metrics, serviceName, orgID string) {
+	metrics.Business.PrintersRegisteredTotal.WithLabelValues(
+		serviceName,
+		orgID,
+	).Inc()
+}
+
+// RecordPrinterHeartbeat records a printer heartbeat.
+func RecordPrinterHeartbeat(metrics *Metrics, serviceName, orgID string) {
+	metrics.Business.PrinterHeartbeatsTotal.WithLabelValues(
+		serviceName,
+		orgID,
+	).Inc()
+}
+
+// RecordDocumentStored records a document storage operation.
+func RecordDocumentStored(metrics *Metrics, serviceName, backend, docType string, size int64) {
+	metrics.Business.DocumentsStoredTotal.WithLabelValues(
+		serviceName,
+		backend,
+		docType,
+	).Inc()
+--- internal/shared/telemetry/prometheus/business_test.go ---
+// Package prometheus provides tests for business metrics.
+package prometheus
+
+import (
+	"testing"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestRecordJobCreated(t *testing.T) {
+	cfg := Config{ServiceName: "test-record-job"}
+	reg, err := NewRegistry(cfg)
+	require.NoError(t, err)
+
+	metrics := NewMetrics(reg)
+
+	RecordJobCreated(metrics, "test-service", "org-123")
+
+	// Metric should be recorded
+	labels := prometheus.Labels{
+		LabelServiceName: "test-service",
+		LabelOrgID:       "org-123",
+	}
+
+	// Check via direct metric access
+	var metric dto.Metric
+	err = metrics.Business.JobsCreatedTotal.With(labels).Write(&metric)
+	assert.NoError(t, err)
+	assert.Equal(t, float64(1), metric.Counter.GetValue())
+}
+
+func TestRecordJobCompleted(t *testing.T) {
+	cfg := Config{ServiceName: "test-job-complete"}
+	reg, err := NewRegistry(cfg)
+	require.NoError(t, err)
+
+	metrics := NewMetrics(reg)
+
+	duration := 30 * time.Second
+
+	RecordJobCompleted(metrics, "test-service", "org-456", duration)
+
+	// Both completed count and duration should be recorded
+	labels := prometheus.Labels{
+		LabelServiceName: "test-service",
+		LabelOrgID:       "org-456",
+	}
+
+	var metric dto.Metric
+	err = metrics.Business.JobsCompletedTotal.With(labels).Write(&metric)
+	assert.NoError(t, err)
+	assert.Equal(t, float64(1), metric.Counter.GetValue())
+}
+
+func TestRecordJobCompleted_ZeroDuration(t *testing.T) {
+	cfg := Config{ServiceName: "test-job-zero-dur"}
+	reg, err := NewRegistry(cfg)
+	require.NoError(t, err)
+
+	metrics := NewMetrics(reg)
+
+	RecordJobCompleted(metrics, "test-service", "org-789", 0)
+
+	// Should only increment counter, not record duration
+	labels := prometheus.Labels{
+		LabelServiceName: "test-service",
+		LabelOrgID:       "org-789",
+	}
+
+	var metric dto.Metric
+	err = metrics.Business.JobsCompletedTotal.With(labels).Write(&metric)
+	assert.NoError(t, err)
+	assert.Equal(t, float64(1), metric.Counter.GetValue())
+}
+
+func TestRecordJobFailed(t *testing.T) {
+Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.
