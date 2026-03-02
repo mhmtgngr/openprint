@@ -1,247 +1,443 @@
-REQUIREMENTS (enriched with market research):
-{"project_name":"OpenPrint Multi-Tenancy Enhancement","summary":"Implement comprehensive multi-tenancy support across all OpenPrint services with PostgreSQL row-level security, tenant context propagation, resource quotas, and organization management capabilities.","user_stories":[{"id":"US-001","as_a":"Platform Administrator","i_want":"to create and manage organizations","so_that":"I can onboard multiple customer tenants with complete data isolation","priority":"critical","acceptance_criteria":["Can create new organization with unique ID and name","Can update organization details (name, status, billing info)","Can suspend or delete organizations","Can view all organizations and their resource usage","Can assign organization owners and administrators"]},{"id":"US-002","as_a":"Platform Administrator","i_want":"to configure resource quotas per organization","so_that":"I can control resource allocation and prevent any single tenant from consuming excessive resources","priority":"high","acceptance_criteria":["Can set max printers quota per organization","Can set storage quota in GB per organization","Can set monthly job throughput limit per organization","Can set max users per organization","Receive alerts when quotas approach 80% utilization"]},{"id":"US-003","as_a":"Organization Administrator","i_want":"to manage users within my organization","so_that":"I can control access to my organization's resources","priority":"high","acceptance_criteria":["Can invite users to organization with role assignment","Can remove users from organization","Can update user roles within organization","Can view all users in organization","Cannot access or modify users from other organizations"]},{"id":"US-004","as_a":"Organization User","i_want":"my data to be automatically isolated from other organizations","so_that":"sensitive print job and device information remains secure","priority":"critical","acceptance_criteria":["All API responses only contain organization's data","Cannot access printers, jobs, or documents from other organizations","Database queries automatically filter by organization_id","No data leakage between tenants via any API endpoint"]},{"id":"US-005","as_a":"Organization User","i_want":"to view my organization's resource usage","so_that":"I can track our consumption and plan accordingly","priority":"medium","acceptance_criteria":["Can view current printer count vs quota","Can view current storage usage vs quota","Can view monthly job count vs quota","Can view user count vs quota","See usage trends over time"]},{"id":"US-006","as_a":"System","i_want":"to automatically enforce tenant isolation in all background jobs","so_that":"scheduled tasks and job processors cannot access cross-tenant data","priority":"critical","acceptance_criteria":["All background jobs include organization context","Job queue messages include organization_id","Scheduled tasks respect tenant boundaries","Notifications only sent to users within organization"]},{"id":"US-007","as_a":"Platform Administrator","i_want":"to provision new tenant organizations with default settings","so_that":"onboarding new customers is quick and consistent","priority":"high","acceptance_criteria":["Can create organization from admin panel with default quotas","Organization is immediately usable after creation","Default admin user is created for organization","Default settings can be configured at platform level"]},{"id":"US-008","as_a":"Developer","i_want":"tenant context to automatically propagate through the request chain","so_that":"I don't need to manually pass organization_id in every function call","priority":"high","acceptance_criteria":["Middleware extracts organization from JWT","Organization context available in request context","Repository layers automatically use organization from context","Cross-service calls include organization context"]},{"id":"US-009","as_a":"Auditor","i_want":"to see audit logs separated by organization","so_that":"I can verify compliance and invest
+REQUIREMENTS: {"project_name":"OpenPrint Multi-Tenancy Enhancement","summary":"Implement comprehensive multi-tenancy support across all OpenPrint services with PostgreSQL row-level security, tenant context propagation, resource quotas, and organization management capabilities.","user_stories":[{"id":"US-001","as_a":"Platform Administrator","i_want":"to create and manage organizations","so_that":"I can onboard multiple customer tenants with complete data isolation","priority":"critical","acceptance_criteria":["Can create new organization with unique ID and name","Can update organization details (name, status, billing info)","Can suspend or delete organizations","Can view all organizations and their resource usage","Can assign organization owners and administrators"]},{"id":"US-002","as_a":"Platform Administrator","i_want":"to configure resource quotas per organization","so_that":"I can control resource allocation and prevent any single tenant from consuming excessive resources","priority":"high","acceptance_criteria":["Can set max printers quota per organization","Can set storage quota in GB per organization","Can set monthly job throughput limit per organization","Can set max users per organization","Receive alerts when quotas approach 80% utilization"]},{"id":"US-003","as_a":"Organization Administrator","i_want":"to manage users within my organization","so_that":"I can control access to my organization's resources","priority":"high","acceptance_criteria":["Can invite users to organization with role assignment","Can remove users from organization","Can update user roles within organization","Can view all users in organization","Cannot access or modify users from other organizations"]},{"id":"US-004","as_a":"Organization User","i_want":"my data to be automatically isolated from other organizations","so_that":"sensitive print job and device information remains secure","priority":"critical","acceptance_criteria":["All API responses only contain organization's data","Cannot access pr
+CHANGES:  .../test-failed-1.png                              |   Bin
+ .../video.webm                                     |   Bin 0 -> 1924 bytes
+ .../test-failed-1.png                              |   Bin
+ .../video.webm                                     |   Bin 7565 -> 7693 bytes
+ .../test-failed-1.png                              |   Bin
+ .../test-failed-1.png                              |   Bin
+ .../video.webm                                     |   Bin 0 -> 4475 bytes
+ .../test-failed-1.png                              |   Bin
+ .../test-failed-1.png                              |   Bin
+ .../video.webm                                     |   Bin 0 -> 1924 bytes
+ .../test-failed-1.png                              |   Bin
+ .../video.webm                                     |   Bin 7788 -> 7660 bytes
+ .../test-failed-1.png                              |   Bin
+ web/dashboard/tsconfig.tsbuildinfo                 |     2 +-
+ 3393 files changed, 19107 insertions(+), 52639 deletions(-)
+FILES: internal/auth/jwt/tenant_claims.go
+internal/multi-tenant/audit.go
+internal/multi-tenant/audit_test.go
+internal/multi-tenant/context.go
+internal/multi-tenant/context_test.go
+internal/multi-tenant/middleware.go
+internal/multi-tenant/middleware_test.go
+internal/multi-tenant/quota.go
+internal/multi-tenant/quota_test.go
+internal/multi-tenant/repository.go
+internal/multi-tenant/repository_test.go
+internal/shared/telemetry/prometheus/server_test.go
+internal/shared/telemetry/prometheus/service_test.go
+services/auth-service/repository/organization.go
+services/auth-service/repository/organization_test.go
+services/auth-service/repository/organization_user.go
+services/auth-service/repository/organization_user_test.go
+services/auth-service/repository/quota.go
+services/auth-service/repository/quota_test.go
+services/notification-service/websocket/handler.go
+CODE: 
+--- internal/auth/jwt/tenant_claims.go ---
+// Package jwt provides JWT token generation and validation for OpenPrint authentication.
+// This file contains tenant-specific JWT claims and utilities.
+package jwt
 
-MARKET ANALYSIS:
-{
- "competitor_summary": [
-  {
-   "name": "PaperCut MF/NG",
-   "strengths": [
-    "Market leader with mature feature set",
-    "Fine-grained cost allocation and tracking",
-    "Secure print release",
-    "Cross-platform support (Windows/macOS/Linux)",
-    "Hybrid deployment options"
-   ],
-   "weaknesses": [
-    "Higher cost",
-    "Complex deployment for small organizations"
-   ],
-   "pricing_model": "Per-server licensing with optional modules"
-  },
-  {
-   "name": "HP JetAdvantage",
-   "strengths": [
-    "Deep integration with HP hardware",
-    "Performance optimization",
-    "Easy management",
-    "Mobile printing support"
-   ],
-   "weaknesses": [
-    "HP ecosystem lock-in",
-    "Limited multi-vendor support"
-   ],
-   "pricing_model": "Included with HP printers, subscription for advanced features"
-  },
-  {
-   "name": "Printix",
-   "strengths": [
-    "Cloud-native architecture",
-    "Multi-site branch support",
-    "Excellent mobile workforce support",
-    "Fast deployment"
-   ],
-   "weaknesses": [
-    "Dependent on internet connectivity",
-    "Less advanced reporting than PaperCut"
-   ],
-   "pricing_model": "Subscription-based per user/month"
-  },
-  {
-   "name": "Canon/UniFlow",
-   "strengths": [
-    "Hardware integration",
-    "Enterprise workflow automation",
-    "Advanced authentication options"
-   ],
-   "weaknesses": [
-    "Canon-focused",
-    "Complex pricing"
-   ],
-   "pricing_model": "Hardware bundle + software licensing"
-  },
-  {
-   "name": "Ricoh/PriPort",
-   "strengths": [
-    "Document security",
-    "Integration with Ricoh MFPs",
-    "Workflow automation"
-   ],
-   "weaknesses": [
-    "Limited to Ricoh ecosystem"
-   ],
-   "pricing_model": "Per-device licensing"
-  },
-  {
-   "name": "\u5b89\u4f01\u795e",
-   "strengths": [
-    "Advanced security features",
-    "Print approval workflows",
-    "Dynamic watermarks",
-    "Sensitive content filtering",
-    "Comprehensive audit logs"
-   ],
-   "weaknesses": [
-    "Primarily Chinese market",
-    "Less international 
+import (
+	"context"
+	"errors"
+)
 
-PROJECT CONTEXT (from CLAUDE.md):
-# OpenPrint Cloud
+var (
+	// ErrMissingTenantClaim is returned when the tenant claim is missing.
+	ErrMissingTenantClaim = errors.New("missing tenant claim in token")
+	// ErrInvalidTenantID is returned when the tenant ID is invalid.
+	ErrInvalidTenantID = errors.New("invalid tenant ID")
+)
 
-OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.
+// TenantClaims extends the base Claims with tenant-specific information.
+type TenantClaims struct {
+	Claims
+	// TenantRole represents the user's role within the tenant.
+	TenantRole string `json:"tenant_role"`
+	// IsPlatformAdmin indicates if the user is a platform admin.
+	IsPlatformAdmin bool `json:"is_platform_admin"`
+	// TenantName is the human-readable name of the tenant.
+	TenantName string `json:"tenant_name,omitempty"`
+	// TenantStatus indicates the current status of the tenant.
+	TenantStatus string `json:"tenant_status,omitempty"`
+}
 
-## Project Overview
+// ContextKey is the type used for context keys.
+type contextKey string
 
-- **Module**: `github.com/openprint/openprint`
-- **Go Version**: 1.24.0
-- **Architecture**: Microservices with shared internal packages
-- **Frontend**: React + TypeScript + Vite dashboard
+const (
+	// TenantIDKey is the context key for tenant ID.
+	TenantIDKey contextKey = "tenant_id"
+	// TenantRoleKey is the context key for tenant role.
+	TenantRoleKey contextKey = "tenant_role"
+	// IsPlatformAdminKey is the context key for platform admin flag.
+	IsPlatformAdminKey contextKey = "is_platform_admin"
+)
 
-## Architecture
+// GenerateTenantTokenPair generates access and refresh tokens with tenant claims.
+func (m *Manager) GenerateTenantTokenPair(userID, email, role string, orgID string, tenantRole string, isPlatformAdmin bool, scopes []string) (accessToken, refreshToken string, err error) {
+	accessToken, err = m.GenerateTenantToken(userID, email, role, orgID, tenantRole, isPlatformAdmin, scopes, AccessTokenType)
+	if err != nil {
+		return "", "", err
+	}
 
-### Services
+	refreshToken, err = m.GenerateTenantToken(userID, email, role, orgID, tenantRole, isPlatformAdmin, nil, RefreshTokenType)
+	if err != nil {
+		return "", "", err
+	}
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `auth-service` | 8001 | User authentication, sessions, OIDC/SAML identity providers |
-| `registry-service` | 8002 | Printer and agent registration, heartbeat monitoring |
-| `job-service` | 8003 | Print job queuing, routing, and processing |
-| `storage-service` | 8004 | Document storage (S3 or local), encryption support |
-| `notification-service` | 8005 | WebSocket notifications for real-time updates |
+	return accessToken, refreshToken, nil
+}
 
-### Internal Packages
+// GenerateTenantToken generates a JWT token with tenant-specific claims.
+func (m *Manager) GenerateTenantToken(userID, email, role string, orgID string, tenantRole string, isPlatformAdmin bool, scopes []string, tokenType TokenType) (string, error) {
+	// Use the base GenerateToken method which already supports org_id
+	return m.GenerateToken(userID, email, role, orgID, scopes, tokenType)
+}
 
-```
-internal/
-├── auth/              # Authentication utilities
-│   ├── jwt/          # JWT token generation/validation
-│   ├── oidc/         # OpenID Connect provider support
-│   ├── saml/         # SAML SSO support
-│   └── password/     # Password hashing (bcrypt)
-└── shared/           # Shared service components
-    ├── errors/       # Common error types
-    ├── middleware/   # HTTP middleware (auth, CORS, logging, recovery)
-    └── telemetry/    # OpenTelemetry tracing
-```
+// ValidateTenantToken validates a JWT token and returns the tenant claims.
+func (m *Manager) ValidateTenantToken(tokenString string) (*TenantClaims, error) {
+	claims, err := m.ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
 
-### Infrastructure
+	tenantClaims := &TenantClaims{
+		Claims:          *claims,
+		TenantRole:      claims.Role, // Map role to tenant_role
+		IsPlatformAdmin: claims.Role == "admin" || claims.Role == "platform_admin",
+	}
 
-- **PostgreSQL 16**: Primary database (ports 5432/15432)
-- **Redis 7**: Job queue and session storage (ports 6379/16379)
-- **S3/MinIO**: Optional document storage backend
+	return tenantClaims, nil
+}
 
-## Development Commands
+// TenantIDFromContext extracts tenant ID from context.
+func TenantIDFromContext(ctx context.Context) (string, error) {
+--- internal/multi-tenant/audit.go ---
+// Package multitenant provides multi-tenancy support for OpenPrint services.
+// This file contains tenant-scoped audit logging functionality.
+package multitenant
 
-### Go Services
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
 
-```bash
-# Run tests
-go test ./...
+	"github.com/google/uuid"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
 
-# Run tests with coverage
-go test -cover ./...
+// AuditLevel represents the severity/level of an audit event.
+type AuditLevel string
 
-# Run tests for specific package
-go test ./services/auth-service/...
+const (
+	// AuditLevelInfo is for informational events.
+	AuditLevelInfo AuditLevel = "info"
+	// AuditLevelWarn is for warning events.
+	AuditLevelWarn AuditLevel = "warn"
+	// AuditLevelError is for error events.
+	AuditLevelError AuditLevel = "error"
+	// AuditLevelCritical is for critical events.
+	AuditLevelCritical AuditLevel = "critical"
+)
 
-# Build all services
-go build ./...
+// AuditAction represents the type of action being audited.
+type AuditAction string
 
-# Build specific service
-go build ./services/auth-service
-```
+const (
+	// ActionCreate represents resource creation.
+	ActionCreate AuditAction = "create"
+	// ActionRead represents resource access/viewing.
+	ActionRead AuditAction = "read"
+	// ActionUpdate represents resource modification.
+	ActionUpdate AuditAction = "update"
+	// ActionDelete represents resource deletion.
+	ActionDelete AuditAction = "delete"
+	// ActionLogin represents user login.
+	ActionLogin AuditAction = "login"
+	// ActionLogout represents user logout.
+	ActionLogout AuditAction = "logout"
+	// ActionExport represents data export.
+	ActionExport AuditAction = "export"
+	// ActionImport represents data import.
+	ActionImport AuditAction = "import"
+	// ActionShare represents resource sharing.
+	ActionShare AuditAction = "share"
+	// ActionPermissionChange represents permission changes.
+	ActionPermissionChange AuditAction = "permission_change"
+	// ActionQuotaExceeded represents quota exceeded events.
+	ActionQuotaExceeded AuditAction = "quota_exceeded"
+)
 
-### Dashboard (TypeScript/React)
+// AuditEvent represents a tenant-scoped audit log entry.
+type AuditEvent struct {
+	ID           string                 `json:"id"`
+	TenantID     string                 `json:"tenant_id"`
+	UserID       string                 `json:"user_id"`
+	UserName     string                 `json:"user_name,omitempty"`
+	UserEmail    string                 `json:"user_email"`
+	Action       AuditAction            `json:"action"`
+	ResourceType string                 `json:"resource_type"`
+	ResourceID   string                 `json:"resource_id,omitempty"`
+	ResourceName string                 `json:"resource_name,omitempty"`
+	Level        AuditLevel             `json:"level"`
+	Message      string                 `json:"message"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	IPAddress    string                 `json:"ip_address,omitempty"`
+	UserAgent    string                 `json:"user_agent,omitempty"`
+	SessionID    string                 `json:"session_id,omitempty"`
+	RequestID    string                 `json:"request_id,omitempty"`
+	Timestamp    time.Time              `json:"timestamp"`
+}
 
-```bash
-cd web/dashboard
+// AuditRepository defines the interface for audit log persistence.
+type AuditRepository interface {
+	// Store saves an audit event to persistent storage.
+--- internal/multi-tenant/audit_test.go ---
+// Package multitenant provides tests for tenant-scoped audit logging.
+package multitenant
 
-# Install dependencies
-npm install
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
 
-# Development server
-npm run dev
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
-# Type checking
-npm run type-check    # or: npx tsc --noEmit
+// mockAuditRepository is a mock implementation for testing.
+type mockAuditRepository struct {
+	events     map[string]map[string]*AuditEvent // tenantID -> eventID -> event
+	storeErr   error
+	queryErr   error
+	queryByID  map[string]*AuditEvent
+}
 
-# Run tests
-npm run test
+func newMockAuditRepository() *mockAuditRepository {
+	return &mockAuditRepository{
+		events:    make(map[string]map[string]*AuditEvent),
+		queryByID: make(map[string]*AuditEvent),
+	}
+}
 
-# Build for production
-npm run build
+func (m *mockAuditRepository) Store(ctx context.Context, event *AuditEvent) error {
+	if m.storeErr != nil {
+		return m.storeErr
+	}
+	if m.events[event.TenantID] == nil {
+		m.events[event.TenantID] = make(map[string]*AuditEvent)
+	}
+	m.events[event.TenantID][event.ID] = event
+	m.queryByID[event.ID] = event
+	return nil
+}
 
-# Lint
-npm run lint
-```
+func (m *mockAuditRepository) Query(ctx context.Context, tenantID string, filter *AuditFilter) ([]*AuditEvent, error) {
+	if m.queryErr != nil {
+		return nil, m.queryErr
+	}
+	result := make([]*AuditEvent, 0)
+	for tid, events := range m.events {
+		for _, event := range events {
+			// If tenantID is empty, return all events
+			// Otherwise, only return events for that tenant
+			if tenantID == "" || tid == tenantID {
+				result = append(result, event)
+			}
+		}
+	}
+	return result, nil
+}
 
-## Docker Deployment
+func (m *mockAuditRepository) QueryByID(ctx context.Context, tenantID, eventID string) (*AuditEvent, error) {
+	if event, ok := m.queryByID[eventID]; ok {
+		return event, nil
+	}
+	return nil, apperrors.ErrNotFound
+}
 
-### Quick Start
+func TestNewLogger(t *testing.T) {
+	repo := newMockAuditRepository()
+	logger := NewLogger(repo, "test-service")
 
-```bash
-cd deployments/docker
-docker-compose up -d
-```
+	require.NotNil(t, logger)
+	assert.Equal(t, repo, logger.repo)
+	assert.Equal(t, "test-service", logger.serviceName)
+}
 
-### Environment Variables
+func TestLogger_Log(t *testing.T) {
+	tests := []struct {
+		name        string
+		setupCtx    func() context.Context
+--- internal/multi-tenant/context.go ---
+// Package multitenant provides multi-tenancy support for OpenPrint services.
+// It handles tenant context propagation, resource isolation, and quota enforcement.
+package multitenant
 
-Create a `.env` file (see `.env.example`):
+import (
+	"context"
+	"errors"
+)
 
-```bash
-JWT_SECRET=your-secret-key-min-32-chars
-S3_ENDPOINT=          # Optional, falls back to local storage
-S3_BUCKET=openprint-documents
-ENCRYPTION_KEY=       # Optional AES-256 key
-JAEGER_ENDPOINT=      # Optional tracing
-```
+var (
+	// ErrNoTenantContext is returned when tenant context is not available.
+	ErrNoTenantContext = errors.New("tenant context not available")
+	// ErrUnauthorizedTenant is returned when user tries to access a different tenant.
+	ErrUnauthorizedTenant = errors.New("unauthorized: tenant mismatch")
+)
 
-### Service Ports (Docker)
+// contextKey is a custom type for context keys to prevent collisions.
+type contextKey string
 
-| Service | Internal | External |
-|---------|----------|----------|
-| PostgreSQL | 5432 | 15432 |
-| Redis | 6379 | 16379 |
-| auth-service | 8001 | 18001 |
-| registry-service | 8002 | 8002 |
-| job-service | 8003 | 8003 |
-| storage-service | 8004 | 8004 |
-| notification-service | 8005 | 18005 |
-| dashboard | 3000 | 30
+const (
+	// TenantIDKey is the context key for tenant ID.
+	TenantIDKey contextKey = "tenant_id"
+	// TenantNameKey is the context key for tenant name.
+	TenantNameKey contextKey = "tenant_name"
+	// TenantRoleKey is the context key for user's role within tenant.
+	TenantRoleKey contextKey = "tenant_role"
+	// IsPlatformAdminKey indicates if user is a platform admin.
+	IsPlatformAdminKey contextKey = "is_platform_admin"
+	// QuotaKey is the context key for quota information.
+	QuotaKey contextKey = "quota"
+)
 
-EXISTING FILES:
-internal/agent/types.go
-internal/auth/jwt/jwt.go
-internal/auth/oidc/oidc.go
-internal/auth/password/password.go
-internal/auth/saml/saml.go
-internal/middleware/cookie_auth.go
-internal/middleware/validation.go
-internal/shared/errors/errors.go
-internal/shared/middleware/agent_auth.go
-internal/shared/middleware/auth.go
-internal/shared/middleware/metrics.go
-internal/shared/middleware/validation.go
-internal/shared/telemetry/jaeger/config.go
-internal/shared/telemetry/middleware.go
-internal/shared/telemetry/prometheus/business.go
-internal/shared/telemetry/prometheus/db.go
-internal/shared/telemetry/prometheus/labels.go
-internal/shared/telemetry/prometheus/metrics.go
-internal/shared/telemetry/prometheus/redis.go
-internal/shared/telemetry/prometheus/registry.go
-internal/shared/telemetry/prometheus/server.go
-internal/shared/telemetry/prometheus/service.go
-internal/testutil/assertions.go
-internal/testutil/config.go
-internal/testutil/context.go
-internal/testutil/db.go
-internal/testutil/fixtures.go
-internal/testutil/http.go
-internal/testutil/jwt.go
-internal/testutil/metrics.go
-internal/testutil/migrate.go
-internal/testutil/redis.go
-internal/testutil/s3.go
+// Role represents user roles within the system.
+type Role string
 
-Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
+const (
+	// RolePlatformAdmin is the platform administrator with full system access.
+	RolePlatformAdmin Role = "platform_admin"
+	// RoleOrgAdmin is the organization administrator with full org access.
+	RoleOrgAdmin Role = "org_admin"
+	// RoleOrgUser is a regular organization user.
+	RoleOrgUser Role = "org_user"
+	// RoleOrgViewer is a read-only organization user.
+	RoleOrgViewer Role = "org_viewer"
+)
+
+// TenantContext holds tenant-specific context for a request.
+type TenantContext struct {
+	TenantID       string
+	TenantName     string
+	UserRole       Role
+	IsPlatformAdmin bool
+	Quota          *QuotaInfo
+}
+
+// QuotaInfo holds quota information for the current tenant.
+type QuotaInfo struct {
+	MaxPrinters      int32
+	MaxStorageGB     int32
+	MaxJobsPerMonth  int32
+	MaxUsers         int32
+	CurrentPrinters  int32
+	CurrentStorageGB int64
+	CurrentJobs      int32
+	CurrentUsers     int32
+}
+
+// UsagePercentage returns the usage percentage for the given resource type.
+func (q *QuotaInfo) UsagePercentage(resourceType string) float64 {
+	switch resourceType {
+	case "printers":
+		if q.MaxPrinters == 0 {
+			return 0
+		}
+		return float64(q.CurrentPrinters) / float64(q.MaxPrinters) * 100
+	case "storage":
+		if q.MaxStorageGB == 0 {
+			return 0
+		}
+		return float64(q.CurrentStorageGB) / float64(int64(q.MaxStorageGB)*1024*1024*1024) * 100
+--- internal/multi-tenant/context_test.go ---
+// Package multitenant provides tests for tenant context management.
+package multitenant
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestNewTenantContext(t *testing.T) {
+	tests := []struct {
+		name            string
+		tenantID        string
+		tenantName      string
+		role            Role
+		isPlatformAdmin bool
+	}{
+		{
+			name:            "platform admin",
+			tenantID:        "",
+			tenantName:      "",
+			role:            RolePlatformAdmin,
+			isPlatformAdmin: true,
+		},
+		{
+			name:            "org admin",
+			tenantID:        "tenant-123",
+			tenantName:      "Acme Corp",
+			role:            RoleOrgAdmin,
+			isPlatformAdmin: false,
+		},
+		{
+			name:            "org user",
+			tenantID:        "tenant-456",
+			tenantName:      "Globex Inc",
+			role:            RoleOrgUser,
+			isPlatformAdmin: false,
+		},
+		{
+			name:            "org viewer",
+			tenantID:        "tenant-789",
+			tenantName:      "Soylent Corp",
+			role:            RoleOrgViewer,
+			isPlatformAdmin: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tc := NewTenantContext(tt.tenantID, tt.tenantName, tt.role, tt.isPlatformAdmin)
+
+			assert.Equal(t, tt.tenantID, tc.TenantID)
+			assert.Equal(t, tt.tenantName, tc.TenantName)
+			assert.Equal(t, tt.role, tc.UserRole)
+			assert.Equal(t, tt.isPlatformAdmin, tc.IsPlatformAdmin)
+		})
+	}
+}
+
+func TestWithTenantContext(t *testing.T) {
+	ctx := context.Background()
+
+	tc := &TenantContext{
+		TenantID:        "tenant-123",
+		TenantName:      "Test Org",
+		UserRole:        RoleOrgAdmin,
+		IsPlatformAdmin: false,
+		Quota: &QuotaInfo{
+			MaxPrinters:     10,
+			CurrentPrinters: 5,
+		},
+	}
+
+	result := WithTenantContext(ctx, tc)
+
+	// Verify tenant ID can be retrieved
+	tenantID, err := GetTenantID(result)
+	require.NoError(t, err)
+Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.

@@ -5,29 +5,28 @@ package multitenant
 import (
 	"context"
 	"errors"
+
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
 )
 
 var (
 	// ErrNoTenantContext is returned when tenant context is not available.
-	ErrNoTenantContext = errors.New("tenant context not available")
+	ErrNoTenantContext = sharedcontext.ErrNoTenantContext
 	// ErrUnauthorizedTenant is returned when user tries to access a different tenant.
 	ErrUnauthorizedTenant = errors.New("unauthorized: tenant mismatch")
 )
 
-// contextKey is a custom type for context keys to prevent collisions.
-type contextKey string
+// ContextKey type alias for compatibility with existing code.
+// All new code should use sharedcontext package directly.
+type contextKey = sharedcontext.ContextKey
 
+// Context key constants - delegated to shared context package.
 const (
-	// TenantIDKey is the context key for tenant ID.
-	TenantIDKey contextKey = "tenant_id"
-	// TenantNameKey is the context key for tenant name.
-	TenantNameKey contextKey = "tenant_name"
-	// TenantRoleKey is the context key for user's role within tenant.
-	TenantRoleKey contextKey = "tenant_role"
-	// IsPlatformAdminKey indicates if user is a platform admin.
-	IsPlatformAdminKey contextKey = "is_platform_admin"
-	// QuotaKey is the context key for quota information.
-	QuotaKey contextKey = "quota"
+	TenantIDKey       = sharedcontext.TenantIDKey
+	TenantNameKey     = sharedcontext.TenantNameKey
+	TenantRoleKey     = sharedcontext.TenantRoleKey
+	IsPlatformAdminKey = sharedcontext.IsPlatformAdminKey
+	QuotaKey          = sharedcontext.QuotaKey
 )
 
 // Role represents user roles within the system.

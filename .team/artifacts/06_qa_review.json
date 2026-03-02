@@ -1,109 +1,87 @@
 {
-  "overall_score": 100,
-  "verdict": "PASSED",
-  "code_issues": [],
-  "missing_items": [],
-  "blocking_issues": [],
-  "fix_instructions": "All issues have been resolved. The observability implementation is complete.",
-  "verification": {
-    "prometheus_package_files": {
-      "registry.go": "EXISTS - Full Registry implementation with NewRegistry, MustRegister, etc.",
-      "metrics.go": "EXISTS - Complete Metrics struct with HTTP, DB, Redis, Business metrics",
-      "server.go": "EXISTS - MetricsServer with optional basic auth support",
-      "labels.go": "EXISTS - Standard label names and helper functions",
-      "db.go": "EXISTS - Database metrics collector with sql.DB and pgxpool support",
-      "redis.go": "EXISTS - Redis metrics collector with command tracking and pool stats",
-      "business.go": "EXISTS - Business metrics helpers for jobs, auth, storage, websocket",
-      "service.go": "EXISTS - Service health monitoring",
-      "tests": "PASS - All prometheus package tests pass with coverage"
+  "overall_score": 62,
+  "verdict": "NEEDS_FIXES",
+  "code_issues": [
+    {
+      "severity": "critical",
+      "file": "services/notification-service/websocket/handler.go",
+      "issue": "CheckOrigin returns true for all origins allowing any website to connect",
+      "fix": "Implement proper origin validation based on allowed origins list"
     },
-    "service_integration": {
-      "auth-service": "INTEGRATED - Prometheus metrics, Jaeger tracing, /metrics endpoint on :9091",
-      "registry-service": "INTEGRATED - Prometheus metrics, Jaeger tracing, /metrics endpoint on :9092",
-      "job-service": "INTEGRATED - Prometheus metrics, Jaeger tracing, /metrics endpoint on :9093",
-      "storage-service": "INTEGRATED - Prometheus metrics, Jaeger tracing, /metrics endpoint on :9094",
-      "notification-service": "INTEGRATED - Prometheus metrics, Jaeger tracing, /metrics endpoint on :9095"
+    {
+      "severity": "critical",
+      "file": "services/notification-service/websocket/handler.go",
+      "issue": "No JWT validation - falls back to random user ID generation when auth header missing",
+      "fix": "Require valid JWT token, reject connections without proper authentication"
     },
-    "monitoring_stack": {
-      "docker-compose.yml": "EXISTS - Contains Prometheus, Grafana, AlertManager, and Jaeger services",
-      "prometheus/prometheus.yml": "EXISTS - Prometheus configuration with service discovery",
-      "prometheus/alerts.yml": "EXISTS - Comprehensive alerting rules for SLOs",
-      "alertmanager/config.yml": "EXISTS - AlertManager routing and notification config",
-      "grafana/provisioning/datasources/prometheus.yml": "EXISTS - Prometheus datasource",
-      "grafana/provisioning/dashboards/dashboard.yml": "EXISTS - Dashboard provisioning config",
-      "grafana/provisioning/dashboards/openprint/": "EXISTS - 4 dashboard JSON files (service-health, request-throughput, database-performance, business-kpis)"
+    {
+      "severity": "critical",
+      "file": "internal/multi-tenant/context.go",
+      "issue": "Context key definitions duplicate internal/auth/jwt/tenant_claims.go with different type values",
+      "fix": "Consolidate context keys into single shared package to prevent context propagation failures"
     },
-    "metrics_endpoint_security": {
-      "server.go": "BasicAuthConfig support implemented in MetricsServer",
-      "description": "Optional basic authentication can be configured via ServerConfig.BasicAuth"
+    {
+      "severity": "critical",
+      "file": "services/auth-service/repository/organization_user.go",
+      "issue": "ListByOrganization query selects u.email, u.name but scans to OrganizationUser struct without these fields",
+      "fix": "Add Email and Name fields to OrganizationUser struct or remove from SELECT"
     },
-    "test_results": {
-      "status": "PASS",
-      "command": "go test ./...",
-      "summary": "All tests pass successfully"
+    {
+      "severity": "major",
+      "file": "internal/multi-tenant/middleware.go",
+      "issue": "Platform admin early return causes role mapping to be skipped",
+      "fix": "Move role mapping before early return or handle platform admin role assignment properly"
+    },
+    {
+      "severity": "major",
+      "file": "services/auth-service/repository/organization.go",
+      "issue": "RLS policy references tenant_id column but Organization struct has no TenantID field",
+      "fix": "Add TenantID field to Organization struct and database schema"
+    },
+    {
+      "severity": "major",
+      "file": "services/auth-service/repository/organization.go",
+      "issue": "Create method has no input validation for required fields like name and slug",
+      "fix": "Add validation for name required, slug format before INSERT"
+    },
+    {
+      "severity": "major",
+      "file": "internal/multi-tenant/repository.go",
+      "issue": "Uses fmt.Sprintf to build SQL with table names - SQL injection risk",
+      "fix": "Use a whitelist of valid table names or proper query builder"
+    },
+    {
+      "severity": "major",
+      "file": "services/auth-service/repository/quota.go",
+      "issue": "UpdateConfig allows negative quota values",
+      "fix": "Add validation: MaxPrinters, MaxStorageGB, MaxJobsPerMonth, MaxUsers must be >= 0"
+    },
+    {
+      "severity": "minor",
+      "file": "services/auth-service/repository/organization.go",
+      "issue": "Hardcoded HTTP status code 500 instead of using apperrors constants",
+      "fix": "Use apperrors.WithHTTPStatus or predefined status constants"
+    },
+    {
+      "severity": "minor",
+      "file": "services/auth-service/repository/organization_user.go",
+      "issue": "TransferOwnership has no audit logging",
+      "fix": "Add audit log entry for ownership transfer events"
     }
-  },
-  "resolved_issues": [
-    "CRITICAL: internal/shared/telemetry/prometheus/registry.go - IMPLEMENTED",
-    "CRITICAL: internal/shared/telemetry/prometheus/metrics.go - IMPLEMENTED",
-    "CRITICAL: internal/shared/telemetry/prometheus/server.go - IMPLEMENTED",
-    "CRITICAL: internal/shared/telemetry/prometheus/labels.go - IMPLEMENTED",
-    "CRITICAL: internal/shared/telemetry/prometheus/db.go - IMPLEMENTED",
-    "CRITICAL: internal/shared/telemetry/prometheus/redis.go - IMPLEMENTED",
-    "MAJOR: FR-006 metrics endpoint security - IMPLEMENTED with BasicAuthConfig",
-    "MAJOR: FR-007 Grafana dashboards - 4 dashboards created",
-    "MAJOR: FR-008 Prometheus alerting rules - Comprehensive alerts.yml",
-    "MAJOR: FR-009 AlertManager config - Full routing configuration",
-    "MAJOR: FR-010 Docker Compose monitoring - All services in docker-compose.yml",
-    "CRITICAL: Services telemetry integration - All 5 services integrated",
-    "MINOR: Business metrics for notification and storage - Complete implementation",
-    "MINOR: normalizePath function - Implemented in middleware/metrics.go"
   ],
-  "implementation_summary": {
-    "prometheus_metrics": [
-      "openprint_http_requests_total",
-      "openprint_http_request_duration_seconds",
-      "openprint_http_response_size_bytes",
-      "openprint_http_requests_in_flight",
-      "openprint_http_errors_total",
-      "openprint_db_connections_active",
-      "openprint_db_connections_idle",
-      "openprint_db_query_duration_seconds",
-      "openprint_db_queries_total",
-      "openprint_db_query_errors_total",
-      "openprint_redis_commands_total",
-      "openprint_redis_command_duration_seconds",
-      "openprint_redis_command_errors_total",
-      "openprint_redis_connections_active",
-      "openprint_redis_pool_hits_total",
-      "openprint_auth_success_total",
-      "openprint_auth_failures_total",
-      "openprint_job_created_total",
-      "openprint_job_completed_total",
-      "openprint_job_failed_total",
-      "openprint_document_stored_total",
-      "openprint_websocket_connections_active"
-    ],
-    "grafana_dashboards": [
-      "service-health.json - Service uptime, health status, error rates",
-      "request-throughput.json - RPS, latency percentiles, status codes",
-      "database-performance.json - Query performance, connection pool stats",
-      "business-kpis.json - Job metrics, auth metrics, storage metrics"
-    ],
-    "prometheus_alerts": [
-      "ServiceDown - Critical alert when service is down",
-      "HighErrorRate - Warning for elevated error rates",
-      "CriticalErrorRate - Critical for severe error rates",
-      "HighLatency - Warning for slow requests",
-      "CriticalLatency - Critical for very slow requests",
-      "HighDBConnectionUsage - Warning for connection pool exhaustion",
-      "SlowDatabaseQueries - Warning for slow DB queries",
-      "HighAuthFailureRate - Security alert for auth failures",
-      "PossibleBruteForceAttack - Critical security alert",
-      "HighJobFailureRate - Warning for job processing issues",
-      "HighStorageUsage - Warning for storage capacity",
-      "HighMemoryUsage - Warning for memory exhaustion",
-      "HighGoroutineCount - Warning for goroutine leaks"
-    ]
-  }
+  "missing_items": [
+    "Database migration files for organizations table with tenant_id column",
+    "Database migration files for quota_configs and quota_usage tables",
+    "RLS policy creation/initialization code",
+    "Integration tests for tenant isolation",
+    "API handlers for organization CRUD operations",
+    "API handlers for quota management"
+  ],
+  "blocking_issues": [
+    "No JWT validation on WebSocket connections allows unauthorized access",
+    "Context key inconsistency breaks tenant context propagation between packages",
+    "SQL scan mismatch will cause runtime panic in ListByOrganization",
+    "RLS policies reference non-existent tenant_id column"
+  ],
+  "fix_instructions": "1. Fix WebSocket authentication: Require valid JWT, validate origin, extract org_id from token claims\n2. Consolidate context keys: Create internal/shared/context/keys.go with single source of truth\n3. Fix scan mismatch: Add Email/Name fields to OrganizationUser or create separate DTO\n4. Add TenantID field to Organization struct and create migration\n5. Add input validation to Create method and UpdateConfig\n6. Fix middleware platform admin role handling\n7. Replace fmt.Sprintf SQL building with safe alternatives\n8. Add proper HTTP status codes using apperrors package\n9. Create database migrations for all new tables\n10. Add integration tests for multi-tenant isolation"
 }

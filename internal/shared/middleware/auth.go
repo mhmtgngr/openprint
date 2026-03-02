@@ -13,19 +13,22 @@ import (
 	"time"
 
 	"github.com/openprint/openprint/internal/auth/jwt"
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
-// Context keys for storing request-scoped data.
-type contextKey string
+// ContextKey type alias for compatibility with existing code.
+// All new code should use sharedcontext package directly.
+type contextKey = sharedcontext.ContextKey
 
+// Context key constants - delegated to shared context package.
 const (
-	UserIDKey  contextKey = "user_id"
-	EmailKey   contextKey = "email"
-	OrgIDKey   contextKey = "org_id"
-	RoleKey    contextKey = "role"
-	ScopesKey  contextKey = "scopes"
-	TokenKey   contextKey = "token"
+	UserIDKey  = sharedcontext.UserIDKey
+	EmailKey   = sharedcontext.EmailKey
+	OrgIDKey   = sharedcontext.OrgIDKey
+	RoleKey    = sharedcontext.RoleKey
+	ScopesKey  = sharedcontext.ScopesKey
+	TokenKey   = sharedcontext.TokenKey
 )
 
 // JWTConfig holds JWT authentication configuration.

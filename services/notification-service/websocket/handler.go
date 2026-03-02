@@ -6,68 +6,144 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/auth/jwt"
 )
-
-var upgrader = gorillawebsocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// In production, implement proper origin checking
-		return true
-	},
-}
 
 // HandlerConfig holds handler configuration.
 type HandlerConfig struct {
-	Hub     *Hub
-	DB      *pgxpool.Pool
-	Metrics interface{} // Can be *prometheus.Metrics when available
+	Hub            *Hub
+	DB             *pgxpool.Pool
+	Metrics        interface{} // Can be *prometheus.Metrics when available
+	JWTManager     *jwt.Manager
+	AllowedOrigins []string // Allowed WebSocket origins
+}
+
+// upgrader creates a WebSocket upgrader with the given allowed origins.
+func upgrader(allowedOrigins []string) *gorillawebsocket.Upgrader {
+	return &gorillawebsocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return false
+			}
+
+			// Parse origin URL for validation
+			parsedOrigin, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+
+			// Check against allowed origins
+			for _, allowed := range allowedOrigins {
+				if allowed == "*" {
+					return true
+				}
+				if strings.EqualFold(origin, allowed) {
+					return true
+				}
+				// Check hostname match
+				allowedURL, err := url.Parse(allowed)
+				if err == nil && allowedURL.Hostname() != "" {
+					if strings.EqualFold(parsedOrigin.Hostname(), allowedURL.Hostname()) {
+						// Match scheme and port if specified
+						if (allowedURL.Scheme == "" || parsedOrigin.Scheme == allowedURL.Scheme) &&
+							(allowedURL.Port() == "" || parsedOrigin.Port() == allowedURL.Port()) {
+							return true
+						}
+					}
+				}
+			}
+			return false
+		},
+	}
 }
 
 // Handler handles WebSocket connections.
 type Handler struct {
-	hub *Hub
-	db  *pgxpool.Pool
+	hub            *Hub
+	db             *pgxpool.Pool
+	jwtManager     *jwt.Manager
+	allowedOrigins []string
 }
 
 // NewHandler creates a new WebSocket handler.
 func NewHandler(cfg HandlerConfig) *Handler {
+	allowedOrigins := cfg.AllowedOrigins
+	if len(allowedOrigins) == 0 {
+		// Default to localhost for development if none specified
+		allowedOrigins = []string{"http://localhost:3000", "http://localhost:5173"}
+	}
+
 	return &Handler{
-		hub: cfg.Hub,
-		db:  cfg.DB,
+		hub:            cfg.Hub,
+		db:             cfg.DB,
+		jwtManager:     cfg.JWTManager,
+		allowedOrigins: allowedOrigins,
 	}
 }
 
 // ServeWS handles WebSocket connection requests.
 func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
-	// Upgrade to WebSocket
-	conn, err := upgrader.Upgrade(w, r, nil)
+	// Upgrade to WebSocket with origin checking
+	u := upgrader(h.allowedOrigins)
+	conn, err := u.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("Failed to upgrade to WebSocket: %v", err)
 		return
 	}
 
-	// Extract user info from query params (in production, use JWT auth)
-	userID := r.URL.Query().Get("user_id")
-	orgID := r.URL.Query().Get("org_id")
+	var userID, orgID string
 
-	if userID == "" {
-		// Try to get from JWT token
-		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" {
-			// In production, validate JWT and extract user ID
-			userID = "user-" + uuid.New().String()
-		} else {
-			userID = "anon-" + uuid.New().String()
-		}
+	// Extract and validate JWT token
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		// No token provided - reject connection
+		conn.WriteMessage(gorillawebsocket.CloseMessage,
+			gorillawebsocket.FormatCloseMessage(gorillawebsocket.ClosePolicyViolation, "missing authorization"))
+		conn.Close()
+		return
 	}
 
-	// Create client
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		// Invalid header format
+		conn.WriteMessage(gorillawebsocket.CloseMessage,
+			gorillawebsocket.FormatCloseMessage(gorillawebsocket.ClosePolicyViolation, "invalid authorization header"))
+		conn.Close()
+		return
+	}
+
+	// Validate JWT token
+	var claims *jwt.Claims
+	if h.jwtManager != nil {
+		claims, err = h.jwtManager.ValidateAccessToken(tokenString)
+		if err != nil {
+			log.Printf("WebSocket JWT validation failed: %v", err)
+			conn.WriteMessage(gorillawebsocket.CloseMessage,
+				gorillawebsocket.FormatCloseMessage(gorillawebsocket.ClosePolicyViolation, "invalid token"))
+			conn.Close()
+			return
+		}
+		userID = claims.UserID
+		orgID = claims.OrgID
+	} else {
+		// No JWT manager configured - reject connection for security
+		conn.WriteMessage(gorillawebsocket.CloseMessage,
+			gorillawebsocket.FormatCloseMessage(gorillawebsocket.ClosePolicyViolation, "server configuration error"))
+		conn.Close()
+		return
+	}
+
+	// Create client with authenticated user info
 	client := &Client{
 		ID:     uuid.New().String(),
 		UserID: userID,

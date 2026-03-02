@@ -5,6 +5,8 @@ package jwt
 import (
 	"context"
 	"errors"
+
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
 )
 
 var (
@@ -27,16 +29,15 @@ type TenantClaims struct {
 	TenantStatus string `json:"tenant_status,omitempty"`
 }
 
-// ContextKey is the type used for context keys.
-type contextKey string
+// ContextKey type alias for compatibility with existing code.
+// All new code should use sharedcontext package directly.
+type contextKey = sharedcontext.ContextKey
 
+// Context key constants - delegated to shared context package.
 const (
-	// TenantIDKey is the context key for tenant ID.
-	TenantIDKey contextKey = "tenant_id"
-	// TenantRoleKey is the context key for tenant role.
-	TenantRoleKey contextKey = "tenant_role"
-	// IsPlatformAdminKey is the context key for platform admin flag.
-	IsPlatformAdminKey contextKey = "is_platform_admin"
+	TenantIDKey       = sharedcontext.TenantIDKey
+	TenantRoleKey     = sharedcontext.TenantRoleKey
+	IsPlatformAdminKey = sharedcontext.IsPlatformAdminKey
 )
 
 // GenerateTenantTokenPair generates access and refresh tokens with tenant claims.

@@ -39,6 +39,9 @@ type OrganizationUser struct {
 	JoinedAt       time.Time              `json:"joined_at" db:"joined_at"`
 	InvitedBy      string                 `json:"invited_by,omitempty" db:"invited_by"`
 	DeletedAt      *time.Time             `json:"deleted_at,omitempty" db:"deleted_at"`
+	// User details populated when joining with users table
+	Email string `json:"email,omitempty" db:"email"`
+	Name  string `json:"name,omitempty" db:"name"`
 }
 
 // OrganizationUserRepository provides data access for organization members.
@@ -169,6 +172,7 @@ func (r *OrganizationUserRepository) ListByOrganization(ctx context.Context, org
 		err := rows.Scan(
 			&orgUser.ID, &orgUser.OrganizationID, &orgUser.UserID, &orgUser.Role,
 			&orgUser.Settings, &orgUser.JoinedAt, &orgUser.InvitedBy, &orgUser.DeletedAt,
+			&orgUser.Email, &orgUser.Name,
 		)
 		if err != nil {
 			return nil, 0, apperrors.Wrap(err, "failed to scan organization user", 500)

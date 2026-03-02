@@ -363,7 +363,8 @@ func TestRowLevelSecurity_EnableForTable(t *testing.T) {
 	err := rls.EnableForTable(ctx, "organizations")
 
 	assert.NoError(t, err)
-	assert.Contains(t, mockDB.lastSQL, "ALTER TABLE organizations ENABLE ROW LEVEL SECURITY")
+	// SQL identifiers are now quoted for SQL injection prevention
+	assert.Contains(t, mockDB.lastSQL, `ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY`)
 }
 
 func TestRowLevelSecurity_DisableForTable(t *testing.T) {
@@ -377,7 +378,8 @@ func TestRowLevelSecurity_DisableForTable(t *testing.T) {
 	err := rls.DisableForTable(ctx, "organizations")
 
 	assert.NoError(t, err)
-	assert.Contains(t, mockDB.lastSQL, "ALTER TABLE organizations DISABLE ROW LEVEL SECURITY")
+	// SQL identifiers are now quoted for SQL injection prevention
+	assert.Contains(t, mockDB.lastSQL, `ALTER TABLE "organizations" DISABLE ROW LEVEL SECURITY`)
 }
 
 func TestRowLevelSecurity_SetTenantContext(t *testing.T) {
@@ -434,7 +436,8 @@ func TestRowLevelSecurity_CreateTenantPolicy(t *testing.T) {
 
 	assert.NoError(t, err)
 	// mockDB.lastSQL contains the CREATE POLICY statement (DROP POLICY is executed first but not stored)
-	assert.Contains(t, mockDB.lastSQL, "CREATE POLICY tenant_isolation ON organizations")
+	// SQL identifiers are now quoted for SQL injection prevention
+	assert.Contains(t, mockDB.lastSQL, `CREATE POLICY "tenant_isolation" ON "organizations"`)
 	assert.Contains(t, mockDB.lastSQL, "USING (tenant_id =")
 }
 
@@ -450,7 +453,8 @@ func TestRowLevelSecurity_CreateTenantPolicyWithAdmin(t *testing.T) {
 
 	assert.NoError(t, err)
 	// mockDB.lastSQL contains the CREATE POLICY statement (DROP POLICY is executed first but not stored)
-	assert.Contains(t, mockDB.lastSQL, "CREATE POLICY tenant_isolation ON organizations")
+	// SQL identifiers are now quoted for SQL injection prevention
+	assert.Contains(t, mockDB.lastSQL, `CREATE POLICY "tenant_isolation" ON "organizations"`)
 	assert.Contains(t, mockDB.lastSQL, "current_setting('app.is_platform_admin'")
 }
 

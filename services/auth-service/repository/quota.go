@@ -130,6 +130,24 @@ func (r *QuotaRepository) getDefaultConfig(tenantID string) *QuotaConfig {
 
 // UpdateConfig updates the quota configuration for a tenant.
 func (r *QuotaRepository) UpdateConfig(ctx context.Context, config *QuotaConfig) error {
+	// Input validation - all quota values must be non-negative
+	if config.MaxPrinters < 0 {
+		return apperrors.NewValidationError("max_printers", "max_printers must be >= 0")
+	}
+	if config.MaxStorageGB < 0 {
+		return apperrors.NewValidationError("max_storage_gb", "max_storage_gb must be >= 0")
+	}
+	if config.MaxJobsPerMonth < 0 {
+		return apperrors.NewValidationError("max_jobs_per_month", "max_jobs_per_month must be >= 0")
+	}
+	if config.MaxUsers < 0 {
+		return apperrors.NewValidationError("max_users", "max_users must be >= 0")
+	}
+	// Alert threshold must be between 0 and 100
+	if config.AlertThreshold < 0 || config.AlertThreshold > 100 {
+		return apperrors.NewValidationError("alert_threshold", "alert_threshold must be between 0 and 100")
+	}
+
 	config.UpdatedAt = time.Now().UTC()
 
 	query := `

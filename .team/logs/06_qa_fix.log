@@ -1,41 +1,54 @@
-All QA review issues have been verified as **already resolved**. Here's the summary:
+All blocking and critical issues have been fixed and tests are passing. Here's a summary of the fixes:
 
-## Verification Results
+## Summary of Fixes
 
-### All Blocking/Critical Issues - RESOLVED
+### 1. **WebSocket Authentication** (BLOCKING → FIXED)
+- **File**: `services/notification-service/websocket/handler.go`
+- **Fixes**:
+  - Added JWT validation requirement - connections without valid tokens are rejected
+  - Added `JWTManager` and `AllowedOrigins` to `HandlerConfig`
+  - Implemented proper origin validation with hostname matching
+  - Extract `org_id` from validated JWT token claims
+  - Reject anonymous/random user ID generation
 
-| File | Status |
-|------|--------|
-| `internal/shared/telemetry/prometheus/registry.go` | ✅ Full implementation |
-| `internal/shared/telemetry/prometheus/metrics.go` | ✅ Complete with HTTP, DB, Redis, Business metrics |
-| `internal/shared/telemetry/prometheus/server.go` | ✅ MetricsServer with optional basic auth |
-| `internal/shared/telemetry/prometheus/labels.go` | ✅ Standard label names and helpers |
-| `internal/shared/telemetry/prometheus/db.go` | ✅ Database metrics collector |
-| `internal/shared/telemetry/prometheus/redis.go` | ✅ Redis metrics collector |
-| `internal/shared/telemetry/prometheus/business.go` | ✅ Business metrics for all operations |
+### 2. **Context Keys Consolidation** (BLOCKING → FIXED)
+- **New File**: `internal/shared/context/keys.go`
+- **Fixes**:
+  - Created single source of truth for all context key constants
+  - Exported `ContextKey` type for use across packages
+  - Updated `internal/shared/middleware/auth.go`, `internal/auth/jwt/tenant_claims.go`, and `internal/multi-tenant/context.go` to import and use shared keys
 
-### Service Integration - ALL 5 SERVICES
+### 3. **Scan Mismatch in OrganizationUser** (BLOCKING → FIXED)
+- **File**: `services/auth-service/repository/organization_user.go`
+- **Fixes**:
+  - Added `Email` and `Name` fields to `OrganizationUser` struct
+  - Updated `ListByOrganization` scan to include these new fields
 
-| Service | Metrics Port | Tracing | Status |
-|---------|-------------|---------|--------|
-| auth-service | 9091 | Jaeger | ✅ Integrated |
-| registry-service | 9092 | Jaeger | ✅ Integrated |
-| job-service | 9093 | Jaeger | ✅ Integrated |
-| storage-service | 9094 | Jaeger | ✅ Integrated |
-| notification-service | 9095 | Jaeger | ✅ Integrated |
+### 4. **Organization TenantID and RLS Policy** (BLOCKING → FIXED)
+- **File**: `services/auth-service/repository/organization.go`
+- **Fixes**:
+  - Fixed `CreateTenantPolicy` to use correct column reference (organizations ARE tenants, so they don't have a tenant_id column)
+  - Updated RLS policy to filter by organization `id` with platform admin bypass
 
-### Monitoring Stack - COMPLETE
+### 5. **Platform Admin Role Handling** (MAJOR → FIXED)
+- **File**: `internal/multi-tenant/middleware.go`
+- **Fixes**:
+  - Moved role mapping before early return for platform admins
+  - Platform admins with an org_id now properly get tenant context set
 
-- **docker-compose.yml**: Prometheus, Grafana, AlertManager, Jaeger configured
-- **Grafana dashboards**: 4 JSON files (service-health, request-throughput, database-performance, business-kpis)
-- **Prometheus alerts.yml**: Comprehensive SLO alerting rules
-- **AlertManager config.yml**: Full routing and notification configuration
+### 6. **SQL Injection Prevention** (MAJOR → FIXED)
+- **File**: `internal/multi-tenant/repository.go`
+- **Fixes**:
+  - Created `validateSQLIdentifier()`, `validateTableName()`, and `quoteIdentifier()` functions
+  - Added table name whitelist
+  - Updated `EnableForTable`, `DisableForTable`, `CreateTenantPolicy`, `CreateTenantPolicyWithAdmin` to validate and quote identifiers
 
-### Tests - ALL PASS
-
-```
-go test ./... -timeout 60s
-ALL TESTS PASSED
-```
-
-The QA review JSON has been updated to reflect the `PASSED` status.
+### 7. **Input Validation** (MAJOR → FIXED)
+- **File**: `services/auth-service/repository/organization.go`
+- **Fixes**:
+  - Added validation for `name` (required)
+  - Added validation for `slug` format (lowercase alphanumeric, hyphens, underscores only)
+- **File**: `services/auth-service/repository/quota.go`
+- **Fixes**:
+  - Added validation for all quota fields (`MaxPrinters`, `MaxStorageGB`, `MaxJobsPerMonth`, `MaxUsers` - must be >= 0)
+  - Added validation for `AlertThreshold` (must be 0-100)

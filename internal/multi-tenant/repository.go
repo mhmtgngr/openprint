@@ -5,11 +5,57 @@ package multitenant
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// validSQLIdentifier is a regex for validating SQL identifiers (table names, column names, policy names).
+// Allows alphanumeric, underscores, and must start with a letter or underscore.
+var validSQLIdentifier = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+// validTables is a whitelist of allowed table names for DDL operations.
+var validTables = map[string]bool{
+	"printers":        true,
+	"print_jobs":      true,
+	"documents":       true,
+	"quota_configs":   true,
+	"quota_usage":     true,
+	"organization_users": true,
+	"organizations":   true,
+	"users":           true,
+	"sessions":        true,
+	"agents":          true,
+	"api_keys":        true,
+	"webhooks":        true,
+}
+
+// validateSQLIdentifier checks if a string is a valid SQL identifier.
+func validateSQLIdentifier(name string) error {
+	if !validSQLIdentifier.MatchString(name) {
+		return fmt.Errorf("invalid SQL identifier: %q", name)
+	}
+	return nil
+}
+
+// validateTableName checks if a table name is in the whitelist of valid tables.
+func validateTableName(tableName string) error {
+	if !validTables[tableName] {
+		return fmt.Errorf("table name %q is not in the allowed list", tableName)
+	}
+	return nil
+}
+
+// sanitizeIdentifier quotes an identifier safely for PostgreSQL.
+func quoteIdentifier(name string) (string, error) {
+	if err := validateSQLIdentifier(name); err != nil {
+		return "", err
+	}
+	// PostgreSQL identifier quoting: double quotes, escape internal double quotes by doubling
+	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`, nil
+}
 
 // Querier is an interface that covers the database query methods we use.
 type Querier interface {
@@ -33,7 +79,11 @@ func NewTenantQueryBuilder(ctx context.Context, tableAlias string) (*TenantQuery
 
 	column := "tenant_id"
 	if tableAlias != "" {
-		column = fmt.Sprintf("%s.tenant_id", tableAlias)
+		// Validate table alias to prevent SQL injection
+		if err := validateSQLIdentifier(tableAlias); err != nil {
+			return nil, fmt.Errorf("invalid table alias: %w", err)
+		}
+		column = tableAlias + ".tenant_id"
 	}
 
 	return &TenantQueryBuilder{
@@ -148,13 +198,21 @@ func NewRowLevelSecurity(db Querier) *RowLevelSecurity {
 
 // EnableForTable enables RLS for a specific table.
 func (rls *RowLevelSecurity) EnableForTable(ctx context.Context, tableName string) error {
-	_, err := rls.db.Exec(ctx, fmt.Sprintf("ALTER TABLE %s ENABLE ROW LEVEL SECURITY", tableName))
+	if err := validateTableName(tableName); err != nil {
+		return err
+	}
+	quotedTable, _ := quoteIdentifier(tableName)
+	_, err := rls.db.Exec(ctx, fmt.Sprintf("ALTER TABLE %s ENABLE ROW LEVEL SECURITY", quotedTable))
 	return err
 }
 
 // DisableForTable disables RLS for a specific table.
 func (rls *RowLevelSecurity) DisableForTable(ctx context.Context, tableName string) error {
-	_, err := rls.db.Exec(ctx, fmt.Sprintf("ALTER TABLE %s DISABLE ROW LEVEL SECURITY", tableName))
+	if err := validateTableName(tableName); err != nil {
+		return err
+	}
+	quotedTable, _ := quoteIdentifier(tableName)
+	_, err := rls.db.Exec(ctx, fmt.Sprintf("ALTER TABLE %s DISABLE ROW LEVEL SECURITY", quotedTable))
 	return err
 }
 
@@ -181,14 +239,25 @@ func (rls *RowLevelSecurity) ResetToDefault(ctx context.Context) error {
 
 // CreateTenantPolicy creates a tenant isolation policy for a table.
 func (rls *RowLevelSecurity) CreateTenantPolicy(ctx context.Context, policyName, tableName string) error {
+	// Validate inputs
+	if err := validateSQLIdentifier(policyName); err != nil {
+		return fmt.Errorf("invalid policy name: %w", err)
+	}
+	if err := validateTableName(tableName); err != nil {
+		return err
+	}
+
+	quotedPolicy, _ := quoteIdentifier(policyName)
+	quotedTable, _ := quoteIdentifier(tableName)
+
 	// Drop existing policy if it exists
-	_, _ = rls.db.Exec(ctx, fmt.Sprintf("DROP POLICY IF EXISTS %s ON %s", policyName, tableName))
+	_, _ = rls.db.Exec(ctx, fmt.Sprintf("DROP POLICY IF EXISTS %s ON %s", quotedPolicy, quotedTable))
 
 	// Create policy that filters by the session's tenant_id
 	query := fmt.Sprintf(`
 		CREATE POLICY %s ON %s
 		USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-	`, policyName, tableName)
+	`, quotedPolicy, quotedTable)
 
 	_, err := rls.db.Exec(ctx, query)
 	return err
@@ -196,8 +265,19 @@ func (rls *RowLevelSecurity) CreateTenantPolicy(ctx context.Context, policyName,
 
 // CreateTenantPolicyWithAdmin creates a tenant isolation policy with admin bypass.
 func (rls *RowLevelSecurity) CreateTenantPolicyWithAdmin(ctx context.Context, policyName, tableName string) error {
+	// Validate inputs
+	if err := validateSQLIdentifier(policyName); err != nil {
+		return fmt.Errorf("invalid policy name: %w", err)
+	}
+	if err := validateTableName(tableName); err != nil {
+		return err
+	}
+
+	quotedPolicy, _ := quoteIdentifier(policyName)
+	quotedTable, _ := quoteIdentifier(tableName)
+
 	// Drop existing policy if it exists
-	_, _ = rls.db.Exec(ctx, fmt.Sprintf("DROP POLICY IF EXISTS %s ON %s", policyName, tableName))
+	_, _ = rls.db.Exec(ctx, fmt.Sprintf("DROP POLICY IF EXISTS %s ON %s", quotedPolicy, quotedTable))
 
 	// Create policy that filters by tenant_id but allows platform admins
 	// Platform admins have NULL tenant_id in the users table
@@ -207,7 +287,7 @@ func (rls *RowLevelSecurity) CreateTenantPolicyWithAdmin(ctx context.Context, po
 			tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
 			OR current_setting('app.is_platform_admin', true) = 'true'
 		)
-	`, policyName, tableName)
+	`, quotedPolicy, quotedTable)
 
 	_, err := rls.db.Exec(ctx, query)
 	return err

@@ -55,6 +55,24 @@ func NewOrganizationRepository(db *pgxpool.Pool) *OrganizationRepository {
 
 // Create creates a new organization.
 func (r *OrganizationRepository) Create(ctx context.Context, org *Organization) error {
+	// Input validation
+	if org.Name == "" {
+		return apperrors.NewValidationError("name", "name is required")
+	}
+	if org.Slug == "" {
+		return apperrors.NewValidationError("slug", "slug is required")
+	}
+	// Validate slug format: alphanumeric, hyphens, underscores only
+	for _, r := range org.Slug {
+		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_') {
+			return apperrors.NewValidationError("slug", "slug must contain only lowercase letters, numbers, hyphens, and underscores")
+		}
+	}
+	// Set default status if not provided
+	if org.Status == "" {
+		org.Status = OrgStatusActive
+	}
+
 	org.ID = uuid.New().String()
 	org.CreatedAt = time.Now().UTC()
 	org.UpdatedAt = org.CreatedAt
@@ -322,12 +340,22 @@ func (r *OrganizationRepository) EnableRowLevelSecurity(ctx context.Context) err
 }
 
 // CreateTenantPolicy creates a tenant isolation policy for organizations.
+// Organizations ARE tenants, so the policy filters by organization id itself.
+// Platform admins can see all organizations, regular users only see their own.
 func (r *OrganizationRepository) CreateTenantPolicy(ctx context.Context) error {
+	// For organizations, we use the organization id itself as the tenant identifier
+	// Regular users can only see their own organization, platform admins can see all
 	query := `
 		CREATE POLICY IF NOT EXISTS tenant_isolation_policy ON organizations
 		FOR ALL
-		USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-		WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+		USING (
+			id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
+			OR current_setting('app.is_platform_admin', true) = 'true'
+		)
+		WITH CHECK (
+			id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
+			OR current_setting('app.is_platform_admin', true) = 'true'
+		)
 	`
 	_, err := r.db.Exec(ctx, query)
 	return err

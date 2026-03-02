@@ -99,34 +99,44 @@ func extractFromJWT(r *http.Request) (tenantID, tenantName string, role Role, is
 		return "", "", "", false, errors.New("unauthorized: no user context")
 	}
 
-	// Check if platform admin
-	if userRole == "admin" || userRole == "platform_admin" {
-		// For platform admins, org_id may be empty for platform-level operations
-		// or may contain the org they're currently managing
-		return "", "", RolePlatformAdmin, true, nil
-	}
-
-	// Regular user - require organization context
-	if orgID == "" {
-		return "", "", "", false, errors.New("unauthorized: no organization context")
-	}
-
-	// Map JWT role to tenant role
+	// Map JWT role to tenant role - do this first for all users
 	switch userRole {
 	case "admin", "platform_admin":
 		role = RolePlatformAdmin
 		isPlatformAdmin = true
+		// For platform admins, org_id may be empty for platform-level operations
+		// or may contain the org they're currently managing
+		if orgID == "" {
+			// Platform admin with no org context - accessing platform-level resources
+			return "", "", RolePlatformAdmin, true, nil
+		}
+		// Platform admin accessing a specific organization - continue with tenant context
+		tenantID = orgID
 	case "org_admin":
 		role = RoleOrgAdmin
+		isPlatformAdmin = false
 	case "user", "org_user":
 		role = RoleOrgUser
+		isPlatformAdmin = false
 	case "viewer", "org_viewer":
 		role = RoleOrgViewer
+		isPlatformAdmin = false
 	default:
 		role = RoleOrgUser
+		isPlatformAdmin = false
 	}
 
-	return orgID, "", role, isPlatformAdmin, nil
+	// Regular users require organization context
+	if tenantID == "" && orgID == "" {
+		return "", "", "", false, errors.New("unauthorized: no organization context")
+	}
+
+	// Use orgID if tenantID wasn't set
+	if tenantID == "" {
+		tenantID = orgID
+	}
+
+	return tenantID, "", role, isPlatformAdmin, nil
 }
 
 // RequireTenant middleware ensures tenant context is present.
