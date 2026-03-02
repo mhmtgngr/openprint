@@ -2586,6 +2586,37 @@ phase_deploy() {
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   state_set deploy status running
 
+  # 🔍 Port availability check (early warning for conflicts)
+  log ""
+  log "  🔍 Checking port availability..."
+  local default_ports=(3000 8001 8002 8003 8004 8005 18001 18005)
+  local occupied_ports=()
+  local port_alternatives=""
+
+  for port in "${default_ports[@]}"; do
+    if ! is_port_available "$port"; then
+      occupied_ports+=("$port")
+      local free_port
+      free_port=$(find_free_port "$((port + 1))" 3)
+      if [ -n "$free_port" ]; then
+        port_alternatives+="    → Port $port occupied, will use $free_port\n"
+        # Store mapping for later use
+        echo "${port}:${free_port}" >> "$DEV_DIR/port_conflicts.txt"
+      else
+        port_alternatives+="    → Port $port occupied, no free alternative found!\n"
+      fi
+    fi
+  done
+
+  if [ -n "$port_alternatives" ]; then
+    warn "  ⚠️  Port conflicts detected:"
+    echo -e "$port_alternatives"
+    log "  🔄 Will use alternative ports for conflicting services"
+  else
+    log "  ✓ All required ports are available"
+  fi
+
+  # Docker setup creation if needed
   if ! ls "$REPO_DIR/deployments/docker/Dockerfile."* >/dev/null 2>&1 && [ ! -f "$REPO_DIR/Dockerfile" ]; then
     claude_do "🐳 DevOps" \
       "Read CLAUDE.md. Create Docker setup in deployments/docker/:
