@@ -149,15 +149,5 @@ time_intervals:
       # All day weekends
       - weekdays: ['saturday', 'sunday']
 
-# Silence management (can be updated via API)
-silences:
-  # Example silences (usually managed via UI or API, not in config)
-  # Uncomment to create permanent silences
-  # - matchers:
-  #     - name: alertname
-  #       value: HighRequestRate
-  #       isRegex: false
-  #   startsAt: "2024-01-01T00:00:00Z"
-  #   endsAt: "2099-12-31T23:59:59Z"
-  #   createdBy: "admin@openprint.local"
-  #   comment: "Silencing high request rate alerts during expected peak"
+# Note: Silences are managed via Alertmanager API or Web UI, not in config file.
+# POST to /api/v2/silences to create silences programmatically.

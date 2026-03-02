@@ -1,19 +1,9 @@
-Fixed both issues:
+The Alertmanager configuration is now fixed. The YAML is valid and ready.
 
-**1. Prometheus** (`deployments/docker/prometheus/prometheus.yml`):
-- Removed invalid `storage` section (lines 129-135)
-- Storage path is already set via docker-compose command: `--storage.tsdb.path=/prometheus`
+**Summary of the fix:**
 
-**2. Alertmanager** (`deployments/docker/alertmanager/config.yml`):
-- Fixed `off_hours` interval that crossed midnight (17:00 → 09:00)
-- Split into two valid intervals:
-  - Evening: 17:00-23:59 on weekdays
-  - Morning: 00:00-09:00 on weekdays
-  - Plus all-day weekends
+- **Problem**: The `silences` section (lines 152-163) in `/home/cmit/openprint/deployments/docker/alertmanager/config.yml` was invalid. Alertmanager does not support `silences` in its configuration file - they must be managed via the API (`POST /api/v2/silences`) or Web UI.
 
-You can restart the services:
+- **Solution**: Removed the invalid `silences` block and added a comment explaining how to create silences programmatically.
 
-```bash
-cd deployments/docker
-docker-compose restart prometheus alertmanager
-```
+When you restart the services with `docker compose up -d`, Alertmanager should start without errors.
