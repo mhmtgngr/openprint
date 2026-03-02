@@ -1,19 +1,19 @@
 {
   "project": {
-    "go_files": 75,
+    "go_files": 89,
     "test_files": 55,
     "tsx_files": 0,
     "todo_count": 2,
     "build": "yes",
-    "tests": "pass",
-    "test_count": 21,
-    "test_passed": 21,
+    "tests": "fail",
+    "test_count": 22,
+    "test_passed": 20,
     "dockerfiles": 6,
     "compose": "yes",
     "frontend": "yes"
   },
   "compile_errors": "",
-  "test_failures": "",
+  "test_failures": "FAIL\tgithub.com/openprint/openprint/services/job-service/repository\t11.563s\n?   \tgithub.com/openprint/openprint/services/m365-integration-service\t[no test files]\n?   \tgithub.com/openprint/openprint/services/notification-service\t[no test files]\n--\nFAIL",
   "ts_errors": "",
   "todos": "/home/cmit/openprint/internal/testutil/migrate.go:19://   XXX_description.up.sql - for applying the migration\n/home/cmit/openprint/internal/testutil/migrate.go:20://   XXX_description.down.sql - for rolling back the migration (not used in tests)"
 }

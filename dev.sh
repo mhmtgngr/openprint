@@ -49,7 +49,8 @@
 #    ./dev.sh new-branch "name"             # Create new feature branch
 #
 #  SMART IMPROVE ENHANCED:
-#    ./dev.sh smart-improve [threshold%] [--incremental]  # Incremental mode
+#    ./dev.sh smart-improve [phases] [target%] [max_loops]  # Scan→Plan→Run→Repeat until target%
+#    ./dev.sh work [hours] [phases] [max_loops]            # Continuous work for N hours
 #    ./dev.sh focus [type]                  # Focus: migrations, frontend, backend, todos
 #
 # ═══════════════════════════════════════════════════════════════
@@ -2715,11 +2716,15 @@ PR_DOC
 
 smart_improve() {
   local t0; t0=$(date +%s)
+  local num_phases="${1:-15}"  # Default to 15 phases (was 3)
+  local max_loops="${2:-5}"     # Max improvement loops
+  local loop=0
 
   slog "╔═══════════════════════════════════════════════════════════╗"
   slog "║  🧠 SMART IMPROVE — Project-Focused Self-Improvement       ║"
   slog "╠═══════════════════════════════════════════════════════════╣"
   slog "║  1. SCAN → 2. ADAPT → 3. RUN → 4. RESCAN → 5. PR?       ║"
+  slog "║  Phases per loop: $num_phases | Max loops: $max_loops    ║"
   slog "╚═══════════════════════════════════════════════════════════╝"
 
   scan_project_completion
@@ -2727,28 +2732,129 @@ smart_improve() {
 
   slog "  📊 Before: ${pct_before}%"
 
-  # Plan and execute focused improvement
-  diagnose_project
-  plan_improvements 3
-  execute_planned_phases
+  # Loop until threshold reached or max loops
+  while [ "$loop" -lt "$max_loops" ]; do
+    loop=$((loop + 1))
+    slog "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    slog "🔄 IMPROVEMENT LOOP $loop/$max_loops"
 
-  # Re-scan
-  scan_project_completion
-  local pct_after; pct_after=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE'))['completion_pct'])" 2>/dev/null || echo "0")
-  local delta=$((pct_after - pct_before))
-  slog "  📊 Progress: ${pct_before}% → ${pct_after}% (+${delta}%)"
+    # Plan and execute focused improvement
+    diagnose_project
+    plan_improvements "$num_phases"
 
-  if [ "$pct_after" -ge "$PR_THRESHOLD" ]; then
-    slog "  🎉 ${pct_after}% ≥ ${PR_THRESHOLD}% → PR mode!"
-    run_demo
-    prepare_pr
-  else
-    slog "  ⏳ ${pct_after}% < ${PR_THRESHOLD}% — run again: ./dev.sh smart-improve"
-  fi
+    # Check if plan has phases
+    local phase_count
+    phase_count=$(python3 -c "import json; print(len(json.load(open('$PLAN_FILE')).get('phases',[])))" 2>/dev/null || echo "0")
+
+    if [ "$phase_count" -eq 0 ]; then
+      slog "⚠ No gaps found - project complete!"
+      break
+    fi
+
+    slog "  📋 Plan contains $phase_count phases"
+    execute_planned_phases
+
+    # Re-scan after each loop
+    scan_project_completion
+    local pct_after
+    pct_after=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE'))['completion_pct'])" 2>/dev/null || echo "0")
+    local delta=$((pct_after - pct_before))
+
+    slog "  📊 Progress: ${pct_before}% → ${pct_after}% (+${delta}%)"
+
+    if [ "$pct_after" -ge "$PR_THRESHOLD" ]; then
+      slog "  🎉 ${pct_after}% ≥ ${PR_THRESHOLD}% → PR mode!"
+      run_demo
+      prepare_pr
+      break
+    fi
+
+    pct_before="$pct_after"
+  done
 
   local elapsed=$(( $(date +%s) - t0 ))
-  slog "  ⏱ Smart improve done in $((elapsed/60))m $((elapsed%60))s"
+  slog "⏱ Smart improve done in $((elapsed/60))m $((elapsed%60))s ($loop loops)"
 }
+
+# ═══════════════════════════════════════════════
+# CONTINUOUS WORK MODE
+# ═══════════════════════════════════════════════
+
+work_mode() {
+  local work_hours="${1:-6}"
+  local phases="${2:-10}"
+  local max_loops="${3:-50}"
+  local end_time=$(($(date +%s) + work_hours * 3600))
+  PR_THRESHOLD=95
+
+  slog "╔═══════════════════════════════════════════════════════════╗"
+  slog "║  🏃 CONTINUOUS WORK MODE                                   ║"
+  slog "╠═══════════════════════════════════════════════════════════╣"
+  slog "║  Target: ${work_hours}h | Phases/loop: $phases | Max: $max_loops ║"
+  slog "╚═══════════════════════════════════════════════════════════╝"
+
+  local loop=0
+  while [ "$(date +%s)" -lt "$end_time" ] && [ "$loop" -lt "$max_loops" ]; do
+    loop=$((loop + 1))
+    local remaining=$((end_time - $(date +%s)))
+    local mins_left=$((remaining / 60))
+
+    slog "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    slog "🏃 WORK LOOP $loop | ${mins_left}m remaining"
+
+    diagnose_project
+    plan_improvements "$phases"
+
+    local phase_count
+    phase_count=$(python3 -c "import json; print(len(json.load(open('$PLAN_FILE')).get('phases',[])))" 2>/dev/null || echo "0")
+
+    # Always check actual completion before deciding we're done
+    scan_project_completion
+    local completion_pct
+    completion_pct=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE')).get('completion_pct',0))" 2>/dev/null || echo "0")
+
+    if [ "$phase_count" -eq 0 ]; then
+      slog "⚠ Planner found no phases, checking completion: ${completion_pct}%"
+      if [ "$completion_pct" -ge 90 ]; then
+        slog "✅ Project 90%+ complete - running demo and PR!"
+        run_demo
+        prepare_pr
+        break
+      else
+        slog "📊 Only ${completion_pct}% - forcing focus on critical gaps"
+        # Force a fix phase for test failures or critical items
+        local fix_desc="Fix test failures and complete remaining gaps. Current completion: ${completion_pct}%. Prioritize: 1) Fix failing tests, 2) Complete missing migrations, 3) Implement missing frontend components, 4) Add missing backend handlers."
+        phase_data="$fix_desc"
+        phase_name="Critical Gap Fix"
+        # Run single waterfall for this fix
+        if run_waterfall "$phase_data" 2>&1; then
+          slog "✅ Gap fix done"
+        else
+          slog "⚠ Gap fix had issues, continuing..."
+        fi
+      fi
+    else
+      slog "  📋 Plan contains $phase_count phases"
+      execute_planned_phases
+
+      local pct
+      pct=$(python3 -c "import json; print(json.load(open('$COMPLETION_FILE'))['completion_pct'])" 2>/dev/null || echo "0")
+      slog "📊 Current completion: ${pct}%"
+
+      if [ "$pct" -ge 95 ]; then
+        slog "🎉 95%+ complete - running demo and PR!"
+        run_demo
+        prepare_pr
+        break
+      fi
+    fi
+  done
+
+  local elapsed=$(( $(date +%s) - (end_time - work_hours * 3600) ))
+  slog "⏱ Work session done: $((elapsed/60))m $((elapsed%60))s | $loop loops completed"
+}
+
+# ═══════════════════════════════════════════════
 
 # ═══════════════════════════════════════════════
 # BACKGROUND EXECUTION
@@ -2900,7 +3006,10 @@ show_help() { cat << 'HELP'
     ./dev.sh migrate-rollback           # Test migration rollback
 
   SMART IMPROVE (recommended):
-    ./dev.sh smart-improve [threshold%]  # Scan→Plan→Run→Rescan→PR
+    ./dev.sh smart-improve [phases] [target%] [max_loops]  # Continuous improvement until target%
+                                                          # Default: 15 phases, 90% target, 10 loops
+    ./dev.sh work [hours] [phases] [max_loops]            # Work for N hours continuously
+                                                          # Default: 6 hours, 10 phases/loop, 50 loops
     ./dev.sh scan                        # Show % complete + gaps
     ./dev.sh gaps                        # Just the gaps
     ./dev.sh demo                        # Run live demos
@@ -2932,9 +3041,18 @@ show_help() { cat << 'HELP'
 HELP
 }
 
-# Strip -- prefix so both "status" and "--status" work
-CMD="${1:-}"
-CMD="${CMD#--}"
+# Find first non-flag argument as CMD (skip --fg, --skip-health-check, etc)
+# Build a clean args array without flags
+_CLEAN_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --|--fg|--skip-health-check) continue ;;
+    --*) continue ;;  # Skip other flags
+    *) _CLEAN_ARGS+=("$arg") ;;
+  esac
+done
+CMD="${_CLEAN_ARGS[0]:-}"
+CMD="${CMD#--}"  # Strip -- prefix if present
 
 # ── Preflight checks (only for commands that need tools) ──
 case "$CMD" in
@@ -3013,20 +3131,46 @@ case "$CMD" in
 
   # ── Smart improve ──
   smart-improve|smart|focus)
-    PR_THRESHOLD="${2:-50}"
+    # Parse args: [num_phases] [threshold%] [max_loops]
+    local num_phases="${_CLEAN_ARGS[1]:-15}"
+    local pr_thresh="${_CLEAN_ARGS[2]:-90}"
+    local max_loops="${_CLEAN_ARGS[3]:-10}"
+    PR_THRESHOLD="$pr_thresh"
+
     if [ "$FOREGROUND" = false ] && [ "${_DEV_FG:-}" != "1" ]; then
-      _DEV_FG=1 setsid bash "$0" --fg "$CMD" "${2:-50}" </dev/null > /dev/null 2>&1 &
+      _DEV_FG=1 setsid bash "$0" --fg "$CMD" "$num_phases" "$pr_thresh" "$max_loops" </dev/null > /dev/null 2>&1 &
       disown
       echo "  🧠 Smart Improve started (detached)"
+      echo "     Phases: $num_phases | Target: ${pr_thresh}% | Max loops: $max_loops"
       echo "  📺 tail -f $SUP_LOG"
       echo "  📊 ./dev.sh status"
       exit 0
     fi
-    smart_improve
+    smart_improve "$num_phases" "$max_loops"
     ;;
 
   scan)    scan_project_completion ;;
   gaps)    show_gaps ;;
+  work)    # Continuous work mode: ./dev.sh work [hours] [phases_per_loop] [max_loops]
+    _work_hours="${_CLEAN_ARGS[1]:-6}"
+    _phases="${_CLEAN_ARGS[2]:-10}"
+    _max_loops="${_CLEAN_ARGS[3]:-50}"
+
+    if [ "$FOREGROUND" = false ] && [ "${_DEV_FG:-}" != "1" ]; then
+      _DEV_FG=1 setsid bash "$0" --fg "$CMD" "$_work_hours" "$_phases" "$_max_loops" </dev/null > /dev/null 2>&1 &
+      disown
+      _end_time=$(($(date +%s) + _work_hours * 3600))
+      _end_hr=$(date -d "@$_end_time" "+%H:%M" 2>/dev/null || date -r "$_end_time" "+%H:%M" 2>/dev/null || echo "N/A")
+      echo "  🏃 Continuous work started (detached)"
+      echo "     Duration: ${_work_hours}h (until ~${_end_hr})"
+      echo "     Phases per loop: $_phases | Max loops: $_max_loops"
+      echo "  📺 tail -f $SUP_LOG"
+      echo "  📊 ./dev.sh status"
+      echo "  🛑 ./dev.sh stop"
+      exit 0
+    fi
+    work_mode "$_work_hours" "$_phases" "$_max_loops"
+    ;;
   demo)    run_demo ;;
   pr)      [ ! -f "$COMPLETION_FILE" ] && scan_project_completion; run_demo; prepare_pr ;;
 

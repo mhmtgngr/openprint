@@ -1,245 +1,8 @@
 REQUIREMENTS (enriched with market research):
-{
- "project_name": "API Rate Limiting and Throttling System",
- "summary": "Implement a comprehensive Redis-based rate limiting system with sliding window algorithm, supporting per-IP and per-user limits, configurable tiers, endpoint-specific policies, admin management panel, metrics/monitoring, intelligent bypass for trusted clients, violation alerts, circuit breakers, and priority request queuing.",
- "functional_requirements": [
-  {
-   "id": "FR-001",
-   "title": "Redis-based Sliding Window Rate Limiter"
-  },
-  {
-   "id": "FR-002",
-   "title": "Multi-Dimension Rate Limiting"
-  },
-  {
-   "id": "FR-003",
-   "title": "Endpoint-Specific Policies"
-  },
-  {
-   "id": "FR-004",
-   "title": "Burst vs Sustained Rate Limits"
-  },
-  {
-   "id": "FR-005",
-   "title": "Rate Limit Policy Management API"
-  },
-  {
-   "id": "FR-006",
-   "title": "Admin Panel for Rate Limits"
-  },
-  {
-   "id": "FR-007",
-   "title": "Rate Limit Metrics"
-  },
-  {
-   "id": "FR-008",
-   "title": "Trusted Client Bypass"
-  },
-  {
-   "id": "FR-009",
-   "title": "Rate Limit Violation Alerts"
-  },
-  {
-   "id": "FR-010",
-   "title": "Circuit Breaker Pattern"
-  },
-  {
-   "id": "FR-011",
-   "title": "Priority Request Queuing"
-  },
-  {
-   "id": "FR-012",
-   "title": "Rate Limit Testing Suite"
-  },
-  {
-   "id": "FR-M013",
-   "title": "Print Quota System"
-  },
-  {
-   "id": "FR-M014",
-   "title": "Secure Print Release"
-  },
-  {
-   "id": "FR-M015",
-   "title": "Cost Allocation Engine"
-  },
-  {
-   "id": "FR-M016",
-   "title": "Mobile Print Apps"
-  },
-  {
-   "id": "FR-M017",
-   "title": "Scan-to-Cloud Workflows"
-  },
-  {
-   "id": "FR-M018",
-   "title": "Print Job Rules Engine"
-  },
-  {
-   "id": "FR-M019",
-   "title": "Universal Print Driver"
-  },
-  {
-   "id": "FR-M020",
-   "title": "Advanced Analytics Dashboard"
-  }
- ],
- "affected_services": [
-  "auth-service",
-  "registry-service",
-  "job-service",
-  "storage-service",
-  "notification-service",
-  "internal/shared/middleware",
-  "internal/shared/telemetry",
-  "dashboard"
- ],
- "implementation_phases": [
-  {
-   "phase": 1,
-   "name": "Core Rate Limiter",
-   "tasks": [
-    "Create internal/shared/ratelimit package structure",
-    "Implement sliding window algorithm with Redis",
-    "Add rate limit middleware with basic IP-based limiting",
-    "Create rate_limit_policies and rate_limit_violations tables",
-    "Implement basic policy CRUD operations in auth-service",
-    "Add rate limit HTTP headers to responses",
-    "Write unit tests for rate limiter algorithm",
-    "Integration tests for middleware"
-   ]
-  },
-  {
-   "phase": 2,
-   "name": "Multi-Dimension Limits",
-   "tasks": [
-    "Add user-based rate limiting",
-    "Add API key-based rate limiting",
-    "Implement hierarchical limit override logic",
-    "Add burst vs sustained rate limiting",
-    "Create trusted_clients table and management API",
-    "Add trusted client bypass logic",
-    "Write tests for multi-dimensional limiting"
-   ]
-  },
-  {
-   "phase": 3,
-   "name": "Endpoint-Specific Policies",
-   "tasks": [
-    "Add endpoint pattern matching to policies",
-    "Implement policy precedence and merging",
-    "Add policy validation and templates",
-    "Create default policies for all service endpoints",
-    "Apply middleware to all services",
-    "Write endpoint-specific policy tests"
-   ]
-  },
-  {
-   "phase": 4,
-   "name": "Admin Panel",
-   "tasks": [
-    "Create rate limit management pages in dashboard",
-    "Add policy CRUD UI",
-    "Add real-time metrics visualization",
-    "Add violation log viewer",
-    "Add trusted client management UI",
-    "Implement policy dry-run mode testing"
-   ]
-  },
-  {
-   "phase": 5,
-   "name": "Metrics and Monitoring",
-   "tasks": [
-    "Add OpenTelemetry metrics for rate limiting",
-    "Implement Prometheus metrics endpoint",
-    "Add rate limit utilization tracking",
-    "Create dashboard in Grafana",
-    "Add metrics retention and cleanup",
-    "Performance testing under load"
-   ]
-  },
-  {
-   "phase": 6,
-   "name": "Alerts and Notification
+
 
 MARKET ANALYSIS:
-{
- "competitor_summary": [
-  {
-   "name": "PaperCut",
-   "strengths": [
-    "Market leader with 100M+ users",
-    "Cross-platform support (Windows/macOS/Linux/Chrome OS/iOS/Android)",
-    "Print quotas and cost allocation",
-    "Secure release with card/PIN",
-    "Environmental reporting",
-    "Mobile printing",
-    "Google's official Cloud Print replacement",
-    "Free tier for up to 5 users"
-   ],
-   "weaknesses": [
-    "Acquired by Google (2020), future unclear",
-    "Migration required for Google Cloud Print refugees",
-    "Enterprise pricing can be expensive"
-   ],
-   "pricing_model": "Freemium - Free for 5 users, then per-user/per-printer pricing starting from $0.02 per page"
-  },
-  {
-   "name": "Printix",
-   "strengths": [
-    "Cloud-native architecture",
-    "Strong Microsoft 365 integration",
-    "Easy deployment",
-    "Automatic updates"
-   ],
-   "weaknesses": [
-    "Limited to Microsoft ecosystem",
-    "Fewer advanced features than PaperCut"
-   ],
-   "pricing_model": "Subscription-based per user/month"
-  },
-  {
-   "name": "PrinterLogic",
-   "strengths": [
-    "Serverless direct IP printing",
-    "Enterprise scalability",
-    "Strong driver management"
-   ],
-   "weaknesses": [
-    "Complex initial setup",
-    "Higher cost for small organizations"
-   ],
-   "pricing_model": "Per-device perpetual license + annual maintenance"
-  },
-  {
-   "name": "YSoft SafeQ",
-   "strengths": [
-    "Comprehensive reporting",
-    "3D printing management",
-    "Strong security features",
-    "Embedded terminal support"
-   ],
-   "weaknesses": [
-    "Higher price point",
-    "Requires on-premises components"
-   ],
-   "pricing_model": "Per-device license with optional modules"
-  },
-  {
-   "name": "AWS Print Service",
-   "strengths": [
-    "Global compliance standards",
-    "AWS ecosystem integration"
-   ],
-   "weaknesses": [
-    "Limited print management features",
-    "AWS lock-in"
-   ],
-   "pricing_model": "Pay-per-use AWS service"
-  },
-  {
-   "name": "Microsoft Azure Print",
-  
+
 
 PROJECT CONTEXT (from CLAUDE.md):
 # OpenPrint Cloud
@@ -374,6 +137,7 @@ internal/auth/password/password.go
 internal/auth/roles/roles.go
 internal/auth/saml/saml.go
 internal/middleware/cookie_auth.go
+internal/middleware/ratelimit.go
 internal/middleware/validation.go
 internal/multi-tenant/audit.go
 internal/multi-tenant/context.go
@@ -386,6 +150,19 @@ internal/shared/middleware/agent_auth.go
 internal/shared/middleware/auth.go
 internal/shared/middleware/metrics.go
 internal/shared/middleware/validation.go
+internal/shared/ratelimit/alert.go
+internal/shared/ratelimit/burst.go
+internal/shared/ratelimit/bypass.go
+internal/shared/ratelimit/circuit_breaker.go
+internal/shared/ratelimit/config.go
+internal/shared/ratelimit/limiter.go
+internal/shared/ratelimit/metrics.go
+internal/shared/ratelimit/middleware.go
+internal/shared/ratelimit/print_quota.go
+internal/shared/ratelimit/queue.go
+internal/shared/ratelimit/redis.go
+internal/shared/ratelimit/repository.go
+internal/shared/ratelimit/resolver.go
 internal/shared/telemetry/jaeger/config.go
 internal/shared/telemetry/middleware.go
 internal/shared/telemetry/prometheus/business.go
@@ -402,10 +179,5 @@ internal/testutil/context.go
 internal/testutil/db.go
 internal/testutil/fixtures.go
 internal/testutil/http.go
-internal/testutil/jwt.go
-internal/testutil/metrics.go
-internal/testutil/migrate.go
-internal/testutil/redis.go
-internal/testutil/s3.go
 
 Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
