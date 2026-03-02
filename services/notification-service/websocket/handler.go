@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
+	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var upgrader = websocket.Upgrader{
+var upgrader = gorillawebsocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
@@ -158,7 +158,7 @@ func (c *Client) readPump() {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			if gorillawebsocket.IsUnexpectedCloseError(err, gorillawebsocket.CloseGoingAway, gorillawebsocket.CloseAbnormalClosure) {
 				log.Printf("WebSocket error: %v", err)
 			}
 			break
@@ -183,7 +183,7 @@ func (c *Client) writePump() {
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
 				// Hub closed the channel
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.Conn.WriteMessage(gorillawebsocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -195,7 +195,7 @@ func (c *Client) writePump() {
 			}
 
 			c.mu.Lock()
-			err = c.Conn.WriteMessage(websocket.TextMessage, data)
+			err = c.Conn.WriteMessage(gorillawebsocket.TextMessage, data)
 			c.mu.Unlock()
 
 			if err != nil {
@@ -204,7 +204,7 @@ func (c *Client) writePump() {
 
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.Conn.WriteMessage(gorillawebsocket.PingMessage, nil); err != nil {
 				return
 			}
 		}

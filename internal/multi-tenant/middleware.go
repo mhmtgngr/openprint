@@ -90,8 +90,6 @@ func TenantMiddleware(cfg MiddlewareConfig) func(http.Handler) http.Handler {
 
 // extractFromJWT extracts tenant information from JWT claims stored in request context.
 func extractFromJWT(r *http.Request) (tenantID, tenantName string, role Role, isPlatformAdmin bool, err error) {
-	ctx := r.Context()
-
 	// Get user info from JWT middleware
 	userID := middleware.GetUserID(r)
 	userRole := middleware.GetRole(r)
@@ -200,9 +198,9 @@ func RequireOrgAdmin(skipPaths ...string) func(http.Handler) http.Handler {
 	}
 }
 
-// RequireTenantAccess ensures the user can access the specified tenant.
+// RequireTenantAccessMiddleware ensures the user can access the specified tenant.
 // The tenant ID is extracted from the URL using the provided function.
-func RequireTenantAccess(tenantIDFunc func(*http.Request) (string, error)) func(http.Handler) http.Handler {
+func RequireTenantAccessMiddleware(tenantIDFunc func(*http.Request) (string, error)) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

@@ -440,6 +440,3 @@ func (r *InMemoryAuditRepository) matchesFilter(event *AuditEvent, filter *Audit
 
 	return true
 }
-
-// Helper contextKey type for middleware context values.
-type contextKey string

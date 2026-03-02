@@ -69,6 +69,7 @@ func (b *TenantQueryBuilder) Args() map[string]interface{} {
 	return map[string]interface{}{
 		"tenant_id": b.tenantID,
 	}
+}
 
 // MergeArgs merges tenant args with additional query arguments.
 func (b *TenantQueryBuilder) MergeArgs(args map[string]interface{}) map[string]interface{} {

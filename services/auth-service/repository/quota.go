@@ -270,7 +270,7 @@ func (r *QuotaRepository) UpdateUsage(ctx context.Context, tenantID string, reso
 }
 
 // GetQuotaInfo returns combined quota configuration and usage information.
-func (r *QuotaRepository) GetQuotaInfo(ctx context.Context, tenantID string) (*multi_tenant.QuotaInfo, error) {
+func (r *QuotaRepository) GetQuotaInfo(ctx context.Context, tenantID string) (*multitenant.QuotaInfo, error) {
 	config, err := r.GetConfig(ctx, tenantID)
 	if err != nil {
 		return nil, err
