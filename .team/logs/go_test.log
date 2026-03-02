@@ -172,7 +172,7 @@
     --- PASS: TestSecurity_AudienceValidationEnforced/DefaultConfig_always_has_audience_validation_enabled (0.00s)
     --- PASS: TestSecurity_AudienceValidationEnforced/token_without_audience_is_rejected_when_validation_is_enabled (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/jwt	0.025s
+ok  	github.com/openprint/openprint/internal/auth/jwt	0.020s
 === RUN   TestNewManager
 === RUN   TestNewManager/valid_config
 === RUN   TestNewManager/nil_config
@@ -272,7 +272,7 @@ ok  	github.com/openprint/openprint/internal/auth/jwt	0.025s
 --- PASS: TestExchange (0.00s)
     --- PASS: TestExchange/empty_code_returns_error (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/oidc	0.008s
+ok  	github.com/openprint/openprint/internal/auth/oidc	0.011s
 === RUN   TestDefaultParameters
 --- PASS: TestDefaultParameters (0.00s)
 === RUN   TestNewHasher
@@ -283,43 +283,43 @@ ok  	github.com/openprint/openprint/internal/auth/oidc	0.008s
 === RUN   TestHasher_Generate/generate_valid_hash
 === RUN   TestHasher_Generate/generate_different_hashes_for_same_password
 === RUN   TestHasher_Generate/empty_password_returns_error
---- PASS: TestHasher_Generate (0.47s)
-    --- PASS: TestHasher_Generate/generate_valid_hash (0.20s)
-    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.27s)
+--- PASS: TestHasher_Generate (0.70s)
+    --- PASS: TestHasher_Generate/generate_valid_hash (0.25s)
+    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.45s)
     --- PASS: TestHasher_Generate/empty_password_returns_error (0.00s)
 === RUN   TestHasher_Verify
 === RUN   TestHasher_Verify/verify_correct_password
 === RUN   TestHasher_Verify/verify_incorrect_password
 === RUN   TestHasher_Verify/verify_invalid_hash_format
---- PASS: TestHasher_Verify (0.39s)
-    --- PASS: TestHasher_Verify/verify_correct_password (0.17s)
-    --- PASS: TestHasher_Verify/verify_incorrect_password (0.22s)
+--- PASS: TestHasher_Verify (0.43s)
+    --- PASS: TestHasher_Verify/verify_correct_password (0.25s)
+    --- PASS: TestHasher_Verify/verify_incorrect_password (0.19s)
     --- PASS: TestHasher_Verify/verify_invalid_hash_format (0.00s)
 === RUN   TestHasher_MustGenerate
 === RUN   TestHasher_MustGenerate/successful_generation
 === RUN   TestHasher_MustGenerate/panics_on_empty_password
---- PASS: TestHasher_MustGenerate (0.21s)
-    --- PASS: TestHasher_MustGenerate/successful_generation (0.21s)
+--- PASS: TestHasher_MustGenerate (0.14s)
+    --- PASS: TestHasher_MustGenerate/successful_generation (0.14s)
     --- PASS: TestHasher_MustGenerate/panics_on_empty_password (0.00s)
 === RUN   TestGenerate
---- PASS: TestGenerate (0.17s)
+--- PASS: TestGenerate (0.23s)
 === RUN   TestVerify
 === RUN   TestVerify/verify_correct_password
 === RUN   TestVerify/verify_incorrect_password
---- PASS: TestVerify (0.23s)
-    --- PASS: TestVerify/verify_correct_password (0.07s)
-    --- PASS: TestVerify/verify_incorrect_password (0.07s)
+--- PASS: TestVerify (0.28s)
+    --- PASS: TestVerify/verify_correct_password (0.09s)
+    --- PASS: TestVerify/verify_incorrect_password (0.09s)
 === RUN   TestMustVerify
 === RUN   TestMustVerify/successful_verification
 === RUN   TestMustVerify/panics_on_invalid_password
---- PASS: TestMustVerify (0.22s)
-    --- PASS: TestMustVerify/successful_verification (0.07s)
+--- PASS: TestMustVerify (0.23s)
+    --- PASS: TestMustVerify/successful_verification (0.08s)
     --- PASS: TestMustVerify/panics_on_invalid_password (0.08s)
 === RUN   TestDecodeHash
 === RUN   TestDecodeHash/decode_valid_hash
 === RUN   TestDecodeHash/decode_invalid_hash_format
 === RUN   TestDecodeHash/decode_hash_with_wrong_version
---- PASS: TestDecodeHash (0.08s)
+--- PASS: TestDecodeHash (0.07s)
     --- PASS: TestDecodeHash/decode_valid_hash (0.00s)
     --- PASS: TestDecodeHash/decode_invalid_hash_format (0.00s)
     --- PASS: TestDecodeHash/decode_hash_with_wrong_version (0.00s)
@@ -360,29 +360,29 @@ ok  	github.com/openprint/openprint/internal/auth/oidc	0.008s
     --- PASS: TestStrengthChecker_CalculateStrength/maximum_strength (0.00s)
     --- PASS: TestStrengthChecker_CalculateStrength/weak_password (0.00s)
 === RUN   TestHash_String
---- PASS: TestHash_String (0.10s)
+--- PASS: TestHash_String (0.09s)
 === RUN   TestConstantTimeComparison
---- PASS: TestConstantTimeComparison (0.31s)
+--- PASS: TestConstantTimeComparison (0.25s)
 === RUN   TestCrossCompatibility
---- PASS: TestCrossCompatibility (0.17s)
+--- PASS: TestCrossCompatibility (0.31s)
 === RUN   TestEmptyPasswordHash
 === RUN   TestEmptyPasswordHash/hash_empty_password
 === RUN   TestEmptyPasswordHash/verify_empty_password
---- PASS: TestEmptyPasswordHash (0.21s)
+--- PASS: TestEmptyPasswordHash (0.23s)
     --- PASS: TestEmptyPasswordHash/hash_empty_password (0.00s)
-    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.21s)
+    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.23s)
 === RUN   TestSpecialCharactersInPassword
 === RUN   TestSpecialCharactersInPassword/special_chars
 === RUN   TestSpecialCharactersInPassword/special_chars#01
 === RUN   TestSpecialCharactersInPassword/special_chars#02
 === RUN   TestSpecialCharactersInPassword/special_chars#03
---- PASS: TestSpecialCharactersInPassword (0.79s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars (0.14s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.17s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.26s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.22s)
+--- PASS: TestSpecialCharactersInPassword (0.99s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars (0.28s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.18s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.21s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.33s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/password	3.367s
+ok  	github.com/openprint/openprint/internal/auth/password	3.988s
 === RUN   TestNewManager
 === RUN   TestNewManager/valid_config
 === RUN   TestNewManager/nil_config
@@ -436,7 +436,7 @@ ok  	github.com/openprint/openprint/internal/auth/password	3.367s
 === RUN   TestSAMLConditions
 --- PASS: TestSAMLConditions (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/saml	0.009s
+ok  	github.com/openprint/openprint/internal/auth/saml	0.008s
 === RUN   TestDefaultCookieSecurity
 --- PASS: TestDefaultCookieSecurity (0.00s)
 === RUN   TestProductionCookieSecurity
@@ -478,7 +478,673 @@ ok  	github.com/openprint/openprint/internal/auth/saml	0.009s
 --- PASS: TestClearSessionCookie (0.00s)
     --- PASS: TestClearSessionCookie/clears_cookie_properly (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/middleware	0.023s
+ok  	github.com/openprint/openprint/internal/middleware	0.014s
+=== RUN   TestNewLogger
+--- PASS: TestNewLogger (0.00s)
+=== RUN   TestLogger_Log
+=== RUN   TestLogger_Log/log_event_with_tenant_context
+=== RUN   TestLogger_Log/log_event_with_pre-set_tenant_ID
+=== RUN   TestLogger_Log/log_event_without_tenant
+=== RUN   TestLogger_Log/event_with_ID_is_preserved
+=== RUN   TestLogger_Log/event_with_timestamp_is_preserved
+--- PASS: TestLogger_Log (0.00s)
+    --- PASS: TestLogger_Log/log_event_with_tenant_context (0.00s)
+    --- PASS: TestLogger_Log/log_event_with_pre-set_tenant_ID (0.00s)
+    --- PASS: TestLogger_Log/log_event_without_tenant (0.00s)
+    --- PASS: TestLogger_Log/event_with_ID_is_preserved (0.00s)
+    --- PASS: TestLogger_Log/event_with_timestamp_is_preserved (0.00s)
+=== RUN   TestLogger_LogCreate
+--- PASS: TestLogger_LogCreate (0.00s)
+=== RUN   TestLogger_LogRead
+--- PASS: TestLogger_LogRead (0.00s)
+=== RUN   TestLogger_LogUpdate
+--- PASS: TestLogger_LogUpdate (0.00s)
+=== RUN   TestLogger_LogDelete
+--- PASS: TestLogger_LogDelete (0.00s)
+=== RUN   TestLogger_LogLogin
+--- PASS: TestLogger_LogLogin (0.00s)
+=== RUN   TestLogger_LogLogout
+--- PASS: TestLogger_LogLogout (0.00s)
+=== RUN   TestLogger_LogPermissionChange
+--- PASS: TestLogger_LogPermissionChange (0.00s)
+=== RUN   TestLogger_LogPermissionChange_Revoke
+--- PASS: TestLogger_LogPermissionChange_Revoke (0.00s)
+=== RUN   TestLogger_LogQuotaExceeded
+--- PASS: TestLogger_LogQuotaExceeded (0.00s)
+=== RUN   TestLogger_LogSecurityEvent
+--- PASS: TestLogger_LogSecurityEvent (0.00s)
+=== RUN   TestLogger_Query
+=== RUN   TestLogger_Query/query_with_tenant_context
+=== RUN   TestLogger_Query/platform_admin_can_query_without_tenant
+=== RUN   TestLogger_Query/query_without_tenant_context_returns_error
+--- PASS: TestLogger_Query (0.00s)
+    --- PASS: TestLogger_Query/query_with_tenant_context (0.00s)
+    --- PASS: TestLogger_Query/platform_admin_can_query_without_tenant (0.00s)
+    --- PASS: TestLogger_Query/query_without_tenant_context_returns_error (0.00s)
+=== RUN   TestLogger_QueryWithFilter
+=== RUN   TestLogger_QueryWithFilter/no_filter
+=== RUN   TestLogger_QueryWithFilter/filter_by_user_ID
+=== RUN   TestLogger_QueryWithFilter/filter_by_action
+=== RUN   TestLogger_QueryWithFilter/filter_by_level
+=== RUN   TestLogger_QueryWithFilter/filter_by_start_time
+=== RUN   TestLogger_QueryWithFilter/filter_with_limit
+=== RUN   TestLogger_QueryWithFilter/filter_with_offset
+=== RUN   TestLogger_QueryWithFilter/filter_with_limit_and_offset
+--- PASS: TestLogger_QueryWithFilter (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/no_filter (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_by_user_ID (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_by_action (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_by_level (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_by_start_time (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_with_limit (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_with_offset (0.00s)
+    --- PASS: TestLogger_QueryWithFilter/filter_with_limit_and_offset (0.00s)
+=== RUN   TestLogger_GetEvent
+=== RUN   TestLogger_GetEvent/get_event_with_matching_tenant
+=== RUN   TestLogger_GetEvent/platform_admin_can_get_any_event
+=== RUN   TestLogger_GetEvent/get_event_with_different_tenant
+=== RUN   TestLogger_GetEvent/get_event_without_tenant_context
+--- PASS: TestLogger_GetEvent (0.00s)
+    --- PASS: TestLogger_GetEvent/get_event_with_matching_tenant (0.00s)
+    --- PASS: TestLogger_GetEvent/platform_admin_can_get_any_event (0.00s)
+    --- PASS: TestLogger_GetEvent/get_event_with_different_tenant (0.00s)
+    --- PASS: TestLogger_GetEvent/get_event_without_tenant_context (0.00s)
+=== RUN   TestLogger_HTTPMiddleware
+--- PASS: TestLogger_HTTPMiddleware (0.00s)
+=== RUN   TestLogger_HTTPMiddleware_WithRequestID
+--- PASS: TestLogger_HTTPMiddleware_WithRequestID (0.00s)
+=== RUN   TestInMemoryAuditRepository_Store
+--- PASS: TestInMemoryAuditRepository_Store (0.00s)
+=== RUN   TestInMemoryAuditRepository_Query
+=== RUN   TestInMemoryAuditRepository_Query/query_all_for_tenant
+=== RUN   TestInMemoryAuditRepository_Query/query_non-existent_tenant
+=== RUN   TestInMemoryAuditRepository_Query/filter_by_user_ID
+=== RUN   TestInMemoryAuditRepository_Query/filter_by_action
+=== RUN   TestInMemoryAuditRepository_Query/filter_by_level
+=== RUN   TestInMemoryAuditRepository_Query/filter_by_start_time
+=== RUN   TestInMemoryAuditRepository_Query/filter_by_end_time
+=== RUN   TestInMemoryAuditRepository_Query/with_limit
+=== RUN   TestInMemoryAuditRepository_Query/with_offset
+--- PASS: TestInMemoryAuditRepository_Query (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/query_all_for_tenant (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/query_non-existent_tenant (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/filter_by_user_ID (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/filter_by_action (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/filter_by_level (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/filter_by_start_time (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/filter_by_end_time (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/with_limit (0.00s)
+    --- PASS: TestInMemoryAuditRepository_Query/with_offset (0.00s)
+=== RUN   TestInMemoryAuditRepository_QueryByID
+=== RUN   TestInMemoryAuditRepository_QueryByID/existing_event
+=== RUN   TestInMemoryAuditRepository_QueryByID/non-existent_event
+=== RUN   TestInMemoryAuditRepository_QueryByID/non-existent_tenant
+--- PASS: TestInMemoryAuditRepository_QueryByID (0.00s)
+    --- PASS: TestInMemoryAuditRepository_QueryByID/existing_event (0.00s)
+    --- PASS: TestInMemoryAuditRepository_QueryByID/non-existent_event (0.00s)
+    --- PASS: TestInMemoryAuditRepository_QueryByID/non-existent_tenant (0.00s)
+=== RUN   TestAuditLevelValues
+=== RUN   TestAuditLevelValues/info
+=== RUN   TestAuditLevelValues/warn
+=== RUN   TestAuditLevelValues/error
+=== RUN   TestAuditLevelValues/critical
+--- PASS: TestAuditLevelValues (0.00s)
+    --- PASS: TestAuditLevelValues/info (0.00s)
+    --- PASS: TestAuditLevelValues/warn (0.00s)
+    --- PASS: TestAuditLevelValues/error (0.00s)
+    --- PASS: TestAuditLevelValues/critical (0.00s)
+=== RUN   TestAuditActionValues
+=== RUN   TestAuditActionValues/create
+=== RUN   TestAuditActionValues/read
+=== RUN   TestAuditActionValues/update
+=== RUN   TestAuditActionValues/delete
+=== RUN   TestAuditActionValues/login
+=== RUN   TestAuditActionValues/logout
+=== RUN   TestAuditActionValues/export
+=== RUN   TestAuditActionValues/import
+=== RUN   TestAuditActionValues/share
+=== RUN   TestAuditActionValues/permission_change
+=== RUN   TestAuditActionValues/quota_exceeded
+--- PASS: TestAuditActionValues (0.00s)
+    --- PASS: TestAuditActionValues/create (0.00s)
+    --- PASS: TestAuditActionValues/read (0.00s)
+    --- PASS: TestAuditActionValues/update (0.00s)
+    --- PASS: TestAuditActionValues/delete (0.00s)
+    --- PASS: TestAuditActionValues/login (0.00s)
+    --- PASS: TestAuditActionValues/logout (0.00s)
+    --- PASS: TestAuditActionValues/export (0.00s)
+    --- PASS: TestAuditActionValues/import (0.00s)
+    --- PASS: TestAuditActionValues/share (0.00s)
+    --- PASS: TestAuditActionValues/permission_change (0.00s)
+    --- PASS: TestAuditActionValues/quota_exceeded (0.00s)
+=== RUN   TestAuditEvent_Fields
+--- PASS: TestAuditEvent_Fields (0.00s)
+=== RUN   TestAuditFilter_Fields
+--- PASS: TestAuditFilter_Fields (0.00s)
+=== RUN   TestInMemoryAuditRepository_Concurrency
+--- PASS: TestInMemoryAuditRepository_Concurrency (0.00s)
+=== RUN   TestNewTenantContext
+=== RUN   TestNewTenantContext/platform_admin
+=== RUN   TestNewTenantContext/org_admin
+=== RUN   TestNewTenantContext/org_user
+=== RUN   TestNewTenantContext/org_viewer
+--- PASS: TestNewTenantContext (0.00s)
+    --- PASS: TestNewTenantContext/platform_admin (0.00s)
+    --- PASS: TestNewTenantContext/org_admin (0.00s)
+    --- PASS: TestNewTenantContext/org_user (0.00s)
+    --- PASS: TestNewTenantContext/org_viewer (0.00s)
+=== RUN   TestWithTenantContext
+--- PASS: TestWithTenantContext (0.00s)
+=== RUN   TestGetTenantID
+=== RUN   TestGetTenantID/valid_tenant_ID
+=== RUN   TestGetTenantID/missing_tenant_ID
+=== RUN   TestGetTenantID/empty_string_tenant_ID
+=== RUN   TestGetTenantID/wrong_type_in_context
+--- PASS: TestGetTenantID (0.00s)
+    --- PASS: TestGetTenantID/valid_tenant_ID (0.00s)
+    --- PASS: TestGetTenantID/missing_tenant_ID (0.00s)
+    --- PASS: TestGetTenantID/empty_string_tenant_ID (0.00s)
+    --- PASS: TestGetTenantID/wrong_type_in_context (0.00s)
+=== RUN   TestMustGetTenantID
+=== RUN   TestMustGetTenantID/valid_tenant_ID_returns_ID
+=== RUN   TestMustGetTenantID/missing_tenant_ID_panics
+--- PASS: TestMustGetTenantID (0.00s)
+    --- PASS: TestMustGetTenantID/valid_tenant_ID_returns_ID (0.00s)
+    --- PASS: TestMustGetTenantID/missing_tenant_ID_panics (0.00s)
+=== RUN   TestGetTenantName
+=== RUN   TestGetTenantName/valid_tenant_name
+=== RUN   TestGetTenantName/missing_tenant_name
+=== RUN   TestGetTenantName/wrong_type_in_context
+--- PASS: TestGetTenantName (0.00s)
+    --- PASS: TestGetTenantName/valid_tenant_name (0.00s)
+    --- PASS: TestGetTenantName/missing_tenant_name (0.00s)
+    --- PASS: TestGetTenantName/wrong_type_in_context (0.00s)
+=== RUN   TestGetTenantRole
+=== RUN   TestGetTenantRole/platform_admin_role
+=== RUN   TestGetTenantRole/org_admin_role
+=== RUN   TestGetTenantRole/org_user_role
+=== RUN   TestGetTenantRole/org_viewer_role
+=== RUN   TestGetTenantRole/missing_role
+=== RUN   TestGetTenantRole/wrong_type_in_context
+--- PASS: TestGetTenantRole (0.00s)
+    --- PASS: TestGetTenantRole/platform_admin_role (0.00s)
+    --- PASS: TestGetTenantRole/org_admin_role (0.00s)
+    --- PASS: TestGetTenantRole/org_user_role (0.00s)
+    --- PASS: TestGetTenantRole/org_viewer_role (0.00s)
+    --- PASS: TestGetTenantRole/missing_role (0.00s)
+    --- PASS: TestGetTenantRole/wrong_type_in_context (0.00s)
+=== RUN   TestIsPlatformAdmin
+=== RUN   TestIsPlatformAdmin/is_platform_admin
+=== RUN   TestIsPlatformAdmin/is_not_platform_admin
+=== RUN   TestIsPlatformAdmin/missing_platform_admin_flag
+=== RUN   TestIsPlatformAdmin/wrong_type_in_context
+--- PASS: TestIsPlatformAdmin (0.00s)
+    --- PASS: TestIsPlatformAdmin/is_platform_admin (0.00s)
+    --- PASS: TestIsPlatformAdmin/is_not_platform_admin (0.00s)
+    --- PASS: TestIsPlatformAdmin/missing_platform_admin_flag (0.00s)
+    --- PASS: TestIsPlatformAdmin/wrong_type_in_context (0.00s)
+=== RUN   TestIsOrgAdmin
+=== RUN   TestIsOrgAdmin/org_admin
+=== RUN   TestIsOrgAdmin/platform_admin
+=== RUN   TestIsOrgAdmin/org_user
+=== RUN   TestIsOrgAdmin/org_viewer
+=== RUN   TestIsOrgAdmin/empty_role
+--- PASS: TestIsOrgAdmin (0.00s)
+    --- PASS: TestIsOrgAdmin/org_admin (0.00s)
+    --- PASS: TestIsOrgAdmin/platform_admin (0.00s)
+    --- PASS: TestIsOrgAdmin/org_user (0.00s)
+    --- PASS: TestIsOrgAdmin/org_viewer (0.00s)
+    --- PASS: TestIsOrgAdmin/empty_role (0.00s)
+=== RUN   TestGetQuota
+=== RUN   TestGetQuota/quota_exists
+=== RUN   TestGetQuota/quota_missing
+=== RUN   TestGetQuota/wrong_type_in_context
+--- PASS: TestGetQuota (0.00s)
+    --- PASS: TestGetQuota/quota_exists (0.00s)
+    --- PASS: TestGetQuota/quota_missing (0.00s)
+    --- PASS: TestGetQuota/wrong_type_in_context (0.00s)
+=== RUN   TestCanAccessTenant
+=== RUN   TestCanAccessTenant/platform_admin_can_access_any_tenant
+=== RUN   TestCanAccessTenant/user_can_access_their_own_tenant
+=== RUN   TestCanAccessTenant/user_cannot_access_different_tenant
+=== RUN   TestCanAccessTenant/user_without_tenant_cannot_access
+--- PASS: TestCanAccessTenant (0.00s)
+    --- PASS: TestCanAccessTenant/platform_admin_can_access_any_tenant (0.00s)
+    --- PASS: TestCanAccessTenant/user_can_access_their_own_tenant (0.00s)
+    --- PASS: TestCanAccessTenant/user_cannot_access_different_tenant (0.00s)
+    --- PASS: TestCanAccessTenant/user_without_tenant_cannot_access (0.00s)
+=== RUN   TestRequireTenantAccess
+=== RUN   TestRequireTenantAccess/platform_admin_can_access_any_tenant
+=== RUN   TestRequireTenantAccess/user_can_access_their_own_tenant
+=== RUN   TestRequireTenantAccess/user_cannot_access_different_tenant
+=== RUN   TestRequireTenantAccess/user_without_tenant_cannot_access
+--- PASS: TestRequireTenantAccess (0.00s)
+    --- PASS: TestRequireTenantAccess/platform_admin_can_access_any_tenant (0.00s)
+    --- PASS: TestRequireTenantAccess/user_can_access_their_own_tenant (0.00s)
+    --- PASS: TestRequireTenantAccess/user_cannot_access_different_tenant (0.00s)
+    --- PASS: TestRequireTenantAccess/user_without_tenant_cannot_access (0.00s)
+=== RUN   TestWithTenantID
+--- PASS: TestWithTenantID (0.00s)
+=== RUN   TestClearTenantContext
+--- PASS: TestClearTenantContext (0.00s)
+=== RUN   TestQuotaInfo_UsagePercentage
+=== RUN   TestQuotaInfo_UsagePercentage/printers_usage
+=== RUN   TestQuotaInfo_UsagePercentage/printers_at_limit
+=== RUN   TestQuotaInfo_UsagePercentage/printers_unlimited
+=== RUN   TestQuotaInfo_UsagePercentage/storage_usage
+=== RUN   TestQuotaInfo_UsagePercentage/storage_unlimited
+=== RUN   TestQuotaInfo_UsagePercentage/jobs_usage
+=== RUN   TestQuotaInfo_UsagePercentage/users_usage
+=== RUN   TestQuotaInfo_UsagePercentage/unknown_resource_type
+--- PASS: TestQuotaInfo_UsagePercentage (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/printers_usage (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/printers_at_limit (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/printers_unlimited (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/storage_usage (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/storage_unlimited (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/jobs_usage (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/users_usage (0.00s)
+    --- PASS: TestQuotaInfo_UsagePercentage/unknown_resource_type (0.00s)
+=== RUN   TestQuotaInfo_IsNearLimit
+=== RUN   TestQuotaInfo_IsNearLimit/below_threshold
+=== RUN   TestQuotaInfo_IsNearLimit/at_threshold
+=== RUN   TestQuotaInfo_IsNearLimit/above_threshold
+=== RUN   TestQuotaInfo_IsNearLimit/unknown_resource_type
+--- PASS: TestQuotaInfo_IsNearLimit (0.00s)
+    --- PASS: TestQuotaInfo_IsNearLimit/below_threshold (0.00s)
+    --- PASS: TestQuotaInfo_IsNearLimit/at_threshold (0.00s)
+    --- PASS: TestQuotaInfo_IsNearLimit/above_threshold (0.00s)
+    --- PASS: TestQuotaInfo_IsNearLimit/unknown_resource_type (0.00s)
+=== RUN   TestRoleValues
+=== RUN   TestRoleValues/platform_admin
+=== RUN   TestRoleValues/org_admin
+=== RUN   TestRoleValues/org_user
+=== RUN   TestRoleValues/org_viewer
+--- PASS: TestRoleValues (0.00s)
+    --- PASS: TestRoleValues/platform_admin (0.00s)
+    --- PASS: TestRoleValues/org_admin (0.00s)
+    --- PASS: TestRoleValues/org_user (0.00s)
+    --- PASS: TestRoleValues/org_viewer (0.00s)
+=== RUN   TestErrorValues
+--- PASS: TestErrorValues (0.00s)
+=== RUN   TestTenantMiddleware
+=== RUN   TestTenantMiddleware/skip_path_matches
+=== RUN   TestTenantMiddleware/skip_path_with_prefix
+=== RUN   TestTenantMiddleware/platform_admin_path_with_admin_role
+=== RUN   TestTenantMiddleware/platform_admin_path_with_non-admin_role
+--- PASS: TestTenantMiddleware (0.00s)
+    --- PASS: TestTenantMiddleware/skip_path_matches (0.00s)
+    --- PASS: TestTenantMiddleware/skip_path_with_prefix (0.00s)
+    --- PASS: TestTenantMiddleware/platform_admin_path_with_admin_role (0.00s)
+    --- PASS: TestTenantMiddleware/platform_admin_path_with_non-admin_role (0.00s)
+=== RUN   TestExtractFromJWT
+=== RUN   TestExtractFromJWT/platform_admin
+=== RUN   TestExtractFromJWT/platform_admin_role
+=== RUN   TestExtractFromJWT/org_admin_with_organization
+=== RUN   TestExtractFromJWT/org_user
+=== RUN   TestExtractFromJWT/user_role_maps_to_org_user
+=== RUN   TestExtractFromJWT/viewer_role
+=== RUN   TestExtractFromJWT/org_viewer_role
+=== RUN   TestExtractFromJWT/unknown_role_defaults_to_org_user
+=== RUN   TestExtractFromJWT/no_user_context
+=== RUN   TestExtractFromJWT/regular_user_without_organization
+--- PASS: TestExtractFromJWT (0.00s)
+    --- PASS: TestExtractFromJWT/platform_admin (0.00s)
+    --- PASS: TestExtractFromJWT/platform_admin_role (0.00s)
+    --- PASS: TestExtractFromJWT/org_admin_with_organization (0.00s)
+    --- PASS: TestExtractFromJWT/org_user (0.00s)
+    --- PASS: TestExtractFromJWT/user_role_maps_to_org_user (0.00s)
+    --- PASS: TestExtractFromJWT/viewer_role (0.00s)
+    --- PASS: TestExtractFromJWT/org_viewer_role (0.00s)
+    --- PASS: TestExtractFromJWT/unknown_role_defaults_to_org_user (0.00s)
+    --- PASS: TestExtractFromJWT/no_user_context (0.00s)
+    --- PASS: TestExtractFromJWT/regular_user_without_organization (0.00s)
+=== RUN   TestRequireTenant
+=== RUN   TestRequireTenant/skip_path
+=== RUN   TestRequireTenant/no_tenant_context_returns_error
+--- PASS: TestRequireTenant (0.00s)
+    --- PASS: TestRequireTenant/skip_path (0.00s)
+    --- PASS: TestRequireTenant/no_tenant_context_returns_error (0.00s)
+=== RUN   TestRequirePlatformAdmin
+=== RUN   TestRequirePlatformAdmin/platform_admin_allowed
+=== RUN   TestRequirePlatformAdmin/admin_role_allowed
+=== RUN   TestRequirePlatformAdmin/regular_user_denied
+=== RUN   TestRequirePlatformAdmin/no_role_denied
+=== RUN   TestRequirePlatformAdmin/skip_path_allowed
+--- PASS: TestRequirePlatformAdmin (0.00s)
+    --- PASS: TestRequirePlatformAdmin/platform_admin_allowed (0.00s)
+    --- PASS: TestRequirePlatformAdmin/admin_role_allowed (0.00s)
+    --- PASS: TestRequirePlatformAdmin/regular_user_denied (0.00s)
+    --- PASS: TestRequirePlatformAdmin/no_role_denied (0.00s)
+    --- PASS: TestRequirePlatformAdmin/skip_path_allowed (0.00s)
+=== RUN   TestRequireOrgAdmin
+=== RUN   TestRequireOrgAdmin/platform_admin_allowed
+=== RUN   TestRequireOrgAdmin/admin_role_allowed
+=== RUN   TestRequireOrgAdmin/org_admin_allowed
+=== RUN   TestRequireOrgAdmin/org_user_denied
+=== RUN   TestRequireOrgAdmin/viewer_denied
+=== RUN   TestRequireOrgAdmin/skip_path_allowed
+=== RUN   TestRequireOrgAdmin/no_role_on_skip_path
+--- PASS: TestRequireOrgAdmin (0.00s)
+    --- PASS: TestRequireOrgAdmin/platform_admin_allowed (0.00s)
+    --- PASS: TestRequireOrgAdmin/admin_role_allowed (0.00s)
+    --- PASS: TestRequireOrgAdmin/org_admin_allowed (0.00s)
+    --- PASS: TestRequireOrgAdmin/org_user_denied (0.00s)
+    --- PASS: TestRequireOrgAdmin/viewer_denied (0.00s)
+    --- PASS: TestRequireOrgAdmin/skip_path_allowed (0.00s)
+    --- PASS: TestRequireOrgAdmin/no_role_on_skip_path (0.00s)
+=== RUN   TestRequireTenantAccessMiddleware
+=== RUN   TestRequireTenantAccessMiddleware/platform_admin_can_access_any_tenant
+=== RUN   TestRequireTenantAccessMiddleware/user_can_access_their_own_tenant
+=== RUN   TestRequireTenantAccessMiddleware/user_cannot_access_different_tenant
+=== RUN   TestRequireTenantAccessMiddleware/no_tenant_context_returns_error
+--- PASS: TestRequireTenantAccessMiddleware (0.00s)
+    --- PASS: TestRequireTenantAccessMiddleware/platform_admin_can_access_any_tenant (0.00s)
+    --- PASS: TestRequireTenantAccessMiddleware/user_can_access_their_own_tenant (0.00s)
+    --- PASS: TestRequireTenantAccessMiddleware/user_cannot_access_different_tenant (0.00s)
+    --- PASS: TestRequireTenantAccessMiddleware/no_tenant_context_returns_error (0.00s)
+=== RUN   TestTenantFromHeader
+=== RUN   TestTenantFromHeader/valid_tenant_ID
+=== RUN   TestTenantFromHeader/empty_header
+=== RUN   TestTenantFromHeader/missing_header
+--- PASS: TestTenantFromHeader (0.00s)
+    --- PASS: TestTenantFromHeader/valid_tenant_ID (0.00s)
+    --- PASS: TestTenantFromHeader/empty_header (0.00s)
+    --- PASS: TestTenantFromHeader/missing_header (0.00s)
+=== RUN   TestTenantFromQuery
+=== RUN   TestTenantFromQuery/valid_tenant_ID
+=== RUN   TestTenantFromQuery/empty_query_param
+=== RUN   TestTenantFromQuery/missing_query_param
+--- PASS: TestTenantFromQuery (0.00s)
+    --- PASS: TestTenantFromQuery/valid_tenant_ID (0.00s)
+    --- PASS: TestTenantFromQuery/empty_query_param (0.00s)
+    --- PASS: TestTenantFromQuery/missing_query_param (0.00s)
+=== RUN   TestTenantFromURL
+--- PASS: TestTenantFromURL (0.00s)
+=== RUN   TestRespondError
+=== RUN   TestRespondError/no_tenant_context_error
+=== RUN   TestRespondError/other_error
+=== RUN   TestRespondError/app_error
+--- PASS: TestRespondError (0.00s)
+    --- PASS: TestRespondError/no_tenant_context_error (0.00s)
+    --- PASS: TestRespondError/other_error (0.00s)
+    --- PASS: TestRespondError/app_error (0.00s)
+=== RUN   TestRespondForbidden
+--- PASS: TestRespondForbidden (0.00s)
+=== RUN   TestMiddlewareConfig_Defaults
+--- PASS: TestMiddlewareConfig_Defaults (0.00s)
+=== RUN   TestTenantExtractor_Signature
+--- PASS: TestTenantExtractor_Signature (0.00s)
+=== RUN   TestTenantMiddleware_WithCustomExtractor
+--- PASS: TestTenantMiddleware_WithCustomExtractor (0.00s)
+=== RUN   TestTenantMiddleware_WithErroringExtractor
+--- PASS: TestTenantMiddleware_WithErroringExtractor (0.00s)
+=== RUN   TestTenantMiddleware_RequireTenantFalse
+--- PASS: TestTenantMiddleware_RequireTenantFalse (0.00s)
+=== RUN   TestErrorResponses
+=== RUN   TestErrorResponses/forbidden_response_format
+=== RUN   TestErrorResponses/tenant_required_response_format
+--- PASS: TestErrorResponses (0.00s)
+    --- PASS: TestErrorResponses/forbidden_response_format (0.00s)
+    --- PASS: TestErrorResponses/tenant_required_response_format (0.00s)
+=== RUN   TestNewQuotaEnforcer
+--- PASS: TestNewQuotaEnforcer (0.00s)
+=== RUN   TestQuotaEnforcer_SetWarningThreshold
+--- PASS: TestQuotaEnforcer_SetWarningThreshold (0.00s)
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota/unlimited_quota
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota/under_limit
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota/near_limit
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota/would_exceed_quota
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota/exactly_at_limit
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota/near_limit_when_at_threshold
+--- PASS: TestQuotaEnforcer_CheckPrinterQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckPrinterQuota/unlimited_quota (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckPrinterQuota/under_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckPrinterQuota/near_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckPrinterQuota/would_exceed_quota (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckPrinterQuota/exactly_at_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckPrinterQuota/near_limit_when_at_threshold (0.00s)
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota_NoTenantContext
+--- PASS: TestQuotaEnforcer_CheckPrinterQuota_NoTenantContext (0.00s)
+=== RUN   TestQuotaEnforcer_CheckStorageQuota
+=== RUN   TestQuotaEnforcer_CheckStorageQuota/unlimited_storage
+=== RUN   TestQuotaEnforcer_CheckStorageQuota/under_storage_limit
+=== RUN   TestQuotaEnforcer_CheckStorageQuota/near_storage_limit
+=== RUN   TestQuotaEnforcer_CheckStorageQuota/would_exceed_storage_quota
+--- PASS: TestQuotaEnforcer_CheckStorageQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckStorageQuota/unlimited_storage (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckStorageQuota/under_storage_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckStorageQuota/near_storage_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckStorageQuota/would_exceed_storage_quota (0.00s)
+=== RUN   TestQuotaEnforcer_CheckJobQuota
+=== RUN   TestQuotaEnforcer_CheckJobQuota/unlimited_jobs
+=== RUN   TestQuotaEnforcer_CheckJobQuota/under_job_limit
+=== RUN   TestQuotaEnforcer_CheckJobQuota/would_exceed_job_quota
+--- PASS: TestQuotaEnforcer_CheckJobQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckJobQuota/unlimited_jobs (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckJobQuota/under_job_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckJobQuota/would_exceed_job_quota (0.00s)
+=== RUN   TestQuotaEnforcer_CheckUserQuota
+=== RUN   TestQuotaEnforcer_CheckUserQuota/unlimited_users
+=== RUN   TestQuotaEnforcer_CheckUserQuota/under_user_limit
+=== RUN   TestQuotaEnforcer_CheckUserQuota/would_exceed_user_quota
+--- PASS: TestQuotaEnforcer_CheckUserQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckUserQuota/unlimited_users (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckUserQuota/under_user_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_CheckUserQuota/would_exceed_user_quota (0.00s)
+=== RUN   TestQuotaEnforcer_RequirePrinterQuota
+=== RUN   TestQuotaEnforcer_RequirePrinterQuota/allowed_-_under_limit
+=== RUN   TestQuotaEnforcer_RequirePrinterQuota/allowed_-_near_limit
+=== RUN   TestQuotaEnforcer_RequirePrinterQuota/denied_-_exceeded
+--- PASS: TestQuotaEnforcer_RequirePrinterQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_RequirePrinterQuota/allowed_-_under_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_RequirePrinterQuota/allowed_-_near_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_RequirePrinterQuota/denied_-_exceeded (0.00s)
+=== RUN   TestQuotaEnforcer_RequireStorageQuota
+=== RUN   TestQuotaEnforcer_RequireStorageQuota/allowed_-_under_limit
+=== RUN   TestQuotaEnforcer_RequireStorageQuota/denied_-_exceeded
+--- PASS: TestQuotaEnforcer_RequireStorageQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_RequireStorageQuota/allowed_-_under_limit (0.00s)
+    --- PASS: TestQuotaEnforcer_RequireStorageQuota/denied_-_exceeded (0.00s)
+=== RUN   TestQuotaEnforcer_RequireJobQuota
+=== RUN   TestQuotaEnforcer_RequireJobQuota/allowed
+=== RUN   TestQuotaEnforcer_RequireJobQuota/denied
+--- PASS: TestQuotaEnforcer_RequireJobQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_RequireJobQuota/allowed (0.00s)
+    --- PASS: TestQuotaEnforcer_RequireJobQuota/denied (0.00s)
+=== RUN   TestQuotaEnforcer_RequireUserQuota
+=== RUN   TestQuotaEnforcer_RequireUserQuota/allowed
+=== RUN   TestQuotaEnforcer_RequireUserQuota/denied
+--- PASS: TestQuotaEnforcer_RequireUserQuota (0.00s)
+    --- PASS: TestQuotaEnforcer_RequireUserQuota/allowed (0.00s)
+    --- PASS: TestQuotaEnforcer_RequireUserQuota/denied (0.00s)
+=== RUN   TestQuotaEnforcer_CheckAllQuotas
+--- PASS: TestQuotaEnforcer_CheckAllQuotas (0.00s)
+=== RUN   TestQuotaEnforcer_CheckAllQuotas_Exceeded
+--- PASS: TestQuotaEnforcer_CheckAllQuotas_Exceeded (0.00s)
+=== RUN   TestQuotaEnforcer_RecordPrinterUsage
+--- PASS: TestQuotaEnforcer_RecordPrinterUsage (0.00s)
+=== RUN   TestQuotaEnforcer_RecordStorageUsage
+--- PASS: TestQuotaEnforcer_RecordStorageUsage (0.00s)
+=== RUN   TestQuotaEnforcer_RecordJobUsage
+--- PASS: TestQuotaEnforcer_RecordJobUsage (0.00s)
+=== RUN   TestQuotaEnforcer_RecordUserUsage
+--- PASS: TestQuotaEnforcer_RecordUserUsage (0.00s)
+=== RUN   TestQuotaEnforcer_Usage_NoTenantContext
+--- PASS: TestQuotaEnforcer_Usage_NoTenantContext (0.00s)
+=== RUN   TestQuotaEnforcer_GetQuotaError
+=== RUN   TestQuotaEnforcer_GetQuotaError/repository_error
+--- PASS: TestQuotaEnforcer_GetQuotaError (0.00s)
+    --- PASS: TestQuotaEnforcer_GetQuotaError/repository_error (0.00s)
+=== RUN   TestQuotaCheckResult_IsAllowed
+=== RUN   TestQuotaCheckResult_IsAllowed/OK_status_is_allowed
+=== RUN   TestQuotaCheckResult_IsAllowed/NearLimit_status_is_allowed
+=== RUN   TestQuotaCheckResult_IsAllowed/Exceeded_status_is_not_allowed
+--- PASS: TestQuotaCheckResult_IsAllowed (0.00s)
+    --- PASS: TestQuotaCheckResult_IsAllowed/OK_status_is_allowed (0.00s)
+    --- PASS: TestQuotaCheckResult_IsAllowed/NearLimit_status_is_allowed (0.00s)
+    --- PASS: TestQuotaCheckResult_IsAllowed/Exceeded_status_is_not_allowed (0.00s)
+=== RUN   TestResourceTypeValues
+=== RUN   TestResourceTypeValues/printers
+=== RUN   TestResourceTypeValues/storage
+=== RUN   TestResourceTypeValues/jobs
+=== RUN   TestResourceTypeValues/users
+--- PASS: TestResourceTypeValues (0.00s)
+    --- PASS: TestResourceTypeValues/printers (0.00s)
+    --- PASS: TestResourceTypeValues/storage (0.00s)
+    --- PASS: TestResourceTypeValues/jobs (0.00s)
+    --- PASS: TestResourceTypeValues/users (0.00s)
+=== RUN   TestQuotaStatusValues
+=== RUN   TestQuotaStatusValues/ok
+=== RUN   TestQuotaStatusValues/near_limit
+=== RUN   TestQuotaStatusValues/exceeded
+--- PASS: TestQuotaStatusValues (0.00s)
+    --- PASS: TestQuotaStatusValues/ok (0.00s)
+    --- PASS: TestQuotaStatusValues/near_limit (0.00s)
+    --- PASS: TestQuotaStatusValues/exceeded (0.00s)
+=== RUN   TestQuotaExceededError
+--- PASS: TestQuotaExceededError (0.00s)
+=== RUN   TestQuotaEnforcer_CustomWarningThreshold
+--- PASS: TestQuotaEnforcer_CustomWarningThreshold (0.00s)
+=== RUN   TestQuotaEnforcer_CheckPrinterQuota_ZeroCount
+--- PASS: TestQuotaEnforcer_CheckPrinterQuota_ZeroCount (0.00s)
+=== RUN   TestQuotaEnforcer_CheckStorageQuota_PreciseBytes
+--- PASS: TestQuotaEnforcer_CheckStorageQuota_PreciseBytes (0.00s)
+=== RUN   TestQuotaEnforcer_MultipleQuotaChecksConsistency
+--- PASS: TestQuotaEnforcer_MultipleQuotaChecksConsistency (0.00s)
+=== RUN   TestQuotaEnforcer_Formatting
+--- PASS: TestQuotaEnforcer_Formatting (0.00s)
+=== RUN   TestQuotaEnforcer_NegativeDeltaRecording
+--- PASS: TestQuotaEnforcer_NegativeDeltaRecording (0.00s)
+=== RUN   TestNewTenantQueryBuilder
+=== RUN   TestNewTenantQueryBuilder/valid_tenant_context_without_alias
+=== RUN   TestNewTenantQueryBuilder/valid_tenant_context_with_alias
+=== RUN   TestNewTenantQueryBuilder/missing_tenant_context
+--- PASS: TestNewTenantQueryBuilder (0.00s)
+    --- PASS: TestNewTenantQueryBuilder/valid_tenant_context_without_alias (0.00s)
+    --- PASS: TestNewTenantQueryBuilder/valid_tenant_context_with_alias (0.00s)
+    --- PASS: TestNewTenantQueryBuilder/missing_tenant_context (0.00s)
+=== RUN   TestMustNewTenantQueryBuilder
+=== RUN   TestMustNewTenantQueryBuilder/valid_context_creates_builder
+=== RUN   TestMustNewTenantQueryBuilder/missing_context_panics
+--- PASS: TestMustNewTenantQueryBuilder (0.00s)
+    --- PASS: TestMustNewTenantQueryBuilder/valid_context_creates_builder (0.00s)
+    --- PASS: TestMustNewTenantQueryBuilder/missing_context_panics (0.00s)
+=== RUN   TestTenantQueryBuilder_WhereClause
+=== RUN   TestTenantQueryBuilder_WhereClause/no_alias
+=== RUN   TestTenantQueryBuilder_WhereClause/with_alias
+--- PASS: TestTenantQueryBuilder_WhereClause (0.00s)
+    --- PASS: TestTenantQueryBuilder_WhereClause/no_alias (0.00s)
+    --- PASS: TestTenantQueryBuilder_WhereClause/with_alias (0.00s)
+=== RUN   TestTenantQueryBuilder_WhereClauseWith
+=== RUN   TestTenantQueryBuilder_WhereClauseWith/no_existing_clause
+=== RUN   TestTenantQueryBuilder_WhereClauseWith/with_existing_clause
+=== RUN   TestTenantQueryBuilder_WhereClauseWith/with_existing_clause_and_alias
+--- PASS: TestTenantQueryBuilder_WhereClauseWith (0.00s)
+    --- PASS: TestTenantQueryBuilder_WhereClauseWith/no_existing_clause (0.00s)
+    --- PASS: TestTenantQueryBuilder_WhereClauseWith/with_existing_clause (0.00s)
+    --- PASS: TestTenantQueryBuilder_WhereClauseWith/with_existing_clause_and_alias (0.00s)
+=== RUN   TestTenantQueryBuilder_Args
+--- PASS: TestTenantQueryBuilder_Args (0.00s)
+=== RUN   TestTenantQueryBuilder_MergeArgs
+=== RUN   TestTenantQueryBuilder_MergeArgs/nil_args
+=== RUN   TestTenantQueryBuilder_MergeArgs/empty_args
+=== RUN   TestTenantQueryBuilder_MergeArgs/with_existing_args
+=== RUN   TestTenantQueryBuilder_MergeArgs/tenant_ID_gets_overwritten
+--- PASS: TestTenantQueryBuilder_MergeArgs (0.00s)
+    --- PASS: TestTenantQueryBuilder_MergeArgs/nil_args (0.00s)
+    --- PASS: TestTenantQueryBuilder_MergeArgs/empty_args (0.00s)
+    --- PASS: TestTenantQueryBuilder_MergeArgs/with_existing_args (0.00s)
+    --- PASS: TestTenantQueryBuilder_MergeArgs/tenant_ID_gets_overwritten (0.00s)
+=== RUN   TestTenantQueryBuilder_ApplyToQuery
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/simple_select
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/select_with_order_by
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/select_with_existing_where
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/select_with_where_and_order_by
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/select_with_limit
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/select_with_group_by
+=== RUN   TestTenantQueryBuilder_ApplyToQuery/select_with_offset
+--- PASS: TestTenantQueryBuilder_ApplyToQuery (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/simple_select (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/select_with_order_by (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/select_with_existing_where (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/select_with_where_and_order_by (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/select_with_limit (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/select_with_group_by (0.00s)
+    --- PASS: TestTenantQueryBuilder_ApplyToQuery/select_with_offset (0.00s)
+=== RUN   TestTenantQueryBuilder_injectWhereBefore
+=== RUN   TestTenantQueryBuilder_injectWhereBefore/inject_before_ORDER_BY
+=== RUN   TestTenantQueryBuilder_injectWhereBefore/inject_before_GROUP_BY
+=== RUN   TestTenantQueryBuilder_injectWhereBefore/inject_before_LIMIT
+=== RUN   TestTenantQueryBuilder_injectWhereBefore/no_keywords_-_append
+--- PASS: TestTenantQueryBuilder_injectWhereBefore (0.00s)
+    --- PASS: TestTenantQueryBuilder_injectWhereBefore/inject_before_ORDER_BY (0.00s)
+    --- PASS: TestTenantQueryBuilder_injectWhereBefore/inject_before_GROUP_BY (0.00s)
+    --- PASS: TestTenantQueryBuilder_injectWhereBefore/inject_before_LIMIT (0.00s)
+    --- PASS: TestTenantQueryBuilder_injectWhereBefore/no_keywords_-_append (0.00s)
+=== RUN   TestNewRowLevelSecurity
+--- PASS: TestNewRowLevelSecurity (0.00s)
+=== RUN   TestRowLevelSecurity_EnableForTable
+--- PASS: TestRowLevelSecurity_EnableForTable (0.00s)
+=== RUN   TestRowLevelSecurity_DisableForTable
+--- PASS: TestRowLevelSecurity_DisableForTable (0.00s)
+=== RUN   TestRowLevelSecurity_SetTenantContext
+--- PASS: TestRowLevelSecurity_SetTenantContext (0.00s)
+=== RUN   TestRowLevelSecurity_ClearTenantContext
+--- PASS: TestRowLevelSecurity_ClearTenantContext (0.00s)
+=== RUN   TestRowLevelSecurity_ResetToDefault
+--- PASS: TestRowLevelSecurity_ResetToDefault (0.00s)
+=== RUN   TestRowLevelSecurity_CreateTenantPolicy
+--- PASS: TestRowLevelSecurity_CreateTenantPolicy (0.00s)
+=== RUN   TestRowLevelSecurity_CreateTenantPolicyWithAdmin
+--- PASS: TestRowLevelSecurity_CreateTenantPolicyWithAdmin (0.00s)
+=== RUN   TestRowLevelSecurity_SetPlatformAdmin
+--- PASS: TestRowLevelSecurity_SetPlatformAdmin (0.00s)
+=== RUN   TestScanner_MustScanTenantID
+=== RUN   TestScanner_MustScanTenantID/matching_tenant_ID
+=== RUN   TestScanner_MustScanTenantID/mismatched_tenant_ID
+=== RUN   TestScanner_MustScanTenantID/row_scan_error
+=== RUN   TestScanner_MustScanTenantID/no_tenant_context
+--- PASS: TestScanner_MustScanTenantID (0.00s)
+    --- PASS: TestScanner_MustScanTenantID/matching_tenant_ID (0.00s)
+    --- PASS: TestScanner_MustScanTenantID/mismatched_tenant_ID (0.00s)
+    --- PASS: TestScanner_MustScanTenantID/row_scan_error (0.00s)
+    --- PASS: TestScanner_MustScanTenantID/no_tenant_context (0.00s)
+=== RUN   TestScanWithTenant
+=== RUN   TestScanWithTenant/matching_tenant_ID
+=== RUN   TestScanWithTenant/mismatched_tenant_ID
+=== RUN   TestScanWithTenant/platform_admin_bypasses_tenant_check
+=== RUN   TestScanWithTenant/no_tenant_context
+--- PASS: TestScanWithTenant (0.00s)
+    --- PASS: TestScanWithTenant/matching_tenant_ID (0.00s)
+    --- PASS: TestScanWithTenant/mismatched_tenant_ID (0.00s)
+    --- PASS: TestScanWithTenant/platform_admin_bypasses_tenant_check (0.00s)
+    --- PASS: TestScanWithTenant/no_tenant_context (0.00s)
+=== RUN   TestSafeQuery
+=== RUN   TestSafeQuery/valid_query_with_tenant_context
+=== RUN   TestSafeQuery/no_tenant_context
+--- PASS: TestSafeQuery (0.00s)
+    --- PASS: TestSafeQuery/valid_query_with_tenant_context (0.00s)
+    --- PASS: TestSafeQuery/no_tenant_context (0.00s)
+=== RUN   TestSafeQueryRow
+=== RUN   TestSafeQueryRow/valid_query_with_tenant_context
+=== RUN   TestSafeQueryRow/no_tenant_context
+--- PASS: TestSafeQueryRow (0.00s)
+    --- PASS: TestSafeQueryRow/valid_query_with_tenant_context (0.00s)
+    --- PASS: TestSafeQueryRow/no_tenant_context (0.00s)
+=== RUN   TestSafeExec
+=== RUN   TestSafeExec/valid_exec_with_tenant_context
+=== RUN   TestSafeExec/no_tenant_context
+--- PASS: TestSafeExec (0.00s)
+    --- PASS: TestSafeExec/valid_exec_with_tenant_context (0.00s)
+    --- PASS: TestSafeExec/no_tenant_context (0.00s)
+=== RUN   TestMergeArgs
+--- PASS: TestMergeArgs (0.00s)
+=== RUN   TestErrorRow
+--- PASS: TestErrorRow (0.00s)
+PASS
+ok  	github.com/openprint/openprint/internal/multi-tenant	0.029s
 === RUN   TestAppError_Error
 === RUN   TestAppError_Error/error_without_underlying_error
 === RUN   TestAppError_Error/error_with_underlying_error
@@ -598,7 +1264,7 @@ ok  	github.com/openprint/openprint/internal/middleware	0.023s
 === RUN   TestValidationErrorType
 --- PASS: TestValidationErrorType (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/errors	0.006s
+ok  	github.com/openprint/openprint/internal/shared/errors	0.007s
 === RUN   TestMetricsMiddlewareConfig
 --- PASS: TestMetricsMiddlewareConfig (0.00s)
 === RUN   TestMetricsMiddleware
@@ -858,7 +1524,7 @@ ok  	github.com/openprint/openprint/internal/shared/errors	0.006s
 === RUN   TestMetricsMiddleware_InFlightTracking
 --- PASS: TestMetricsMiddleware_InFlightTracking (0.20s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/middleware	0.236s
+ok  	github.com/openprint/openprint/internal/shared/middleware	0.244s
 === RUN   TestInitTracer
 === RUN   TestInitTracer/no_jaeger_endpoint_returns_noop_tracer
 === RUN   TestInitTracer/with_jaeger_endpoint_creates_stdout_tracer
@@ -872,7 +1538,7 @@ ok  	github.com/openprint/openprint/internal/shared/middleware	0.236s
 === RUN   TestHTTPMiddleware
 === RUN   TestHTTPMiddleware/http_middleware_adds_duration_attribute
 === RUN   TestHTTPMiddleware/http_middleware_captures_status_code
---- PASS: TestHTTPMiddleware (0.01s)
+--- PASS: TestHTTPMiddleware (0.02s)
     --- PASS: TestHTTPMiddleware/http_middleware_adds_duration_attribute (0.01s)
     --- PASS: TestHTTPMiddleware/http_middleware_captures_status_code (0.00s)
 === RUN   TestResponseWriter_WriteHeader
@@ -954,13 +1620,13 @@ ok  	github.com/openprint/openprint/internal/shared/middleware	0.236s
     --- PASS: TestHTTPMiddleware_status_capture/Created (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/Accepted (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/No_Content (0.00s)
-    --- PASS: TestHTTPMiddleware_status_capture/Bad_Request (0.00s)
+    --- PASS: TestHTTPMiddleware_status_capture/Bad_Request (0.01s)
     --- PASS: TestHTTPMiddleware_status_capture/Unauthorized (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/Forbidden (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/Not_Found (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/Internal_Server_Error (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
+ok  	github.com/openprint/openprint/internal/shared/telemetry	0.045s
 ?   	github.com/openprint/openprint/internal/shared/telemetry/jaeger	[no test files]
 === RUN   TestRecordJobCreated
 --- PASS: TestRecordJobCreated (0.00s)
@@ -1603,7 +2269,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
 === RUN   TestClientWithMetrics_Incr
 --- PASS: TestClientWithMetrics_Incr (0.09s)
 === RUN   TestClientWithMetrics_Decr
---- PASS: TestClientWithMetrics_Decr (0.10s)
+--- PASS: TestClientWithMetrics_Decr (0.11s)
 === RUN   TestClientWithMetrics_Expire
 --- PASS: TestClientWithMetrics_Expire (0.09s)
 === RUN   TestClientWithMetrics_TTL
@@ -1775,35 +2441,59 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
 === RUN   TestMetricsServer_BasicAuth/missing_auth_returns_401
 === RUN   TestMetricsServer_BasicAuth/invalid_auth_returns_401
 === RUN   TestMetricsServer_BasicAuth/wrong_password_returns_401
---- PASS: TestMetricsServer_BasicAuth (0.01s)
-    --- PASS: TestMetricsServer_BasicAuth/valid_auth_succeeds (0.01s)
+--- PASS: TestMetricsServer_BasicAuth (0.00s)
+    --- PASS: TestMetricsServer_BasicAuth/valid_auth_succeeds (0.00s)
     --- PASS: TestMetricsServer_BasicAuth/missing_auth_returns_401 (0.00s)
     --- PASS: TestMetricsServer_BasicAuth/invalid_auth_returns_401 (0.00s)
     --- PASS: TestMetricsServer_BasicAuth/wrong_password_returns_401 (0.00s)
 === RUN   TestMetricsServer_StartAndShutdown
 === RUN   TestMetricsServer_StartAndShutdown/server_starts_and_shuts_down_gracefully
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
-2026/03/02 01:01:50 Shutting down metrics server...
---- PASS: TestMetricsServer_StartAndShutdown (0.05s)
-    --- PASS: TestMetricsServer_StartAndShutdown/server_starts_and_shuts_down_gracefully (0.05s)
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    server_test.go:273: Could not start server: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+--- PASS: TestMetricsServer_StartAndShutdown (0.00s)
+    --- SKIP: TestMetricsServer_StartAndShutdown/server_starts_and_shuts_down_gracefully (0.00s)
 === RUN   TestStartMetricsServer
 === RUN   TestStartMetricsServer/starts_server_with_default_port
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Shutting down metrics server...
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    server_test.go:299: Could not start server: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 === RUN   TestStartMetricsServer/starts_server_with_custom_port
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9999
-2026/03/02 01:01:50 Shutting down metrics server...
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9999
+2026/03/02 03:02:34 Shutting down metrics server...
 --- PASS: TestStartMetricsServer (0.00s)
-    --- PASS: TestStartMetricsServer/starts_server_with_default_port (0.00s)
+    --- SKIP: TestStartMetricsServer/starts_server_with_default_port (0.00s)
     --- PASS: TestStartMetricsServer/starts_server_with_custom_port (0.00s)
 === RUN   TestMustStartMetricsServer
 === RUN   TestMustStartMetricsServer/panics_on_error
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Shutting down metrics server...
---- PASS: TestMustStartMetricsServer (0.00s)
-    --- PASS: TestMustStartMetricsServer/panics_on_error (0.00s)
+2026/03/02 03:02:34 Metrics server listening on 0.0.0.0:9999
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    server_test.go:342: 
+        	Error Trace:	/home/cmit/openprint/internal/shared/telemetry/prometheus/server_test.go:342
+        	Error:      	func (assert.PanicTestFunc)(0x8a1060) should not panic
+        	            		Panic value:	failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+        	            		Panic stack:	goroutine 4362 [running]:
+        	            	runtime/debug.Stack()
+        	            		/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/debug/stack.go:26 +0x5e
+        	            	github.com/stretchr/testify/assert.didPanic.func1()
+        	            		/home/cmit/go/pkg/mod/github.com/stretchr/testify@v1.11.1/assert/assertions.go:1286 +0x6b
+        	            	panic({0x992f00?, 0xc0006a8880?})
+        	            		/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/runtime/panic.go:787 +0x132
+        	            	github.com/openprint/openprint/internal/shared/telemetry/prometheus.MustStartMetricsServer(...)
+        	            		/home/cmit/openprint/internal/shared/telemetry/prometheus/server.go:236
+        	            	github.com/openprint/openprint/internal/shared/telemetry/prometheus.TestMustStartMetricsServer.func1.1()
+        	            		/home/cmit/openprint/internal/shared/telemetry/prometheus/server_test.go:343 +0xa5
+        	            	github.com/stretchr/testify/assert.didPanic(0xc0004a6fc0?)
+        	            		/home/cmit/go/pkg/mod/github.com/stretchr/testify@v1.11.1/assert/assertions.go:1291 +0x75
+        	            	github.com/stretchr/testify/assert.NotPanics({0xb42da0, 0xc0004a6fc0}, 0xc000605340, {0x0, 0x0, 0x0})
+        	            		/home/cmit/go/pkg/mod/github.com/stretchr/testify@v1.11.1/assert/assertions.go:1362 +0x7e
+        	            	github.com/openprint/openprint/internal/shared/telemetry/prometheus.TestMustStartMetricsServer.func1(0xc0004a6fc0)
+        	            		/home/cmit/openprint/internal/shared/telemetry/prometheus/server_test.go:342 +0xe6
+        	            	testing.tRunner(0xc0004a6fc0, 0xaa6f40)
+        	            		/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1792 +0xf4
+        	            	created by testing.(*T).Run in goroutine 4361
+        	            		/home/cmit/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.0.linux-amd64/src/testing/testing.go:1851 +0x413
+        	Test:       	TestMustStartMetricsServer/panics_on_error
+--- FAIL: TestMustStartMetricsServer (0.00s)
+    --- FAIL: TestMustStartMetricsServer/panics_on_error (0.00s)
 === RUN   TestGetDefaultMetricsPort
 === RUN   TestGetDefaultMetricsPort/auth_service
 === RUN   TestGetDefaultMetricsPort/registry_service
@@ -1837,11 +2527,9 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
     --- PASS: TestMultiRegistryServer_Endpoints/root_handler (0.00s)
     --- PASS: TestMultiRegistryServer_Endpoints/404_for_unknown_paths (0.00s)
 === RUN   TestMetricsServer_MetricsContent
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9999
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
 === RUN   TestMetricsServer_MetricsContent/metrics_endpoint_contains_custom_metrics
 --- PASS: TestMetricsServer_MetricsContent (0.01s)
-    --- PASS: TestMetricsServer_MetricsContent/metrics_endpoint_contains_custom_metrics (0.01s)
+    --- PASS: TestMetricsServer_MetricsContent/metrics_endpoint_contains_custom_metrics (0.00s)
 === RUN   TestMetricsServer_HTMLContent
 === RUN   TestMetricsServer_HTMLContent/root_HTML_contains_service_info
 --- PASS: TestMetricsServer_HTMLContent (0.00s)
@@ -1863,34 +2551,35 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
 === RUN   TestServerConfig
 --- PASS: TestServerConfig (0.00s)
 === RUN   TestMetricsServer_ContextCancellation
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Shutting down metrics server...
---- PASS: TestMetricsServer_ContextCancellation (0.00s)
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    server_test.go:669: Could not start server: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+--- SKIP: TestMetricsServer_ContextCancellation (0.00s)
 === RUN   TestServiceInitConfig
 --- PASS: TestServiceInitConfig (0.00s)
 === RUN   TestInitService
 === RUN   TestInitService/init_with_metrics_enabled
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
     service_test.go:49: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 === RUN   TestInitService/init_with_metrics_disabled
 === RUN   TestInitService/init_with_custom_port
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9999
-2026/03/02 01:01:50 Metrics server started for test-custom-port on port 9999
-2026/03/02 01:01:50 Shutting down metrics server...
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9999
+2026/03/02 03:02:34 Metrics server started for test-custom-port on port 9999
+2026/03/02 03:02:34 Shutting down metrics server...
 === RUN   TestInitService/shutdown_function_works
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9999
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Metrics server started for test-shutdown on port 9090
-2026/03/02 01:01:50 Shutting down metrics server...
---- PASS: TestInitService (0.00s)
+2026/03/02 03:02:34 Metrics server listening on 0.0.0.0:9999
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    service_test.go:118: 
+        	Error Trace:	/home/cmit/openprint/internal/shared/telemetry/prometheus/service_test.go:118
+        	Error:      	Received unexpected error:
+        	            	failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+        	Test:       	TestInitService/shutdown_function_works
+--- FAIL: TestInitService (0.00s)
     --- SKIP: TestInitService/init_with_metrics_enabled (0.00s)
     --- PASS: TestInitService/init_with_metrics_disabled (0.00s)
     --- PASS: TestInitService/init_with_custom_port (0.00s)
-    --- PASS: TestInitService/shutdown_function_works (0.00s)
+    --- FAIL: TestInitService/shutdown_function_works (0.00s)
 === RUN   TestWrapPostgresPool
 === RUN   TestWrapPostgresPool/wraps_pool_with_metrics
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
 === RUN   TestWrapPostgresPool/handles_no_global_registry
 --- PASS: TestWrapPostgresPool (0.00s)
     --- PASS: TestWrapPostgresPool/wraps_pool_with_metrics (0.00s)
@@ -1918,7 +2607,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
 === RUN   TestGetEnvServiceConfig/parses_int_env_vars/valid
 === RUN   TestGetEnvServiceConfig/parses_int_env_vars/zero
 === RUN   TestGetEnvServiceConfig/handles_invalid_int_env_vars
---- PASS: TestGetEnvServiceConfig (0.01s)
+--- PASS: TestGetEnvServiceConfig (0.00s)
     --- PASS: TestGetEnvServiceConfig/reads_from_environment (0.00s)
     --- PASS: TestGetEnvServiceConfig/uses_defaults_when_env_vars_not_set (0.00s)
     --- PASS: TestGetEnvServiceConfig/parses_boolean_env_vars (0.00s)
@@ -1957,35 +2646,29 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
 --- PASS: TestServiceInitConfig_Defaults (0.00s)
 === RUN   TestInitService_GlobalRegistry
 === RUN   TestInitService_GlobalRegistry/sets_global_registry
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Metrics server started for global-registry-test on port 9090
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
-2026/03/02 01:01:50 Shutting down metrics server...
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    service_test.go:385: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 === RUN   TestInitService_GlobalRegistry/uses_default_metrics_port_when_not_specified
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Metrics server started for default-port-test on port 9090
-2026/03/02 01:01:50 Shutting down metrics server...
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    service_test.go:411: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 --- PASS: TestInitService_GlobalRegistry (0.00s)
-    --- PASS: TestInitService_GlobalRegistry/sets_global_registry (0.00s)
-    --- PASS: TestInitService_GlobalRegistry/uses_default_metrics_port_when_not_specified (0.00s)
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
+    --- SKIP: TestInitService_GlobalRegistry/sets_global_registry (0.00s)
+    --- SKIP: TestInitService_GlobalRegistry/uses_default_metrics_port_when_not_specified (0.00s)
 === RUN   TestInitService_ServiceDefaults
 === RUN   TestInitService_ServiceDefaults/auth-service_uses_port_9091
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9091
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9091
     service_test.go:439: Could not init service: failed to listen on 0.0.0.0:9091: listen tcp 0.0.0.0:9091: bind: address already in use
 === RUN   TestInitService_ServiceDefaults/registry-service_uses_port_9092
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9092
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9092
     service_test.go:463: Could not init service: failed to listen on 0.0.0.0:9092: listen tcp 0.0.0.0:9092: bind: address already in use
 --- PASS: TestInitService_ServiceDefaults (0.00s)
     --- SKIP: TestInitService_ServiceDefaults/auth-service_uses_port_9091 (0.00s)
     --- SKIP: TestInitService_ServiceDefaults/registry-service_uses_port_9092 (0.00s)
 === RUN   TestInitService_TracingNotSupported
-2026/03/02 01:01:50 Starting metrics server on 0.0.0.0:9090
-2026/03/02 01:01:50 Metrics server started for tracing-test on port 9090
-2026/03/02 01:01:50 Shutting down metrics server...
---- PASS: TestInitService_TracingNotSupported (0.00s)
+2026/03/02 03:02:34 Starting metrics server on 0.0.0.0:9090
+    service_test.go:490: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+--- SKIP: TestInitService_TracingNotSupported (0.00s)
 === RUN   TestServiceVersionDefaults
-2026/03/02 01:01:50 Metrics server listening on 0.0.0.0:9090
 === RUN   TestServiceVersionDefaults/empty_version_defaults_to_1.0.0
 --- PASS: TestServiceVersionDefaults (0.00s)
     --- PASS: TestServiceVersionDefaults/empty_version_defaults_to_1.0.0 (0.00s)
@@ -1993,8 +2676,8 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.033s
 --- PASS: TestDBConfig_Struct (0.00s)
 === RUN   TestRedisConfig_Struct
 --- PASS: TestRedisConfig_Struct (0.00s)
-PASS
-ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.129s
+FAIL
+FAIL	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.066s
 === RUN   TestNewAssert
 --- PASS: TestNewAssert (0.00s)
 === RUN   TestAssert_NoError
@@ -2124,7 +2807,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.129s
 === RUN   TestAssert_Eventually
 === RUN   TestAssert_Eventually/condition_becomes_true
 === RUN   TestAssert_Eventually/condition_never_true
---- PASS: TestAssert_Eventually (0.15s)
+--- PASS: TestAssert_Eventually (0.16s)
     --- PASS: TestAssert_Eventually/condition_becomes_true (0.10s)
     --- PASS: TestAssert_Eventually/condition_never_true (0.05s)
 === RUN   TestAssert_Consistently
@@ -2623,8 +3306,8 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.129s
 === RUN   TestTestServerRequestBodyTypes/map_body
 === RUN   TestTestServerRequestBodyTypes/string_body
 === RUN   TestTestServerRequestBodyTypes/bytes_body
---- PASS: TestTestServerRequestBodyTypes (0.00s)
-    --- PASS: TestTestServerRequestBodyTypes/map_body (0.00s)
+--- PASS: TestTestServerRequestBodyTypes (0.01s)
+    --- PASS: TestTestServerRequestBodyTypes/map_body (0.01s)
     --- PASS: TestTestServerRequestBodyTypes/string_body (0.00s)
     --- PASS: TestTestServerRequestBodyTypes/bytes_body (0.00s)
 === RUN   TestRecordRequests
@@ -2759,7 +3442,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.129s
 
 === Test Metrics Summary ===
 Tests: 1 passed, 1 failed, 0 skipped
-Duration: 10.069µs
+Duration: 9.848µs
 
 Counters:
   counter1: 1
@@ -2858,7 +3541,7 @@ Histograms:
 === CONT  TestTestMetrics_Parallel
 --- PASS: TestTestMetrics_Parallel (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/testutil	1.179s
+ok  	github.com/openprint/openprint/internal/testutil	1.221s
 ?   	github.com/openprint/openprint/services/analytics-service	[no test files]
 ?   	github.com/openprint/openprint/services/analytics-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/analytics-service/processor	[no test files]
@@ -2885,6 +3568,562 @@ ok  	github.com/openprint/openprint/internal/testutil	1.179s
 === RUN   TestEnrollmentTokenRepository_List
     enrollment_token_test.go:350: database ping failed: failed to connect to `user=openprint database=openprint`: 127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
 --- SKIP: TestEnrollmentTokenRepository_List (0.00s)
+=== RUN   TestNewOrganizationRepository
+--- PASS: TestNewOrganizationRepository (0.00s)
+=== RUN   TestOrganizationStatus_Values
+=== RUN   TestOrganizationStatus_Values/active
+=== RUN   TestOrganizationStatus_Values/suspended
+=== RUN   TestOrganizationStatus_Values/deleted
+=== RUN   TestOrganizationStatus_Values/trial
+--- PASS: TestOrganizationStatus_Values (0.00s)
+    --- PASS: TestOrganizationStatus_Values/active (0.00s)
+    --- PASS: TestOrganizationStatus_Values/suspended (0.00s)
+    --- PASS: TestOrganizationStatus_Values/deleted (0.00s)
+    --- PASS: TestOrganizationStatus_Values/trial (0.00s)
+=== RUN   TestOrganization_Fields
+--- PASS: TestOrganization_Fields (0.00s)
+=== RUN   TestOrganizationRepository_Create
+=== RUN   TestOrganizationRepository_Create/create_organization
+--- PASS: TestOrganizationRepository_Create (0.00s)
+    --- PASS: TestOrganizationRepository_Create/create_organization (0.00s)
+=== RUN   TestOrganizationRepository_GetByID
+=== RUN   TestOrganizationRepository_GetByID/existing_organization
+=== RUN   TestOrganizationRepository_GetByID/non-existent_organization
+--- PASS: TestOrganizationRepository_GetByID (0.00s)
+    --- PASS: TestOrganizationRepository_GetByID/existing_organization (0.00s)
+    --- PASS: TestOrganizationRepository_GetByID/non-existent_organization (0.00s)
+=== RUN   TestOrganizationRepository_GetBySlug
+=== RUN   TestOrganizationRepository_GetBySlug/existing_slug
+=== RUN   TestOrganizationRepository_GetBySlug/non-existent_slug
+--- PASS: TestOrganizationRepository_GetBySlug (0.00s)
+    --- PASS: TestOrganizationRepository_GetBySlug/existing_slug (0.00s)
+    --- PASS: TestOrganizationRepository_GetBySlug/non-existent_slug (0.00s)
+=== RUN   TestOrganizationRepository_List
+=== RUN   TestOrganizationRepository_List/list_all_organizations
+=== RUN   TestOrganizationRepository_List/list_active_organizations
+=== RUN   TestOrganizationRepository_List/list_with_custom_limit
+=== RUN   TestOrganizationRepository_List/list_with_offset
+=== RUN   TestOrganizationRepository_List/list_exceeds_max_limit
+    organization_test.go:394: limit would be capped at 100
+--- PASS: TestOrganizationRepository_List (0.00s)
+    --- PASS: TestOrganizationRepository_List/list_all_organizations (0.00s)
+    --- PASS: TestOrganizationRepository_List/list_active_organizations (0.00s)
+    --- PASS: TestOrganizationRepository_List/list_with_custom_limit (0.00s)
+    --- PASS: TestOrganizationRepository_List/list_with_offset (0.00s)
+    --- SKIP: TestOrganizationRepository_List/list_exceeds_max_limit (0.00s)
+=== RUN   TestOrganizationRepository_Update
+=== RUN   TestOrganizationRepository_Update/update_existing_organization
+=== RUN   TestOrganizationRepository_Update/update_non-existent_organization
+--- PASS: TestOrganizationRepository_Update (0.00s)
+    --- PASS: TestOrganizationRepository_Update/update_existing_organization (0.00s)
+    --- PASS: TestOrganizationRepository_Update/update_non-existent_organization (0.00s)
+=== RUN   TestOrganizationRepository_UpdateStatus
+=== RUN   TestOrganizationRepository_UpdateStatus/update_to_active
+=== RUN   TestOrganizationRepository_UpdateStatus/update_to_suspended
+=== RUN   TestOrganizationRepository_UpdateStatus/update_to_trial
+=== RUN   TestOrganizationRepository_UpdateStatus/update_non-existent_org
+--- PASS: TestOrganizationRepository_UpdateStatus (0.00s)
+    --- PASS: TestOrganizationRepository_UpdateStatus/update_to_active (0.00s)
+    --- PASS: TestOrganizationRepository_UpdateStatus/update_to_suspended (0.00s)
+    --- PASS: TestOrganizationRepository_UpdateStatus/update_to_trial (0.00s)
+    --- PASS: TestOrganizationRepository_UpdateStatus/update_non-existent_org (0.00s)
+=== RUN   TestOrganizationRepository_Delete
+=== RUN   TestOrganizationRepository_Delete/delete_existing_organization
+=== RUN   TestOrganizationRepository_Delete/delete_non-existent_organization
+--- PASS: TestOrganizationRepository_Delete (0.00s)
+    --- PASS: TestOrganizationRepository_Delete/delete_existing_organization (0.00s)
+    --- PASS: TestOrganizationRepository_Delete/delete_non-existent_organization (0.00s)
+=== RUN   TestOrganizationRepository_Exists
+=== RUN   TestOrganizationRepository_Exists/existing_organization
+=== RUN   TestOrganizationRepository_Exists/non-existent_organization
+--- PASS: TestOrganizationRepository_Exists (0.00s)
+    --- PASS: TestOrganizationRepository_Exists/existing_organization (0.00s)
+    --- PASS: TestOrganizationRepository_Exists/non-existent_organization (0.00s)
+=== RUN   TestOrganizationRepository_SlugExists
+=== RUN   TestOrganizationRepository_SlugExists/existing_slug_without_exclusion
+=== RUN   TestOrganizationRepository_SlugExists/existing_slug_with_exclusion_(same_org)
+=== RUN   TestOrganizationRepository_SlugExists/non-existent_slug
+--- PASS: TestOrganizationRepository_SlugExists (0.00s)
+    --- PASS: TestOrganizationRepository_SlugExists/existing_slug_without_exclusion (0.00s)
+    --- PASS: TestOrganizationRepository_SlugExists/existing_slug_with_exclusion_(same_org) (0.00s)
+    --- PASS: TestOrganizationRepository_SlugExists/non-existent_slug (0.00s)
+=== RUN   TestOrganizationRepository_GetUserOrganization
+=== RUN   TestOrganizationRepository_GetUserOrganization/user_with_organization
+=== RUN   TestOrganizationRepository_GetUserOrganization/user_without_organization
+--- PASS: TestOrganizationRepository_GetUserOrganization (0.00s)
+    --- PASS: TestOrganizationRepository_GetUserOrganization/user_with_organization (0.00s)
+    --- PASS: TestOrganizationRepository_GetUserOrganization/user_without_organization (0.00s)
+=== RUN   TestOrganizationRepository_SetTenantContext
+=== RUN   TestOrganizationRepository_SetTenantContext/set_valid_tenant_context
+=== RUN   TestOrganizationRepository_SetTenantContext/set_empty_tenant_context
+--- PASS: TestOrganizationRepository_SetTenantContext (0.00s)
+    --- PASS: TestOrganizationRepository_SetTenantContext/set_valid_tenant_context (0.00s)
+    --- PASS: TestOrganizationRepository_SetTenantContext/set_empty_tenant_context (0.00s)
+=== RUN   TestOrganizationRepository_ClearTenantContext
+=== RUN   TestOrganizationRepository_ClearTenantContext/clear_tenant_context
+--- PASS: TestOrganizationRepository_ClearTenantContext (0.00s)
+    --- PASS: TestOrganizationRepository_ClearTenantContext/clear_tenant_context (0.00s)
+=== RUN   TestOrganizationRepository_EnableRowLevelSecurity
+=== RUN   TestOrganizationRepository_EnableRowLevelSecurity/enable_RLS
+--- PASS: TestOrganizationRepository_EnableRowLevelSecurity (0.00s)
+    --- PASS: TestOrganizationRepository_EnableRowLevelSecurity/enable_RLS (0.00s)
+=== RUN   TestOrganizationRepository_CreateTenantPolicy
+=== RUN   TestOrganizationRepository_CreateTenantPolicy/create_tenant_policy
+--- PASS: TestOrganizationRepository_CreateTenantPolicy (0.00s)
+    --- PASS: TestOrganizationRepository_CreateTenantPolicy/create_tenant_policy (0.00s)
+=== RUN   TestOrganizationRepository_Integration
+=== RUN   TestOrganizationRepository_Integration/organization_lifecycle
+    organization_test.go:650: 1. Create organization with name, slug, status
+    organization_test.go:650: 2. Get organization by ID
+    organization_test.go:650: 3. Update organization name
+    organization_test.go:650: 4. Update organization status to suspended
+    organization_test.go:650: 5. Delete organization (soft delete)
+    organization_test.go:650: 6. Verify organization still exists but has deleted_at set
+=== RUN   TestOrganizationRepository_Integration/slug_uniqueness
+    organization_test.go:655: Slugs must be unique across organizations
+    organization_test.go:656: SlugExists method checks this with optional exclusion
+=== RUN   TestOrganizationRepository_Integration/soft_delete_behavior
+    organization_test.go:660: Delete sets deleted_at timestamp and status to 'deleted'
+    organization_test.go:661: Queries filter out deleted organizations
+=== RUN   TestOrganizationRepository_Integration/tenant_isolation
+    organization_test.go:665: SetTenantContext sets app.tenant_id for RLS
+    organization_test.go:666: EnableRowLevelSecurity enables RLS on organizations table
+    organization_test.go:667: CreateTenantPolicy creates tenant isolation policy
+--- PASS: TestOrganizationRepository_Integration (0.00s)
+    --- PASS: TestOrganizationRepository_Integration/organization_lifecycle (0.00s)
+    --- PASS: TestOrganizationRepository_Integration/slug_uniqueness (0.00s)
+    --- PASS: TestOrganizationRepository_Integration/soft_delete_behavior (0.00s)
+    --- PASS: TestOrganizationRepository_Integration/tenant_isolation (0.00s)
+=== RUN   TestOrganization_SlugValidation
+=== RUN   TestOrganization_SlugValidation/valid_slug:_test-org
+=== RUN   TestOrganization_SlugValidation/valid_slug:_acme-corp
+=== RUN   TestOrganization_SlugValidation/valid_slug:_123-organization
+=== RUN   TestOrganization_SlugValidation/valid_slug:_my-company-2024
+--- PASS: TestOrganization_SlugValidation (0.00s)
+    --- PASS: TestOrganization_SlugValidation/valid_slug:_test-org (0.00s)
+    --- PASS: TestOrganization_SlugValidation/valid_slug:_acme-corp (0.00s)
+    --- PASS: TestOrganization_SlugValidation/valid_slug:_123-organization (0.00s)
+    --- PASS: TestOrganization_SlugValidation/valid_slug:_my-company-2024 (0.00s)
+=== RUN   TestOrganization_StatusTransitions
+=== RUN   TestOrganization_StatusTransitions/trial_->_active
+=== RUN   TestOrganization_StatusTransitions/active_->_suspended
+=== RUN   TestOrganization_StatusTransitions/suspended_->_active
+=== RUN   TestOrganization_StatusTransitions/active_->_deleted
+--- PASS: TestOrganization_StatusTransitions (0.00s)
+    --- PASS: TestOrganization_StatusTransitions/trial_->_active (0.00s)
+    --- PASS: TestOrganization_StatusTransitions/active_->_suspended (0.00s)
+    --- PASS: TestOrganization_StatusTransitions/suspended_->_active (0.00s)
+    --- PASS: TestOrganization_StatusTransitions/active_->_deleted (0.00s)
+=== RUN   TestOrganization_Settings
+=== RUN   TestOrganization_Settings/nil_settings
+=== RUN   TestOrganization_Settings/empty_settings
+=== RUN   TestOrganization_Settings/settings_with_values
+    organization_test.go:738: Setting: require_2fa = true
+    organization_test.go:738: Setting: feature_flags = [beta alpha]
+    organization_test.go:738: Setting: max_users = 100
+    organization_test.go:738: Setting: storage_quota_gb = 50
+    organization_test.go:738: Setting: custom_domain = portal.example.com
+    organization_test.go:738: Setting: billing_email = billing@example.com
+    organization_test.go:738: Setting: trial_days = 30
+--- PASS: TestOrganization_Settings (0.00s)
+    --- PASS: TestOrganization_Settings/nil_settings (0.00s)
+    --- PASS: TestOrganization_Settings/empty_settings (0.00s)
+    --- PASS: TestOrganization_Settings/settings_with_values (0.00s)
+=== RUN   TestOrganizationRepository_Pagination
+=== RUN   TestOrganizationRepository_Pagination/default_limit
+=== RUN   TestOrganizationRepository_Pagination/custom_limit
+=== RUN   TestOrganizationRepository_Pagination/maximum_limit
+=== RUN   TestOrganizationRepository_Pagination/negative_limit
+--- PASS: TestOrganizationRepository_Pagination (0.00s)
+    --- PASS: TestOrganizationRepository_Pagination/default_limit (0.00s)
+    --- PASS: TestOrganizationRepository_Pagination/custom_limit (0.00s)
+    --- PASS: TestOrganizationRepository_Pagination/maximum_limit (0.00s)
+    --- PASS: TestOrganizationRepository_Pagination/negative_limit (0.00s)
+=== RUN   TestOrganization_Timestamps
+--- PASS: TestOrganization_Timestamps (0.00s)
+=== RUN   TestOrganization_SoftDelete
+--- PASS: TestOrganization_SoftDelete (0.00s)
+=== RUN   TestOrganizationUserRole_Values
+=== RUN   TestOrganizationUserRole_Values/viewer
+=== RUN   TestOrganizationUserRole_Values/billing
+=== RUN   TestOrganizationUserRole_Values/member
+=== RUN   TestOrganizationUserRole_Values/admin
+=== RUN   TestOrganizationUserRole_Values/owner
+--- PASS: TestOrganizationUserRole_Values (0.00s)
+    --- PASS: TestOrganizationUserRole_Values/viewer (0.00s)
+    --- PASS: TestOrganizationUserRole_Values/billing (0.00s)
+    --- PASS: TestOrganizationUserRole_Values/member (0.00s)
+    --- PASS: TestOrganizationUserRole_Values/admin (0.00s)
+    --- PASS: TestOrganizationUserRole_Values/owner (0.00s)
+=== RUN   TestOrganizationUser_Fields
+--- PASS: TestOrganizationUser_Fields (0.00s)
+=== RUN   TestNewOrganizationUserRepository
+--- PASS: TestNewOrganizationUserRepository (0.00s)
+=== RUN   TestOrganizationUserRepository_Add
+=== RUN   TestOrganizationUserRepository_Add/add_new_user_to_organization
+=== RUN   TestOrganizationUserRepository_Add/add_user_with_settings
+--- PASS: TestOrganizationUserRepository_Add (0.00s)
+    --- PASS: TestOrganizationUserRepository_Add/add_new_user_to_organization (0.00s)
+    --- PASS: TestOrganizationUserRepository_Add/add_user_with_settings (0.00s)
+=== RUN   TestOrganizationUserRepository_Get
+=== RUN   TestOrganizationUserRepository_Get/existing_organization_user
+=== RUN   TestOrganizationUserRepository_Get/non-existent_organization_user
+--- PASS: TestOrganizationUserRepository_Get (0.00s)
+    --- PASS: TestOrganizationUserRepository_Get/existing_organization_user (0.00s)
+    --- PASS: TestOrganizationUserRepository_Get/non-existent_organization_user (0.00s)
+=== RUN   TestOrganizationUserRepository_GetByOrganizationAndUser
+=== RUN   TestOrganizationUserRepository_GetByOrganizationAndUser/existing_membership
+=== RUN   TestOrganizationUserRepository_GetByOrganizationAndUser/non-existent_membership
+--- PASS: TestOrganizationUserRepository_GetByOrganizationAndUser (0.00s)
+    --- PASS: TestOrganizationUserRepository_GetByOrganizationAndUser/existing_membership (0.00s)
+    --- PASS: TestOrganizationUserRepository_GetByOrganizationAndUser/non-existent_membership (0.00s)
+=== RUN   TestOrganizationUserRepository_ListByOrganization
+=== RUN   TestOrganizationUserRepository_ListByOrganization/list_all_members
+=== RUN   TestOrganizationUserRepository_ListByOrganization/list_with_limit
+=== RUN   TestOrganizationUserRepository_ListByOrganization/list_with_offset
+=== RUN   TestOrganizationUserRepository_ListByOrganization/list_exceeds_max_limit
+--- PASS: TestOrganizationUserRepository_ListByOrganization (0.00s)
+    --- PASS: TestOrganizationUserRepository_ListByOrganization/list_all_members (0.00s)
+    --- PASS: TestOrganizationUserRepository_ListByOrganization/list_with_limit (0.00s)
+    --- PASS: TestOrganizationUserRepository_ListByOrganization/list_with_offset (0.00s)
+    --- PASS: TestOrganizationUserRepository_ListByOrganization/list_exceeds_max_limit (0.00s)
+=== RUN   TestOrganizationUserRepository_ListByUser
+=== RUN   TestOrganizationUserRepository_ListByUser/user_with_organizations
+=== RUN   TestOrganizationUserRepository_ListByUser/user_without_organizations
+--- PASS: TestOrganizationUserRepository_ListByUser (0.00s)
+    --- PASS: TestOrganizationUserRepository_ListByUser/user_with_organizations (0.00s)
+    --- PASS: TestOrganizationUserRepository_ListByUser/user_without_organizations (0.00s)
+=== RUN   TestOrganizationUserRepository_UpdateRole
+=== RUN   TestOrganizationUserRepository_UpdateRole/update_role_to_admin
+=== RUN   TestOrganizationUserRepository_UpdateRole/update_role_to_viewer
+=== RUN   TestOrganizationUserRepository_UpdateRole/update_non-existent_membership
+--- PASS: TestOrganizationUserRepository_UpdateRole (0.00s)
+    --- PASS: TestOrganizationUserRepository_UpdateRole/update_role_to_admin (0.00s)
+    --- PASS: TestOrganizationUserRepository_UpdateRole/update_role_to_viewer (0.00s)
+    --- PASS: TestOrganizationUserRepository_UpdateRole/update_non-existent_membership (0.00s)
+=== RUN   TestOrganizationUserRepository_Remove
+=== RUN   TestOrganizationUserRepository_Remove/remove_user_from_organization
+=== RUN   TestOrganizationUserRepository_Remove/remove_non-existent_membership
+--- PASS: TestOrganizationUserRepository_Remove (0.00s)
+    --- PASS: TestOrganizationUserRepository_Remove/remove_user_from_organization (0.00s)
+    --- PASS: TestOrganizationUserRepository_Remove/remove_non-existent_membership (0.00s)
+=== RUN   TestOrganizationUserRepository_IsMember
+=== RUN   TestOrganizationUserRepository_IsMember/user_is_member
+=== RUN   TestOrganizationUserRepository_IsMember/user_is_not_member
+--- PASS: TestOrganizationUserRepository_IsMember (0.00s)
+    --- PASS: TestOrganizationUserRepository_IsMember/user_is_member (0.00s)
+    --- PASS: TestOrganizationUserRepository_IsMember/user_is_not_member (0.00s)
+=== RUN   TestOrganizationUserRepository_GetMemberCount
+=== RUN   TestOrganizationUserRepository_GetMemberCount/organization_with_members
+=== RUN   TestOrganizationUserRepository_GetMemberCount/organization_without_members
+--- PASS: TestOrganizationUserRepository_GetMemberCount (0.00s)
+    --- PASS: TestOrganizationUserRepository_GetMemberCount/organization_with_members (0.00s)
+    --- PASS: TestOrganizationUserRepository_GetMemberCount/organization_without_members (0.00s)
+=== RUN   TestOrganizationUserRepository_HasRole
+=== RUN   TestOrganizationUserRepository_HasRole/owner_has_admin_access
+=== RUN   TestOrganizationUserRepository_HasRole/admin_has_member_access
+=== RUN   TestOrganizationUserRepository_HasRole/viewer_does_not_have_admin_access
+=== RUN   TestOrganizationUserRepository_HasRole/non-member_does_not_have_role
+--- PASS: TestOrganizationUserRepository_HasRole (0.00s)
+    --- PASS: TestOrganizationUserRepository_HasRole/owner_has_admin_access (0.00s)
+    --- PASS: TestOrganizationUserRepository_HasRole/admin_has_member_access (0.00s)
+    --- PASS: TestOrganizationUserRepository_HasRole/viewer_does_not_have_admin_access (0.00s)
+    --- PASS: TestOrganizationUserRepository_HasRole/non-member_does_not_have_role (0.00s)
+=== RUN   TestOrganizationUserRepository_compareRoles
+=== RUN   TestOrganizationUserRepository_compareRoles/owner_meets_admin_requirement
+=== RUN   TestOrganizationUserRepository_compareRoles/admin_meets_member_requirement
+=== RUN   TestOrganizationUserRepository_compareRoles/viewer_meets_viewer_requirement
+=== RUN   TestOrganizationUserRepository_compareRoles/viewer_does_not_meet_admin_requirement
+=== RUN   TestOrganizationUserRepository_compareRoles/billing_meets_member_requirement
+=== RUN   TestOrganizationUserRepository_compareRoles/billing_meets_viewer_requirement
+--- PASS: TestOrganizationUserRepository_compareRoles (0.00s)
+    --- PASS: TestOrganizationUserRepository_compareRoles/owner_meets_admin_requirement (0.00s)
+    --- PASS: TestOrganizationUserRepository_compareRoles/admin_meets_member_requirement (0.00s)
+    --- PASS: TestOrganizationUserRepository_compareRoles/viewer_meets_viewer_requirement (0.00s)
+    --- PASS: TestOrganizationUserRepository_compareRoles/viewer_does_not_meet_admin_requirement (0.00s)
+    --- PASS: TestOrganizationUserRepository_compareRoles/billing_meets_member_requirement (0.00s)
+    --- PASS: TestOrganizationUserRepository_compareRoles/billing_meets_viewer_requirement (0.00s)
+=== RUN   TestOrganizationUserRepository_GetOwners
+=== RUN   TestOrganizationUserRepository_GetOwners/organization_with_owners
+=== RUN   TestOrganizationUserRepository_GetOwners/organization_without_owners
+--- PASS: TestOrganizationUserRepository_GetOwners (0.00s)
+    --- PASS: TestOrganizationUserRepository_GetOwners/organization_with_owners (0.00s)
+    --- PASS: TestOrganizationUserRepository_GetOwners/organization_without_owners (0.00s)
+=== RUN   TestOrganizationUserRepository_TransferOwnership
+=== RUN   TestOrganizationUserRepository_TransferOwnership/successful_transfer
+=== RUN   TestOrganizationUserRepository_TransferOwnership/from_user_is_not_owner
+=== RUN   TestOrganizationUserRepository_TransferOwnership/to_user_not_in_organization
+--- PASS: TestOrganizationUserRepository_TransferOwnership (0.00s)
+    --- PASS: TestOrganizationUserRepository_TransferOwnership/successful_transfer (0.00s)
+    --- PASS: TestOrganizationUserRepository_TransferOwnership/from_user_is_not_owner (0.00s)
+    --- PASS: TestOrganizationUserRepository_TransferOwnership/to_user_not_in_organization (0.00s)
+=== RUN   TestOrganizationUserRepository_UpdateSettings
+=== RUN   TestOrganizationUserRepository_UpdateSettings/update_user_settings
+=== RUN   TestOrganizationUserRepository_UpdateSettings/clear_user_settings
+=== RUN   TestOrganizationUserRepository_UpdateSettings/update_non-existent_membership
+--- PASS: TestOrganizationUserRepository_UpdateSettings (0.00s)
+    --- PASS: TestOrganizationUserRepository_UpdateSettings/update_user_settings (0.00s)
+    --- PASS: TestOrganizationUserRepository_UpdateSettings/clear_user_settings (0.00s)
+    --- PASS: TestOrganizationUserRepository_UpdateSettings/update_non-existent_membership (0.00s)
+=== RUN   TestOrganizationUser_RoleHierarchy
+--- PASS: TestOrganizationUser_RoleHierarchy (0.00s)
+=== RUN   TestOrganizationUser_JoinedAt
+--- PASS: TestOrganizationUser_JoinedAt (0.00s)
+=== RUN   TestOrganizationUser_SoftDelete
+--- PASS: TestOrganizationUser_SoftDelete (0.00s)
+=== RUN   TestOrganizationUser_Settings
+=== RUN   TestOrganizationUser_Settings/nil_settings
+=== RUN   TestOrganizationUser_Settings/empty_settings
+=== RUN   TestOrganizationUser_Settings/notification_settings
+=== RUN   TestOrganizationUser_Settings/ui_preferences
+--- PASS: TestOrganizationUser_Settings (0.00s)
+    --- PASS: TestOrganizationUser_Settings/nil_settings (0.00s)
+    --- PASS: TestOrganizationUser_Settings/empty_settings (0.00s)
+    --- PASS: TestOrganizationUser_Settings/notification_settings (0.00s)
+    --- PASS: TestOrganizationUser_Settings/ui_preferences (0.00s)
+=== RUN   TestOrganizationUser_InvitedBy
+=== RUN   TestOrganizationUser_InvitedBy/with_inviter
+=== RUN   TestOrganizationUser_InvitedBy/without_inviter
+--- PASS: TestOrganizationUser_InvitedBy (0.00s)
+    --- PASS: TestOrganizationUser_InvitedBy/with_inviter (0.00s)
+    --- PASS: TestOrganizationUser_InvitedBy/without_inviter (0.00s)
+=== RUN   TestOrganizationUser_Pagination
+=== RUN   TestOrganizationUser_Pagination/default_limit
+=== RUN   TestOrganizationUser_Pagination/custom_limit
+=== RUN   TestOrganizationUser_Pagination/maximum_limit
+=== RUN   TestOrganizationUser_Pagination/with_offset
+--- PASS: TestOrganizationUser_Pagination (0.00s)
+    --- PASS: TestOrganizationUser_Pagination/default_limit (0.00s)
+    --- PASS: TestOrganizationUser_Pagination/custom_limit (0.00s)
+    --- PASS: TestOrganizationUser_Pagination/maximum_limit (0.00s)
+    --- PASS: TestOrganizationUser_Pagination/with_offset (0.00s)
+=== RUN   TestOrganizationUserRepository_Integration
+=== RUN   TestOrganizationUserRepository_Integration/membership_lifecycle
+    organization_user_test.go:791: 1. Add user to organization
+    organization_user_test.go:791: 2. Get membership by ID
+    organization_user_test.go:791: 3. Update user role
+    organization_user_test.go:791: 4. Update user settings
+    organization_user_test.go:791: 5. Check if user is member
+    organization_user_test.go:791: 6. Check if user has specific role
+    organization_user_test.go:791: 7. Remove user from organization (soft delete)
+    organization_user_test.go:791: 8. Verify membership is deleted
+=== RUN   TestOrganizationUserRepository_Integration/ownership_transfer
+    organization_user_test.go:804: 1. Verify current owner has owner role
+    organization_user_test.go:804: 2. Transfer ownership to another user
+    organization_user_test.go:804: 3. Verify new user has owner role
+    organization_user_test.go:804: 4. Verify previous owner is now admin
+=== RUN   TestOrganizationUserRepository_Integration/role_hierarchy_enforcement
+    organization_user_test.go:809: Viewer < Billing < Member < Admin < Owner
+    organization_user_test.go:810: Higher roles can perform actions of lower roles
+=== RUN   TestOrganizationUserRepository_Integration/soft_delete_behavior
+    organization_user_test.go:814: Remove sets deleted_at timestamp
+    organization_user_test.go:815: Soft deleted members are excluded from queries
+    organization_user_test.go:816: Re-adding with same org/user clears deleted_at
+--- PASS: TestOrganizationUserRepository_Integration (0.00s)
+    --- PASS: TestOrganizationUserRepository_Integration/membership_lifecycle (0.00s)
+    --- PASS: TestOrganizationUserRepository_Integration/ownership_transfer (0.00s)
+    --- PASS: TestOrganizationUserRepository_Integration/role_hierarchy_enforcement (0.00s)
+    --- PASS: TestOrganizationUserRepository_Integration/soft_delete_behavior (0.00s)
+=== RUN   TestOrganizationUser_MultipleOrganizations
+=== RUN   TestOrganizationUser_MultipleOrganizations/user_can_belong_to_multiple_organizations
+    organization_user_test.go:822: A user can be a member of multiple organizations
+    organization_user_test.go:823: Each membership can have different roles
+    organization_user_test.go:824: ListByUser returns all organizations for a user
+--- PASS: TestOrganizationUser_MultipleOrganizations (0.00s)
+    --- PASS: TestOrganizationUser_MultipleOrganizations/user_can_belong_to_multiple_organizations (0.00s)
+=== RUN   TestOrganizationUser_LimitChecks
+=== RUN   TestOrganizationUser_LimitChecks/member_count_respects_quota
+    organization_user_test.go:830: GetMemberCount returns current member count
+    organization_user_test.go:831: Add should check quota before adding
+    organization_user_test.go:832: Quota is checked at application layer
+--- PASS: TestOrganizationUser_LimitChecks (0.00s)
+    --- PASS: TestOrganizationUser_LimitChecks/member_count_respects_quota (0.00s)
+=== RUN   TestNewQuotaRepository
+--- PASS: TestNewQuotaRepository (0.00s)
+=== RUN   TestQuotaConfig_Fields
+--- PASS: TestQuotaConfig_Fields (0.00s)
+=== RUN   TestQuotaUsage_Fields
+--- PASS: TestQuotaUsage_Fields (0.00s)
+=== RUN   TestQuotaRepository_CreateConfig
+=== RUN   TestQuotaRepository_CreateConfig/create_with_valid_config
+=== RUN   TestQuotaRepository_CreateConfig/create_with_default_alert_threshold
+=== RUN   TestQuotaRepository_CreateConfig/unlimited_quota_(0_values)
+--- PASS: TestQuotaRepository_CreateConfig (0.00s)
+    --- PASS: TestQuotaRepository_CreateConfig/create_with_valid_config (0.00s)
+    --- PASS: TestQuotaRepository_CreateConfig/create_with_default_alert_threshold (0.00s)
+    --- PASS: TestQuotaRepository_CreateConfig/unlimited_quota_(0_values) (0.00s)
+=== RUN   TestQuotaRepository_GetConfig
+=== RUN   TestQuotaRepository_GetConfig/existing_config
+=== RUN   TestQuotaRepository_GetConfig/non-existent_config_returns_defaults
+--- PASS: TestQuotaRepository_GetConfig (0.00s)
+    --- PASS: TestQuotaRepository_GetConfig/existing_config (0.00s)
+    --- PASS: TestQuotaRepository_GetConfig/non-existent_config_returns_defaults (0.00s)
+=== RUN   TestQuotaRepository_getDefaultConfig
+--- PASS: TestQuotaRepository_getDefaultConfig (0.00s)
+=== RUN   TestQuotaRepository_UpdateConfig
+=== RUN   TestQuotaRepository_UpdateConfig/update_existing_config
+=== RUN   TestQuotaRepository_UpdateConfig/update_non-existent_creates_new
+--- PASS: TestQuotaRepository_UpdateConfig (0.00s)
+    --- PASS: TestQuotaRepository_UpdateConfig/update_existing_config (0.00s)
+    --- PASS: TestQuotaRepository_UpdateConfig/update_non-existent_creates_new (0.00s)
+=== RUN   TestQuotaRepository_GetUsage
+=== RUN   TestQuotaRepository_GetUsage/existing_usage
+=== RUN   TestQuotaRepository_GetUsage/no_usage_creates_initial
+--- PASS: TestQuotaRepository_GetUsage (0.00s)
+    --- PASS: TestQuotaRepository_GetUsage/existing_usage (0.00s)
+    --- PASS: TestQuotaRepository_GetUsage/no_usage_creates_initial (0.00s)
+=== RUN   TestQuotaRepository_UpdateUsage
+=== RUN   TestQuotaRepository_UpdateUsage/update_printer_count
+=== RUN   TestQuotaRepository_UpdateUsage/update_storage_usage
+=== RUN   TestQuotaRepository_UpdateUsage/update_job_count
+=== RUN   TestQuotaRepository_UpdateUsage/update_user_count
+=== RUN   TestQuotaRepository_UpdateUsage/decrement_printer_count
+=== RUN   TestQuotaRepository_UpdateUsage/invalid_resource_type
+--- PASS: TestQuotaRepository_UpdateUsage (0.00s)
+    --- PASS: TestQuotaRepository_UpdateUsage/update_printer_count (0.00s)
+    --- PASS: TestQuotaRepository_UpdateUsage/update_storage_usage (0.00s)
+    --- PASS: TestQuotaRepository_UpdateUsage/update_job_count (0.00s)
+    --- PASS: TestQuotaRepository_UpdateUsage/update_user_count (0.00s)
+    --- PASS: TestQuotaRepository_UpdateUsage/decrement_printer_count (0.00s)
+    --- PASS: TestQuotaRepository_UpdateUsage/invalid_resource_type (0.00s)
+=== RUN   TestQuotaRepository_GetQuotaInfo
+=== RUN   TestQuotaRepository_GetQuotaInfo/combined_quota_info
+=== RUN   TestQuotaRepository_GetQuotaInfo/quota_info_for_new_tenant
+--- PASS: TestQuotaRepository_GetQuotaInfo (0.00s)
+    --- PASS: TestQuotaRepository_GetQuotaInfo/combined_quota_info (0.00s)
+    --- PASS: TestQuotaRepository_GetQuotaInfo/quota_info_for_new_tenant (0.00s)
+=== RUN   TestQuotaRepository_GetTenantUsageForMonth
+=== RUN   TestQuotaRepository_GetTenantUsageForMonth/current_month_usage
+=== RUN   TestQuotaRepository_GetTenantUsageForMonth/previous_month_usage
+=== RUN   TestQuotaRepository_GetTenantUsageForMonth/non-existent_month
+--- PASS: TestQuotaRepository_GetTenantUsageForMonth (0.00s)
+    --- PASS: TestQuotaRepository_GetTenantUsageForMonth/current_month_usage (0.00s)
+    --- PASS: TestQuotaRepository_GetTenantUsageForMonth/previous_month_usage (0.00s)
+    --- PASS: TestQuotaRepository_GetTenantUsageForMonth/non-existent_month (0.00s)
+=== RUN   TestQuotaRepository_ListQuotaConfigs
+=== RUN   TestQuotaRepository_ListQuotaConfigs/list_multiple_tenants
+=== RUN   TestQuotaRepository_ListQuotaConfigs/empty_list
+=== RUN   TestQuotaRepository_ListQuotaConfigs/single_tenant
+--- PASS: TestQuotaRepository_ListQuotaConfigs (0.00s)
+    --- PASS: TestQuotaRepository_ListQuotaConfigs/list_multiple_tenants (0.00s)
+    --- PASS: TestQuotaRepository_ListQuotaConfigs/empty_list (0.00s)
+    --- PASS: TestQuotaRepository_ListQuotaConfigs/single_tenant (0.00s)
+=== RUN   TestQuotaRepository_DeleteConfig
+=== RUN   TestQuotaRepository_DeleteConfig/delete_existing_config
+=== RUN   TestQuotaRepository_DeleteConfig/delete_non-existent_config
+--- PASS: TestQuotaRepository_DeleteConfig (0.00s)
+    --- PASS: TestQuotaRepository_DeleteConfig/delete_existing_config (0.00s)
+    --- PASS: TestQuotaRepository_DeleteConfig/delete_non-existent_config (0.00s)
+=== RUN   TestQuotaRepository_ResetMonthlyUsage
+=== RUN   TestQuotaRepository_ResetMonthlyUsage/reset_monthly_job_counters
+--- PASS: TestQuotaRepository_ResetMonthlyUsage (0.00s)
+    --- PASS: TestQuotaRepository_ResetMonthlyUsage/reset_monthly_job_counters (0.00s)
+=== RUN   TestQuotaRepository_StorageConversion
+=== RUN   TestQuotaRepository_StorageConversion/1_GB
+=== RUN   TestQuotaRepository_StorageConversion/5_GB
+=== RUN   TestQuotaRepository_StorageConversion/10_GB
+=== RUN   TestQuotaRepository_StorageConversion/100_GB
+--- PASS: TestQuotaRepository_StorageConversion (0.00s)
+    --- PASS: TestQuotaRepository_StorageConversion/1_GB (0.00s)
+    --- PASS: TestQuotaRepository_StorageConversion/5_GB (0.00s)
+    --- PASS: TestQuotaRepository_StorageConversion/10_GB (0.00s)
+    --- PASS: TestQuotaRepository_StorageConversion/100_GB (0.00s)
+=== RUN   TestQuotaRepository_ResourceTypeValidation
+=== RUN   TestQuotaRepository_ResourceTypeValidation/valid_type:_printers
+=== RUN   TestQuotaRepository_ResourceTypeValidation/valid_type:_storage
+=== RUN   TestQuotaRepository_ResourceTypeValidation/valid_type:_jobs
+=== RUN   TestQuotaRepository_ResourceTypeValidation/valid_type:_users
+--- PASS: TestQuotaRepository_ResourceTypeValidation (0.00s)
+    --- PASS: TestQuotaRepository_ResourceTypeValidation/valid_type:_printers (0.00s)
+    --- PASS: TestQuotaRepository_ResourceTypeValidation/valid_type:_storage (0.00s)
+    --- PASS: TestQuotaRepository_ResourceTypeValidation/valid_type:_jobs (0.00s)
+    --- PASS: TestQuotaRepository_ResourceTypeValidation/valid_type:_users (0.00s)
+=== RUN   TestQuotaRepository_QuotaCalculations
+=== RUN   TestQuotaRepository_QuotaCalculations/50%_used
+=== RUN   TestQuotaRepository_QuotaCalculations/80%_used_(warning_threshold)
+=== RUN   TestQuotaRepository_QuotaCalculations/100%_used
+=== RUN   TestQuotaRepository_QuotaCalculations/0%_used
+--- PASS: TestQuotaRepository_QuotaCalculations (0.00s)
+    --- PASS: TestQuotaRepository_QuotaCalculations/50%_used (0.00s)
+    --- PASS: TestQuotaRepository_QuotaCalculations/80%_used_(warning_threshold) (0.00s)
+    --- PASS: TestQuotaRepository_QuotaCalculations/100%_used (0.00s)
+    --- PASS: TestQuotaRepository_QuotaCalculations/0%_used (0.00s)
+=== RUN   TestQuotaRepository_AggregatedQuotaInfo
+--- PASS: TestQuotaRepository_AggregatedQuotaInfo (0.00s)
+=== RUN   TestQuotaRepository_NearLimitDetection
+--- PASS: TestQuotaRepository_NearLimitDetection (0.00s)
+=== RUN   TestQuotaRepository_UnlimitedQuota
+=== RUN   TestQuotaRepository_UnlimitedQuota/zero_is_unlimited
+=== RUN   TestQuotaRepository_UnlimitedQuota/negative_is_unlimited
+=== RUN   TestQuotaRepository_UnlimitedQuota/positive_is_limited
+--- PASS: TestQuotaRepository_UnlimitedQuota (0.00s)
+    --- PASS: TestQuotaRepository_UnlimitedQuota/zero_is_unlimited (0.00s)
+    --- PASS: TestQuotaRepository_UnlimitedQuota/negative_is_unlimited (0.00s)
+    --- PASS: TestQuotaRepository_UnlimitedQuota/positive_is_limited (0.00s)
+=== RUN   TestQuotaRepository_MonthBoundaries
+=== RUN   TestQuotaRepository_MonthBoundaries/first_day_of_month
+=== RUN   TestQuotaRepository_MonthBoundaries/middle_of_month
+=== RUN   TestQuotaRepository_MonthBoundaries/last_day_of_month
+--- PASS: TestQuotaRepository_MonthBoundaries (0.00s)
+    --- PASS: TestQuotaRepository_MonthBoundaries/first_day_of_month (0.00s)
+    --- PASS: TestQuotaRepository_MonthBoundaries/middle_of_month (0.00s)
+    --- PASS: TestQuotaRepository_MonthBoundaries/last_day_of_month (0.00s)
+=== RUN   TestQuotaUsage_MonthlyReset
+--- PASS: TestQuotaUsage_MonthlyReset (0.00s)
+=== RUN   TestQuotaConfig_Timestamps
+--- PASS: TestQuotaConfig_Timestamps (0.00s)
+=== RUN   TestQuotaUsage_Timestamps
+--- PASS: TestQuotaUsage_Timestamps (0.00s)
+=== RUN   TestQuota_BytesToGB
+=== RUN   TestQuota_BytesToGB/1_GB_in_bytes
+=== RUN   TestQuota_BytesToGB/5_GB_in_bytes
+=== RUN   TestQuota_BytesToGB/10_GB_in_bytes
+--- PASS: TestQuota_BytesToGB (0.00s)
+    --- PASS: TestQuota_BytesToGB/1_GB_in_bytes (0.00s)
+    --- PASS: TestQuota_BytesToGB/5_GB_in_bytes (0.00s)
+    --- PASS: TestQuota_BytesToGB/10_GB_in_bytes (0.00s)
+=== RUN   TestQuota_AlertThreshold
+=== RUN   TestQuota_AlertThreshold/exactly_at_threshold
+=== RUN   TestQuota_AlertThreshold/above_threshold
+=== RUN   TestQuota_AlertThreshold/below_threshold
+=== RUN   TestQuota_AlertThreshold/zero_threshold_(disabled)
+--- PASS: TestQuota_AlertThreshold (0.00s)
+    --- PASS: TestQuota_AlertThreshold/exactly_at_threshold (0.00s)
+    --- PASS: TestQuota_AlertThreshold/above_threshold (0.00s)
+    --- PASS: TestQuota_AlertThreshold/below_threshold (0.00s)
+    --- PASS: TestQuota_AlertThreshold/zero_threshold_(disabled) (0.00s)
+=== RUN   TestQuotaRepository_OnConflict
+=== RUN   TestQuotaRepository_OnConflict/upsert_on_conflict
+--- PASS: TestQuotaRepository_OnConflict (0.00s)
+    --- PASS: TestQuotaRepository_OnConflict/upsert_on_conflict (0.00s)
+=== RUN   TestQuotaIntegration_DefaultQuotas
+=== RUN   TestQuotaIntegration_DefaultQuotas/new_tenant_gets_default_quotas
+--- PASS: TestQuotaIntegration_DefaultQuotas (0.00s)
+    --- PASS: TestQuotaIntegration_DefaultQuotas/new_tenant_gets_default_quotas (0.00s)
+=== RUN   TestQuotaIntegration_JobCounterReset
+=== RUN   TestQuotaIntegration_JobCounterReset/monthly_job_counter_reset
+--- PASS: TestQuotaIntegration_JobCounterReset (0.00s)
+    --- PASS: TestQuotaIntegration_JobCounterReset/monthly_job_counter_reset (0.00s)
+=== RUN   TestQuotaIntegration_CrossMonthQueries
+=== RUN   TestQuotaIntegration_CrossMonthQueries/query_usage_across_months
+--- PASS: TestQuotaIntegration_CrossMonthQueries (0.00s)
+    --- PASS: TestQuotaIntegration_CrossMonthQueries/query_usage_across_months (0.00s)
+=== RUN   TestQuotaRepository_GetConfig_ErrorHandling
+=== RUN   TestQuotaRepository_GetConfig_ErrorHandling/database_connection_error
+=== RUN   TestQuotaRepository_GetConfig_ErrorHandling/no_rows_found_returns_default
+--- PASS: TestQuotaRepository_GetConfig_ErrorHandling (0.00s)
+    --- PASS: TestQuotaRepository_GetConfig_ErrorHandling/database_connection_error (0.00s)
+    --- PASS: TestQuotaRepository_GetConfig_ErrorHandling/no_rows_found_returns_default (0.00s)
+=== RUN   TestQuotaRepository_ExecHandling
+=== RUN   TestQuotaRepository_ExecHandling/exec_returns_command_tag
+=== RUN   TestQuotaRepository_ExecHandling/exec_with_no_rows_affected
+--- PASS: TestQuotaRepository_ExecHandling (0.00s)
+    --- PASS: TestQuotaRepository_ExecHandling/exec_returns_command_tag (0.00s)
+    --- PASS: TestQuotaRepository_ExecHandling/exec_with_no_rows_affected (0.00s)
+=== RUN   TestQuotaRepository_TransactionBehavior
+=== RUN   TestQuotaRepository_TransactionBehavior/reset_monthly_usage_transaction
+--- PASS: TestQuotaRepository_TransactionBehavior (0.00s)
+    --- PASS: TestQuotaRepository_TransactionBehavior/reset_monthly_usage_transaction (0.00s)
 === RUN   TestNewSessionRepository
 --- PASS: TestNewSessionRepository (0.00s)
 === RUN   TestSessionRepository_key
@@ -3018,7 +4257,7 @@ ok  	github.com/openprint/openprint/internal/testutil	1.179s
 --- PASS: TestUser_CRUD (0.00s)
     --- PASS: TestUser_CRUD/create,_read,_update,_delete_flow (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/auth-service/repository	0.088s
+ok  	github.com/openprint/openprint/services/auth-service/repository	0.120s
 ?   	github.com/openprint/openprint/services/compliance-service	[no test files]
 ?   	github.com/openprint/openprint/services/gateway	[no test files]
 ?   	github.com/openprint/openprint/services/gateway/middleware	[no test files]
@@ -3094,7 +4333,7 @@ ok  	github.com/openprint/openprint/services/auth-service/repository	0.088s
 === RUN   TestRespondError_GenericError
 --- PASS: TestRespondError_GenericError (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/job-service/handler	0.011s
+ok  	github.com/openprint/openprint/services/job-service/handler	0.018s
 ?   	github.com/openprint/openprint/services/job-service/handlers	[no test files]
 === RUN   TestNewProcessor
 --- PASS: TestNewProcessor (0.00s)
@@ -3131,10 +4370,10 @@ ok  	github.com/openprint/openprint/services/job-service/handler	0.011s
     processor_test.go:592: Concurrent access test passed
 --- PASS: TestProcessor_ConcurrentAccess (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/job-service/processor	0.012s
-2026/03/02 01:01:51 init: testSetup file loaded
-2026/03/02 01:01:51 setup_test.go:20: TestMain: Starting test database setup...
-2026/03/02 01:01:53 github.com/testcontainers/testcontainers-go - Connected to docker: 
+ok  	github.com/openprint/openprint/services/job-service/processor	0.009s
+2026/03/02 03:02:36 init: testSetup file loaded
+2026/03/02 03:02:36 setup_test.go:20: TestMain: Starting test database setup...
+2026/03/02 03:02:39 github.com/testcontainers/testcontainers-go - Connected to docker: 
   Server Version: 4.9.3
   API Version: 1.41
   Operating System: ubuntu
@@ -3142,302 +4381,24 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.012s
   Testcontainers for Go Version: v0.33.0
   Resolved Docker Host: unix:///run/user/1000/podman/podman.sock
   Resolved Docker Socket Path: /run/user/1000/podman/podman.sock
-  Test SessionID: b743a107170ce962c0619b9506e1b99b15d4f8b7bef2d1d979c00fe654286cf2
-  Test ProcessID: 9e8047d6-c948-40ec-8411-a003159086db
-2026/03/02 01:01:53 🐳 Creating container for image testcontainers/ryuk:0.8.1
-2026/03/02 01:01:53 ✅ Container created: 8eb588d421af
-2026/03/02 01:01:53 🐳 Starting container: 8eb588d421af
-2026/03/02 01:01:54 ✅ Container started: 8eb588d421af
-2026/03/02 01:01:54 ⏳ Waiting for container id 8eb588d421af image: testcontainers/ryuk:0.8.1. Waiting for: &{Port:8080/tcp timeout:<nil> PollInterval:100ms skipInternalCheck:false}
-2026/03/02 01:01:54 🔔 Container is ready: 8eb588d421af
-2026/03/02 01:01:54 🐳 Creating container for image postgres:16-alpine
-2026/03/02 01:01:54 ✅ Container created: 3f3ba0d2cb12
-2026/03/02 01:01:54 🐳 Starting container: 3f3ba0d2cb12
-2026/03/02 01:01:54 ✅ Container started: 3f3ba0d2cb12
-2026/03/02 01:01:54 ⏳ Waiting for container id 3f3ba0d2cb12 image: postgres:16-alpine. Waiting for: &{timeout:0xc000431570 Log:database system is ready to accept connections IsRegexp:false Occurrence:2 PollInterval:100ms}
-2026/03/02 01:01:57 🔔 Container is ready: 3f3ba0d2cb12
-2026/03/02 01:02:01 setup_test.go:35: TestMain: Database setup complete, running tests...
-=== RUN   TestJobAssignmentRepository_AssignJob
---- PASS: TestJobAssignmentRepository_AssignJob (0.06s)
-=== RUN   TestJobAssignmentRepository_UpdateStatus
---- PASS: TestJobAssignmentRepository_UpdateStatus (0.05s)
-=== RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection
-=== RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_DROP_TABLE_job_assignments;_--
-=== RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_completed'_OR_'1'='1
-=== RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_failed';_DELETE_FROM_users_WHERE_'1'='1';_--
-=== RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_INSERT_INTO_job_assignments_(status)_VALUES_('hacked');_--
---- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection (0.06s)
-    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_DROP_TABLE_job_assignments;_-- (0.00s)
-    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_completed'_OR_'1'='1 (0.00s)
-    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_failed';_DELETE_FROM_users_WHERE_'1'='1';_-- (0.00s)
-    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_INSERT_INTO_job_assignments_(status)_VALUES_('hacked');_-- (0.00s)
-=== RUN   TestJobAssignmentRepository_FindByAgent
---- PASS: TestJobAssignmentRepository_FindByAgent (0.14s)
-=== RUN   TestJobAssignmentRepository_FindByJobAndAgent
---- PASS: TestJobAssignmentRepository_FindByJobAndAgent (0.07s)
-=== RUN   TestJobAssignmentRepository_UpdateHeartbeat
---- PASS: TestJobAssignmentRepository_UpdateHeartbeat (0.04s)
-=== RUN   TestJobAssignmentRepository_IncrementRetry
---- PASS: TestJobAssignmentRepository_IncrementRetry (0.06s)
-=== RUN   TestJobAssignmentRepository_SetError
---- PASS: TestJobAssignmentRepository_SetError (0.05s)
-=== RUN   TestJobAssignmentRepository_GetStaleAssignments
---- PASS: TestJobAssignmentRepository_GetStaleAssignments (0.05s)
-=== RUN   TestJobAssignmentRepository_AssignJob_Conflict
---- PASS: TestJobAssignmentRepository_AssignJob_Conflict (0.04s)
-=== RUN   TestJobAssignmentRepository_FindByID_NotFound
---- PASS: TestJobAssignmentRepository_FindByID_NotFound (0.00s)
-=== RUN   TestJobAssignmentRepository_Delete
---- PASS: TestJobAssignmentRepository_Delete (0.05s)
-=== RUN   TestJobAssignmentRepository_DeleteByJob
---- PASS: TestJobAssignmentRepository_DeleteByJob (0.10s)
-=== RUN   TestJobAssignmentRepository_AssignmentStatuses
-=== RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_assigned
-=== RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_in_progress
-=== RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_completed
-=== RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_failed
-=== RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_cancelled
---- PASS: TestJobAssignmentRepository_AssignmentStatuses (0.20s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_assigned (0.03s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_in_progress (0.04s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_completed (0.04s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_failed (0.04s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_cancelled (0.04s)
-=== RUN   TestJobAssignmentRepository_GetAssignmentStats
---- PASS: TestJobAssignmentRepository_GetAssignmentStats (0.15s)
-=== RUN   TestJobAssignmentRepository_FindByJobID
---- PASS: TestJobAssignmentRepository_FindByJobID (0.09s)
-=== RUN   TestJobAssignmentRepository_UpdateStatus_NotFound
---- PASS: TestJobAssignmentRepository_UpdateStatus_NotFound (0.00s)
-=== RUN   TestJobAssignmentRepository_UpdateHeartbeat_NotFound
---- PASS: TestJobAssignmentRepository_UpdateHeartbeat_NotFound (0.00s)
-=== RUN   TestJobAssignmentRepository_IncrementRetry_NotFound
---- PASS: TestJobAssignmentRepository_IncrementRetry_NotFound (0.00s)
-=== RUN   TestJobAssignmentRepository_SetError_NotFound
---- PASS: TestJobAssignmentRepository_SetError_NotFound (0.00s)
-=== RUN   TestJobAssignmentRepository_Delete_NotFound
---- PASS: TestJobAssignmentRepository_Delete_NotFound (0.00s)
-=== RUN   TestJobAssignmentRepository_UpdateNilTimestamp
---- PASS: TestJobAssignmentRepository_UpdateNilTimestamp (0.06s)
-=== RUN   TestJobAssignmentRepository_ScanAssignmentWithNulls
---- PASS: TestJobAssignmentRepository_ScanAssignmentWithNulls (0.03s)
-=== RUN   TestJobAssignmentRepository_DocumentETag
---- PASS: TestJobAssignmentRepository_DocumentETag (0.04s)
-=== RUN   TestJobAssignmentRepository_TransactionIsolation
---- PASS: TestJobAssignmentRepository_TransactionIsolation (0.05s)
-=== RUN   TestNewJobHistoryRepository
---- PASS: TestNewJobHistoryRepository (0.00s)
-=== RUN   TestJobHistory_Struct
---- PASS: TestJobHistory_Struct (0.00s)
-=== RUN   TestJobHistoryRepository_CRUD
-=== RUN   TestJobHistoryRepository_CRUD/create_history
-=== RUN   TestJobHistoryRepository_CRUD/find_by_ID
-=== RUN   TestJobHistoryRepository_CRUD/find_by_job_ID
-=== RUN   TestJobHistoryRepository_CRUD/find_by_status
-=== RUN   TestJobHistoryRepository_CRUD/delete_by_job_ID
---- PASS: TestJobHistoryRepository_CRUD (0.05s)
-    --- PASS: TestJobHistoryRepository_CRUD/create_history (0.00s)
-    --- PASS: TestJobHistoryRepository_CRUD/find_by_ID (0.00s)
-    --- PASS: TestJobHistoryRepository_CRUD/find_by_job_ID (0.00s)
-    --- PASS: TestJobHistoryRepository_CRUD/find_by_status (0.00s)
-    --- PASS: TestJobHistoryRepository_CRUD/delete_by_job_ID (0.00s)
-=== RUN   TestJobHistoryRepository_QueryMethods
-=== RUN   TestJobHistoryRepository_QueryMethods/get_latest_by_job_ID
-=== RUN   TestJobHistoryRepository_QueryMethods/count_by_job_ID
-=== RUN   TestJobHistoryRepository_QueryMethods/list_with_pagination
---- PASS: TestJobHistoryRepository_QueryMethods (0.04s)
-    --- PASS: TestJobHistoryRepository_QueryMethods/get_latest_by_job_ID (0.00s)
-    --- PASS: TestJobHistoryRepository_QueryMethods/count_by_job_ID (0.00s)
-    --- PASS: TestJobHistoryRepository_QueryMethods/list_with_pagination (0.00s)
-=== RUN   TestJobHistoryRepository_BatchOperations
---- PASS: TestJobHistoryRepository_BatchOperations (0.02s)
-=== RUN   TestJobHistoryRepository_DeleteOld
---- PASS: TestJobHistoryRepository_DeleteOld (0.02s)
-=== RUN   TestJobHistoryRepository_FindByID_NotFound
---- PASS: TestJobHistoryRepository_FindByID_NotFound (0.00s)
-=== RUN   TestJobHistoryRepository_GetLatestByJobID_NotFound
---- PASS: TestJobHistoryRepository_GetLatestByJobID_NotFound (0.00s)
-=== RUN   TestJobHistoryRepository_CountByJobID_Zero
---- PASS: TestJobHistoryRepository_CountByJobID_Zero (0.00s)
-=== RUN   TestJobHistoryRepository_EmptyBatch
---- PASS: TestJobHistoryRepository_EmptyBatch (0.00s)
-=== RUN   TestJobHistory_StatusTransitions
-=== RUN   TestJobHistory_StatusTransitions/queued_to_processing
-=== RUN   TestJobHistory_StatusTransitions/processing_to_pending_agent
-=== RUN   TestJobHistory_StatusTransitions/pending_agent_to_processing
-=== RUN   TestJobHistory_StatusTransitions/processing_to_completed
-=== RUN   TestJobHistory_StatusTransitions/processing_to_failed
-=== RUN   TestJobHistory_StatusTransitions/queued_to_cancelled
-=== RUN   TestJobHistory_StatusTransitions/paused_to_queued
---- PASS: TestJobHistory_StatusTransitions (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/queued_to_processing (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/processing_to_pending_agent (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/pending_agent_to_processing (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/processing_to_completed (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/processing_to_failed (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/queued_to_cancelled (0.00s)
-    --- PASS: TestJobHistory_StatusTransitions/paused_to_queued (0.00s)
-=== RUN   TestJobHistory_Messages
-=== RUN   TestJobHistory_Messages/simple_message
-=== RUN   TestJobHistory_Messages/message_with_detail
-=== RUN   TestJobHistory_Messages/progress_message
-=== RUN   TestJobHistory_Messages/completion_message
-=== RUN   TestJobHistory_Messages/error_message
---- PASS: TestJobHistory_Messages (0.00s)
-    --- PASS: TestJobHistory_Messages/simple_message (0.00s)
-    --- PASS: TestJobHistory_Messages/message_with_detail (0.00s)
-    --- PASS: TestJobHistory_Messages/progress_message (0.00s)
-    --- PASS: TestJobHistory_Messages/completion_message (0.00s)
-    --- PASS: TestJobHistory_Messages/error_message (0.00s)
-=== RUN   TestJobHistory_TimeFields
---- PASS: TestJobHistory_TimeFields (0.00s)
-=== RUN   TestJobHistory_JobLifecycle
---- PASS: TestJobHistory_JobLifecycle (0.03s)
-=== RUN   TestJobHistory_MultipleJobs
---- PASS: TestJobHistory_MultipleJobs (0.04s)
-=== RUN   TestJobHistory_LongMessages
---- PASS: TestJobHistory_LongMessages (0.01s)
-=== RUN   TestJobHistory_SpecialCharacters
---- PASS: TestJobHistory_SpecialCharacters (0.02s)
-=== RUN   TestJobHistoryRepository_FindByStatus_Pagination
-=== RUN   TestJobHistoryRepository_FindByStatus_Pagination/first_page
-=== RUN   TestJobHistoryRepository_FindByStatus_Pagination/second_page
---- PASS: TestJobHistoryRepository_FindByStatus_Pagination (0.02s)
-    --- PASS: TestJobHistoryRepository_FindByStatus_Pagination/first_page (0.00s)
-    --- PASS: TestJobHistoryRepository_FindByStatus_Pagination/second_page (0.00s)
-=== RUN   TestJobHistoryRepository_List_Pagination
-=== RUN   TestJobHistoryRepository_List_Pagination/first_page
-=== RUN   TestJobHistoryRepository_List_Pagination/second_page
---- PASS: TestJobHistoryRepository_List_Pagination (0.37s)
-    --- PASS: TestJobHistoryRepository_List_Pagination/first_page (0.00s)
-    --- PASS: TestJobHistoryRepository_List_Pagination/second_page (0.00s)
-=== RUN   TestJobHistoryRepository_Update_Status
---- PASS: TestJobHistoryRepository_Update_Status (0.02s)
-=== RUN   TestNewJobRepository
---- PASS: TestNewJobRepository (0.00s)
-=== RUN   TestPrintJob_Struct
---- PASS: TestPrintJob_Struct (0.00s)
-=== RUN   TestPrintJob_StatusValues
---- PASS: TestPrintJob_StatusValues (0.00s)
-=== RUN   TestPrintJob_ColorMode
---- PASS: TestPrintJob_ColorMode (0.00s)
-=== RUN   TestPrintJob_PriorityRange
-=== RUN   TestPrintJob_PriorityRange/valid_priorities
-=== RUN   TestPrintJob_PriorityRange/priority_1_is_lowest
---- PASS: TestPrintJob_PriorityRange (0.00s)
-    --- PASS: TestPrintJob_PriorityRange/valid_priorities (0.00s)
-    --- PASS: TestPrintJob_PriorityRange/priority_1_is_lowest (0.00s)
-=== RUN   TestJobRepository_CRUD
-=== RUN   TestJobRepository_CRUD/create_job
-=== RUN   TestJobRepository_CRUD/find_by_ID
-=== RUN   TestJobRepository_CRUD/update_job
-=== RUN   TestJobRepository_CRUD/update_status
-=== RUN   TestJobRepository_CRUD/assign_agent
-=== RUN   TestJobRepository_CRUD/delete_job
---- PASS: TestJobRepository_CRUD (0.06s)
-    --- PASS: TestJobRepository_CRUD/create_job (0.01s)
-    --- PASS: TestJobRepository_CRUD/find_by_ID (0.00s)
-    --- PASS: TestJobRepository_CRUD/update_job (0.00s)
-    --- PASS: TestJobRepository_CRUD/update_status (0.00s)
-    --- PASS: TestJobRepository_CRUD/assign_agent (0.00s)
-    --- PASS: TestJobRepository_CRUD/delete_job (0.01s)
-=== RUN   TestJobRepository_QueryMethods
-=== RUN   TestJobRepository_QueryMethods/find_by_status
-=== RUN   TestJobRepository_QueryMethods/find_by_printer
-=== RUN   TestJobRepository_QueryMethods/find_by_user
-=== RUN   TestJobRepository_QueryMethods/list_with_filters
-=== RUN   TestJobRepository_QueryMethods/count_by_status
---- PASS: TestJobRepository_QueryMethods (0.13s)
-    --- PASS: TestJobRepository_QueryMethods/find_by_status (0.00s)
-    --- PASS: TestJobRepository_QueryMethods/find_by_printer (0.00s)
-    --- PASS: TestJobRepository_QueryMethods/find_by_user (0.00s)
-    --- PASS: TestJobRepository_QueryMethods/list_with_filters (0.00s)
-    --- PASS: TestJobRepository_QueryMethods/count_by_status (0.00s)
-=== RUN   TestJobRepository_AdvancedOperations
-=== RUN   TestJobRepository_AdvancedOperations/get_next_pending_job
-=== RUN   TestJobRepository_AdvancedOperations/update_job_progress
-=== RUN   TestJobRepository_AdvancedOperations/create_failed_job_for_retry
-=== RUN   TestJobRepository_AdvancedOperations/get_jobs_needing_retry
---- PASS: TestJobRepository_AdvancedOperations (0.08s)
-    --- PASS: TestJobRepository_AdvancedOperations/get_next_pending_job (0.00s)
-    --- PASS: TestJobRepository_AdvancedOperations/update_job_progress (0.01s)
-    --- PASS: TestJobRepository_AdvancedOperations/create_failed_job_for_retry (0.03s)
-    --- PASS: TestJobRepository_AdvancedOperations/get_jobs_needing_retry (0.00s)
-=== RUN   TestPrintJob_TimeFields
---- PASS: TestPrintJob_TimeFields (0.00s)
-=== RUN   TestPrintJob_CompletionTracking
-=== RUN   TestPrintJob_CompletionTracking/completed_job
-=== RUN   TestPrintJob_CompletionTracking/incomplete_job
---- PASS: TestPrintJob_CompletionTracking (0.00s)
-    --- PASS: TestPrintJob_CompletionTracking/completed_job (0.00s)
-    --- PASS: TestPrintJob_CompletionTracking/incomplete_job (0.00s)
-=== RUN   TestPrintJob_Retries
---- PASS: TestPrintJob_Retries (0.00s)
-=== RUN   TestPrintJob_Options
-=== RUN   TestPrintJob_Options/empty_options
-=== RUN   TestPrintJob_Options/JSON_options
---- PASS: TestPrintJob_Options (0.00s)
-    --- PASS: TestPrintJob_Options/empty_options (0.00s)
-    --- PASS: TestPrintJob_Options/JSON_options (0.00s)
-=== RUN   TestPrintJob_UserFields
---- PASS: TestPrintJob_UserFields (0.00s)
-=== RUN   TestPrintJob_PrinterAssociation
---- PASS: TestPrintJob_PrinterAssociation (0.00s)
-=== RUN   TestJobRepository_ListWithFilters_EmptyFilters
---- PASS: TestJobRepository_ListWithFilters_EmptyFilters (0.00s)
-=== RUN   TestJobRepository_ListWithFilters_SingleFilter
-=== RUN   TestJobRepository_ListWithFilters_SingleFilter/filter_by_printer_only
-=== RUN   TestJobRepository_ListWithFilters_SingleFilter/filter_by_status_only
-=== RUN   TestJobRepository_ListWithFilters_SingleFilter/filter_by_user_only
---- PASS: TestJobRepository_ListWithFilters_SingleFilter (0.05s)
-    --- PASS: TestJobRepository_ListWithFilters_SingleFilter/filter_by_printer_only (0.00s)
-    --- PASS: TestJobRepository_ListWithFilters_SingleFilter/filter_by_status_only (0.00s)
-    --- PASS: TestJobRepository_ListWithFilters_SingleFilter/filter_by_user_only (0.00s)
-=== RUN   TestJobRepository_DuplicateHandling
---- PASS: TestJobRepository_DuplicateHandling (0.04s)
-=== RUN   TestPrintJob_MediaTypes
---- PASS: TestPrintJob_MediaTypes (0.00s)
-=== RUN   TestPrintJob_QualityLevels
---- PASS: TestPrintJob_QualityLevels (0.00s)
-=== RUN   TestJobRepository_FindByID_NotFound
---- PASS: TestJobRepository_FindByID_NotFound (0.00s)
-=== RUN   TestJobRepository_Update_NotFound
---- PASS: TestJobRepository_Update_NotFound (0.00s)
-=== RUN   TestJobRepository_UpdateStatus_NotFound
---- PASS: TestJobRepository_UpdateStatus_NotFound (0.00s)
-=== RUN   TestJobRepository_AssignAgent_NotFound
---- PASS: TestJobRepository_AssignAgent_NotFound (0.00s)
-=== RUN   TestJobRepository_Delete_NotFound
---- PASS: TestJobRepository_Delete_NotFound (0.00s)
-=== RUN   TestJobRepository_UpdateJobProgress_NotFound
---- PASS: TestJobRepository_UpdateJobProgress_NotFound (0.00s)
-=== RUN   TestJobRepository_PriorityOrdering
---- PASS: TestJobRepository_PriorityOrdering (0.19s)
-=== RUN   TestJobRepository_StatusTransitions
---- PASS: TestJobRepository_StatusTransitions (0.04s)
-=== RUN   TestJobRepository_AgentAssignment
---- PASS: TestJobRepository_AgentAssignment (0.02s)
-=== RUN   TestJobRepository_OptionsJSON
---- PASS: TestJobRepository_OptionsJSON (0.02s)
-=== RUN   TestJobRepository_CompletionTimestamps
---- PASS: TestJobRepository_CompletionTimestamps (0.02s)
-=== RUN   TestJobRepository_RetryTracking
---- PASS: TestJobRepository_RetryTracking (0.04s)
-=== RUN   TestJobRepository_MultiFilterQueries
---- PASS: TestJobRepository_MultiFilterQueries (0.03s)
-=== RUN   TestJobRepository_NullAgentHandling
---- PASS: TestJobRepository_NullAgentHandling (0.02s)
-=== RUN   TestJobRepository_Pagination
-=== RUN   TestJobRepository_Pagination/first_page
-=== RUN   TestJobRepository_Pagination/second_page
-=== RUN   TestJobRepository_Pagination/offset_beyond_results
---- PASS: TestJobRepository_Pagination (0.34s)
-    --- PASS: TestJobRepository_Pagination/first_page (0.00s)
-    --- PASS: TestJobRepository_Pagination/second_page (0.00s)
-    --- PASS: TestJobRepository_Pagination/offset_beyond_results (0.00s)
-PASS
-2026/03/02 01:02:04 setup_test.go:42: TestMain: Tests finished with exit code: 0
-ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
+  Test SessionID: 9d00321991e1f6ecda25ba16ebcd53747e5813f718ca0adb8a69beb465254397
+  Test ProcessID: 3df8e09e-e4ff-4d06-ad30-fc341e82e765
+2026/03/02 03:02:39 🐳 Creating container for image testcontainers/ryuk:0.8.1
+2026/03/02 03:02:39 ✅ Container created: d6f1e2b65421
+2026/03/02 03:02:39 🐳 Starting container: d6f1e2b65421
+2026/03/02 03:02:39 ✅ Container started: d6f1e2b65421
+2026/03/02 03:02:39 ⏳ Waiting for container id d6f1e2b65421 image: testcontainers/ryuk:0.8.1. Waiting for: &{Port:8080/tcp timeout:<nil> PollInterval:100ms skipInternalCheck:false}
+2026/03/02 03:02:40 🔔 Container is ready: d6f1e2b65421
+2026/03/02 03:02:40 🐳 Creating container for image postgres:16-alpine
+2026/03/02 03:02:40 ✅ Container created: 84aec43503ef
+2026/03/02 03:02:40 🐳 Starting container: 84aec43503ef
+2026/03/02 03:02:40 ✅ Container started: 84aec43503ef
+2026/03/02 03:02:40 ⏳ Waiting for container id 84aec43503ef image: postgres:16-alpine. Waiting for: &{timeout:0xc0000125f0 Log:database system is ready to accept connections IsRegexp:false Occurrence:2 PollInterval:100ms}
+2026/03/02 03:02:44 🔔 Container is ready: 84aec43503ef
+2026/03/02 03:02:48 🐳 Terminating container: 84aec43503ef
+2026/03/02 03:02:49 🚫 Container terminated: 84aec43503ef
+2026/03/02 03:02:49 setup_test.go:25: Failed to setup test database: run migrations: execute migration 000034_add_multi_tenant_support.up.sql: ERROR: syntax error at or near "NOT" (SQLSTATE 42601)
+FAIL	github.com/openprint/openprint/services/job-service/repository	13.126s
 ?   	github.com/openprint/openprint/services/m365-integration-service	[no test files]
 ?   	github.com/openprint/openprint/services/notification-service	[no test files]
 === RUN   TestNewHandler
@@ -3475,7 +4436,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
 === RUN   TestHandler_BroadcastSystemNotification
 --- PASS: TestHandler_BroadcastSystemNotification (0.00s)
 === RUN   TestHandler_GetActiveUsers
-2026/03/02 01:01:51 Client registered: client-1 (user: user-123, org: )
+2026/03/02 03:02:36 Client registered: client-1 (user: user-123, org: )
 --- PASS: TestHandler_GetActiveUsers (0.00s)
 === RUN   TestHandler_GetConnectionStats
 --- PASS: TestHandler_GetConnectionStats (0.00s)
@@ -3495,9 +4456,9 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
 === RUN   TestClient_HandleMessage/subscribe_message
 === RUN   TestClient_HandleMessage/unsubscribe_message
 === RUN   TestClient_HandleMessage/unknown_message_type
-2026/03/02 01:01:51 Unknown message type: unknown
+2026/03/02 03:02:36 Unknown message type: unknown
 === RUN   TestClient_HandleMessage/invalid_JSON
-2026/03/02 01:01:51 Failed to unmarshal message: invalid character 'i' looking for beginning of value
+2026/03/02 03:02:36 Failed to unmarshal message: invalid character 'i' looking for beginning of value
 --- PASS: TestClient_HandleMessage (0.00s)
     --- PASS: TestClient_HandleMessage/ping_message (0.00s)
     --- PASS: TestClient_HandleMessage/subscribe_message (0.00s)
@@ -3508,8 +4469,8 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
     handler_test.go:607: writePump exit test passed
 --- PASS: TestWritePump_Timeout (0.00s)
 === RUN   TestReadPump_CloseOnPongTimeout
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: )
-2026/03/02 01:01:51 Client unregistered: client-1
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: )
+2026/03/02 03:02:36 Client unregistered: client-1
 --- PASS: TestReadPump_CloseOnPongTimeout (0.00s)
 === RUN   TestHandler_URLParsing
 --- PASS: TestHandler_URLParsing (0.00s)
@@ -3518,52 +4479,52 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
 === RUN   TestNewHub
 --- PASS: TestNewHub (0.00s)
 === RUN   TestHub_RegisterClient
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
 --- PASS: TestHub_RegisterClient (0.00s)
 === RUN   TestHub_UnregisterClient
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 01:01:51 Client unregistered: client-1
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client unregistered: client-1
 --- PASS: TestHub_UnregisterClient (0.00s)
 === RUN   TestHub_Broadcast
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 01:01:51 Client registered: client-2 (user: user-2, org: org-1)
-2026/03/02 01:01:51 Client registered: client-3 (user: user-3, org: org-1)
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-2 (user: user-2, org: org-1)
+2026/03/02 03:02:36 Client registered: client-3 (user: user-3, org: org-1)
 --- PASS: TestHub_Broadcast (0.00s)
 === RUN   TestHub_SendToUser
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 01:01:51 Client registered: client-2 (user: user-1, org: org-1)
-2026/03/02 01:01:51 Client registered: client-3 (user: user-2, org: org-1)
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-2 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-3 (user: user-2, org: org-1)
 --- PASS: TestHub_SendToUser (0.00s)
 === RUN   TestHub_BroadcastToOrg
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 01:01:51 Client registered: client-2 (user: user-2, org: org-1)
-2026/03/02 01:01:51 Client registered: client-3 (user: user-3, org: org-2)
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-2 (user: user-2, org: org-1)
+2026/03/02 03:02:36 Client registered: client-3 (user: user-3, org: org-2)
 --- PASS: TestHub_BroadcastToOrg (0.00s)
 === RUN   TestHub_GetConnectionCount
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: )
-2026/03/02 01:01:51 Client registered: client-2 (user: user-2, org: )
-2026/03/02 01:01:51 Client registered: client-3 (user: user-3, org: )
-2026/03/02 01:01:51 Client registered: client-4 (user: user-4, org: )
-2026/03/02 01:01:51 Client registered: client-5 (user: user-5, org: )
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: )
+2026/03/02 03:02:36 Client registered: client-2 (user: user-2, org: )
+2026/03/02 03:02:36 Client registered: client-3 (user: user-3, org: )
+2026/03/02 03:02:36 Client registered: client-4 (user: user-4, org: )
+2026/03/02 03:02:36 Client registered: client-5 (user: user-5, org: )
 --- PASS: TestHub_GetConnectionCount (0.00s)
 === RUN   TestHub_GetConnectionsByUser
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: )
-2026/03/02 01:01:51 Client registered: client-2 (user: user-1, org: )
-2026/03/02 01:01:51 Client registered: client-3 (user: user-1, org: )
-2026/03/02 01:01:51 Client registered: client-other (user: user-2, org: )
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: )
+2026/03/02 03:02:36 Client registered: client-2 (user: user-1, org: )
+2026/03/02 03:02:36 Client registered: client-3 (user: user-1, org: )
+2026/03/02 03:02:36 Client registered: client-other (user: user-2, org: )
 --- PASS: TestHub_GetConnectionsByUser (0.00s)
 === RUN   TestHub_GetConnectionsByOrg
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 01:01:51 Client registered: client-2 (user: user-2, org: org-1)
-2026/03/02 01:01:51 Client registered: client-3 (user: user-3, org: org-1)
-2026/03/02 01:01:51 Client registered: client-4 (user: user-4, org: org-1)
-2026/03/02 01:01:51 Client registered: client-5 (user: user-5, org: org-2)
-2026/03/02 01:01:51 Client registered: client-6 (user: user-6, org: org-2)
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-2 (user: user-2, org: org-1)
+2026/03/02 03:02:36 Client registered: client-3 (user: user-3, org: org-1)
+2026/03/02 03:02:36 Client registered: client-4 (user: user-4, org: org-1)
+2026/03/02 03:02:36 Client registered: client-5 (user: user-5, org: org-2)
+2026/03/02 03:02:36 Client registered: client-6 (user: user-6, org: org-2)
 --- PASS: TestHub_GetConnectionsByOrg (0.00s)
 === RUN   TestHub_Shutdown
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: )
-2026/03/02 01:01:51 Client registered: client-2 (user: user-2, org: )
-2026/03/02 01:01:51 Client registered: client-3 (user: user-3, org: )
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: )
+2026/03/02 03:02:36 Client registered: client-2 (user: user-2, org: )
+2026/03/02 03:02:36 Client registered: client-3 (user: user-3, org: )
 --- PASS: TestHub_Shutdown (0.00s)
 === RUN   TestMessage_CreationFunctions
 === RUN   TestMessage_CreationFunctions/JobStatusUpdate
@@ -3576,7 +4537,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
     --- PASS: TestMessage_CreationFunctions/PrinterStatusUpdate (0.00s)
     --- PASS: TestMessage_CreationFunctions/NewNotification (0.00s)
 === RUN   TestHub_SendMethods
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: org-1)
 === RUN   TestHub_SendMethods/SendToUser
 === RUN   TestHub_SendMethods/BroadcastToOrg
 === RUN   TestHub_SendMethods/Broadcast
@@ -3585,7 +4546,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
     --- PASS: TestHub_SendMethods/BroadcastToOrg (0.00s)
     --- PASS: TestHub_SendMethods/Broadcast (0.00s)
 === RUN   TestClient_NoOrg
-2026/03/02 01:01:51 Client registered: client-1 (user: user-1, org: )
+2026/03/02 03:02:36 Client registered: client-1 (user: user-1, org: )
 --- PASS: TestClient_NoOrg (0.00s)
 === RUN   TestHub_Run_ContextCancellation
 --- PASS: TestHub_Run_ContextCancellation (0.00s)
@@ -3594,7 +4555,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	13.664s
 === RUN   TestRemoveClient_NotFound
 --- PASS: TestRemoveClient_NotFound (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/notification-service/websocket	0.028s
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.038s
 ?   	github.com/openprint/openprint/services/organization-service	[no test files]
 ?   	github.com/openprint/openprint/services/organization-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/organization-service/repository	[no test files]
@@ -3699,7 +4660,7 @@ ok  	github.com/openprint/openprint/services/notification-service/websocket	0.02
 === RUN   TestPrinter_TimeFields
 --- PASS: TestPrinter_TimeFields (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/registry-service/repository	0.008s
+ok  	github.com/openprint/openprint/services/registry-service/repository	0.006s
 ?   	github.com/openprint/openprint/services/storage-service	[no test files]
 === RUN   TestNewHandler
 --- PASS: TestNewHandler (0.00s)
@@ -3795,7 +4756,7 @@ ok  	github.com/openprint/openprint/services/registry-service/repository	0.008s
 === RUN   TestDocumentMetadata_WithoutExpiry
 --- PASS: TestDocumentMetadata_WithoutExpiry (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/storage-service/handler	0.014s
+ok  	github.com/openprint/openprint/services/storage-service/handler	0.018s
 ?   	github.com/openprint/openprint/services/storage-service/handlers	[no test files]
 === RUN   TestNewEncryptedBackend
 --- PASS: TestNewEncryptedBackend (0.00s)
@@ -3826,7 +4787,7 @@ ok  	github.com/openprint/openprint/services/storage-service/handler	0.014s
 === RUN   TestGenerateKey
 --- PASS: TestGenerateKey (0.00s)
 === RUN   TestDeriveKey
---- PASS: TestDeriveKey (0.19s)
+--- PASS: TestDeriveKey (0.21s)
 === RUN   TestEncryptedBackend_EmptyData
 --- PASS: TestEncryptedBackend_EmptyData (0.00s)
 === RUN   TestEncryptedBackend_LargeData
@@ -3951,7 +4912,7 @@ ok  	github.com/openprint/openprint/services/storage-service/handler	0.014s
 === RUN   TestDataBuffer_OffsetTracking
 --- PASS: TestDataBuffer_OffsetTracking (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/storage-service/storage	0.227s
+ok  	github.com/openprint/openprint/services/storage-service/storage	0.254s
 === RUN   TestGetTestConfig
 === RUN   TestGetTestConfig/defaults
 === RUN   TestGetTestConfig/custom_values
@@ -4206,4 +5167,5 @@ ok  	github.com/openprint/openprint/services/storage-service/storage	0.227s
     --- PASS: TestJoinNonEmpty/all_empty_strings (0.00s)
     --- PASS: TestJoinNonEmpty/no_arguments (0.00s)
 PASS
-ok  	github.com/openprint/openprint/tests/testutil	0.201s
+ok  	github.com/openprint/openprint/tests/testutil	0.203s
+FAIL

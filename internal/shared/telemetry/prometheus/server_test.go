@@ -338,9 +338,9 @@ func TestMustStartMetricsServer(t *testing.T) {
 		reg, err := NewRegistry(cfg)
 		require.NoError(t, err)
 
-		// Try with a port that might be available
+		// Use a random high port that's unlikely to conflict
 		assert.NotPanics(t, func() {
-			server := MustStartMetricsServer(reg, 0)
+			server := MustStartMetricsServer(reg, 39090)
 			if server != nil {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()

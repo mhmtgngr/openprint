@@ -36,7 +36,7 @@ CREATE INDEX idx_alert_history_status ON alert_history(status, fired_at DESC);
 CREATE INDEX idx_alert_history_service ON alert_history(service_name, fired_at DESC);
 
 -- Quota usage table for tracking user and organization quotas
-CREATE TABLE IF NOT EXISTS quota_usage (
+CREATE TABLE IF NOT EXISTS quota_usage_tracking (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
     organization_id UUID NOT NULL,
@@ -51,9 +51,9 @@ CREATE TABLE IF NOT EXISTS quota_usage (
 );
 
 -- Index for quota queries
-CREATE INDEX idx_quota_usage_user ON quota_usage(user_id, period_start DESC);
-CREATE INDEX idx_quota_usage_org ON quota_usage(organization_id, period_start DESC);
-CREATE INDEX idx_quota_usage_period ON quota_usage(period_start, period_end);
+CREATE INDEX IF NOT EXISTS idx_quota_usage_tracking_user ON quota_usage_tracking(user_id, period_start DESC);
+CREATE INDEX IF NOT EXISTS idx_quota_usage_tracking_org ON quota_usage_tracking(organization_id, period_start DESC);
+CREATE INDEX IF NOT EXISTS idx_quota_usage_tracking_period ON quota_usage_tracking(period_start, period_end);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -65,8 +65,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger for automatic updated_at
-CREATE TRIGGER update_quota_usage_updated_at
-    BEFORE UPDATE ON quota_usage
+DROP TRIGGER IF EXISTS update_quota_usage_tracking_updated_at ON quota_usage_tracking;
+CREATE TRIGGER update_quota_usage_tracking_updated_at
+    BEFORE UPDATE ON quota_usage_tracking
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -130,7 +131,7 @@ CREATE INDEX idx_sla_service_period ON sla_compliance(service_name, period_start
 -- Comments for documentation
 COMMENT ON TABLE observability_metrics IS 'Stores metric samples for long-term analysis and backup';
 COMMENT ON TABLE alert_history IS 'History of all fired and resolved alerts from Prometheus/AlertManager';
-COMMENT ON TABLE quota_usage IS 'Tracks usage-based quotas for users and organizations';
+COMMENT ON TABLE quota_usage_tracking IS 'Tracks usage-based quotas for users and organizations';
 COMMENT ON TABLE audit_log_enrichment IS 'Enriches audit logs with trace context and performance data';
 COMMENT ON TABLE service_performance_daily IS 'Daily aggregated performance metrics for each service';
 COMMENT ON TABLE sla_compliance IS 'Tracks SLA compliance for service availability guarantees';
