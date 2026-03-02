@@ -1,817 +1,411 @@
-AUTH CODE: 
---- internal/middleware/cookie_auth.go ---
-// Package middleware provides HTTP middleware for cookie-based authentication.
-//
-// SECURITY CONSIDERATIONS FOR COOKIES:
-//
-// This package provides secure cookie helpers that enforce the following security attributes:
-//
-// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
-//    interception on the network. Always use Secure=true in production.
-//
-// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
-//    protecting against XSS attacks that attempt to steal session tokens.
-//
-// 3. SameSite Attribute - Controls cross-site cookie behavior:
-//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
-//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
-//    - SameSiteNone: Allows cross-site requests; requires Secure=true
-//
-// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
-//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
-//
-// USAGE EXAMPLE:
-//
-//	// Recommended: Use AutoCookieSecurity for environment-aware settings
-//	security := middleware.AutoCookieSecurity()
-//	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
-//
-//	// On logout:
-//	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
-//
-// PRODUCTION DEPLOYMENT:
-//
-// For production, ensure ENV=production or GO_ENV=production is set.
-// AutoCookieSecurity will automatically apply secure settings (Secure+HttpOnly).
-//
-// Alternatively, explicitly use ProductionCookieSecurity():
-//
-//	security := middleware.ProductionCookieSecurity()
-package middleware
-
-import (
-	"context"
-	"encoding/json"
-	"net/http"
-	"os"
-	"strings"
-	"time"
-
-	"github.com/openprint/openprint/internal/auth/jwt"
-)
-
-const (
-	// SessionCookieName is the name of the session cookie
-	SessionCookieName = "openprint_session"
-	// RefreshCookieName is the name of the refresh token cookie
-	RefreshCookieName = "openprint_refresh"
-
-	UserIDKey  contextKey = "user_id"
-	EmailKey   contextKey = "email"
-	OrgIDKey   contextKey = "org_id"
-	RoleKey    contextKey = "role"
---- internal/middleware/cookie_auth_test.go ---
-// Package middleware provides tests for cookie authentication middleware.
-package middleware
-
-import (
-	"net/http"
-	"os"
-	"testing"
-	"time"
-)
-
-func TestDefaultCookieSecurity(t *testing.T) {
-	security := DefaultCookieSecurity()
-
-	if !security.Secure {
-		t.Error("DefaultCookieSecurity() should set Secure=true")
-	}
-	if !security.HttpOnly {
-		t.Error("DefaultCookieSecurity() should set HttpOnly=true")
-	}
-	if security.SameSite != http.SameSiteLaxMode {
-		t.Errorf("DefaultCookieSecurity() SameSite = %v, want SameSiteLaxMode", security.SameSite)
-	}
-	if security.Path != "/" {
-		t.Errorf("DefaultCookieSecurity() Path = %v, want /", security.Path)
-	}
-}
-
-func TestProductionCookieSecurity(t *testing.T) {
-	security := ProductionCookieSecurity()
-
-	if !security.Secure {
-		t.Error("ProductionCookieSecurity() MUST set Secure=true")
-	}
-	if !security.HttpOnly {
-		t.Error("ProductionCookieSecurity() MUST set HttpOnly=true")
-	}
-	if security.SameSite != http.SameSiteStrictMode {
-		t.Errorf("ProductionCookieSecurity() SameSite = %v, want SameSiteStrictMode for stricter CSRF protection", security.SameSite)
-	}
-	if security.Path != "/" {
-		t.Errorf("ProductionCookieSecurity() Path = %v, want /", security.Path)
-	}
-}
-
-func TestDevelopmentCookieSecurity(t *testing.T) {
-	security := DevelopmentCookieSecurity()
-
-	if security.Secure {
-		t.Error("DevelopmentCookieSecurity() should allow HTTP (Secure=false)")
-	}
-	if !security.HttpOnly {
-		t.Error("DevelopmentCookieSecurity() should still set HttpOnly=true")
-	}
-	if security.SameSite != http.SameSiteLaxMode {
-		t.Errorf("DevelopmentCookieSecurity() SameSite = %v, want SameSiteLaxMode", security.SameSite)
-	}
-}
-
-func TestEnvIsProduction(t *testing.T) {
-	// Save original env values
---- internal/agent/types.go ---
-// Package agent provides shared types for Windows Print Agent communication.
-package agent
-
-import (
-	"encoding/json"
-	"time"
-)
-
-// PrinterConnectionType represents how a printer is connected.
-type PrinterConnectionType string
-
-const (
-	// ConnectionLocal indicates a locally connected printer (USB, LPT, etc.)
-	ConnectionLocal PrinterConnectionType = "local"
-	// ConnectionNetwork indicates a network-connected printer
-	ConnectionNetwork PrinterConnectionType = "network"
-	// ConnectionShared indicates a shared printer from another machine
-	ConnectionShared PrinterConnectionType = "shared"
-	// ConnectionWSD indicates a Web Services for Devices printer
-	ConnectionWSD PrinterConnectionType = "wsd"
-	// ConnectionLPD indicates a Line Printer Daemon printer
-	ConnectionLPD PrinterConnectionType = "lpd"
-)
-
-// PrinterStatus represents the current status of a printer.
-type PrinterStatus string
-
-const (
-	// PrinterStatusIdle indicates the printer is ready and idle
-	PrinterStatusIdle PrinterStatus = "idle"
-	// PrinterStatusPrinting indicates the printer is currently printing
-	PrinterStatusPrinting PrinterStatus = "printing"
-	// PrinterStatusBusy indicates the printer is busy
-	PrinterStatusBusy PrinterStatus = "busy"
-	// PrinterStatusOffline indicates the printer is offline
-	PrinterStatusOffline PrinterStatus = "offline"
-	// PrinterStatusError indicates the printer has an error
-	PrinterStatusError PrinterStatus = "error"
-	// PrinterStatusOutOfPaper indicates the printer is out of paper
-	PrinterStatusOutOfPaper PrinterStatus = "out_of_paper"
-	// PrinterStatusLowToner indicates the printer has low toner
-	PrinterStatusLowToner PrinterStatus = "low_toner"
-	// PrinterStatusDoorOpen indicates the printer door is open
-	PrinterStatusDoorOpen PrinterStatus = "door_open"
-)
-
-// AgentStatus represents the current status of an agent.
-type AgentStatus string
-
-const (
-	// AgentStatusOnline indicates the agent is online and operational
-	AgentStatusOnline AgentStatus = "online"
-	// AgentStatusOffline indicates the agent is offline
-	AgentStatusOffline AgentStatus = "offline"
-	// AgentStatusError indicates the agent has encountered an error
-	AgentStatusError AgentStatus = "error"
-	// AgentStatusMaintenance indicates the agent is under maintenance
-	AgentStatusMaintenance AgentStatus = "maintenance"
-	// AgentStatusInitializing indicates the agent is initializing
-	AgentStatusInitializing AgentStatus = "initializing"
---- internal/auth/password/password.go ---
-// Package password provides secure password hashing using Argon2id.
-package password
-
-import (
-	"crypto/rand"
-	"crypto/subtle"
-	"encoding/base64"
-	"errors"
-	"fmt"
-	"strings"
-
-	"golang.org/x/crypto/argon2"
-)
-
-var (
-	// ErrMismatchedHashAndPassword is returned when a password doesn't match its hash.
-	ErrMismatchedHashAndPassword = errors.New("password does not match")
-	// ErrInvalidHashFormat is returned when the hash format is invalid.
-	ErrInvalidHashFormat = errors.New("invalid hash format")
-	// ErrInvalidHashVersion is returned when the hash version is not supported.
-	ErrInvalidHashVersion = errors.New("invalid hash version")
-)
-
-// Hash represents a password hash with its parameters.
-type Hash struct {
-	Version  int
-	Memory   uint32
-	Time     uint32
-	Threads  uint8
-	KeyLen   uint32
-	SaltLen  uint32
-	Salt     []byte
-	Hash     []byte
-}
-
-// String returns the string representation of the hash.
-func (h *Hash) String() string {
-	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		h.Version,
-		h.Memory,
-		h.Time,
-		h.Threads,
-		base64.RawStdEncoding.EncodeToString(h.Salt),
-		base64.RawStdEncoding.EncodeToString(h.Hash),
-	)
-}
-
-// Default parameters for Argon2id (OWASP recommendations as of 2024).
-var (
-	// DefaultMemory is the default memory cost in KiB (64 MiB).
-	DefaultMemory = uint32(64 * 1024)
-	// DefaultIterations is the default number of iterations.
-	DefaultIterations = uint32(3)
-	// DefaultThreads is the default parallelism degree.
-	DefaultThreads = uint8(4)
-	// DefaultKeyLen is the default derived key length in bytes.
-	DefaultKeyLen = uint32(32)
-	// DefaultSaltLen is the default salt length in bytes.
-	DefaultSaltLen = uint32(16)
-)
---- internal/auth/password/password_test.go ---
-// Package password provides tests for secure password hashing using Argon2id.
-package password
-
-import (
-	"strings"
-	"testing"
-
-	"golang.org/x/crypto/argon2"
-)
-
-func TestDefaultParameters(t *testing.T) {
-	if DefaultMemory != 64*1024 {
-		t.Errorf("DefaultMemory = %d, want %d", DefaultMemory, 64*1024)
-	}
-	if DefaultIterations != 3 {
-		t.Errorf("DefaultIterations = %d, want %d", DefaultIterations, 3)
-	}
-	if DefaultThreads != 4 {
-		t.Errorf("DefaultThreads = %d, want %d", DefaultThreads, 4)
-	}
-	if DefaultKeyLen != 32 {
-		t.Errorf("DefaultKeyLen = %d, want %d", DefaultKeyLen, 32)
-	}
-	if DefaultSaltLen != 16 {
-		t.Errorf("DefaultSaltLen = %d, want %d", DefaultSaltLen, 16)
-	}
-}
-
-func TestNewHasher(t *testing.T) {
-	memory := uint32(32 * 1024)
-	time := uint32(2)
-	threads := uint8(2)
-	keyLen := uint32(24)
-	saltLen := uint32(12)
-
-	hasher := NewHasher(memory, time, threads, keyLen, saltLen)
-
-	if hasher.memory != memory {
-		t.Errorf("NewHasher() memory = %d, want %d", hasher.memory, memory)
-	}
-	if hasher.time != time {
-		t.Errorf("NewHasher() time = %d, want %d", hasher.time, time)
-	}
-	if hasher.threads != threads {
-		t.Errorf("NewHasher() threads = %d, want %d", hasher.threads, threads)
-	}
-	if hasher.keyLen != keyLen {
-		t.Errorf("NewHasher() keyLen = %d, want %d", hasher.keyLen, keyLen)
-	}
-	if hasher.saltLen != saltLen {
-		t.Errorf("NewHasher() saltLen = %d, want %d", hasher.saltLen, saltLen)
-	}
-}
-
-func TestDefaultHasher(t *testing.T) {
-	hasher := DefaultHasher()
-
-	if hasher.memory != DefaultMemory {
-		t.Errorf("DefaultHasher() memory = %d, want %d", hasher.memory, DefaultMemory)
-	}
---- internal/auth/saml/saml.go ---
-// Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
-// This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
-//
-// SECURITY: SHA-1 signature support has been removed due to cryptographic vulnerabilities.
-// Only SHA-256 and stronger signature algorithms are supported.
-// IdPs using SHA-1 must be upgraded to use SHA-256 or stronger algorithms.
-package saml
-
-import (
-	"bytes"
-	"context"
-	cryptoRand "crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/sha512"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/xml"
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
-)
-
-// secureXMLDecoder wraps xml.Decoder with security restrictions.
-// Go's encoding/xml package does not process external entities by default,
-// but this wrapper provides explicit security controls for defense-in-depth.
-type secureXMLDecoder struct {
-	*xml.Decoder
-	maxBytes int64
-	bytesRead int64
-}
-
-// newSecureXMLDecoder creates a new secure XML decoder with size limits.
-// The decoder is configured to prevent XXE attacks by:
-// 1. Using a limited reader to enforce maximum XML size
-// 2. Disallowing DTD processing (already disabled by default in Go)
-// 3. Returning an error when size limit is exceeded (not silent truncation)
-func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
-	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
-	return &secureXMLDecoder{
-		Decoder: xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
-		maxBytes: maxXMLSize,
-	}
-}
-
-// Decode wraps the underlying Decoder's Decode method with size checking.
-// Returns an error if the XML document exceeds the maximum allowed size.
-func (d *secureXMLDecoder) Decode(v interface{}) error {
-	err := d.Decoder.Decode(v)
-	if err == io.EOF {
-		// Check if we hit the size limit by looking at the input offset
-		// If offset is near maxBytes, the EOF was likely due to hitting the limit
-		offset := d.Decoder.InputOffset()
-		if offset >= d.maxBytes-100 {
-			// We hit the size limit with some margin for the final read
-			return fmt.Errorf("XML document exceeds maximum size of %d bytes", d.maxBytes)
---- internal/auth/saml/saml_test.go ---
-// Package saml provides tests for SAML 2.0 SSO integration.
-package saml
-
-import (
-	"bytes"
-	"encoding/xml"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"strings"
-	"testing"
-)
-
-func TestNewManager(t *testing.T) {
-	t.Run("valid config", func(t *testing.T) {
-		cfg := &Config{
-			EntityID: "https://sp.example.com",
-			SSOURL:   "https://idp.example.com/sso",
-			ACSURL:   "https://sp.example.com/acs",
-			SLOURL:   "https://idp.example.com/slo",
-		}
-
-		mgr, err := NewManager(cfg)
-		if err != nil {
-			t.Fatalf("NewManager() error = %v", err)
-		}
-		if mgr == nil {
-			t.Fatal("NewManager() returned nil")
-		}
-		if mgr.config != cfg {
-			t.Error("NewManager() config not set correctly")
-		}
-	})
-
-	t.Run("nil config", func(t *testing.T) {
-		_, err := NewManager(nil)
-		if err == nil {
-			t.Error("NewManager(nil) should return error")
-		}
-	})
-}
-
-func TestManager_Metadata(t *testing.T) {
-	cfg := &Config{
-		EntityID:     "https://sp.example.com",
-		SSOURL:       "https://idp.example.com/sso",
-		ACSURL:       "https://sp.example.com/acs",
-		SLOResponseURL: "https://sp.example.com/slo",
-	}
-
-	mgr, err := NewManager(cfg)
-	if err != nil {
-		t.Fatalf("NewManager() error = %v", err)
-	}
-
-	metadata, err := mgr.Metadata()
-	if err != nil {
-		t.Fatalf("Metadata() error = %v", err)
-	}
---- internal/auth/jwt/jwt_test.go ---
-// Package jwt provides tests for JWT token generation and validation.
-package jwt
-
-import (
-	"errors"
-	"testing"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
-)
-
-func TestDefaultConfig(t *testing.T) {
-	t.Run("valid config", func(t *testing.T) {
-		secret := "this-is-a-secure-secret-key-32-chars-long"
-		cfg, err := DefaultConfig(secret)
-
-		if err != nil {
-			t.Fatalf("DefaultConfig() error = %v", err)
-		}
-		if cfg.SecretKey != secret {
-			t.Errorf("DefaultConfig() SecretKey = %v, want %v", cfg.SecretKey, secret)
-		}
-		if cfg.AccessDuration != 15*time.Minute {
-			t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
-		}
-		if cfg.RefreshDuration != MaxRefreshDuration {
-			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, MaxRefreshDuration)
-		}
-		if cfg.Issuer != "openprint.cloud" {
-			t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)
-		}
-	})
-
-	t.Run("secret key too short", func(t *testing.T) {
-		shortSecret := "short"
-		_, err := DefaultConfig(shortSecret)
-
-		if err == nil {
-			t.Error("DefaultConfig() with short secret should return error")
-		}
-		if !errors.Is(err, ErrSecretKeyTooShort) {
-			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
-		}
-	})
-}
-
-func TestNewManager(t *testing.T) {
-	t.Run("valid config", func(t *testing.T) {
-		cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
-		mgr, err := NewManager(cfg)
-
-		if err != nil {
-			t.Fatalf("NewManager() error = %v", err)
-		}
-		if mgr == nil {
-			t.Fatal("NewManager() returned nil")
-		}
-		if mgr.config != cfg {
-			t.Error("NewManager() config not set correctly")
---- internal/auth/jwt/jwt.go ---
-// Package jwt provides JWT token generation and validation for OpenPrint authentication.
-package jwt
-
-import (
-	"errors"
-	"fmt"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
-)
-
-const (
-	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
-	MinSecretKeyLength = 32
-	// MaxRefreshDuration is the maximum allowed refresh token duration (48 hours for security).
-	MaxRefreshDuration = 48 * time.Hour
-)
-
-var (
-	// ErrInvalidToken is returned when a token is invalid.
-	ErrInvalidToken = errors.New("invalid token")
-	// ErrExpiredToken is returned when a token has expired.
-	ErrExpiredToken = errors.New("token expired")
-	// ErrInvalidSigningMethod is returned when the signing method is invalid.
-	ErrInvalidSigningMethod = errors.New("invalid signing method")
-	// ErrSecretKeyTooShort is returned when the secret key is too short.
-	ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
-)
-
-// Claims represents the JWT claims structure.
-type Claims struct {
-	UserID    string   `json:"user_id"`
-	Email     string   `json:"email"`
-	OrgID     string   `json:"org_id,omitempty"`
-	Role      string   `json:"role"`
-	TokenType string   `json:"token_type"` // "access" or "refresh"
-	Scopes    []string `json:"scopes,omitempty"`
-	jwt.RegisteredClaims
-}
-
-// TokenType represents the type of JWT token.
-type TokenType string
-
-const (
-	// AccessTokenType is for short-lived access tokens.
-	AccessTokenType TokenType = "access"
-	// RefreshTokenType is for long-lived refresh tokens.
-	RefreshTokenType TokenType = "refresh"
-)
-
-// Config holds JWT configuration.
-type Config struct {
-	SecretKey       string
-	AccessDuration  time.Duration
-	RefreshDuration time.Duration
-	Issuer          string
-	AllowedAudiences []string // Allowed audiences for JWT validation
-	// RequireAudienceValidation forces audience validation even if no allowed audiences are set.
-	// SECURITY: This defaults to true for security and cannot be disabled in production.
---- internal/auth/jwt/tenant_claims.go ---
-// Package jwt provides JWT token generation and validation for OpenPrint authentication.
-// This file contains tenant-specific JWT claims and utilities.
-package jwt
-
-import (
-	"context"
-	"errors"
-
-	sharedcontext "github.com/openprint/openprint/internal/shared/context"
-)
-
-var (
-	// ErrMissingTenantClaim is returned when the tenant claim is missing.
-	ErrMissingTenantClaim = errors.New("missing tenant claim in token")
-	// ErrInvalidTenantID is returned when the tenant ID is invalid.
-	ErrInvalidTenantID = errors.New("invalid tenant ID")
-)
-
-// TenantClaims extends the base Claims with tenant-specific information.
-type TenantClaims struct {
-	Claims
-	// TenantRole represents the user's role within the tenant.
-	TenantRole string `json:"tenant_role"`
-	// IsPlatformAdmin indicates if the user is a platform admin.
-	IsPlatformAdmin bool `json:"is_platform_admin"`
-	// TenantName is the human-readable name of the tenant.
-	TenantName string `json:"tenant_name,omitempty"`
-	// TenantStatus indicates the current status of the tenant.
-	TenantStatus string `json:"tenant_status,omitempty"`
-}
-
-// ContextKey type alias for compatibility with existing code.
-// All new code should use sharedcontext package directly.
-type contextKey = sharedcontext.ContextKey
-
-// Context key constants - delegated to shared context package.
-const (
-	TenantIDKey       = sharedcontext.TenantIDKey
-	TenantRoleKey     = sharedcontext.TenantRoleKey
-	IsPlatformAdminKey = sharedcontext.IsPlatformAdminKey
-)
-
-// GenerateTenantTokenPair generates access and refresh tokens with tenant claims.
-func (m *Manager) GenerateTenantTokenPair(userID, email, role string, orgID string, tenantRole string, isPlatformAdmin bool, scopes []string) (accessToken, refreshToken string, err error) {
-	accessToken, err = m.GenerateTenantToken(userID, email, role, orgID, tenantRole, isPlatformAdmin, scopes, AccessTokenType)
-	if err != nil {
-		return "", "", err
-	}
-
-	refreshToken, err = m.GenerateTenantToken(userID, email, role, orgID, tenantRole, isPlatformAdmin, nil, RefreshTokenType)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessToken, refreshToken, nil
-}
-
-// GenerateTenantToken generates a JWT token with tenant-specific claims.
-func (m *Manager) GenerateTenantToken(userID, email, role string, orgID string, tenantRole string, isPlatformAdmin bool, scopes []string, tokenType TokenType) (string, error) {
-	// Use the base GenerateToken method which already supports org_id
-HANDLERS: 
---- internal/shared/telemetry/middleware_test.go ---
-// Package telemetry provides tests for OpenTelemetry tracing and instrumentation.
-package telemetry
-
-import (
-	"context"
-	"errors"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
-	"time"
-
-	"go.opentelemetry.io/otel/trace"
-)
-
-func TestInitTracer(t *testing.T) {
-	t.Run("no jaeger endpoint returns noop tracer", func(t *testing.T) {
-		shutdown, err := InitTracer("test-service", "1.0.0", "")
-
-		if err != nil {
-			t.Errorf("InitTracer() error = %v", err)
-		}
-		if shutdown == nil {
-			t.Error("InitTracer() shutdown should not be nil")
-		}
-
-		// Call shutdown to clean up
-		ctx := context.Background()
-		if err := shutdown(ctx); err != nil {
-			t.Errorf("shutdown() error = %v", err)
-		}
-	})
-
-	t.Run("with jaeger endpoint creates stdout tracer", func(t *testing.T) {
-		// Note: This test may fail if the environment doesn't support stdout tracer properly
-		// In a CI environment, this might need adjustment
-		shutdown, err := InitTracer("test-service", "1.0.0", "stdout")
-
-		if err != nil {
-			t.Logf("InitTracer() with stdout produced error (may be expected in some environments): %v", err)
-		}
-		if shutdown != nil {
-			ctx := context.Background()
-			shutdown(ctx)
-		}
-	})
-}
-
-func TestMiddleware(t *testing.T) {
-	t.Run("middleware creates span", func(t *testing.T) {
---- internal/shared/telemetry/middleware.go ---
-// Package telemetry provides OpenTelemetry tracing and instrumentation for all services.
-package telemetry
-
-import (
-	"bufio"
-	"context"
-	"fmt"
-	"net"
-	"net/http"
-	"os"
-	"strings"
-	"time"
-
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.31.0"
-	"go.opentelemetry.io/otel/trace"
-)
-
-const (
-	// ServiceNameKey is the attribute key for service name.
-	ServiceNameKey = attribute.Key("service.name")
-	// ServiceVersionKey is the attribute key for service version.
-	ServiceVersionKey = attribute.Key("service.version")
-	// ServiceInstanceIDKey is the attribute key for service instance ID.
-	ServiceInstanceIDKey = attribute.Key("service.instance.id")
-)
-
-// Tracer is a global tracer instance.
-var Tracer trace.Tracer
-
-// InitTracer initializes the OpenTelemetry tracer with OTLP/Jaeger exporter.
-// In production, configure OTEL_EXPORTER_OTLP_ENDPOINT or JAEGER_ENDPOINT.
-// For development without a collector, tracing is disabled (noop tracer).
-func InitTracer(serviceName, serviceVersion, jaegerEndpoint string) (func(context.Context) error, error) {
-	ctx := context.Background()
-
-	// Check for OTLP endpoint environment variable
-	otlpEndpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	if otlpEndpoint == "" {
-		otlpEndpoint = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
-	}
-
-	var exporter tracesdk.SpanExporter
-	var err error
---- internal/multi-tenant/middleware_test.go ---
-// Package multitenant provides tests for tenant middleware.
-package multitenant
-
-import (
-	"context"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
-
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
-	"github.com/openprint/openprint/internal/shared/middleware"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-// TestTenantMiddleware tests the main tenant middleware.
-func TestTenantMiddleware(t *testing.T) {
-	tests := []struct {
-		name           string
-		config         MiddlewareConfig
-		setupRequest   func() *http.Request
-		wantStatusCode int
-		wantContext    func(*testing.T, context.Context)
-		setupContext   func(context.Context) context.Context
-	}{
-		{
-			name: "skip path matches",
-			config: MiddlewareConfig{
-				SkipPaths: []string{"/health", "/metrics"},
-			},
-			setupRequest: func() *http.Request {
-				return httptest.NewRequest("GET", "/health", nil)
-			},
-			wantStatusCode: http.StatusOK,
-			wantContext: func(t *testing.T, ctx context.Context) {
-				// No tenant context should be set for skipped paths
-				_, err := GetTenantID(ctx)
-				assert.Error(t, err)
-			},
-		},
-		{
-			name: "skip path with prefix",
-			config: MiddlewareConfig{
-				SkipPaths: []string{"/public"},
-			},
-			setupRequest: func() *http.Request {
-				return httptest.NewRequest("GET", "/public/data", nil)
---- internal/multi-tenant/middleware.go ---
-// Package multitenant provides multi-tenancy support for OpenPrint services.
-// This file contains middleware for tenant context propagation.
-package multitenant
-
-import (
-	"context"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"strings"
-
-	"github.com/openprint/openprint/internal/auth/roles"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
-	"github.com/openprint/openprint/internal/shared/middleware"
-)
-
-// TenantExtractor is a function that extracts tenant information from a request.
-type TenantExtractor func(r *http.Request) (tenantID, tenantName string, role Role, isPlatformAdmin bool, err error)
-
-// MiddlewareConfig holds configuration for tenant middleware.
-type MiddlewareConfig struct {
-	// RequireTenant, when true, returns an error if tenant context cannot be established.
-	RequireTenant bool
-	// SkipPaths are URL paths that skip tenant validation.
-	SkipPaths []string
-	// PlatformAdminPaths are paths that require platform admin access.
-	PlatformAdminPaths []string
-	// TenantExtractor is a function to extract tenant information from the request.
-	TenantExtractor TenantExtractor
-}
-
-// TenantMiddleware creates middleware that extracts and validates tenant context from JWT claims.
-func TenantMiddleware(cfg MiddlewareConfig) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check if path should be skipped
-			for _, skipPath := range cfg.SkipPaths {
-				if strings.HasPrefix(r.URL.Path, skipPath) {
-					next.ServeHTTP(w, r)
-					return
-				}
-			}
-
-			ctx := r.Context()
-
-			// Check if this is a platform admin only path
-			for _, adminPath := range cfg.PlatformAdminPaths {
-				if strings.HasPrefix(r.URL.Path, adminPath) {
-					userRole := middleware.GetRole(r)
-					// Use centralized role validation for security
-Check: SQL injection, XSS, CSRF, insecure JWT, weak crypto, missing auth, IDOR, data exposure. Be thorough.
+REQUIREMENTS (enriched with market research):
+{
+ "project_name": "API Rate Limiting and Throttling System",
+ "summary": "Implement a comprehensive Redis-based rate limiting system with sliding window algorithm, supporting per-IP and per-user limits, configurable tiers, endpoint-specific policies, admin management panel, metrics/monitoring, intelligent bypass for trusted clients, violation alerts, circuit breakers, and priority request queuing.",
+ "functional_requirements": [
+  {
+   "id": "FR-001",
+   "title": "Redis-based Sliding Window Rate Limiter"
+  },
+  {
+   "id": "FR-002",
+   "title": "Multi-Dimension Rate Limiting"
+  },
+  {
+   "id": "FR-003",
+   "title": "Endpoint-Specific Policies"
+  },
+  {
+   "id": "FR-004",
+   "title": "Burst vs Sustained Rate Limits"
+  },
+  {
+   "id": "FR-005",
+   "title": "Rate Limit Policy Management API"
+  },
+  {
+   "id": "FR-006",
+   "title": "Admin Panel for Rate Limits"
+  },
+  {
+   "id": "FR-007",
+   "title": "Rate Limit Metrics"
+  },
+  {
+   "id": "FR-008",
+   "title": "Trusted Client Bypass"
+  },
+  {
+   "id": "FR-009",
+   "title": "Rate Limit Violation Alerts"
+  },
+  {
+   "id": "FR-010",
+   "title": "Circuit Breaker Pattern"
+  },
+  {
+   "id": "FR-011",
+   "title": "Priority Request Queuing"
+  },
+  {
+   "id": "FR-012",
+   "title": "Rate Limit Testing Suite"
+  },
+  {
+   "id": "FR-M013",
+   "title": "Print Quota System"
+  },
+  {
+   "id": "FR-M014",
+   "title": "Secure Print Release"
+  },
+  {
+   "id": "FR-M015",
+   "title": "Cost Allocation Engine"
+  },
+  {
+   "id": "FR-M016",
+   "title": "Mobile Print Apps"
+  },
+  {
+   "id": "FR-M017",
+   "title": "Scan-to-Cloud Workflows"
+  },
+  {
+   "id": "FR-M018",
+   "title": "Print Job Rules Engine"
+  },
+  {
+   "id": "FR-M019",
+   "title": "Universal Print Driver"
+  },
+  {
+   "id": "FR-M020",
+   "title": "Advanced Analytics Dashboard"
+  }
+ ],
+ "affected_services": [
+  "auth-service",
+  "registry-service",
+  "job-service",
+  "storage-service",
+  "notification-service",
+  "internal/shared/middleware",
+  "internal/shared/telemetry",
+  "dashboard"
+ ],
+ "implementation_phases": [
+  {
+   "phase": 1,
+   "name": "Core Rate Limiter",
+   "tasks": [
+    "Create internal/shared/ratelimit package structure",
+    "Implement sliding window algorithm with Redis",
+    "Add rate limit middleware with basic IP-based limiting",
+    "Create rate_limit_policies and rate_limit_violations tables",
+    "Implement basic policy CRUD operations in auth-service",
+    "Add rate limit HTTP headers to responses",
+    "Write unit tests for rate limiter algorithm",
+    "Integration tests for middleware"
+   ]
+  },
+  {
+   "phase": 2,
+   "name": "Multi-Dimension Limits",
+   "tasks": [
+    "Add user-based rate limiting",
+    "Add API key-based rate limiting",
+    "Implement hierarchical limit override logic",
+    "Add burst vs sustained rate limiting",
+    "Create trusted_clients table and management API",
+    "Add trusted client bypass logic",
+    "Write tests for multi-dimensional limiting"
+   ]
+  },
+  {
+   "phase": 3,
+   "name": "Endpoint-Specific Policies",
+   "tasks": [
+    "Add endpoint pattern matching to policies",
+    "Implement policy precedence and merging",
+    "Add policy validation and templates",
+    "Create default policies for all service endpoints",
+    "Apply middleware to all services",
+    "Write endpoint-specific policy tests"
+   ]
+  },
+  {
+   "phase": 4,
+   "name": "Admin Panel",
+   "tasks": [
+    "Create rate limit management pages in dashboard",
+    "Add policy CRUD UI",
+    "Add real-time metrics visualization",
+    "Add violation log viewer",
+    "Add trusted client management UI",
+    "Implement policy dry-run mode testing"
+   ]
+  },
+  {
+   "phase": 5,
+   "name": "Metrics and Monitoring",
+   "tasks": [
+    "Add OpenTelemetry metrics for rate limiting",
+    "Implement Prometheus metrics endpoint",
+    "Add rate limit utilization tracking",
+    "Create dashboard in Grafana",
+    "Add metrics retention and cleanup",
+    "Performance testing under load"
+   ]
+  },
+  {
+   "phase": 6,
+   "name": "Alerts and Notification
+
+MARKET ANALYSIS:
+{
+ "competitor_summary": [
+  {
+   "name": "PaperCut",
+   "strengths": [
+    "Market leader with 100M+ users",
+    "Cross-platform support (Windows/macOS/Linux/Chrome OS/iOS/Android)",
+    "Print quotas and cost allocation",
+    "Secure release with card/PIN",
+    "Environmental reporting",
+    "Mobile printing",
+    "Google's official Cloud Print replacement",
+    "Free tier for up to 5 users"
+   ],
+   "weaknesses": [
+    "Acquired by Google (2020), future unclear",
+    "Migration required for Google Cloud Print refugees",
+    "Enterprise pricing can be expensive"
+   ],
+   "pricing_model": "Freemium - Free for 5 users, then per-user/per-printer pricing starting from $0.02 per page"
+  },
+  {
+   "name": "Printix",
+   "strengths": [
+    "Cloud-native architecture",
+    "Strong Microsoft 365 integration",
+    "Easy deployment",
+    "Automatic updates"
+   ],
+   "weaknesses": [
+    "Limited to Microsoft ecosystem",
+    "Fewer advanced features than PaperCut"
+   ],
+   "pricing_model": "Subscription-based per user/month"
+  },
+  {
+   "name": "PrinterLogic",
+   "strengths": [
+    "Serverless direct IP printing",
+    "Enterprise scalability",
+    "Strong driver management"
+   ],
+   "weaknesses": [
+    "Complex initial setup",
+    "Higher cost for small organizations"
+   ],
+   "pricing_model": "Per-device perpetual license + annual maintenance"
+  },
+  {
+   "name": "YSoft SafeQ",
+   "strengths": [
+    "Comprehensive reporting",
+    "3D printing management",
+    "Strong security features",
+    "Embedded terminal support"
+   ],
+   "weaknesses": [
+    "Higher price point",
+    "Requires on-premises components"
+   ],
+   "pricing_model": "Per-device license with optional modules"
+  },
+  {
+   "name": "AWS Print Service",
+   "strengths": [
+    "Global compliance standards",
+    "AWS ecosystem integration"
+   ],
+   "weaknesses": [
+    "Limited print management features",
+    "AWS lock-in"
+   ],
+   "pricing_model": "Pay-per-use AWS service"
+  },
+  {
+   "name": "Microsoft Azure Print",
+  
+
+PROJECT CONTEXT (from CLAUDE.md):
+# OpenPrint Cloud
+
+OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.
+
+## Project Overview
+
+- **Module**: `github.com/openprint/openprint`
+- **Go Version**: 1.24.0
+- **Architecture**: Microservices with shared internal packages
+- **Frontend**: React + TypeScript + Vite dashboard
+
+## Architecture
+
+### Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `auth-service` | 8001 | User authentication, sessions, OIDC/SAML identity providers |
+| `registry-service` | 8002 | Printer and agent registration, heartbeat monitoring |
+| `job-service` | 8003 | Print job queuing, routing, and processing |
+| `storage-service` | 8004 | Document storage (S3 or local), encryption support |
+| `notification-service` | 8005 | WebSocket notifications for real-time updates |
+
+### Internal Packages
+
+```
+internal/
+├── auth/              # Authentication utilities
+│   ├── jwt/          # JWT token generation/validation
+│   ├── oidc/         # OpenID Connect provider support
+│   ├── saml/         # SAML SSO support
+│   └── password/     # Password hashing (bcrypt)
+└── shared/           # Shared service components
+    ├── errors/       # Common error types
+    ├── middleware/   # HTTP middleware (auth, CORS, logging, recovery)
+    └── telemetry/    # OpenTelemetry tracing
+```
+
+### Infrastructure
+
+- **PostgreSQL 16**: Primary database (ports 5432/15432)
+- **Redis 7**: Job queue and session storage (ports 6379/16379)
+- **S3/MinIO**: Optional document storage backend
+
+## Development Commands
+
+### Go Services
+
+```bash
+# Run tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Run tests for specific package
+go test ./services/auth-service/...
+
+# Build all services
+go build ./...
+
+# Build specific service
+go build ./services/auth-service
+```
+
+### Dashboard (TypeScript/React)
+
+```bash
+cd web/dashboard
+
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+
+# Type checking
+npm run type-check    # or: npx tsc --noEmit
+
+# Run tests
+npm run test
+
+# Build for production
+npm run build
+
+# Lint
+npm run lint
+```
+
+## Docker Deployment
+
+### Quick Start
+
+```bash
+cd deployments/docker
+docker-compose up -d
+```
+
+### Environment Variables
+
+Create a `.env` file (see `.env.example`):
+
+```bash
+JWT_SECRET=your-secret-key-min-32-chars
+S3_ENDPOINT=          # Optional, falls back to local storage
+S3_BUCKET=openprint-documents
+ENCRYPTION_KEY=       # Optional AES-256 key
+JAEGER_ENDPOINT=      # Optional tracing
+```
+
+### Service Ports (Docker)
+
+| Service | Internal | External |
+|---------|----------|----------|
+| PostgreSQL | 5432 | 15432 |
+| Redis | 6379 | 16379 |
+| auth-service | 8001 | 18001 |
+| registry-service | 8002 | 8002 |
+| job-service | 8003 | 8003 |
+| storage-service | 8004 | 8004 |
+| notification-service | 8005 | 18005 |
+| dashboard | 3000 | 30
+
+EXISTING FILES:
+internal/agent/types.go
+internal/auth/jwt/jwt.go
+internal/auth/jwt/tenant_claims.go
+internal/auth/oidc/oidc.go
+internal/auth/password/password.go
+internal/auth/roles/roles.go
+internal/auth/saml/saml.go
+internal/middleware/cookie_auth.go
+internal/middleware/validation.go
+internal/multi-tenant/audit.go
+internal/multi-tenant/context.go
+internal/multi-tenant/middleware.go
+internal/multi-tenant/quota.go
+internal/multi-tenant/repository.go
+internal/shared/context/keys.go
+internal/shared/errors/errors.go
+internal/shared/middleware/agent_auth.go
+internal/shared/middleware/auth.go
+internal/shared/middleware/metrics.go
+internal/shared/middleware/validation.go
+internal/shared/telemetry/jaeger/config.go
+internal/shared/telemetry/middleware.go
+internal/shared/telemetry/prometheus/business.go
+internal/shared/telemetry/prometheus/db.go
+internal/shared/telemetry/prometheus/labels.go
+internal/shared/telemetry/prometheus/metrics.go
+internal/shared/telemetry/prometheus/redis.go
+internal/shared/telemetry/prometheus/registry.go
+internal/shared/telemetry/prometheus/server.go
+internal/shared/telemetry/prometheus/service.go
+internal/testutil/assertions.go
+internal/testutil/config.go
+internal/testutil/context.go
+internal/testutil/db.go
+internal/testutil/fixtures.go
+internal/testutil/http.go
+internal/testutil/jwt.go
+internal/testutil/metrics.go
+internal/testutil/migrate.go
+internal/testutil/redis.go
+internal/testutil/s3.go
+
+Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
