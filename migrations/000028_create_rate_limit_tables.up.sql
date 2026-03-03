@@ -7,11 +7,11 @@ CREATE TABLE IF NOT EXISTS rate_limit_policies (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     priority INTEGER DEFAULT 0,
-    scope VARCHAR(50) NOT NULL CHECK (scope IN ('global', 'endpoint', 'user', 'api_key', 'organization', 'ip')),
+    scope VARCHAR(50) NOT NULL CHECK (scope IN ('global', 'endpoint', 'ip', 'user', 'api_key', 'organization', 'ip')),
     identifier VARCHAR(255) NOT NULL DEFAULT '*',
     methods JSONB DEFAULT '[]'::jsonb,
     path_pattern VARCHAR(500),
-    limit BIGINT NOT NULL,
+    request_limit BIGINT NOT NULL,
     window INTEGER NOT NULL, -- seconds
     burst_limit BIGINT DEFAULT 0,
     burst_duration INTEGER DEFAULT 0, -- seconds
@@ -138,7 +138,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert default policies
-INSERT INTO rate_limit_policies (name, description, priority, scope, identifier, limit, window, burst_limit, burst_duration, severity, action) VALUES
+INSERT INTO rate_limit_policies (name, description, priority, scope, identifier, request_limit, window, burst_limit, burst_duration, severity, action) VALUES
     ('Global Default', 'Default rate limit for all requests', 0, 'global', '*', 10000, 3600, 100, 60, 'low', 'reject'),
     ('IP Default', 'Default rate limit per IP address', 10, 'ip', '*', 100, 60, 20, 10, 'medium', 'reject'),
     ('User Default', 'Default rate limit per user', 20, 'user', '*', 1000, 3600, 100, 60, 'medium', 'reject'),
