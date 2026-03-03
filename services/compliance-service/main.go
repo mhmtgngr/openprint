@@ -145,7 +145,7 @@ func loadServerConfig() *ServerConfig {
 	}
 
 	return &ServerConfig{
-		ServerAddr:     getEnv("SERVER_ADDR", ":8006"),
+		ServerAddr:     getEnv("SERVER_ADDR", ":8008"),
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		JWTSecret:      jwtSecret,
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
@@ -265,9 +265,9 @@ func generateReportHandler(svc *Service) http.HandlerFunc {
 		}
 
 		var req struct {
-			Framework    string `json:"framework"`
-			PeriodStart  string `json:"period_start"`
-			PeriodEnd    string `json:"period_end"`
+			Framework   string `json:"framework"`
+			PeriodStart string `json:"period_start"`
+			PeriodEnd   string `json:"period_end"`
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
