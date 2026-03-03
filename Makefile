@@ -24,6 +24,14 @@ DOCKER_COMPOSE := docker compose
 # Project configuration
 MODULE := github.com/openprint/openprint
 SERVICES := auth-service registry-service job-service storage-service notification-service
+EXTENDED_SERVICES := api-gateway analytics-service compliance-service organization-service policy-service m365-integration-service
+ALL_SERVICES := $(SERVICES) $(EXTENDED_SERVICES)
+
+# Extended services (7 additional)
+EXTENDED_SERVICES := api-gateway analytics-service compliance-service organization-service policy-service m365-integration-service gateway
+
+# All services
+ALL_SERVICES := $(SERVICES) $(EXTENDED_SERVICES)
 
 # Test configuration
 TEST_TIMEOUT := 10m
@@ -137,6 +145,64 @@ build-notification-service: ## Build notification service
 	@echo "$(BLUE)Building notification-service...$(NC)"
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/notification-service ./services/notification-service
+
+# Extended services build targets
+.PHONY: build-api-gateway
+build-api-gateway: ## Build API gateway
+	@echo "$(BLUE)Building api-gateway...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/api-gateway ./services/api-gateway
+
+.PHONY: build-analytics-service
+build-analytics-service: ## Build analytics service
+	@echo "$(BLUE)Building analytics-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/analytics-service ./services/analytics-service
+
+.PHONY: build-compliance-service
+build-compliance-service: ## Build compliance service
+	@echo "$(BLUE)Building compliance-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/compliance-service ./services/compliance-service
+
+.PHONY: build-organization-service
+build-organization-service: ## Build organization service
+	@echo "$(BLUE)Building organization-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/organization-service ./services/organization-service
+
+.PHONY: build-policy-service
+build-policy-service: ## Build policy service
+	@echo "$(BLUE)Building policy-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/policy-service ./services/policy-service
+
+.PHONY: build-m365-integration-service
+build-m365-integration-service: ## Build M365 integration service
+	@echo "$(BLUE)Building m365-integration-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/m365-integration-service ./services/m365-integration-service
+
+# Build all services
+.PHONY: build-all
+build-all: ## Build all services (core + extended)
+	@echo "$(BLUE)Building all services...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@for service in $(ALL_SERVICES); do \
+		echo "Building $$service..."; \
+		$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/$$service ./services/$$service; \
+	done
+	@echo "$(GREEN)All services built$(NC)"
+
+.PHONY: build-extended
+build-extended: ## Build extended services only
+	@echo "$(BLUE)Building extended services...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@for service in $(EXTENDED_SERVICES); do \
+		echo "Building $$service..."; \
+		$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/$$service ./services/$$service; \
+	done
+	@echo "$(GREEN)Extended services built$(NC)"
 
 # ============================================================================
 # Test Targets
