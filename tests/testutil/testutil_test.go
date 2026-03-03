@@ -442,8 +442,8 @@ func TestStringReader(t *testing.T) {
 func TestTestHTTPClient_Get_Error(t *testing.T) {
 	t.Run("Get returns error on invalid URL", func(t *testing.T) {
 		client := NewTestHTTPClient()
-		// Use a URL that will fail to connect
-		_, err := client.Get("http://invalid-host-12345:0")
+		// Use a URL with an invalid scheme so http.NewRequest fails deterministically
+		_, err := client.Get("://invalid")
 
 		assert.Error(t, err)
 	})
@@ -452,7 +452,7 @@ func TestTestHTTPClient_Get_Error(t *testing.T) {
 func TestTestHTTPClient_Post_Error(t *testing.T) {
 	t.Run("Post returns error on invalid URL", func(t *testing.T) {
 		client := NewTestHTTPClient()
-		_, err := client.Post("http://invalid-host-12345:0", []byte("{}"))
+		_, err := client.Post("://invalid", []byte("{}"))
 
 		assert.Error(t, err)
 	})
