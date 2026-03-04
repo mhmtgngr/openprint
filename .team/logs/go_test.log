@@ -172,7 +172,7 @@
     --- PASS: TestSecurity_AudienceValidationEnforced/DefaultConfig_always_has_audience_validation_enabled (0.00s)
     --- PASS: TestSecurity_AudienceValidationEnforced/token_without_audience_is_rejected_when_validation_is_enabled (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/jwt	0.021s
+ok  	github.com/openprint/openprint/internal/auth/jwt	0.022s
 === RUN   TestNewManager
 === RUN   TestNewManager/valid_config
 === RUN   TestNewManager/nil_config
@@ -272,7 +272,7 @@ ok  	github.com/openprint/openprint/internal/auth/jwt	0.021s
 --- PASS: TestExchange (0.00s)
     --- PASS: TestExchange/empty_code_returns_error (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/oidc	0.021s
+ok  	github.com/openprint/openprint/internal/auth/oidc	0.014s
 === RUN   TestDefaultParameters
 --- PASS: TestDefaultParameters (0.00s)
 === RUN   TestNewHasher
@@ -283,43 +283,43 @@ ok  	github.com/openprint/openprint/internal/auth/oidc	0.021s
 === RUN   TestHasher_Generate/generate_valid_hash
 === RUN   TestHasher_Generate/generate_different_hashes_for_same_password
 === RUN   TestHasher_Generate/empty_password_returns_error
---- PASS: TestHasher_Generate (0.67s)
-    --- PASS: TestHasher_Generate/generate_valid_hash (0.27s)
-    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.39s)
+--- PASS: TestHasher_Generate (0.58s)
+    --- PASS: TestHasher_Generate/generate_valid_hash (0.21s)
+    --- PASS: TestHasher_Generate/generate_different_hashes_for_same_password (0.37s)
     --- PASS: TestHasher_Generate/empty_password_returns_error (0.00s)
 === RUN   TestHasher_Verify
 === RUN   TestHasher_Verify/verify_correct_password
 === RUN   TestHasher_Verify/verify_incorrect_password
 === RUN   TestHasher_Verify/verify_invalid_hash_format
---- PASS: TestHasher_Verify (0.49s)
-    --- PASS: TestHasher_Verify/verify_correct_password (0.32s)
-    --- PASS: TestHasher_Verify/verify_incorrect_password (0.17s)
+--- PASS: TestHasher_Verify (0.63s)
+    --- PASS: TestHasher_Verify/verify_correct_password (0.37s)
+    --- PASS: TestHasher_Verify/verify_incorrect_password (0.26s)
     --- PASS: TestHasher_Verify/verify_invalid_hash_format (0.00s)
 === RUN   TestHasher_MustGenerate
 === RUN   TestHasher_MustGenerate/successful_generation
 === RUN   TestHasher_MustGenerate/panics_on_empty_password
---- PASS: TestHasher_MustGenerate (0.22s)
-    --- PASS: TestHasher_MustGenerate/successful_generation (0.22s)
+--- PASS: TestHasher_MustGenerate (0.21s)
+    --- PASS: TestHasher_MustGenerate/successful_generation (0.21s)
     --- PASS: TestHasher_MustGenerate/panics_on_empty_password (0.00s)
 === RUN   TestGenerate
---- PASS: TestGenerate (0.16s)
+--- PASS: TestGenerate (0.25s)
 === RUN   TestVerify
 === RUN   TestVerify/verify_correct_password
 === RUN   TestVerify/verify_incorrect_password
---- PASS: TestVerify (0.40s)
-    --- PASS: TestVerify/verify_correct_password (0.18s)
-    --- PASS: TestVerify/verify_incorrect_password (0.12s)
+--- PASS: TestVerify (0.36s)
+    --- PASS: TestVerify/verify_correct_password (0.12s)
+    --- PASS: TestVerify/verify_incorrect_password (0.11s)
 === RUN   TestMustVerify
 === RUN   TestMustVerify/successful_verification
 === RUN   TestMustVerify/panics_on_invalid_password
---- PASS: TestMustVerify (0.24s)
-    --- PASS: TestMustVerify/successful_verification (0.08s)
+--- PASS: TestMustVerify (0.23s)
+    --- PASS: TestMustVerify/successful_verification (0.07s)
     --- PASS: TestMustVerify/panics_on_invalid_password (0.08s)
 === RUN   TestDecodeHash
 === RUN   TestDecodeHash/decode_valid_hash
 === RUN   TestDecodeHash/decode_invalid_hash_format
 === RUN   TestDecodeHash/decode_hash_with_wrong_version
---- PASS: TestDecodeHash (0.08s)
+--- PASS: TestDecodeHash (0.07s)
     --- PASS: TestDecodeHash/decode_valid_hash (0.00s)
     --- PASS: TestDecodeHash/decode_invalid_hash_format (0.00s)
     --- PASS: TestDecodeHash/decode_hash_with_wrong_version (0.00s)
@@ -360,29 +360,29 @@ ok  	github.com/openprint/openprint/internal/auth/oidc	0.021s
     --- PASS: TestStrengthChecker_CalculateStrength/maximum_strength (0.00s)
     --- PASS: TestStrengthChecker_CalculateStrength/weak_password (0.00s)
 === RUN   TestHash_String
---- PASS: TestHash_String (0.07s)
+--- PASS: TestHash_String (0.08s)
 === RUN   TestConstantTimeComparison
---- PASS: TestConstantTimeComparison (0.24s)
+--- PASS: TestConstantTimeComparison (0.27s)
 === RUN   TestCrossCompatibility
---- PASS: TestCrossCompatibility (0.22s)
+--- PASS: TestCrossCompatibility (0.24s)
 === RUN   TestEmptyPasswordHash
 === RUN   TestEmptyPasswordHash/hash_empty_password
 === RUN   TestEmptyPasswordHash/verify_empty_password
---- PASS: TestEmptyPasswordHash (0.28s)
+--- PASS: TestEmptyPasswordHash (0.35s)
     --- PASS: TestEmptyPasswordHash/hash_empty_password (0.00s)
-    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.28s)
+    --- PASS: TestEmptyPasswordHash/verify_empty_password (0.35s)
 === RUN   TestSpecialCharactersInPassword
 === RUN   TestSpecialCharactersInPassword/special_chars
 === RUN   TestSpecialCharactersInPassword/special_chars#01
 === RUN   TestSpecialCharactersInPassword/special_chars#02
 === RUN   TestSpecialCharactersInPassword/special_chars#03
---- PASS: TestSpecialCharactersInPassword (0.81s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars (0.27s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.19s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.15s)
-    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.20s)
+--- PASS: TestSpecialCharactersInPassword (0.97s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars (0.26s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#01 (0.27s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#02 (0.21s)
+    --- PASS: TestSpecialCharactersInPassword/special_chars#03 (0.23s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/password	3.890s
+ok  	github.com/openprint/openprint/internal/auth/password	4.280s
 === RUN   TestIsValid
 === RUN   TestIsValid/platform_admin
 === RUN   TestIsValid/admin
@@ -562,7 +562,7 @@ ok  	github.com/openprint/openprint/internal/auth/password	3.890s
     --- PASS: TestIsLegacyRole/org_user (0.00s)
     --- PASS: TestIsLegacyRole/org_viewer (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/roles	0.006s
+ok  	github.com/openprint/openprint/internal/auth/roles	0.008s
 === RUN   TestNewManager
 === RUN   TestNewManager/valid_config
 === RUN   TestNewManager/nil_config
@@ -618,7 +618,7 @@ ok  	github.com/openprint/openprint/internal/auth/roles	0.006s
 === RUN   TestSecureXMLDecoder_ValidXML
 --- PASS: TestSecureXMLDecoder_ValidXML (0.00s)
 === RUN   TestSecureXMLDecoder_SizeLimit
---- PASS: TestSecureXMLDecoder_SizeLimit (0.04s)
+--- PASS: TestSecureXMLDecoder_SizeLimit (0.03s)
 === RUN   TestCountingReader_RespectsLimit
 === RUN   TestCountingReader_RespectsLimit/read_within_limit
 === RUN   TestCountingReader_RespectsLimit/read_at_limit
@@ -634,15 +634,15 @@ ok  	github.com/openprint/openprint/internal/auth/roles	0.006s
 === RUN   TestValidateXMLSecurity/XXE_attack_with_system
 === RUN   TestValidateXMLSecurity/XXE_attack_with_xi:include
 === RUN   TestValidateXMLSecurity/XML_exceeds_maximum_size
---- PASS: TestValidateXMLSecurity (0.15s)
+--- PASS: TestValidateXMLSecurity (0.09s)
     --- PASS: TestValidateXMLSecurity/valid_SAML_response (0.00s)
     --- PASS: TestValidateXMLSecurity/XXE_attack_with_entity (0.00s)
     --- PASS: TestValidateXMLSecurity/XXE_attack_with_DOCTYPE (0.00s)
     --- PASS: TestValidateXMLSecurity/XXE_attack_with_system (0.00s)
     --- PASS: TestValidateXMLSecurity/XXE_attack_with_xi:include (0.00s)
-    --- PASS: TestValidateXMLSecurity/XML_exceeds_maximum_size (0.10s)
+    --- PASS: TestValidateXMLSecurity/XML_exceeds_maximum_size (0.07s)
 PASS
-ok  	github.com/openprint/openprint/internal/auth/saml	0.207s
+ok  	github.com/openprint/openprint/internal/auth/saml	0.141s
 === RUN   TestDefaultCookieSecurity
 --- PASS: TestDefaultCookieSecurity (0.00s)
 === RUN   TestProductionCookieSecurity
@@ -684,7 +684,7 @@ ok  	github.com/openprint/openprint/internal/auth/saml	0.207s
 --- PASS: TestClearSessionCookie (0.00s)
     --- PASS: TestClearSessionCookie/clears_cookie_properly (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/middleware	0.016s
+ok  	github.com/openprint/openprint/internal/middleware	0.008s
 === RUN   TestNewLogger
 --- PASS: TestNewLogger (0.00s)
 === RUN   TestLogger_Log
@@ -1258,8 +1258,8 @@ ok  	github.com/openprint/openprint/internal/middleware	0.016s
 === RUN   TestTenantQueryBuilder_MergeArgs/empty_args
 === RUN   TestTenantQueryBuilder_MergeArgs/with_existing_args
 === RUN   TestTenantQueryBuilder_MergeArgs/tenant_ID_gets_overwritten
---- PASS: TestTenantQueryBuilder_MergeArgs (0.01s)
-    --- PASS: TestTenantQueryBuilder_MergeArgs/nil_args (0.01s)
+--- PASS: TestTenantQueryBuilder_MergeArgs (0.00s)
+    --- PASS: TestTenantQueryBuilder_MergeArgs/nil_args (0.00s)
     --- PASS: TestTenantQueryBuilder_MergeArgs/empty_args (0.00s)
     --- PASS: TestTenantQueryBuilder_MergeArgs/with_existing_args (0.00s)
     --- PASS: TestTenantQueryBuilder_MergeArgs/tenant_ID_gets_overwritten (0.00s)
@@ -1350,7 +1350,7 @@ ok  	github.com/openprint/openprint/internal/middleware	0.016s
 === RUN   TestErrorRow
 --- PASS: TestErrorRow (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/multi-tenant	0.041s
+ok  	github.com/openprint/openprint/internal/multi-tenant	0.032s
 ?   	github.com/openprint/openprint/internal/shared/context	[no test files]
 === RUN   TestAppError_Error
 === RUN   TestAppError_Error/error_without_underlying_error
@@ -1471,7 +1471,7 @@ ok  	github.com/openprint/openprint/internal/multi-tenant	0.041s
 === RUN   TestValidationErrorType
 --- PASS: TestValidationErrorType (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/errors	0.010s
+ok  	github.com/openprint/openprint/internal/shared/errors	0.008s
 === RUN   TestMetricsMiddlewareConfig
 --- PASS: TestMetricsMiddlewareConfig (0.00s)
 === RUN   TestMetricsMiddleware
@@ -1711,7 +1711,7 @@ ok  	github.com/openprint/openprint/internal/shared/errors	0.010s
 === RUN   TestMetricsMiddleware_ContextCancellation
 --- PASS: TestMetricsMiddleware_ContextCancellation (0.00s)
 === RUN   TestMetricsMiddleware_ConcurrentRequests
---- PASS: TestMetricsMiddleware_ConcurrentRequests (0.02s)
+--- PASS: TestMetricsMiddleware_ConcurrentRequests (0.01s)
 === RUN   TestShouldSkipPath
 === RUN   TestShouldSkipPath/skips_metrics_endpoint
 === RUN   TestShouldSkipPath/skips_health_endpoint
@@ -1731,7 +1731,8 @@ ok  	github.com/openprint/openprint/internal/shared/errors	0.010s
 === RUN   TestMetricsMiddleware_InFlightTracking
 --- PASS: TestMetricsMiddleware_InFlightTracking (0.20s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/middleware	0.244s
+ok  	github.com/openprint/openprint/internal/shared/middleware	0.249s
+?   	github.com/openprint/openprint/internal/shared/ratelimit	[no test files]
 === RUN   TestInitTracer
 === RUN   TestInitTracer/no_jaeger_endpoint_returns_noop_tracer
 === RUN   TestInitTracer/with_jaeger_endpoint_creates_stdout_tracer
@@ -1833,7 +1834,7 @@ ok  	github.com/openprint/openprint/internal/shared/middleware	0.244s
     --- PASS: TestHTTPMiddleware_status_capture/Not_Found (0.00s)
     --- PASS: TestHTTPMiddleware_status_capture/Internal_Server_Error (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
+ok  	github.com/openprint/openprint/internal/shared/telemetry	0.045s
 ?   	github.com/openprint/openprint/internal/shared/telemetry/jaeger	[no test files]
 === RUN   TestRecordJobCreated
 --- PASS: TestRecordJobCreated (0.00s)
@@ -1894,7 +1895,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 === RUN   TestPrinterMetricsRecorder_Heartbeat
 --- PASS: TestPrinterMetricsRecorder_Heartbeat (0.00s)
 === RUN   TestNewWebSocketMetricsRecorder
---- PASS: TestNewWebSocketMetricsRecorder (0.00s)
+--- PASS: TestNewWebSocketMetricsRecorder (0.01s)
 === RUN   TestWebSocketMetricsRecorder_Connected
 --- PASS: TestWebSocketMetricsRecorder_Connected (0.00s)
 === RUN   TestWebSocketMetricsRecorder_Disconnected
@@ -2468,11 +2469,11 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 === RUN   TestClientWithMetrics_Set
 --- PASS: TestClientWithMetrics_Set (0.08s)
 === RUN   TestClientWithMetrics_Del
---- PASS: TestClientWithMetrics_Del (0.11s)
+--- PASS: TestClientWithMetrics_Del (0.12s)
 === RUN   TestClientWithMetrics_HGet
 --- PASS: TestClientWithMetrics_HGet (0.05s)
 === RUN   TestClientWithMetrics_HSet
---- PASS: TestClientWithMetrics_HSet (0.11s)
+--- PASS: TestClientWithMetrics_HSet (0.10s)
 === RUN   TestClientWithMetrics_Incr
 --- PASS: TestClientWithMetrics_Incr (0.09s)
 === RUN   TestClientWithMetrics_Decr
@@ -2648,35 +2649,34 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 === RUN   TestMetricsServer_BasicAuth/missing_auth_returns_401
 === RUN   TestMetricsServer_BasicAuth/invalid_auth_returns_401
 === RUN   TestMetricsServer_BasicAuth/wrong_password_returns_401
---- PASS: TestMetricsServer_BasicAuth (0.00s)
+--- PASS: TestMetricsServer_BasicAuth (0.01s)
     --- PASS: TestMetricsServer_BasicAuth/valid_auth_succeeds (0.00s)
     --- PASS: TestMetricsServer_BasicAuth/missing_auth_returns_401 (0.00s)
     --- PASS: TestMetricsServer_BasicAuth/invalid_auth_returns_401 (0.00s)
     --- PASS: TestMetricsServer_BasicAuth/wrong_password_returns_401 (0.00s)
 === RUN   TestMetricsServer_StartAndShutdown
 === RUN   TestMetricsServer_StartAndShutdown/server_starts_and_shuts_down_gracefully
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
-    server_test.go:273: Could not start server: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
---- PASS: TestMetricsServer_StartAndShutdown (0.00s)
-    --- SKIP: TestMetricsServer_StartAndShutdown/server_starts_and_shuts_down_gracefully (0.00s)
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Metrics server listening on 0.0.0.0:9090
+2026/03/04 04:06:17 Shutting down metrics server...
+--- PASS: TestMetricsServer_StartAndShutdown (0.05s)
+    --- PASS: TestMetricsServer_StartAndShutdown/server_starts_and_shuts_down_gracefully (0.05s)
 === RUN   TestStartMetricsServer
 === RUN   TestStartMetricsServer/starts_server_with_default_port
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
-    server_test.go:299: Could not start server: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Shutting down metrics server...
 === RUN   TestStartMetricsServer/starts_server_with_custom_port
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9999
-2026/03/02 03:35:51 Shutting down metrics server...
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9999
+2026/03/04 04:06:17 Shutting down metrics server...
 --- PASS: TestStartMetricsServer (0.00s)
-    --- SKIP: TestStartMetricsServer/starts_server_with_default_port (0.00s)
+    --- PASS: TestStartMetricsServer/starts_server_with_default_port (0.00s)
     --- PASS: TestStartMetricsServer/starts_server_with_custom_port (0.00s)
 === RUN   TestMustStartMetricsServer
 === RUN   TestMustStartMetricsServer/panics_on_error
-2026/03/02 03:35:51 Metrics server listening on 0.0.0.0:9999
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:39090
-2026/03/02 03:35:51 Shutting down metrics server...
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:39090
+2026/03/04 04:06:17 Shutting down metrics server...
 --- PASS: TestMustStartMetricsServer (0.00s)
     --- PASS: TestMustStartMetricsServer/panics_on_error (0.00s)
-2026/03/02 03:35:51 Metrics server listening on 0.0.0.0:39090
 === RUN   TestGetDefaultMetricsPort
 === RUN   TestGetDefaultMetricsPort/auth_service
 === RUN   TestGetDefaultMetricsPort/registry_service
@@ -2711,6 +2711,9 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
     --- PASS: TestMultiRegistryServer_Endpoints/404_for_unknown_paths (0.00s)
 === RUN   TestMetricsServer_MetricsContent
 === RUN   TestMetricsServer_MetricsContent/metrics_endpoint_contains_custom_metrics
+2026/03/04 04:06:17 Metrics server listening on 0.0.0.0:9999
+2026/03/04 04:06:17 Metrics server listening on 0.0.0.0:9090
+2026/03/04 04:06:17 Metrics server listening on 0.0.0.0:39090
 --- PASS: TestMetricsServer_MetricsContent (0.00s)
     --- PASS: TestMetricsServer_MetricsContent/metrics_endpoint_contains_custom_metrics (0.00s)
 === RUN   TestMetricsServer_HTMLContent
@@ -2734,23 +2737,22 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 === RUN   TestServerConfig
 --- PASS: TestServerConfig (0.00s)
 === RUN   TestMetricsServer_ContextCancellation
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
-    server_test.go:669: Could not start server: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
---- SKIP: TestMetricsServer_ContextCancellation (0.00s)
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Shutting down metrics server...
+--- PASS: TestMetricsServer_ContextCancellation (0.00s)
 === RUN   TestServiceInitConfig
 --- PASS: TestServiceInitConfig (0.00s)
 === RUN   TestInitService
 === RUN   TestInitService/init_with_metrics_enabled
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
     service_test.go:49: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 === RUN   TestInitService/init_with_metrics_disabled
 === RUN   TestInitService/init_with_custom_port
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9999
-2026/03/02 03:35:51 Metrics server started for test-custom-port on port 9999
-2026/03/02 03:35:51 Shutting down metrics server...
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9999
+2026/03/04 04:06:17 Metrics server started for test-custom-port on port 9999
+2026/03/04 04:06:17 Shutting down metrics server...
 === RUN   TestInitService/shutdown_function_works
-2026/03/02 03:35:51 Metrics server listening on 0.0.0.0:9999
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
     service_test.go:119: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 --- PASS: TestInitService (0.00s)
     --- SKIP: TestInitService/init_with_metrics_enabled (0.00s)
@@ -2759,6 +2761,8 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
     --- SKIP: TestInitService/shutdown_function_works (0.00s)
 === RUN   TestWrapPostgresPool
 === RUN   TestWrapPostgresPool/wraps_pool_with_metrics
+2026/03/04 04:06:17 Metrics server listening on 0.0.0.0:9090
+2026/03/04 04:06:17 Metrics server listening on 0.0.0.0:9999
 === RUN   TestWrapPostgresPool/handles_no_global_registry
 --- PASS: TestWrapPostgresPool (0.00s)
     --- PASS: TestWrapPostgresPool/wraps_pool_with_metrics (0.00s)
@@ -2786,7 +2790,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 === RUN   TestGetEnvServiceConfig/parses_int_env_vars/valid
 === RUN   TestGetEnvServiceConfig/parses_int_env_vars/zero
 === RUN   TestGetEnvServiceConfig/handles_invalid_int_env_vars
---- PASS: TestGetEnvServiceConfig (0.00s)
+--- PASS: TestGetEnvServiceConfig (0.01s)
     --- PASS: TestGetEnvServiceConfig/reads_from_environment (0.00s)
     --- PASS: TestGetEnvServiceConfig/uses_defaults_when_env_vars_not_set (0.00s)
     --- PASS: TestGetEnvServiceConfig/parses_boolean_env_vars (0.00s)
@@ -2825,26 +2829,27 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 --- PASS: TestServiceInitConfig_Defaults (0.00s)
 === RUN   TestInitService_GlobalRegistry
 === RUN   TestInitService_GlobalRegistry/sets_global_registry
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
-    service_test.go:387: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Metrics server started for global-registry-test on port 9090
+2026/03/04 04:06:17 Shutting down metrics server...
 === RUN   TestInitService_GlobalRegistry/uses_default_metrics_port_when_not_specified
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
     service_test.go:413: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 --- PASS: TestInitService_GlobalRegistry (0.00s)
-    --- SKIP: TestInitService_GlobalRegistry/sets_global_registry (0.00s)
+    --- PASS: TestInitService_GlobalRegistry/sets_global_registry (0.00s)
     --- SKIP: TestInitService_GlobalRegistry/uses_default_metrics_port_when_not_specified (0.00s)
 === RUN   TestInitService_ServiceDefaults
 === RUN   TestInitService_ServiceDefaults/auth-service_uses_port_9091
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9091
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9091
     service_test.go:441: Could not init service: failed to listen on 0.0.0.0:9091: listen tcp 0.0.0.0:9091: bind: address already in use
 === RUN   TestInitService_ServiceDefaults/registry-service_uses_port_9092
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9092
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9092
     service_test.go:465: Could not init service: failed to listen on 0.0.0.0:9092: listen tcp 0.0.0.0:9092: bind: address already in use
 --- PASS: TestInitService_ServiceDefaults (0.00s)
     --- SKIP: TestInitService_ServiceDefaults/auth-service_uses_port_9091 (0.00s)
     --- SKIP: TestInitService_ServiceDefaults/registry-service_uses_port_9092 (0.00s)
 === RUN   TestInitService_TracingNotSupported
-2026/03/02 03:35:51 Starting metrics server on 0.0.0.0:9090
+2026/03/04 04:06:17 Starting metrics server on 0.0.0.0:9090
     service_test.go:492: Could not init service: failed to listen on 0.0.0.0:9090: listen tcp 0.0.0.0:9090: bind: address already in use
 --- SKIP: TestInitService_TracingNotSupported (0.00s)
 === RUN   TestServiceVersionDefaults
@@ -2856,7 +2861,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry	0.036s
 === RUN   TestRedisConfig_Struct
 --- PASS: TestRedisConfig_Struct (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.065s
+ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.152s
 === RUN   TestNewAssert
 --- PASS: TestNewAssert (0.00s)
 === RUN   TestAssert_NoError
@@ -3050,9 +3055,9 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.065s
 === RUN   TestRetryable_EventuallyTrue
 === RUN   TestRetryable_EventuallyTrue/condition_becomes_true
 === RUN   TestRetryable_EventuallyTrue/condition_never_true
---- PASS: TestRetryable_EventuallyTrue (0.06s)
+--- PASS: TestRetryable_EventuallyTrue (0.07s)
     --- PASS: TestRetryable_EventuallyTrue/condition_becomes_true (0.02s)
-    --- PASS: TestRetryable_EventuallyTrue/condition_never_true (0.04s)
+    --- PASS: TestRetryable_EventuallyTrue/condition_never_true (0.05s)
 === RUN   TestRetryable_EventuallyNoError
 === RUN   TestRetryable_EventuallyNoError/no_error_eventually
 === RUN   TestRetryable_EventuallyNoError/always_error
@@ -3369,7 +3374,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.065s
 === RUN   TestWaitForContextWithPoll/condition_met
 === RUN   TestWaitForContextWithPoll/context_cancelled
 === RUN   TestWaitForContextWithPoll/timeout
---- PASS: TestWaitForContextWithPoll (0.07s)
+--- PASS: TestWaitForContextWithPoll (0.06s)
     --- PASS: TestWaitForContextWithPoll/condition_met (0.02s)
     --- PASS: TestWaitForContextWithPoll/context_cancelled (0.02s)
     --- PASS: TestWaitForContextWithPoll/timeout (0.02s)
@@ -3475,7 +3480,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.065s
 --- PASS: TestCreateMultipartRequest (0.00s)
 === RUN   TestParseErrorResponseFromBody
 === RUN   TestParseErrorResponseFromBody/valid_error_response
---- PASS: TestParseErrorResponseFromBody (0.01s)
+--- PASS: TestParseErrorResponseFromBody (0.00s)
     --- PASS: TestParseErrorResponseFromBody/valid_error_response (0.00s)
 === RUN   TestRunTestServer
 --- PASS: TestRunTestServer (0.00s)
@@ -3621,7 +3626,7 @@ ok  	github.com/openprint/openprint/internal/shared/telemetry/prometheus	1.065s
 
 === Test Metrics Summary ===
 Tests: 1 passed, 1 failed, 0 skipped
-Duration: 11.581µs
+Duration: 10.76µs
 
 Counters:
   counter1: 1
@@ -3720,7 +3725,7 @@ Histograms:
 === CONT  TestTestMetrics_Parallel
 --- PASS: TestTestMetrics_Parallel (0.00s)
 PASS
-ok  	github.com/openprint/openprint/internal/testutil	1.208s
+ok  	github.com/openprint/openprint/internal/testutil	1.255s
 ?   	github.com/openprint/openprint/services/analytics-service	[no test files]
 ?   	github.com/openprint/openprint/services/analytics-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/analytics-service/processor	[no test files]
@@ -3729,6 +3734,7 @@ ok  	github.com/openprint/openprint/internal/testutil	1.208s
 ?   	github.com/openprint/openprint/services/api-gateway/middleware	[no test files]
 ?   	github.com/openprint/openprint/services/auth-service	[no test files]
 ?   	github.com/openprint/openprint/services/auth-service/handler	[no test files]
+?   	github.com/openprint/openprint/services/auth-service/handlers	[no test files]
 === RUN   TestEnrollmentTokenRepository_Create
     enrollment_token_test.go:107: database ping failed: failed to connect to `user=openprint database=openprint`: 127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
 --- SKIP: TestEnrollmentTokenRepository_Create (0.00s)
@@ -3737,7 +3743,7 @@ ok  	github.com/openprint/openprint/internal/testutil	1.208s
 --- SKIP: TestEnrollmentTokenRepository_FindByToken (0.00s)
 === RUN   TestEnrollmentTokenRepository_Validate
     enrollment_token_test.go:167: database ping failed: failed to connect to `user=openprint database=openprint`: 127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
---- SKIP: TestEnrollmentTokenRepository_Validate (0.00s)
+--- SKIP: TestEnrollmentTokenRepository_Validate (0.01s)
 === RUN   TestEnrollmentTokenRepository_IncrementUseCount
     enrollment_token_test.go:280: database ping failed: failed to connect to `user=openprint database=openprint`: 127.0.0.1:15432 (localhost): dial error: dial tcp 127.0.0.1:15432: connect: connection refused
 --- SKIP: TestEnrollmentTokenRepository_IncrementUseCount (0.00s)
@@ -3897,13 +3903,13 @@ ok  	github.com/openprint/openprint/internal/testutil	1.208s
 === RUN   TestOrganization_Settings/nil_settings
 === RUN   TestOrganization_Settings/empty_settings
 === RUN   TestOrganization_Settings/settings_with_values
-    organization_test.go:738: Setting: feature_flags = [beta alpha]
-    organization_test.go:738: Setting: max_users = 100
     organization_test.go:738: Setting: storage_quota_gb = 50
     organization_test.go:738: Setting: custom_domain = portal.example.com
     organization_test.go:738: Setting: billing_email = billing@example.com
     organization_test.go:738: Setting: trial_days = 30
     organization_test.go:738: Setting: require_2fa = true
+    organization_test.go:738: Setting: feature_flags = [beta alpha]
+    organization_test.go:738: Setting: max_users = 100
 --- PASS: TestOrganization_Settings (0.00s)
     --- PASS: TestOrganization_Settings/nil_settings (0.00s)
     --- PASS: TestOrganization_Settings/empty_settings (0.00s)
@@ -4436,8 +4442,54 @@ ok  	github.com/openprint/openprint/internal/testutil	1.208s
 --- PASS: TestUser_CRUD (0.00s)
     --- PASS: TestUser_CRUD/create,_read,_update,_delete_flow (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/auth-service/repository	0.135s
-?   	github.com/openprint/openprint/services/compliance-service	[no test files]
+ok  	github.com/openprint/openprint/services/auth-service/repository	0.114s
+?   	github.com/openprint/openprint/services/auth-service/routes	[no test files]
+2026/03/04 04:06:17 main_test.go:26: TestMain: Starting test database setup...
+2026/03/04 04:06:20 github.com/testcontainers/testcontainers-go - Connected to docker: 
+  Server Version: 4.9.3
+  API Version: 1.41
+  Operating System: ubuntu
+  Total Memory: 32095 MB
+  Testcontainers for Go Version: v0.33.0
+  Resolved Docker Host: unix:///run/user/1000/podman/podman.sock
+  Resolved Docker Socket Path: /run/user/1000/podman/podman.sock
+  Test SessionID: 200dc377fcba6aae51753587440c9bf4f509541f6b83164f28925a0dfffffa86
+  Test ProcessID: 917483b8-e906-4dd9-8688-4d4e96e766de
+2026/03/04 04:06:20 🐳 Creating container for image testcontainers/ryuk:0.8.1
+2026/03/04 04:06:20 ✅ Container created: c1ec84e48a7d
+2026/03/04 04:06:20 🐳 Starting container: c1ec84e48a7d
+2026/03/04 04:06:21 ✅ Container started: c1ec84e48a7d
+2026/03/04 04:06:21 ⏳ Waiting for container id c1ec84e48a7d image: testcontainers/ryuk:0.8.1. Waiting for: &{Port:8080/tcp timeout:<nil> PollInterval:100ms skipInternalCheck:false}
+2026/03/04 04:06:21 🔔 Container is ready: c1ec84e48a7d
+2026/03/04 04:06:21 🐳 Creating container for image postgres:16-alpine
+2026/03/04 04:06:21 ✅ Container created: 83789052dc82
+2026/03/04 04:06:21 🐳 Starting container: 83789052dc82
+2026/03/04 04:06:21 ✅ Container started: 83789052dc82
+2026/03/04 04:06:21 ⏳ Waiting for container id 83789052dc82 image: postgres:16-alpine. Waiting for: &{timeout:0xc0003cccc0 Log:database system is ready to accept connections IsRegexp:false Occurrence:2 PollInterval:100ms}
+2026/03/04 04:06:25 🔔 Container is ready: 83789052dc82
+2026/03/04 04:06:31 main_test.go:34: TestMain: Database setup complete, running tests...
+=== RUN   TestHealthHandler
+--- PASS: TestHealthHandler (0.00s)
+=== RUN   TestListControlsHandler_Empty
+--- PASS: TestListControlsHandler_Empty (0.01s)
+=== RUN   TestCreateControlHandler
+--- PASS: TestCreateControlHandler (0.01s)
+=== RUN   TestCreateControlHandler_InvalidFramework
+--- PASS: TestCreateControlHandler_InvalidFramework (0.00s)
+=== RUN   TestControlByIDHandler_NotFound
+2026/03/04 04:06:31 main.go:198: Error getting control: resource not found
+--- PASS: TestControlByIDHandler_NotFound (0.00s)
+=== RUN   TestUpdateControlStatusHandler
+--- PASS: TestUpdateControlStatusHandler (0.01s)
+=== RUN   TestBreachesHandler_Create
+--- PASS: TestBreachesHandler_Create (0.01s)
+=== RUN   TestPendingReviewsHandler
+--- PASS: TestPendingReviewsHandler (0.00s)
+=== RUN   TestMethodNotAllowed
+--- PASS: TestMethodNotAllowed (0.00s)
+PASS
+2026/03/04 04:06:31 main_test.go:41: TestMain: Tests finished with exit code: 0
+ok  	github.com/openprint/openprint/services/compliance-service	13.732s
 ?   	github.com/openprint/openprint/services/gateway	[no test files]
 ?   	github.com/openprint/openprint/services/gateway/middleware	[no test files]
 ?   	github.com/openprint/openprint/services/job-service	[no test files]
@@ -4512,7 +4564,7 @@ ok  	github.com/openprint/openprint/services/auth-service/repository	0.135s
 === RUN   TestRespondError_GenericError
 --- PASS: TestRespondError_GenericError (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/job-service/handler	0.013s
+ok  	github.com/openprint/openprint/services/job-service/handler	0.015s
 ?   	github.com/openprint/openprint/services/job-service/handlers	[no test files]
 === RUN   TestNewProcessor
 --- PASS: TestNewProcessor (0.00s)
@@ -4549,10 +4601,10 @@ ok  	github.com/openprint/openprint/services/job-service/handler	0.013s
     processor_test.go:592: Concurrent access test passed
 --- PASS: TestProcessor_ConcurrentAccess (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
-2026/03/02 03:35:53 init: testSetup file loaded
-2026/03/02 03:35:53 setup_test.go:20: TestMain: Starting test database setup...
-2026/03/02 03:35:56 github.com/testcontainers/testcontainers-go - Connected to docker: 
+ok  	github.com/openprint/openprint/services/job-service/processor	0.016s
+2026/03/04 04:06:18 init: testSetup file loaded
+2026/03/04 04:06:18 setup_test.go:20: TestMain: Starting test database setup...
+2026/03/04 04:06:21 github.com/testcontainers/testcontainers-go - Connected to docker: 
   Server Version: 4.9.3
   API Version: 1.41
   Operating System: ubuntu
@@ -4560,23 +4612,19 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
   Testcontainers for Go Version: v0.33.0
   Resolved Docker Host: unix:///run/user/1000/podman/podman.sock
   Resolved Docker Socket Path: /run/user/1000/podman/podman.sock
-  Test SessionID: b41b17911ad38d32a0f17efe712fa077cb1565157bb211c4a0dc4ec8eb88114b
-  Test ProcessID: 326abd70-0451-46cf-9890-5a52cdd929c3
-2026/03/02 03:35:56 🐳 Creating container for image testcontainers/ryuk:0.8.1
-2026/03/02 03:35:56 ✅ Container created: 8a50b72794e2
-2026/03/02 03:35:56 🐳 Starting container: 8a50b72794e2
-2026/03/02 03:35:56 ✅ Container started: 8a50b72794e2
-2026/03/02 03:35:56 ⏳ Waiting for container id 8a50b72794e2 image: testcontainers/ryuk:0.8.1. Waiting for: &{Port:8080/tcp timeout:<nil> PollInterval:100ms skipInternalCheck:false}
-2026/03/02 03:35:56 🔔 Container is ready: 8a50b72794e2
-2026/03/02 03:35:57 🐳 Creating container for image postgres:16-alpine
-2026/03/02 03:35:57 ✅ Container created: 71e99e95fb54
-2026/03/02 03:35:57 🐳 Starting container: 71e99e95fb54
-2026/03/02 03:35:57 ✅ Container started: 71e99e95fb54
-2026/03/02 03:35:57 ⏳ Waiting for container id 71e99e95fb54 image: postgres:16-alpine. Waiting for: &{timeout:0xc0002d2df0 Log:database system is ready to accept connections IsRegexp:false Occurrence:2 PollInterval:100ms}
-2026/03/02 03:36:01 🔔 Container is ready: 71e99e95fb54
-2026/03/02 03:36:06 setup_test.go:35: TestMain: Database setup complete, running tests...
+  Test SessionID: 200dc377fcba6aae51753587440c9bf4f509541f6b83164f28925a0dfffffa86
+  Test ProcessID: 8f9c344f-7f18-4073-b760-c96fdab7646d
+2026/03/04 04:06:22 🔥 Reaper obtained from Docker for this test session c1ec84e48a7dfdefe1f991611d0c2b2fe22134116ffbcfd8ec1980860e858423
+2026/03/04 04:06:22 ⏳ Waiting for Reaper port to be ready
+2026/03/04 04:06:22 🐳 Creating container for image postgres:16-alpine
+2026/03/04 04:06:22 ✅ Container created: 6bb8fcc218c7
+2026/03/04 04:06:22 🐳 Starting container: 6bb8fcc218c7
+2026/03/04 04:06:22 ✅ Container started: 6bb8fcc218c7
+2026/03/04 04:06:22 ⏳ Waiting for container id 6bb8fcc218c7 image: postgres:16-alpine. Waiting for: &{timeout:0xc0006038d0 Log:database system is ready to accept connections IsRegexp:false Occurrence:2 PollInterval:100ms}
+2026/03/04 04:06:26 🔔 Container is ready: 6bb8fcc218c7
+2026/03/04 04:06:32 setup_test.go:35: TestMain: Database setup complete, running tests...
 === RUN   TestJobAssignmentRepository_AssignJob
---- PASS: TestJobAssignmentRepository_AssignJob (0.08s)
+--- PASS: TestJobAssignmentRepository_AssignJob (0.09s)
 === RUN   TestJobAssignmentRepository_UpdateStatus
 --- PASS: TestJobAssignmentRepository_UpdateStatus (0.11s)
 === RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection
@@ -4586,43 +4634,43 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_INSERT_INTO_job_assignments_(status)_VALUES_('hacked');_--
 --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection (0.07s)
     --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_DROP_TABLE_job_assignments;_-- (0.00s)
-    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_completed'_OR_'1'='1 (0.01s)
-    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_failed';_DELETE_FROM_users_WHERE_'1'='1';_-- (0.00s)
+    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_completed'_OR_'1'='1 (0.00s)
+    --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_failed';_DELETE_FROM_users_WHERE_'1'='1';_-- (0.01s)
     --- PASS: TestJobAssignmentRepository_UpdateStatus_SQLInjection/Input:_in_progress';_INSERT_INTO_job_assignments_(status)_VALUES_('hacked');_-- (0.00s)
 === RUN   TestJobAssignmentRepository_FindByAgent
---- PASS: TestJobAssignmentRepository_FindByAgent (0.15s)
+--- PASS: TestJobAssignmentRepository_FindByAgent (0.14s)
 === RUN   TestJobAssignmentRepository_FindByJobAndAgent
---- PASS: TestJobAssignmentRepository_FindByJobAndAgent (0.05s)
+--- PASS: TestJobAssignmentRepository_FindByJobAndAgent (0.07s)
 === RUN   TestJobAssignmentRepository_UpdateHeartbeat
 --- PASS: TestJobAssignmentRepository_UpdateHeartbeat (0.06s)
 === RUN   TestJobAssignmentRepository_IncrementRetry
---- PASS: TestJobAssignmentRepository_IncrementRetry (0.05s)
+--- PASS: TestJobAssignmentRepository_IncrementRetry (0.07s)
 === RUN   TestJobAssignmentRepository_SetError
---- PASS: TestJobAssignmentRepository_SetError (0.05s)
+--- PASS: TestJobAssignmentRepository_SetError (0.15s)
 === RUN   TestJobAssignmentRepository_GetStaleAssignments
---- PASS: TestJobAssignmentRepository_GetStaleAssignments (0.08s)
+--- PASS: TestJobAssignmentRepository_GetStaleAssignments (0.07s)
 === RUN   TestJobAssignmentRepository_AssignJob_Conflict
---- PASS: TestJobAssignmentRepository_AssignJob_Conflict (0.04s)
+--- PASS: TestJobAssignmentRepository_AssignJob_Conflict (0.07s)
 === RUN   TestJobAssignmentRepository_FindByID_NotFound
 --- PASS: TestJobAssignmentRepository_FindByID_NotFound (0.00s)
 === RUN   TestJobAssignmentRepository_Delete
---- PASS: TestJobAssignmentRepository_Delete (0.08s)
+--- PASS: TestJobAssignmentRepository_Delete (0.06s)
 === RUN   TestJobAssignmentRepository_DeleteByJob
---- PASS: TestJobAssignmentRepository_DeleteByJob (0.09s)
+--- PASS: TestJobAssignmentRepository_DeleteByJob (0.11s)
 === RUN   TestJobAssignmentRepository_AssignmentStatuses
 === RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_assigned
 === RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_in_progress
 === RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_completed
 === RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_failed
 === RUN   TestJobAssignmentRepository_AssignmentStatuses/Status_cancelled
---- PASS: TestJobAssignmentRepository_AssignmentStatuses (0.28s)
+--- PASS: TestJobAssignmentRepository_AssignmentStatuses (0.24s)
     --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_assigned (0.06s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_in_progress (0.06s)
-    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_completed (0.05s)
+    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_in_progress (0.04s)
+    --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_completed (0.04s)
     --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_failed (0.04s)
     --- PASS: TestJobAssignmentRepository_AssignmentStatuses/Status_cancelled (0.06s)
 === RUN   TestJobAssignmentRepository_GetAssignmentStats
---- PASS: TestJobAssignmentRepository_GetAssignmentStats (0.15s)
+--- PASS: TestJobAssignmentRepository_GetAssignmentStats (0.14s)
 === RUN   TestJobAssignmentRepository_FindByJobID
 --- PASS: TestJobAssignmentRepository_FindByJobID (0.06s)
 === RUN   TestJobAssignmentRepository_UpdateStatus_NotFound
@@ -4640,9 +4688,9 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobAssignmentRepository_ScanAssignmentWithNulls
 --- PASS: TestJobAssignmentRepository_ScanAssignmentWithNulls (0.04s)
 === RUN   TestJobAssignmentRepository_DocumentETag
---- PASS: TestJobAssignmentRepository_DocumentETag (0.07s)
+--- PASS: TestJobAssignmentRepository_DocumentETag (0.05s)
 === RUN   TestJobAssignmentRepository_TransactionIsolation
---- PASS: TestJobAssignmentRepository_TransactionIsolation (0.05s)
+--- PASS: TestJobAssignmentRepository_TransactionIsolation (0.11s)
 === RUN   TestNewJobHistoryRepository
 --- PASS: TestNewJobHistoryRepository (0.00s)
 === RUN   TestJobHistory_Struct
@@ -4653,7 +4701,7 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobHistoryRepository_CRUD/find_by_job_ID
 === RUN   TestJobHistoryRepository_CRUD/find_by_status
 === RUN   TestJobHistoryRepository_CRUD/delete_by_job_ID
---- PASS: TestJobHistoryRepository_CRUD (0.08s)
+--- PASS: TestJobHistoryRepository_CRUD (0.06s)
     --- PASS: TestJobHistoryRepository_CRUD/create_history (0.00s)
     --- PASS: TestJobHistoryRepository_CRUD/find_by_ID (0.00s)
     --- PASS: TestJobHistoryRepository_CRUD/find_by_job_ID (0.00s)
@@ -4663,14 +4711,14 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobHistoryRepository_QueryMethods/get_latest_by_job_ID
 === RUN   TestJobHistoryRepository_QueryMethods/count_by_job_ID
 === RUN   TestJobHistoryRepository_QueryMethods/list_with_pagination
---- PASS: TestJobHistoryRepository_QueryMethods (0.08s)
+--- PASS: TestJobHistoryRepository_QueryMethods (0.06s)
     --- PASS: TestJobHistoryRepository_QueryMethods/get_latest_by_job_ID (0.00s)
     --- PASS: TestJobHistoryRepository_QueryMethods/count_by_job_ID (0.00s)
     --- PASS: TestJobHistoryRepository_QueryMethods/list_with_pagination (0.00s)
 === RUN   TestJobHistoryRepository_BatchOperations
---- PASS: TestJobHistoryRepository_BatchOperations (0.03s)
+--- PASS: TestJobHistoryRepository_BatchOperations (0.02s)
 === RUN   TestJobHistoryRepository_DeleteOld
---- PASS: TestJobHistoryRepository_DeleteOld (0.04s)
+--- PASS: TestJobHistoryRepository_DeleteOld (0.02s)
 === RUN   TestJobHistoryRepository_FindByID_NotFound
 --- PASS: TestJobHistoryRepository_FindByID_NotFound (0.00s)
 === RUN   TestJobHistoryRepository_GetLatestByJobID_NotFound
@@ -4710,27 +4758,27 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobHistory_TimeFields
 --- PASS: TestJobHistory_TimeFields (0.00s)
 === RUN   TestJobHistory_JobLifecycle
---- PASS: TestJobHistory_JobLifecycle (0.03s)
+--- PASS: TestJobHistory_JobLifecycle (0.04s)
 === RUN   TestJobHistory_MultipleJobs
---- PASS: TestJobHistory_MultipleJobs (0.07s)
+--- PASS: TestJobHistory_MultipleJobs (0.11s)
 === RUN   TestJobHistory_LongMessages
---- PASS: TestJobHistory_LongMessages (0.04s)
+--- PASS: TestJobHistory_LongMessages (0.09s)
 === RUN   TestJobHistory_SpecialCharacters
---- PASS: TestJobHistory_SpecialCharacters (0.03s)
+--- PASS: TestJobHistory_SpecialCharacters (0.05s)
 === RUN   TestJobHistoryRepository_FindByStatus_Pagination
 === RUN   TestJobHistoryRepository_FindByStatus_Pagination/first_page
 === RUN   TestJobHistoryRepository_FindByStatus_Pagination/second_page
---- PASS: TestJobHistoryRepository_FindByStatus_Pagination (0.02s)
+--- PASS: TestJobHistoryRepository_FindByStatus_Pagination (0.04s)
     --- PASS: TestJobHistoryRepository_FindByStatus_Pagination/first_page (0.00s)
     --- PASS: TestJobHistoryRepository_FindByStatus_Pagination/second_page (0.00s)
 === RUN   TestJobHistoryRepository_List_Pagination
 === RUN   TestJobHistoryRepository_List_Pagination/first_page
 === RUN   TestJobHistoryRepository_List_Pagination/second_page
---- PASS: TestJobHistoryRepository_List_Pagination (0.41s)
+--- PASS: TestJobHistoryRepository_List_Pagination (0.45s)
     --- PASS: TestJobHistoryRepository_List_Pagination/first_page (0.00s)
     --- PASS: TestJobHistoryRepository_List_Pagination/second_page (0.00s)
 === RUN   TestJobHistoryRepository_Update_Status
---- PASS: TestJobHistoryRepository_Update_Status (0.03s)
+--- PASS: TestJobHistoryRepository_Update_Status (0.04s)
 === RUN   TestNewJobRepository
 --- PASS: TestNewJobRepository (0.00s)
 === RUN   TestPrintJob_Struct
@@ -4752,7 +4800,7 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobRepository_CRUD/update_status
 === RUN   TestJobRepository_CRUD/assign_agent
 === RUN   TestJobRepository_CRUD/delete_job
---- PASS: TestJobRepository_CRUD (0.06s)
+--- PASS: TestJobRepository_CRUD (0.04s)
     --- PASS: TestJobRepository_CRUD/create_job (0.00s)
     --- PASS: TestJobRepository_CRUD/find_by_ID (0.00s)
     --- PASS: TestJobRepository_CRUD/update_job (0.00s)
@@ -4765,7 +4813,7 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobRepository_QueryMethods/find_by_user
 === RUN   TestJobRepository_QueryMethods/list_with_filters
 === RUN   TestJobRepository_QueryMethods/count_by_status
---- PASS: TestJobRepository_QueryMethods (0.10s)
+--- PASS: TestJobRepository_QueryMethods (0.07s)
     --- PASS: TestJobRepository_QueryMethods/find_by_status (0.00s)
     --- PASS: TestJobRepository_QueryMethods/find_by_printer (0.00s)
     --- PASS: TestJobRepository_QueryMethods/find_by_user (0.00s)
@@ -4776,8 +4824,8 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobRepository_AdvancedOperations/update_job_progress
 === RUN   TestJobRepository_AdvancedOperations/create_failed_job_for_retry
 === RUN   TestJobRepository_AdvancedOperations/get_jobs_needing_retry
---- PASS: TestJobRepository_AdvancedOperations (0.10s)
-    --- PASS: TestJobRepository_AdvancedOperations/get_next_pending_job (0.01s)
+--- PASS: TestJobRepository_AdvancedOperations (0.05s)
+    --- PASS: TestJobRepository_AdvancedOperations/get_next_pending_job (0.00s)
     --- PASS: TestJobRepository_AdvancedOperations/update_job_progress (0.00s)
     --- PASS: TestJobRepository_AdvancedOperations/create_failed_job_for_retry (0.02s)
     --- PASS: TestJobRepository_AdvancedOperations/get_jobs_needing_retry (0.00s)
@@ -4807,12 +4855,12 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobRepository_ListWithFilters_SingleFilter/filter_by_printer_only
 === RUN   TestJobRepository_ListWithFilters_SingleFilter/filter_by_status_only
 === RUN   TestJobRepository_ListWithFilters_SingleFilter/filter_by_user_only
---- PASS: TestJobRepository_ListWithFilters_SingleFilter (0.03s)
+--- PASS: TestJobRepository_ListWithFilters_SingleFilter (0.06s)
     --- PASS: TestJobRepository_ListWithFilters_SingleFilter/filter_by_printer_only (0.00s)
     --- PASS: TestJobRepository_ListWithFilters_SingleFilter/filter_by_status_only (0.00s)
     --- PASS: TestJobRepository_ListWithFilters_SingleFilter/filter_by_user_only (0.00s)
 === RUN   TestJobRepository_DuplicateHandling
---- PASS: TestJobRepository_DuplicateHandling (0.03s)
+--- PASS: TestJobRepository_DuplicateHandling (0.05s)
 === RUN   TestPrintJob_MediaTypes
 --- PASS: TestPrintJob_MediaTypes (0.00s)
 === RUN   TestPrintJob_QualityLevels
@@ -4832,30 +4880,30 @@ ok  	github.com/openprint/openprint/services/job-service/processor	0.007s
 === RUN   TestJobRepository_PriorityOrdering
 --- PASS: TestJobRepository_PriorityOrdering (0.23s)
 === RUN   TestJobRepository_StatusTransitions
---- PASS: TestJobRepository_StatusTransitions (0.05s)
+--- PASS: TestJobRepository_StatusTransitions (0.04s)
 === RUN   TestJobRepository_AgentAssignment
---- PASS: TestJobRepository_AgentAssignment (0.04s)
+--- PASS: TestJobRepository_AgentAssignment (0.03s)
 === RUN   TestJobRepository_OptionsJSON
 --- PASS: TestJobRepository_OptionsJSON (0.04s)
 === RUN   TestJobRepository_CompletionTimestamps
---- PASS: TestJobRepository_CompletionTimestamps (0.04s)
+--- PASS: TestJobRepository_CompletionTimestamps (0.08s)
 === RUN   TestJobRepository_RetryTracking
 --- PASS: TestJobRepository_RetryTracking (0.03s)
 === RUN   TestJobRepository_MultiFilterQueries
---- PASS: TestJobRepository_MultiFilterQueries (0.04s)
+--- PASS: TestJobRepository_MultiFilterQueries (0.05s)
 === RUN   TestJobRepository_NullAgentHandling
---- PASS: TestJobRepository_NullAgentHandling (0.03s)
+--- PASS: TestJobRepository_NullAgentHandling (0.04s)
 === RUN   TestJobRepository_Pagination
 === RUN   TestJobRepository_Pagination/first_page
 === RUN   TestJobRepository_Pagination/second_page
 === RUN   TestJobRepository_Pagination/offset_beyond_results
---- PASS: TestJobRepository_Pagination (0.34s)
+--- PASS: TestJobRepository_Pagination (0.41s)
     --- PASS: TestJobRepository_Pagination/first_page (0.00s)
     --- PASS: TestJobRepository_Pagination/second_page (0.00s)
     --- PASS: TestJobRepository_Pagination/offset_beyond_results (0.00s)
 PASS
-2026/03/02 03:36:09 setup_test.go:42: TestMain: Tests finished with exit code: 0
-ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
+2026/03/04 04:06:36 setup_test.go:42: TestMain: Tests finished with exit code: 0
+ok  	github.com/openprint/openprint/services/job-service/repository	17.219s
 ?   	github.com/openprint/openprint/services/m365-integration-service	[no test files]
 ?   	github.com/openprint/openprint/services/notification-service	[no test files]
 === RUN   TestNewHandler
@@ -4893,12 +4941,12 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
 === RUN   TestHandler_BroadcastSystemNotification
 --- PASS: TestHandler_BroadcastSystemNotification (0.00s)
 === RUN   TestHandler_GetActiveUsers
-2026/03/02 03:35:53 Client registered: client-1 (user: user-123, org: )
+2026/03/04 04:06:19 Client registered: client-1 (user: user-123, org: )
 --- PASS: TestHandler_GetActiveUsers (0.00s)
 === RUN   TestHandler_GetConnectionStats
 --- PASS: TestHandler_GetConnectionStats (0.00s)
 === RUN   TestHandler_ServeWS
-2026/03/02 03:35:53 Failed to upgrade to WebSocket: websocket: request origin not allowed by Upgrader.CheckOrigin
+2026/03/04 04:06:19 Failed to upgrade to WebSocket: websocket: request origin not allowed by Upgrader.CheckOrigin
     handler_test.go:458: WebSocket connection failed as expected in test: websocket: bad handshake
 --- PASS: TestHandler_ServeWS (0.00s)
 === RUN   TestHandler_ServeWS_QueryParams
@@ -4914,9 +4962,9 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
 === RUN   TestClient_HandleMessage/subscribe_message
 === RUN   TestClient_HandleMessage/unsubscribe_message
 === RUN   TestClient_HandleMessage/unknown_message_type
-2026/03/02 03:35:53 Unknown message type: unknown
+2026/03/04 04:06:19 Unknown message type: unknown
 === RUN   TestClient_HandleMessage/invalid_JSON
-2026/03/02 03:35:53 Failed to unmarshal message: invalid character 'i' looking for beginning of value
+2026/03/04 04:06:19 Failed to unmarshal message: invalid character 'i' looking for beginning of value
 --- PASS: TestClient_HandleMessage (0.00s)
     --- PASS: TestClient_HandleMessage/ping_message (0.00s)
     --- PASS: TestClient_HandleMessage/subscribe_message (0.00s)
@@ -4927,8 +4975,8 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
     handler_test.go:607: writePump exit test passed
 --- PASS: TestWritePump_Timeout (0.00s)
 === RUN   TestReadPump_CloseOnPongTimeout
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: )
-2026/03/02 03:35:53 Client unregistered: client-1
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: )
+2026/03/04 04:06:19 Client unregistered: client-1
 --- PASS: TestReadPump_CloseOnPongTimeout (0.00s)
 === RUN   TestHandler_URLParsing
 --- PASS: TestHandler_URLParsing (0.00s)
@@ -4937,52 +4985,52 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
 === RUN   TestNewHub
 --- PASS: TestNewHub (0.00s)
 === RUN   TestHub_RegisterClient
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
 --- PASS: TestHub_RegisterClient (0.00s)
 === RUN   TestHub_UnregisterClient
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 03:35:53 Client unregistered: client-1
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client unregistered: client-1
 --- PASS: TestHub_UnregisterClient (0.00s)
 === RUN   TestHub_Broadcast
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 03:35:53 Client registered: client-2 (user: user-2, org: org-1)
-2026/03/02 03:35:53 Client registered: client-3 (user: user-3, org: org-1)
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-2 (user: user-2, org: org-1)
+2026/03/04 04:06:19 Client registered: client-3 (user: user-3, org: org-1)
 --- PASS: TestHub_Broadcast (0.00s)
 === RUN   TestHub_SendToUser
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 03:35:53 Client registered: client-2 (user: user-1, org: org-1)
-2026/03/02 03:35:53 Client registered: client-3 (user: user-2, org: org-1)
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-2 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-3 (user: user-2, org: org-1)
 --- PASS: TestHub_SendToUser (0.00s)
 === RUN   TestHub_BroadcastToOrg
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 03:35:53 Client registered: client-2 (user: user-2, org: org-1)
-2026/03/02 03:35:53 Client registered: client-3 (user: user-3, org: org-2)
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-2 (user: user-2, org: org-1)
+2026/03/04 04:06:19 Client registered: client-3 (user: user-3, org: org-2)
 --- PASS: TestHub_BroadcastToOrg (0.00s)
 === RUN   TestHub_GetConnectionCount
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: )
-2026/03/02 03:35:53 Client registered: client-2 (user: user-2, org: )
-2026/03/02 03:35:53 Client registered: client-3 (user: user-3, org: )
-2026/03/02 03:35:53 Client registered: client-4 (user: user-4, org: )
-2026/03/02 03:35:53 Client registered: client-5 (user: user-5, org: )
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: )
+2026/03/04 04:06:19 Client registered: client-2 (user: user-2, org: )
+2026/03/04 04:06:19 Client registered: client-3 (user: user-3, org: )
+2026/03/04 04:06:19 Client registered: client-4 (user: user-4, org: )
+2026/03/04 04:06:19 Client registered: client-5 (user: user-5, org: )
 --- PASS: TestHub_GetConnectionCount (0.00s)
 === RUN   TestHub_GetConnectionsByUser
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: )
-2026/03/02 03:35:53 Client registered: client-2 (user: user-1, org: )
-2026/03/02 03:35:53 Client registered: client-3 (user: user-1, org: )
-2026/03/02 03:35:53 Client registered: client-other (user: user-2, org: )
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: )
+2026/03/04 04:06:19 Client registered: client-2 (user: user-1, org: )
+2026/03/04 04:06:19 Client registered: client-3 (user: user-1, org: )
+2026/03/04 04:06:19 Client registered: client-other (user: user-2, org: )
 --- PASS: TestHub_GetConnectionsByUser (0.00s)
 === RUN   TestHub_GetConnectionsByOrg
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
-2026/03/02 03:35:53 Client registered: client-2 (user: user-2, org: org-1)
-2026/03/02 03:35:53 Client registered: client-3 (user: user-3, org: org-1)
-2026/03/02 03:35:53 Client registered: client-4 (user: user-4, org: org-1)
-2026/03/02 03:35:53 Client registered: client-5 (user: user-5, org: org-2)
-2026/03/02 03:35:53 Client registered: client-6 (user: user-6, org: org-2)
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-2 (user: user-2, org: org-1)
+2026/03/04 04:06:19 Client registered: client-3 (user: user-3, org: org-1)
+2026/03/04 04:06:19 Client registered: client-4 (user: user-4, org: org-1)
+2026/03/04 04:06:19 Client registered: client-5 (user: user-5, org: org-2)
+2026/03/04 04:06:19 Client registered: client-6 (user: user-6, org: org-2)
 --- PASS: TestHub_GetConnectionsByOrg (0.00s)
 === RUN   TestHub_Shutdown
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: )
-2026/03/02 03:35:53 Client registered: client-2 (user: user-2, org: )
-2026/03/02 03:35:53 Client registered: client-3 (user: user-3, org: )
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: )
+2026/03/04 04:06:19 Client registered: client-2 (user: user-2, org: )
+2026/03/04 04:06:19 Client registered: client-3 (user: user-3, org: )
 --- PASS: TestHub_Shutdown (0.00s)
 === RUN   TestMessage_CreationFunctions
 === RUN   TestMessage_CreationFunctions/JobStatusUpdate
@@ -4995,7 +5043,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
     --- PASS: TestMessage_CreationFunctions/PrinterStatusUpdate (0.00s)
     --- PASS: TestMessage_CreationFunctions/NewNotification (0.00s)
 === RUN   TestHub_SendMethods
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: org-1)
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: org-1)
 === RUN   TestHub_SendMethods/SendToUser
 === RUN   TestHub_SendMethods/BroadcastToOrg
 === RUN   TestHub_SendMethods/Broadcast
@@ -5004,7 +5052,7 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
     --- PASS: TestHub_SendMethods/BroadcastToOrg (0.00s)
     --- PASS: TestHub_SendMethods/Broadcast (0.00s)
 === RUN   TestClient_NoOrg
-2026/03/02 03:35:53 Client registered: client-1 (user: user-1, org: )
+2026/03/04 04:06:19 Client registered: client-1 (user: user-1, org: )
 --- PASS: TestClient_NoOrg (0.00s)
 === RUN   TestHub_Run_ContextCancellation
 --- PASS: TestHub_Run_ContextCancellation (0.00s)
@@ -5013,11 +5061,160 @@ ok  	github.com/openprint/openprint/services/job-service/repository	16.367s
 === RUN   TestRemoveClient_NotFound
 --- PASS: TestRemoveClient_NotFound (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/notification-service/websocket	0.036s
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.037s
 ?   	github.com/openprint/openprint/services/organization-service	[no test files]
 ?   	github.com/openprint/openprint/services/organization-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/organization-service/repository	[no test files]
-?   	github.com/openprint/openprint/services/policy-service	[no test files]
+2026/03/04 04:06:20 main_test.go:25: TestMain: Starting test database setup...
+2026/03/04 04:06:23 github.com/testcontainers/testcontainers-go - Connected to docker: 
+  Server Version: 4.9.3
+  API Version: 1.41
+  Operating System: ubuntu
+  Total Memory: 32095 MB
+  Testcontainers for Go Version: v0.33.0
+  Resolved Docker Host: unix:///run/user/1000/podman/podman.sock
+  Resolved Docker Socket Path: /run/user/1000/podman/podman.sock
+  Test SessionID: 200dc377fcba6aae51753587440c9bf4f509541f6b83164f28925a0dfffffa86
+  Test ProcessID: 42850864-fead-4734-877b-05b21dff206e
+2026/03/04 04:06:23 🔥 Reaper obtained from Docker for this test session c1ec84e48a7dfdefe1f991611d0c2b2fe22134116ffbcfd8ec1980860e858423
+2026/03/04 04:06:23 ⏳ Waiting for Reaper port to be ready
+2026/03/04 04:06:23 🐳 Creating container for image postgres:16-alpine
+2026/03/04 04:06:23 ✅ Container created: fc0808543fc8
+2026/03/04 04:06:23 🐳 Starting container: fc0808543fc8
+2026/03/04 04:06:23 ✅ Container started: fc0808543fc8
+2026/03/04 04:06:23 ⏳ Waiting for container id fc0808543fc8 image: postgres:16-alpine. Waiting for: &{timeout:0xc000405760 Log:database system is ready to accept connections IsRegexp:false Occurrence:2 PollInterval:100ms}
+2026/03/04 04:06:27 🔔 Container is ready: fc0808543fc8
+2026/03/04 04:06:32 main_test.go:33: TestMain: Database setup complete, running tests...
+=== RUN   TestHealthHandler
+--- PASS: TestHealthHandler (0.00s)
+=== RUN   TestListPoliciesHandler_Empty
+--- PASS: TestListPoliciesHandler_Empty (0.01s)
+=== RUN   TestCreatePolicyHandler
+--- PASS: TestCreatePolicyHandler (0.01s)
+=== RUN   TestCreatePolicyHandler_InvalidType
+--- PASS: TestCreatePolicyHandler_InvalidType (0.00s)
+=== RUN   TestCreatePolicyHandler_MissingRuleID
+--- PASS: TestCreatePolicyHandler_MissingRuleID (0.00s)
+=== RUN   TestPolicyByIDHandler_NotFound
+2026/03/04 04:06:33 main.go:367: Error getting policy: resource not found
+--- PASS: TestPolicyByIDHandler_NotFound (0.00s)
+=== RUN   TestEvaluateHandler_DenyPolicy
+--- PASS: TestEvaluateHandler_DenyPolicy (0.03s)
+=== RUN   TestEvaluateHandler_AllowPolicy
+--- PASS: TestEvaluateHandler_AllowPolicy (0.01s)
+=== RUN   TestValidateRulesHandler_Valid
+--- PASS: TestValidateRulesHandler_Valid (0.00s)
+=== RUN   TestValidateRulesHandler_Invalid
+--- PASS: TestValidateRulesHandler_Invalid (0.00s)
+=== RUN   TestTestPolicyHandler_Matched
+--- PASS: TestTestPolicyHandler_Matched (0.00s)
+=== RUN   TestMethodNotAllowed
+--- PASS: TestMethodNotAllowed (0.00s)
+=== RUN   TestEngineEvaluateRules
+=== RUN   TestEngineEvaluateRules/Single_matching_rule_-_equals
+=== RUN   TestEngineEvaluateRules/Single_non-matching_rule_-_equals
+=== RUN   TestEngineEvaluateRules/Greater_than_-_match
+=== RUN   TestEngineEvaluateRules/Less_than_-_match
+=== RUN   TestEngineEvaluateRules/Contains_-_match
+=== RUN   TestEngineEvaluateRules/Not_contains_-_match
+=== RUN   TestEngineEvaluateRules/In_-_match
+=== RUN   TestEngineEvaluateRules/NotIn_-_match
+=== RUN   TestEngineEvaluateRules/Between_-_match
+=== RUN   TestEngineEvaluateRules/Between_-_not_match
+=== RUN   TestEngineEvaluateRules/Always_-_match
+=== RUN   TestEngineEvaluateRules/Never_-_no_match
+=== RUN   TestEngineEvaluateRules/Multiple_rules_-_all_match
+=== RUN   TestEngineEvaluateRules/Multiple_rules_-_one_fails
+--- PASS: TestEngineEvaluateRules (0.00s)
+    --- PASS: TestEngineEvaluateRules/Single_matching_rule_-_equals (0.00s)
+    --- PASS: TestEngineEvaluateRules/Single_non-matching_rule_-_equals (0.00s)
+    --- PASS: TestEngineEvaluateRules/Greater_than_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Less_than_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Contains_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Not_contains_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/In_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/NotIn_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Between_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Between_-_not_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Always_-_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Never_-_no_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Multiple_rules_-_all_match (0.00s)
+    --- PASS: TestEngineEvaluateRules/Multiple_rules_-_one_fails (0.00s)
+=== RUN   TestEngineGetFieldValue
+=== RUN   TestEngineGetFieldValue/user.id
+=== RUN   TestEngineGetFieldValue/user.email
+=== RUN   TestEngineGetFieldValue/user.groups
+=== RUN   TestEngineGetFieldValue/printer.id
+=== RUN   TestEngineGetFieldValue/document.name
+=== RUN   TestEngineGetFieldValue/document.type
+=== RUN   TestEngineGetFieldValue/document.page_count
+=== RUN   TestEngineGetFieldValue/document.color_mode
+=== RUN   TestEngineGetFieldValue/document.duplex_mode
+=== RUN   TestEngineGetFieldValue/document.cost
+=== RUN   TestEngineGetFieldValue/time.hour
+=== RUN   TestEngineGetFieldValue/time.day_of_week
+=== RUN   TestEngineGetFieldValue/quota.remaining
+=== RUN   TestEngineGetFieldValue/quota.used
+=== RUN   TestEngineGetFieldValue/quota.limit
+=== RUN   TestEngineGetFieldValue/ip.address
+=== RUN   TestEngineGetFieldValue/device.id
+=== RUN   TestEngineGetFieldValue/document.tags
+--- PASS: TestEngineGetFieldValue (0.00s)
+    --- PASS: TestEngineGetFieldValue/user.id (0.00s)
+    --- PASS: TestEngineGetFieldValue/user.email (0.00s)
+    --- PASS: TestEngineGetFieldValue/user.groups (0.00s)
+    --- PASS: TestEngineGetFieldValue/printer.id (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.name (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.type (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.page_count (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.color_mode (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.duplex_mode (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.cost (0.00s)
+    --- PASS: TestEngineGetFieldValue/time.hour (0.00s)
+    --- PASS: TestEngineGetFieldValue/time.day_of_week (0.00s)
+    --- PASS: TestEngineGetFieldValue/quota.remaining (0.00s)
+    --- PASS: TestEngineGetFieldValue/quota.used (0.00s)
+    --- PASS: TestEngineGetFieldValue/quota.limit (0.00s)
+    --- PASS: TestEngineGetFieldValue/ip.address (0.00s)
+    --- PASS: TestEngineGetFieldValue/device.id (0.00s)
+    --- PASS: TestEngineGetFieldValue/document.tags (0.00s)
+=== RUN   TestEngineGetFieldValue_UnknownField
+--- PASS: TestEngineGetFieldValue_UnknownField (0.00s)
+=== RUN   TestEngineAppliesToScope
+=== RUN   TestEngineAppliesToScope/No_scope_restrictions
+=== RUN   TestEngineAppliesToScope/User_ID_match
+=== RUN   TestEngineAppliesToScope/User_ID_no_match
+=== RUN   TestEngineAppliesToScope/Group_ID_match
+=== RUN   TestEngineAppliesToScope/Group_ID_no_match
+=== RUN   TestEngineAppliesToScope/Printer_ID_match
+=== RUN   TestEngineAppliesToScope/Printer_ID_no_match
+=== RUN   TestEngineAppliesToScope/Document_type_match
+=== RUN   TestEngineAppliesToScope/Document_type_no_match
+--- PASS: TestEngineAppliesToScope (0.00s)
+    --- PASS: TestEngineAppliesToScope/No_scope_restrictions (0.00s)
+    --- PASS: TestEngineAppliesToScope/User_ID_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/User_ID_no_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/Group_ID_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/Group_ID_no_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/Printer_ID_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/Printer_ID_no_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/Document_type_match (0.00s)
+    --- PASS: TestEngineAppliesToScope/Document_type_no_match (0.00s)
+=== RUN   TestRepositoryCreate
+--- PASS: TestRepositoryCreate (0.01s)
+=== RUN   TestRepositoryGet
+--- PASS: TestRepositoryGet (0.02s)
+=== RUN   TestRepositoryList
+--- PASS: TestRepositoryList (0.02s)
+=== RUN   TestRepositoryUpdate
+--- PASS: TestRepositoryUpdate (0.02s)
+=== RUN   TestRepositoryDelete
+--- PASS: TestRepositoryDelete (0.01s)
+=== RUN   TestRepositoryGetNotFound
+--- PASS: TestRepositoryGetNotFound (0.00s)
+PASS
+2026/03/04 04:06:33 main_test.go:40: TestMain: Tests finished with exit code: 0
+ok  	github.com/openprint/openprint/services/policy-service	13.083s
 ?   	github.com/openprint/openprint/services/registry-service	[no test files]
 ?   	github.com/openprint/openprint/services/registry-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/registry-service/handlers	[no test files]
@@ -5118,7 +5315,7 @@ ok  	github.com/openprint/openprint/services/notification-service/websocket	0.03
 === RUN   TestPrinter_TimeFields
 --- PASS: TestPrinter_TimeFields (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/registry-service/repository	0.010s
+ok  	github.com/openprint/openprint/services/registry-service/repository	0.011s
 ?   	github.com/openprint/openprint/services/storage-service	[no test files]
 === RUN   TestNewHandler
 --- PASS: TestNewHandler (0.00s)
@@ -5245,11 +5442,11 @@ ok  	github.com/openprint/openprint/services/storage-service/handler	0.012s
 === RUN   TestGenerateKey
 --- PASS: TestGenerateKey (0.00s)
 === RUN   TestDeriveKey
---- PASS: TestDeriveKey (0.21s)
+--- PASS: TestDeriveKey (0.23s)
 === RUN   TestEncryptedBackend_EmptyData
 --- PASS: TestEncryptedBackend_EmptyData (0.00s)
 === RUN   TestEncryptedBackend_LargeData
---- PASS: TestEncryptedBackend_LargeData (0.00s)
+--- PASS: TestEncryptedBackend_LargeData (0.01s)
 === RUN   TestEncryptedBackend_MultipleFiles
 --- PASS: TestEncryptedBackend_MultipleFiles (0.00s)
 === RUN   TestEncryptedBackend_SpecialCharacters
@@ -5370,7 +5567,7 @@ ok  	github.com/openprint/openprint/services/storage-service/handler	0.012s
 === RUN   TestDataBuffer_OffsetTracking
 --- PASS: TestDataBuffer_OffsetTracking (0.00s)
 PASS
-ok  	github.com/openprint/openprint/services/storage-service/storage	0.243s
+ok  	github.com/openprint/openprint/services/storage-service/storage	0.275s
 === RUN   TestGetTestConfig
 === RUN   TestGetTestConfig/defaults
 === RUN   TestGetTestConfig/custom_values
@@ -5559,8 +5756,8 @@ ok  	github.com/openprint/openprint/services/storage-service/storage	0.243s
 === RUN   TestWaitForValue/returns_value_when_function_succeeds
 === RUN   TestWaitForValue/times_out_when_function_never_succeeds
     testutil_test.go:796: WaitForValue uses t.Fatalf on timeout which cannot be tested directly
---- PASS: TestWaitForValue (0.03s)
-    --- PASS: TestWaitForValue/returns_value_when_function_succeeds (0.03s)
+--- PASS: TestWaitForValue (0.04s)
+    --- PASS: TestWaitForValue/returns_value_when_function_succeeds (0.04s)
     --- SKIP: TestWaitForValue/times_out_when_function_never_succeeds (0.00s)
 === RUN   TestTemporaryDir
 === RUN   TestTemporaryDir/creates_and_cleans_up_temp_directory
@@ -5625,4 +5822,4 @@ ok  	github.com/openprint/openprint/services/storage-service/storage	0.243s
     --- PASS: TestJoinNonEmpty/all_empty_strings (0.00s)
     --- PASS: TestJoinNonEmpty/no_arguments (0.00s)
 PASS
-ok  	github.com/openprint/openprint/tests/testutil	0.199s
+ok  	github.com/openprint/openprint/tests/testutil	0.212s
