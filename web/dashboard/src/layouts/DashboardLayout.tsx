@@ -5,6 +5,7 @@ import {
   PrinterIcon,
   DocumentIcon,
   FolderIcon,
+  ShieldIcon,
   CogIcon,
   LogoutIcon,
   MetricsIcon,
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { path: '/metrics', icon: MetricsIcon, label: 'Metrics', roles: ['admin', 'owner'] },
   { path: '/monitoring', icon: BellIcon, label: 'Monitoring', roles: ['admin', 'owner'] },
   { path: '/observability', icon: PulseIcon, label: 'Tracing', roles: ['admin', 'owner'] },
+  { path: '/compliance', icon: ShieldIcon, label: 'Compliance', roles: ['admin', 'owner'] },
   { path: '/settings', icon: CogIcon, label: 'Settings', roles: ['user', 'admin', 'owner'] },
 ];
 

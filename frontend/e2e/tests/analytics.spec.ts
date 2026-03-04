@@ -173,7 +173,7 @@ test.describe('Analytics Dashboard', () => {
 
     await page.goto('/analytics');
 
-    await expect(page.locator('.animate-spin, .loading')).first().toBeVisible();
+    await expect(page.locator('.animate-spin, .loading').first()).toBeVisible();
   });
 });
 

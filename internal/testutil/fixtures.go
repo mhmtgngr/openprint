@@ -3,6 +3,7 @@ package testutil
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -322,4 +323,108 @@ func ValidOrganizationID() string {
 // ValidPrinterID returns a valid UUID string formatted as a printer ID.
 func ValidPrinterID() string {
 	return ValidUUID();
+}
+
+// CreateTestComplianceControl creates a test compliance control in the database.
+func CreateTestComplianceControl(ctx context.Context, db *pgxpool.Pool, framework string) (string, error) {
+	id := uuid.New().String()
+
+	query := `
+		INSERT INTO compliance_controls (id, framework, family, title, description, implementation, status, next_review, responsible_team, risk_level)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	`
+
+	nextReview := time.Now().AddDate(0, 0, 30)
+
+	_, err := db.Exec(ctx, query, id, framework, "AC-"+id[:8], "Test Control "+id[:8],
+		"Test control description", "Test implementation", "compliant", nextReview, "security-team", "medium")
+	if err != nil {
+		return "", fmt.Errorf("create test compliance control: %w", err)
+	}
+
+	return id, nil
+}
+
+// CreateTestDataBreach creates a test data breach record in the database.
+func CreateTestDataBreach(ctx context.Context, db *pgxpool.Pool) (string, error) {
+	id := uuid.New().String()
+
+	query := `
+		INSERT INTO data_breaches (id, discovered_at, reported_at, severity, affected_records, data_types, description, containment_status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`
+
+	dataTypes, _ := json.Marshal([]string{"email", "name"})
+
+	_, err := db.Exec(ctx, query, id, time.Now(), time.Now(), "low", 10, dataTypes, "Test breach", "identifying")
+	if err != nil {
+		return "", fmt.Errorf("create test data breach: %w", err)
+	}
+
+	return id, nil
+}
+
+// CreateTestComplianceFinding creates a test compliance finding in the database.
+func CreateTestComplianceFinding(ctx context.Context, db *pgxpool.Pool, controlID string) (string, error) {
+	id := uuid.New().String()
+
+	query := `
+		INSERT INTO compliance_findings (id, control_id, severity, title, description, recommendation, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+
+	_, err := db.Exec(ctx, query, id, controlID, "medium", "Test Finding", "Test finding description", "Fix this issue", "open")
+	if err != nil {
+		return "", fmt.Errorf("create test compliance finding: %w", err)
+	}
+
+	return id, nil
+}
+
+// CreateTestComplianceReport creates a test compliance report in the database.
+func CreateTestComplianceReport(ctx context.Context, db *pgxpool.Pool, framework string) (string, error) {
+	id := uuid.New().String()
+
+	query := `
+		INSERT INTO compliance_reports (id, framework, period_start, period_end, overall_status, compliant_count, non_compliant_count, pending_count, total_controls)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
+
+	periodStart := time.Now().AddDate(0, -1, 0)
+	periodEnd := time.Now()
+
+	_, err := db.Exec(ctx, query, id, framework, periodStart, periodEnd, "compliant", 10, 0, 0, 10)
+	if err != nil {
+		return "", fmt.Errorf("create test compliance report: %w", err)
+	}
+
+	return id, nil
+}
+
+// CreateTestAuditEvent creates a test audit event in the database.
+func CreateTestAuditEvent(ctx context.Context, db *pgxpool.Pool, userID string) (string, error) {
+	id := uuid.New().String()
+
+	query := `
+		INSERT INTO audit_log (id, user_id, organization_id, action, resource_type, resource_id, ip_address, user_agent, metadata)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
+
+	// Get organization_id from user if provided, otherwise use a dummy org UUID
+	var orgID string
+	if userID != "" {
+		_ = db.QueryRow(ctx, "SELECT organization_id FROM users WHERE id = $1", userID).Scan(&orgID)
+	}
+	if orgID == "" {
+		orgID = uuid.New().String()
+	}
+
+	metadata, _ := json.Marshal(map[string]interface{}{"event_type": "user_login", "category": "authentication", "outcome": "success"})
+
+	_, err := db.Exec(ctx, query, id, userID, orgID, "login", "user", id, "127.0.0.1", "test-agent", metadata)
+	if err != nil {
+		return "", fmt.Errorf("create test audit event: %w", err)
+	}
+
+	return id, nil
 }

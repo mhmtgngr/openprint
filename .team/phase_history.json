@@ -191,7 +191,13 @@
       "category": "team",
       "result": "done",
       "timestamp": "2026-03-02T19:14:17.111957"
+    },
+    {
+      "description": "Fix Policy Service Test Failures: Fix 7 failing tests in services/policy-service/. Issues: 1) TestListPoliciesHandler_Empty - policies field missing or wrong type in response JSON. 2) TestCreatePolicyHandler - returns 500 instead of 201, UUID validation failing with empty string. 3) TestEvaluateHandler_DenyPolicy - null organization_id violates not-null constraint. 4) TestEngineEvaluateRules - 'In' and 'Between' rule operators return false instead of true. 5) TestEngineAppliesToScope - document type matching fails. 6) TestRepositoryCreate - UUID parsing fails with 'admin' string. Fix database schema to allow null organization_id, fix UUID generation in tests, repair rule evaluation logic for In/Between operators, and ensure test fixtures provide valid UUIDs.",
+      "category": "project",
+      "result": "done",
+      "timestamp": "2026-03-04T05:06:08.454974"
     }
   ],
-  "current_round": 32
+  "current_round": 33
 }

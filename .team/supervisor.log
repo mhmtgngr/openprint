@@ -898,3 +898,41 @@ Total: 28 errors
 [0;32m[SUP 03:27:34][0m   Dev.sh pipeline done in 1m 30s
 [0;32m[SUP 03:57:46][0m 🔬 SCANNING project completion...
 [0;31m[SUP 04:25:08][0m ⚠️ STUCK DETECTED: testing idle for 1112s (timeout: 600s)
+[0;32m[SUP 05:06:08][0m ✅ Round 1 complete: Fix Policy Service Test Failures
+[0;32m[SUP 05:06:13][0m ╔═══════════════════════════════════════╗
+[0;32m[SUP 05:06:13][0m ║  ROUND 2/10: Fix Compliance Service Tests
+[0;32m[SUP 05:06:13][0m ╚═══════════════════════════════════════╝
+[0;32m[SUP 07:44:42][0m   ℹ️  No auto loop state found
+[0;32m[SUP 08:08:30][0m   ℹ️  No auto loop state found
+[0;32m[SUP 08:46:24][0m   ℹ️  No auto loop state found
+[0;32m[SUP 09:05:16][0m   ℹ️  No auto loop state found
+[0;32m[SUP 09:09:07][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 09:09:07][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 09:09:07][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 09:09:07][0m ╚═══════════════════════════════════════════════════════════╝
+[0;31m[SUP 09:17:04][0m   ⚠️  AI decision failed
+[0;32m[SUP 09:25:05][0m   ℹ️  No auto loop running
+[0;32m[SUP 09:31:55][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 09:31:55][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 09:31:55][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 09:31:55][0m ╚═══════════════════════════════════════════════════════════╝
+[0;31m[SUP 09:31:59][0m   ⚠️  AI decision failed
+[0;32m[SUP 10:00:25][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 10:00:25][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 10:00:25][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 10:00:25][0m ╚═══════════════════════════════════════════════════════════╝
+[0;31m[SUP 10:00:28][0m   ⚠️  AI decision failed
+[0;32m[SUP 10:17:19][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 10:17:19][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 10:17:19][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 10:17:19][0m ╚═══════════════════════════════════════════════════════════╝
+[0;32m[SUP 10:17:23][0m   📋 AI Decision:
+[0;32m[SUP 10:17:24][0m   ✅ Discovery complete
+[0;32m[SUP 10:25:06][0m   ℹ️  No auto loop state found
+[0;32m[SUP 10:27:59][0m   ℹ️  No auto loop state found
+[0;32m[SUP 17:42:11][0m ⚠️  STUCK DETECTED: testing idle for >300s — resetting to pending
+[0;32m[SUP 17:42:11][0m ✅ Recovered 1 stuck phase(s)
+[0;32m[SUP 17:43:25][0m Cleaning stale PID file: 2961152
+[0;32m[SUP 17:43:26][0m Ignoring unknown: fg
+[0;32m[SUP 17:44:02][0m Ignoring unknown: fg
+[0;32m[SUP 17:44:19][0m Cleaning stale PID file: 3914666
