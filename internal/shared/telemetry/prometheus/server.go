@@ -15,13 +15,13 @@ import (
 // MetricsServer manages the Prometheus metrics HTTP endpoint.
 // It runs on a separate port from the main service HTTP server.
 type MetricsServer struct {
-	registry    *Registry
-	server      *http.Server
-	port        int
-	addr        string
-	certFile    string
-	keyFile     string
-	basicAuth   *BasicAuthConfig
+	registry  *Registry
+	server    *http.Server
+	port      int
+	addr      string
+	certFile  string
+	keyFile   string
+	basicAuth *BasicAuthConfig
 }
 
 // BasicAuthConfig holds basic authentication configuration for the metrics endpoint.

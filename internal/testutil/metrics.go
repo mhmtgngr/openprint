@@ -12,19 +12,19 @@ import (
 
 // MetricsCollector collects test execution metrics.
 type MetricsCollector struct {
-	mu                sync.Mutex
-	startTime         time.Time
-	endTime           time.Time
-	testCount         int
-	passedTests       int
-	failedTests       int
-	skippedTests      int
-	testDurations     map[string]time.Duration
-	customMetrics     map[string]interface{}
-	timers            map[string]time.Time
-	counters          map[string]int64
-	histograms        map[string][]float64
-	labels            map[string]string
+	mu            sync.Mutex
+	startTime     time.Time
+	endTime       time.Time
+	testCount     int
+	passedTests   int
+	failedTests   int
+	skippedTests  int
+	testDurations map[string]time.Duration
+	customMetrics map[string]interface{}
+	timers        map[string]time.Time
+	counters      map[string]int64
+	histograms    map[string][]float64
+	labels        map[string]string
 }
 
 // NewMetricsCollector creates a new metrics collector.
@@ -612,13 +612,13 @@ func (rm *ResourceMonitor) GetAverageGoroutines() float64 {
 
 // CoverageTracker tracks test coverage metrics.
 type CoverageTracker struct {
-	mu             sync.Mutex
-	coveredFiles   map[string]int
-	totalFiles     int
-	coveredLines   map[string]int
-	totalLines     int
-	coveredFuncs   map[string]int
-	totalFuncs     int
+	mu           sync.Mutex
+	coveredFiles map[string]int
+	totalFiles   int
+	coveredLines map[string]int
+	totalLines   int
+	coveredFuncs map[string]int
+	totalFuncs   int
 }
 
 // NewCoverageTracker creates a new coverage tracker.

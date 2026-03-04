@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/agent"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/job-service/repository"
 )
 
@@ -29,23 +29,23 @@ type AssignmentRepository interface {
 
 // AgentPollConfig holds agent poll handler dependencies.
 type AgentPollConfig struct {
-	AssignmentRepo AssignmentRepository
-	DocumentBaseURL string // Base URL for document downloads
+	AssignmentRepo    AssignmentRepository
+	DocumentBaseURL   string // Base URL for document downloads
 	AssignmentTimeout time.Duration
 }
 
 // AgentPollHandler handles job polling from agents.
 type AgentPollHandler struct {
-	assignmentRepo   AssignmentRepository
-	documentBaseURL  string
+	assignmentRepo    AssignmentRepository
+	documentBaseURL   string
 	assignmentTimeout time.Duration
 }
 
 // NewAgentPollHandler creates a new agent poll handler.
 func NewAgentPollHandler(cfg AgentPollConfig) *AgentPollHandler {
 	return &AgentPollHandler{
-		assignmentRepo:   cfg.AssignmentRepo,
-		documentBaseURL:  cfg.DocumentBaseURL,
+		assignmentRepo:    cfg.AssignmentRepo,
+		documentBaseURL:   cfg.DocumentBaseURL,
 		assignmentTimeout: cfg.AssignmentTimeout,
 	}
 }
@@ -99,9 +99,9 @@ func (h *AgentPollHandler) PollJobs(w http.ResponseWriter, r *http.Request) {
 
 		// Create assignment record
 		assignment := &repository.JobAssignment{
-			JobID:    job.ID,
-			AgentID:  req.AgentID,
-			Status:   "assigned",
+			JobID:   job.ID,
+			AgentID: req.AgentID,
+			Status:  "assigned",
 		}
 
 		if err := h.assignmentRepo.AssignJob(ctx, assignment); err != nil {
@@ -143,8 +143,8 @@ func (h *AgentPollHandler) PollJobs(w http.ResponseWriter, r *http.Request) {
 			JobID:               job.ID,
 			DocumentID:          job.DocumentID,
 			DocumentURL:         documentURL,
-			DocumentChecksum:    "", // Would be populated from documents table
-			DocumentSize:        0,  // Would be populated from documents table
+			DocumentChecksum:    "",                // Would be populated from documents table
+			DocumentSize:        0,                 // Would be populated from documents table
 			DocumentContentType: "application/pdf", // Default
 			PrinterID:           printerID,
 			PrinterName:         printerName,
@@ -219,8 +219,8 @@ func (h *AgentPollHandler) GetPendingJobs(w http.ResponseWriter, r *http.Request
 	}
 
 	respondPollJSON(w, http.StatusOK, map[string]interface{}{
-		"jobs":    jobResponses,
-		"count":   len(jobResponses),
+		"jobs":     jobResponses,
+		"count":    len(jobResponses),
 		"has_more": len(jobs) >= limit,
 	})
 }
@@ -263,17 +263,17 @@ func (h *AgentPollHandler) GetActiveJobs(w http.ResponseWriter, r *http.Request)
 		}
 
 		jobResponse := map[string]interface{}{
-			"job_id":          job.ID,
-			"document_id":     job.DocumentID,
-			"printer_id":      job.PrinterID,
-			"printer_name":    printerInfo["name"],
-			"user_email":      job.UserEmail,
-			"title":           job.Title,
-			"status":          job.Status,
-			"assignment_id":   assignment.ID,
+			"job_id":            job.ID,
+			"document_id":       job.DocumentID,
+			"printer_id":        job.PrinterID,
+			"printer_name":      printerInfo["name"],
+			"user_email":        job.UserEmail,
+			"title":             job.Title,
+			"status":            job.Status,
+			"assignment_id":     assignment.ID,
 			"assignment_status": assignment.Status,
-			"assigned_at":     assignment.AssignedAt.Format(time.RFC3339),
-			"retry_count":     assignment.RetryCount,
+			"assigned_at":       assignment.AssignedAt.Format(time.RFC3339),
+			"retry_count":       assignment.RetryCount,
 		}
 
 		jobResponses = append(jobResponses, jobResponse)
@@ -330,8 +330,8 @@ func (h *AgentPollHandler) UpdateJobStatus(w http.ResponseWriter, r *http.Reques
 
 	// Build response
 	response := map[string]interface{}{
-		"job_id":    jobID,
-		"status":    req.Status,
+		"job_id":     jobID,
+		"status":     req.Status,
 		"updated_at": time.Now().Format(time.RFC3339),
 	}
 
@@ -379,9 +379,9 @@ func (h *AgentPollHandler) JobHeartbeat(w http.ResponseWriter, r *http.Request) 
 	}
 
 	respondPollJSON(w, http.StatusOK, map[string]interface{}{
-		"job_id":       jobID,
+		"job_id":        jobID,
 		"assignment_id": assignment.ID,
-		"server_time":  now.Format(time.RFC3339),
+		"server_time":   now.Format(time.RFC3339),
 	})
 }
 
@@ -477,11 +477,11 @@ func (h *AgentPollHandler) FailJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"job_id":      jobID,
-		"status":      "failed",
-		"error_code":  req.ErrorCode,
-		"message":     req.Message,
-		"updated_at":  time.Now().Format(time.RFC3339),
+		"job_id":     jobID,
+		"status":     "failed",
+		"error_code": req.ErrorCode,
+		"message":    req.Message,
+		"updated_at": time.Now().Format(time.RFC3339),
 	}
 
 	if req.Retry {
@@ -529,22 +529,22 @@ func (h *AgentPollHandler) GetJobDetails(w http.ResponseWriter, r *http.Request)
 	documentURL := fmt.Sprintf("%s/documents/%s", h.documentBaseURL, job.DocumentID)
 
 	response := map[string]interface{}{
-		"job_id":      job.ID,
-		"document_id": job.DocumentID,
+		"job_id":       job.ID,
+		"document_id":  job.DocumentID,
 		"document_url": documentURL,
-		"printer_id":  job.PrinterID,
+		"printer_id":   job.PrinterID,
 		"printer_name": printerInfo["name"],
-		"user_email":  job.UserEmail,
-		"title":       job.Title,
-		"copies":      job.Copies,
-		"color_mode":  job.ColorMode,
-		"duplex":      job.Duplex,
-		"media_type":  job.MediaType,
-		"quality":     job.Quality,
-		"options":     options,
-		"status":      job.Status,
-		"priority":    job.Priority,
-		"created_at":  job.CreatedAt.Format(time.RFC3339),
+		"user_email":   job.UserEmail,
+		"title":        job.Title,
+		"copies":       job.Copies,
+		"color_mode":   job.ColorMode,
+		"duplex":       job.Duplex,
+		"media_type":   job.MediaType,
+		"quality":      job.Quality,
+		"options":      options,
+		"status":       job.Status,
+		"priority":     job.Priority,
+		"created_at":   job.CreatedAt.Format(time.RFC3339),
 	}
 
 	respondPollJSON(w, http.StatusOK, response)

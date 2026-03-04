@@ -20,19 +20,19 @@ type contextKey = ContextKey
 // These are the single source of truth - all other packages should import these.
 const (
 	// User authentication keys
-	UserIDKey  contextKey = "user_id"
-	EmailKey   contextKey = "email"
-	OrgIDKey   contextKey = "org_id"
-	RoleKey    contextKey = "role"
-	ScopesKey  contextKey = "scopes"
-	TokenKey   contextKey = "token"
+	UserIDKey contextKey = "user_id"
+	EmailKey  contextKey = "email"
+	OrgIDKey  contextKey = "org_id"
+	RoleKey   contextKey = "role"
+	ScopesKey contextKey = "scopes"
+	TokenKey  contextKey = "token"
 
 	// Tenant/Multi-tenancy keys
-	TenantIDKey       contextKey = "tenant_id"
-	TenantNameKey     contextKey = "tenant_name"
-	TenantRoleKey     contextKey = "tenant_role"
+	TenantIDKey        contextKey = "tenant_id"
+	TenantNameKey      contextKey = "tenant_name"
+	TenantRoleKey      contextKey = "tenant_role"
 	IsPlatformAdminKey contextKey = "is_platform_admin"
-	QuotaKey          contextKey = "quota"
+	QuotaKey           contextKey = "quota"
 
 	// Request metadata keys
 	RequestIDKey contextKey = "request_id"

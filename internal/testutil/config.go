@@ -12,13 +12,13 @@ import (
 
 // TestConfig holds configuration for a test environment.
 type TestConfig struct {
-	mu              sync.RWMutex
-	values          map[string]string
-	envBackup       map[string]string
-	tempDir         string
-	cleanupFuncs    []func()
-	configPath      string
-	parent          *TestConfig
+	mu           sync.RWMutex
+	values       map[string]string
+	envBackup    map[string]string
+	tempDir      string
+	cleanupFuncs []func()
+	configPath   string
+	parent       *TestConfig
 }
 
 // NewTestConfig creates a new test configuration.

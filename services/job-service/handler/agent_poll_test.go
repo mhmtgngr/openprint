@@ -20,10 +20,10 @@ import (
 
 // MockAssignmentRepository is a mock implementation of AssignmentRepository.
 type MockAssignmentRepository struct {
-	assignments     []*repository.JobAssignment
-	jobs            []*repository.PrintJob
-	assignJobError  error
-	findByAgentError error
+	assignments       []*repository.JobAssignment
+	jobs              []*repository.PrintJob
+	assignJobError    error
+	findByAgentError  error
 	updateStatusError error
 }
 
@@ -102,22 +102,22 @@ func TestAgentPollHandler_PollJobs_Success(t *testing.T) {
 	mockRepo := &MockAssignmentRepository{
 		jobs: []*repository.PrintJob{
 			{
-				ID:        "job-1",
+				ID:         "job-1",
 				DocumentID: "doc-1",
-				PrinterID: "printer-1",
-				UserName:  "Test User",
-				UserEmail: "test@example.com",
-				Title:     "Test Document",
-				Status:    "queued",
-				CreatedAt: now,
+				PrinterID:  "printer-1",
+				UserName:   "Test User",
+				UserEmail:  "test@example.com",
+				Title:      "Test Document",
+				Status:     "queued",
+				CreatedAt:  now,
 			},
 		},
 	}
 
 	handler := NewAgentPollHandler(AgentPollConfig{
-		AssignmentRepo:     mockRepo,
-		DocumentBaseURL:    "http://localhost:8004",
-		AssignmentTimeout:  30 * time.Minute,
+		AssignmentRepo:    mockRepo,
+		DocumentBaseURL:   "http://localhost:8004",
+		AssignmentTimeout: 30 * time.Minute,
 	})
 
 	reqBody := agent.JobPollRequest{
@@ -201,10 +201,10 @@ func TestAgentPollHandler_UpdateJobStatus_Success(t *testing.T) {
 	mockRepo := &MockAssignmentRepository{
 		assignments: []*repository.JobAssignment{
 			{
-				ID:      "assignment-1",
-				JobID:   "job-1",
-				AgentID: "agent-123",
-				Status:  "assigned",
+				ID:        "assignment-1",
+				JobID:     "job-1",
+				AgentID:   "agent-123",
+				Status:    "assigned",
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -216,10 +216,10 @@ func TestAgentPollHandler_UpdateJobStatus_Success(t *testing.T) {
 	})
 
 	update := agent.JobStatusUpdate{
-		JobID:    "job-1",
-		AgentID:  "agent-123",
-		Status:   "in_progress",
-		Message:  "Processing",
+		JobID:     "job-1",
+		AgentID:   "agent-123",
+		Status:    "in_progress",
+		Message:   "Processing",
 		Timestamp: time.Now(),
 	}
 	body, _ := json.Marshal(update)
@@ -248,9 +248,9 @@ func TestAgentPollHandler_UpdateJobStatus_NotFound(t *testing.T) {
 	})
 
 	update := agent.JobStatusUpdate{
-		JobID:    "non-existent",
-		AgentID:  "agent-123",
-		Status:   "in_progress",
+		JobID:     "non-existent",
+		AgentID:   "agent-123",
+		Status:    "in_progress",
 		Timestamp: time.Now(),
 	}
 	body, _ := json.Marshal(update)
@@ -269,10 +269,10 @@ func TestAgentPollHandler_CompleteJob_Success(t *testing.T) {
 	mockRepo := &MockAssignmentRepository{
 		assignments: []*repository.JobAssignment{
 			{
-				ID:      "assignment-1",
-				JobID:   "job-1",
-				AgentID: "agent-123",
-				Status:  "in_progress",
+				ID:        "assignment-1",
+				JobID:     "job-1",
+				AgentID:   "agent-123",
+				Status:    "in_progress",
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -357,10 +357,10 @@ func TestAgentPollHandler_JobHeartbeat_Success(t *testing.T) {
 	mockRepo := &MockAssignmentRepository{
 		assignments: []*repository.JobAssignment{
 			{
-				ID:      "assignment-1",
-				JobID:   "job-1",
-				AgentID: "agent-123",
-				Status:  "in_progress",
+				ID:        "assignment-1",
+				JobID:     "job-1",
+				AgentID:   "agent-123",
+				Status:    "in_progress",
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -389,14 +389,14 @@ func TestAgentPollHandler_GetJobDetails_Success(t *testing.T) {
 	mockRepo := &MockAssignmentRepository{
 		jobs: []*repository.PrintJob{
 			{
-				ID:        "job-1",
+				ID:         "job-1",
 				DocumentID: "doc-1",
-				PrinterID: "printer-1",
-				UserName:  "Test User",
-				UserEmail: "test@example.com",
-				Title:     "Test Document",
-				Status:    "queued",
-				CreatedAt: now,
+				PrinterID:  "printer-1",
+				UserName:   "Test User",
+				UserEmail:  "test@example.com",
+				Title:      "Test Document",
+				Status:     "queued",
+				CreatedAt:  now,
 			},
 		},
 	}

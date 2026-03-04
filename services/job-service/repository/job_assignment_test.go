@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/openprint/openprint/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/openprint/openprint/internal/testutil"
 )
 
 // setupAssignmentTestDB creates a test database connection for assignment tests.
@@ -38,20 +38,20 @@ func createTestPrintJob(t *testing.T, db *pgxpool.Pool) *PrintJob {
 	require.NoError(t, err)
 
 	job := &PrintJob{
-		DocumentID:  documentID,
-		PrinterID:   printerID,
-		UserName:    "Test User",
-		UserEmail:   userEmail,
-		Title:       "Test Job",
-		Copies:      1,
-		ColorMode:   "color",
-		Duplex:      true,
-		MediaType:   "a4",
-		Quality:     "normal",
-		Status:      "queued",
-		Priority:    5,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		DocumentID: documentID,
+		PrinterID:  printerID,
+		UserName:   "Test User",
+		UserEmail:  userEmail,
+		Title:      "Test Job",
+		Copies:     1,
+		ColorMode:  "color",
+		Duplex:     true,
+		MediaType:  "a4",
+		Quality:    "normal",
+		Status:     "queued",
+		Priority:   5,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	query := `
@@ -87,9 +87,9 @@ func TestJobAssignmentRepository_AssignJob(t *testing.T) {
 	require.NoError(t, err)
 
 	assignment := &JobAssignment{
-		JobID:  job.ID,
+		JobID:   job.ID,
 		AgentID: agentID,
-		Status: "assigned",
+		Status:  "assigned",
 	}
 
 	err = repo.AssignJob(ctx, assignment)
@@ -681,10 +681,10 @@ func TestJobAssignmentRepository_UpdateNilTimestamp(t *testing.T) {
 	require.NoError(t, err)
 
 	assignment := &JobAssignment{
-		JobID:      job.ID,
-		AgentID:    agentID,
-		Status:     "assigned",
-		StartedAt:  nil,
+		JobID:       job.ID,
+		AgentID:     agentID,
+		Status:      "assigned",
+		StartedAt:   nil,
 		CompletedAt: nil,
 	}
 	err = repo.AssignJob(ctx, assignment)
@@ -755,9 +755,9 @@ func TestJobAssignmentRepository_DocumentETag(t *testing.T) {
 
 	// Create assignment with ETag
 	assignment := &JobAssignment{
-		JobID:       job.ID,
-		AgentID:     agentID,
-		Status:      "assigned",
+		JobID:        job.ID,
+		AgentID:      agentID,
+		Status:       "assigned",
 		DocumentETag: "abc123etag",
 	}
 	err = repo.AssignJob(ctx, assignment)

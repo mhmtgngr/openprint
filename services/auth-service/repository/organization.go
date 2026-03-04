@@ -30,17 +30,17 @@ const (
 
 // Organization represents a tenant organization.
 type Organization struct {
-	ID          string            `json:"id" db:"id"`
-	Name        string            `json:"name" db:"name"`
-	Slug        string            `json:"slug" db:"slug"`
-	Status      OrganizationStatus `json:"status" db:"status"`
-	LogoURL     string            `json:"logo_url,omitempty" db:"logo_url"`
-	Website     string            `json:"website,omitempty" db:"website"`
-	Description string            `json:"description,omitempty" db:"description"`
+	ID          string                 `json:"id" db:"id"`
+	Name        string                 `json:"name" db:"name"`
+	Slug        string                 `json:"slug" db:"slug"`
+	Status      OrganizationStatus     `json:"status" db:"status"`
+	LogoURL     string                 `json:"logo_url,omitempty" db:"logo_url"`
+	Website     string                 `json:"website,omitempty" db:"website"`
+	Description string                 `json:"description,omitempty" db:"description"`
 	Settings    map[string]interface{} `json:"settings,omitempty" db:"settings"`
-	CreatedAt   time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at" db:"updated_at"`
-	DeletedAt   *time.Time        `json:"deleted_at,omitempty" db:"deleted_at"`
+	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
+	DeletedAt   *time.Time             `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
 // OrganizationRepository provides data access for organizations.

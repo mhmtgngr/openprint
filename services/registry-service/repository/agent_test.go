@@ -222,19 +222,19 @@ func TestAgent_TimeFields(t *testing.T) {
 
 func TestAgent_OrganizationScoped(t *testing.T) {
 	tests := []struct {
-		name          string
+		name           string
 		organizationID string
-		hasOrg        bool
+		hasOrg         bool
 	}{
 		{
-			name:          "with organization",
+			name:           "with organization",
 			organizationID: "org-123",
-			hasOrg:        true,
+			hasOrg:         true,
 		},
 		{
-			name:          "without organization",
+			name:           "without organization",
 			organizationID: "",
-			hasOrg:        false,
+			hasOrg:         false,
 		},
 	}
 

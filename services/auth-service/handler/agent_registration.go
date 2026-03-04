@@ -19,8 +19,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/agent"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	registryrepository "github.com/openprint/openprint/services/registry-service/repository"
 )
@@ -51,18 +51,18 @@ type EnrollmentTokenRepository interface {
 
 // AgentCertificateRecord represents an agent certificate in the database.
 type AgentCertificateRecord struct {
-	CertificateID     string
-	AgentID           string
-	SerialNumber      string
-	Thumbprint        string
-	Subject           string
-	Issuer            string
-	NotValidBefore    time.Time
-	NotValidAfter     time.Time
-	IsRevoked         bool
-	RevokedAt         *time.Time
-	RevocationReason  string
-	CreatedAt         time.Time
+	CertificateID    string
+	AgentID          string
+	SerialNumber     string
+	Thumbprint       string
+	Subject          string
+	Issuer           string
+	NotValidBefore   time.Time
+	NotValidAfter    time.Time
+	IsRevoked        bool
+	RevokedAt        *time.Time
+	RevocationReason string
+	CreatedAt        time.Time
 }
 
 // AgentRegistrationConfig holds agent registration dependencies.
@@ -82,11 +82,11 @@ type AgentRegistrationHandler struct {
 	agentRepo           AgentRepository
 	certRepo            AgentCertificateRepository
 	enrollmentTokenRepo EnrollmentTokenRepository
-	caPrivateKey         *rsa.PrivateKey
-	caCertificate        *x509.Certificate
-	tokenValidity        time.Duration
-	certValidity         time.Duration
-	jwtSecret            string // JWT secret from configuration
+	caPrivateKey        *rsa.PrivateKey
+	caCertificate       *x509.Certificate
+	tokenValidity       time.Duration
+	certValidity        time.Duration
+	jwtSecret           string // JWT secret from configuration
 }
 
 // NewAgentRegistrationHandler creates a new agent registration handler.
@@ -419,15 +419,15 @@ func (h *AgentRegistrationHandler) GetCertificates(w http.ResponseWriter, r *htt
 	response := make([]map[string]interface{}, len(certificates))
 	for i, cert := range certificates {
 		response[i] = map[string]interface{}{
-			"certificate_id":  cert.CertificateID,
-			"serial_number":   cert.SerialNumber,
-			"thumbprint":      cert.Thumbprint,
-			"subject":         cert.Subject,
-			"issuer":          cert.Issuer,
+			"certificate_id":   cert.CertificateID,
+			"serial_number":    cert.SerialNumber,
+			"thumbprint":       cert.Thumbprint,
+			"subject":          cert.Subject,
+			"issuer":           cert.Issuer,
 			"not_valid_before": cert.NotValidBefore.Format(time.RFC3339),
 			"not_valid_after":  cert.NotValidAfter.Format(time.RFC3339),
-			"is_revoked":      cert.IsRevoked,
-			"revoked_at":      cert.RevokedAt,
+			"is_revoked":       cert.IsRevoked,
+			"revoked_at":       cert.RevokedAt,
 		}
 	}
 
@@ -501,16 +501,16 @@ func (h *AgentRegistrationHandler) issueCertificateFromCSR(ctx context.Context, 
 
 	// Store certificate record
 	certRecord := &AgentCertificateRecord{
-		CertificateID:    uuid.New().String(),
-		AgentID:          agentID,
-		SerialNumber:     serialNumber.String(),
-		Thumbprint:       thumbprint,
-		Subject:          parsedCert.Subject.String(),
-		Issuer:           parsedCert.Issuer.String(),
-		NotValidBefore:   parsedCert.NotBefore,
-		NotValidAfter:    parsedCert.NotAfter,
-		IsRevoked:        false,
-		CreatedAt:        time.Now(),
+		CertificateID:  uuid.New().String(),
+		AgentID:        agentID,
+		SerialNumber:   serialNumber.String(),
+		Thumbprint:     thumbprint,
+		Subject:        parsedCert.Subject.String(),
+		Issuer:         parsedCert.Issuer.String(),
+		NotValidBefore: parsedCert.NotBefore,
+		NotValidAfter:  parsedCert.NotAfter,
+		IsRevoked:      false,
+		CreatedAt:      time.Now(),
 	}
 
 	if err := h.certRepo.Store(ctx, certRecord); err != nil {
@@ -631,8 +631,8 @@ func validateAgentTokenString(tokenString, secret string) (*middleware.AgentClai
 			return nil, fmt.Errorf("unexpected signing method: %v (only HMAC is allowed)", token.Header["alg"])
 		}
 		return []byte(secret), nil
-	// SECURITY: Explicit algorithm whitelist - only HS256 is accepted
-	// This prevents the 'none' algorithm attack and other algorithm confusion attacks
+		// SECURITY: Explicit algorithm whitelist - only HS256 is accepted
+		// This prevents the 'none' algorithm attack and other algorithm confusion attacks
 	}, jwt.WithValidMethods([]string{"HS256"}))
 
 	if err != nil {

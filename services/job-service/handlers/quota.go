@@ -27,16 +27,16 @@ type QuotaRepository interface {
 
 // PrintQuota represents a print quota configuration.
 type PrintQuota struct {
-	ID           string
-	EntityID     string // user_id or organization_id
-	EntityType   string // 'user' or 'organization'
-	QuotaType    string // 'pages', 'jobs', 'color_pages', 'duplex_pages'
-	Period       string // 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'
-	Limit        int    // 0 means unlimited
-	Used         int
-	ResetDate    *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID         string
+	EntityID   string // user_id or organization_id
+	EntityType string // 'user' or 'organization'
+	QuotaType  string // 'pages', 'jobs', 'color_pages', 'duplex_pages'
+	Period     string // 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'
+	Limit      int    // 0 means unlimited
+	Used       int
+	ResetDate  *time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // QuotaHistoryEntry represents a historical quota usage record.
@@ -56,14 +56,14 @@ type QuotaHistoryEntry struct {
 
 // QuotaHandler handles quota management HTTP endpoints.
 type QuotaHandler struct {
-	db  *pgxpool.Pool
+	db        *pgxpool.Pool
 	quotaRepo QuotaRepository
 }
 
 // NewQuotaHandler creates a new quota handler instance.
 func NewQuotaHandler(db *pgxpool.Pool) *QuotaHandler {
 	return &QuotaHandler{
-		db:  db,
+		db:        db,
 		quotaRepo: NewQuotaRepository(db),
 	}
 }
@@ -71,19 +71,19 @@ func NewQuotaHandler(db *pgxpool.Pool) *QuotaHandler {
 // CheckQuotaRequest represents a request to check quota availability.
 type CheckQuotaRequest struct {
 	EntityID   string `json:"entity_id"`
-	EntityType string `json:"entity_type"`   // 'user' or 'organization'
-	QuotaType  string `json:"quota_type"`    // 'pages', 'jobs', 'color_pages', 'duplex_pages'
-	Amount     int    `json:"amount"`        // Amount to check (default 1)
+	EntityType string `json:"entity_type"` // 'user' or 'organization'
+	QuotaType  string `json:"quota_type"`  // 'pages', 'jobs', 'color_pages', 'duplex_pages'
+	Amount     int    `json:"amount"`      // Amount to check (default 1)
 }
 
 // CheckQuotaResponse represents the response from a quota check.
 type CheckQuotaResponse struct {
-	Allowed    bool   `json:"allowed"`
-	Remaining  int    `json:"remaining"`
-	Limit      int    `json:"limit"`
-	Used       int    `json:"used"`
-	ResetDate  string `json:"reset_date,omitempty"`
-	Message    string `json:"message,omitempty"`
+	Allowed   bool   `json:"allowed"`
+	Remaining int    `json:"remaining"`
+	Limit     int    `json:"limit"`
+	Used      int    `json:"used"`
+	ResetDate string `json:"reset_date,omitempty"`
+	Message   string `json:"message,omitempty"`
 }
 
 // SetQuotaRequest represents a request to set a quota.

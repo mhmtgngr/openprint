@@ -13,19 +13,19 @@ import (
 
 // JobAssignment represents the assignment of a job to a specific agent.
 type JobAssignment struct {
-	ID           string
-	JobID        string
-	AgentID      string
-	AssignedAt   time.Time
-	StartedAt    *time.Time
-	CompletedAt  *time.Time
-	Status       string // "assigned", "in_progress", "completed", "failed", "cancelled"
-	RetryCount   int
+	ID            string
+	JobID         string
+	AgentID       string
+	AssignedAt    time.Time
+	StartedAt     *time.Time
+	CompletedAt   *time.Time
+	Status        string // "assigned", "in_progress", "completed", "failed", "cancelled"
+	RetryCount    int
 	LastHeartbeat time.Time
-	Error        string
-	DocumentETag string // For resume support
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Error         string
+	DocumentETag  string // For resume support
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 // AssignmentCriteria defines criteria for assigning jobs.

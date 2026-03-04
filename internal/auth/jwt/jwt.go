@@ -51,10 +51,10 @@ const (
 
 // Config holds JWT configuration.
 type Config struct {
-	SecretKey       string
-	AccessDuration  time.Duration
-	RefreshDuration time.Duration
-	Issuer          string
+	SecretKey        string
+	AccessDuration   time.Duration
+	RefreshDuration  time.Duration
+	Issuer           string
 	AllowedAudiences []string // Allowed audiences for JWT validation
 	// RequireAudienceValidation forces audience validation even if no allowed audiences are set.
 	// SECURITY: This defaults to true for security and cannot be disabled in production.
@@ -348,14 +348,14 @@ func (c *Claims) IsValidForOrg(orgID string) bool {
 
 // Scope constants for authorization.
 const (
-	ScopePrintRead   = "print:read"
-	ScopePrintWrite  = "print:write"
-	ScopePrintDelete = "print:delete"
-	ScopePrinterRead = "printer:read"
+	ScopePrintRead    = "print:read"
+	ScopePrintWrite   = "print:write"
+	ScopePrintDelete  = "print:delete"
+	ScopePrinterRead  = "printer:read"
 	ScopePrinterWrite = "printer:write"
-	ScopeUserRead    = "user:read"
-	ScopeUserWrite   = "user:write"
-	ScopeAdmin       = "admin"
+	ScopeUserRead     = "user:read"
+	ScopeUserWrite    = "user:write"
+	ScopeAdmin        = "admin"
 )
 
 // AllScopes returns all available scopes.

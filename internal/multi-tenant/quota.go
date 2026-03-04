@@ -37,12 +37,12 @@ const (
 
 // QuotaCheckResult represents the result of a quota check.
 type QuotaCheckResult struct {
-	ResourceType  ResourceType
-	Status        QuotaStatus
-	Current       int64
-	Maximum       int64
-	UsagePercent  float64
-	Remaining     int64
+	ResourceType ResourceType
+	Status       QuotaStatus
+	Current      int64
+	Maximum      int64
+	UsagePercent float64
+	Remaining    int64
 }
 
 // IsAllowed returns true if the operation is allowed under quota.
@@ -62,7 +62,7 @@ type QuotaRepository interface {
 
 // QuotaEnforcer handles quota checking and enforcement.
 type QuotaEnforcer struct {
-	repo           QuotaRepository
+	repo             QuotaRepository
 	warningThreshold float64 // Percentage threshold for warnings (default 0.8 = 80%)
 }
 

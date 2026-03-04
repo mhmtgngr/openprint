@@ -44,21 +44,21 @@ type AgentHub struct {
 
 // AgentHubConfig holds agent hub configuration.
 type AgentHubConfig struct {
-	PingInterval time.Duration
-	PongTimeout  time.Duration
+	PingInterval      time.Duration
+	PongTimeout       time.Duration
 	MessageBufferSize int
 }
 
 // AgentClient represents a WebSocket client connection for an agent.
 type AgentClient struct {
-	ID        string
-	AgentID   string
-	Hostname  string
-	Hub       *AgentHub
-	Conn      *websocket.Conn
-	Send      chan *AgentMessage
-	mu        sync.Mutex
-	ConnectedAt time.Time
+	ID           string
+	AgentID      string
+	Hostname     string
+	Hub          *AgentHub
+	Conn         *websocket.Conn
+	Send         chan *AgentMessage
+	mu           sync.Mutex
+	ConnectedAt  time.Time
 	LastActivity time.Time
 }
 
@@ -89,7 +89,7 @@ func NewAgentHub(cfg AgentHubConfig) *AgentHub {
 		unregister:     make(chan *AgentClient),
 		sendToAgent:    make(chan *AgentMessage, cfg.MessageBufferSize),
 		broadcastToAll: make(chan *AgentMessage, cfg.MessageBufferSize),
-		cfg:           cfg,
+		cfg:            cfg,
 	}
 }
 
@@ -336,13 +336,13 @@ func (h *AgentWebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) 
 
 	// Create client
 	client := &AgentClient{
-		ID:          uuid.New().String(),
-		AgentID:     agentID,
-		Hostname:    hostname,
-		Hub:         h.hub,
-		Conn:        conn,
-		Send:        make(chan *AgentMessage, h.hub.cfg.MessageBufferSize),
-		ConnectedAt: time.Now(),
+		ID:           uuid.New().String(),
+		AgentID:      agentID,
+		Hostname:     hostname,
+		Hub:          h.hub,
+		Conn:         conn,
+		Send:         make(chan *AgentMessage, h.hub.cfg.MessageBufferSize),
+		ConnectedAt:  time.Now(),
 		LastActivity: time.Now(),
 	}
 

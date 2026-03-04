@@ -104,17 +104,17 @@ func NewLimiter(cfg *Config) (*Limiter, error) {
 
 // CheckResult represents the result of a rate limit check.
 type CheckResult struct {
-	Allowed         bool          `json:"allowed"`
-	Limit           int64         `json:"limit"`
-	Remaining       int64         `json:"remaining"`
-	ResetAt         time.Time     `json:"reset_at"`
-	RetryAfter      time.Duration `json:"retry_after,omitempty"`
-	Policy          *Policy       `json:"policy,omitempty"`
-	ViolationID     string        `json:"violation_id,omitempty"`
-	IsBypassed      bool          `json:"is_bypassed,omitempty"`
-	IsQueued        bool          `json:"is_queued,omitempty"`
-	QueuePosition   int           `json:"queue_position,omitempty"`
-	EstimatedWait   time.Duration `json:"estimated_wait,omitempty"`
+	Allowed       bool          `json:"allowed"`
+	Limit         int64         `json:"limit"`
+	Remaining     int64         `json:"remaining"`
+	ResetAt       time.Time     `json:"reset_at"`
+	RetryAfter    time.Duration `json:"retry_after,omitempty"`
+	Policy        *Policy       `json:"policy,omitempty"`
+	ViolationID   string        `json:"violation_id,omitempty"`
+	IsBypassed    bool          `json:"is_bypassed,omitempty"`
+	IsQueued      bool          `json:"is_queued,omitempty"`
+	QueuePosition int           `json:"queue_position,omitempty"`
+	EstimatedWait time.Duration `json:"estimated_wait,omitempty"`
 }
 
 // Request represents a rate limit check request.
@@ -315,17 +315,17 @@ func (l *Limiter) getRedisKey(req *Request, policy *Policy) string {
 // RecordViolation records a rate limit violation in the database.
 func (l *Limiter) recordViolation(ctx context.Context, req *Request, policy *Policy, current, limit int64) (string, error) {
 	violation := &Violation{
-		ID:           generateID(),
-		PolicyID:     policy.ID,
-		PolicyName:   policy.Name,
-		Identifier:   req.Identifier,
+		ID:             generateID(),
+		PolicyID:       policy.ID,
+		PolicyName:     policy.Name,
+		Identifier:     req.Identifier,
 		IdentifierType: req.Type,
-		Path:         req.Path,
-		Method:       req.Method,
-		Current:      current,
-		Limit:        limit,
-		Severity:     policy.Severity,
-		OccurredAt:   time.Now(),
+		Path:           req.Path,
+		Method:         req.Method,
+		Current:        current,
+		Limit:          limit,
+		Severity:       policy.Severity,
+		OccurredAt:     time.Now(),
 	}
 
 	if err := l.repository.CreateViolation(ctx, violation); err != nil {

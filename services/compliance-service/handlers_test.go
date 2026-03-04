@@ -100,15 +100,15 @@ func TestHandlers_CreateControl(t *testing.T) {
 	defer server.Close()
 
 	control := map[string]interface{}{
-		"framework":         "fedramp",
-		"family":            "Access Control",
-		"title":             "AC-001: Access Control Policy",
-		"description":       "Test access control policy",
-		"implementation":    "Implemented via LDAP",
-		"status":            "pending",
-		"next_review":       time.Now().AddDate(0, 0, 30).Format(time.RFC3339),
-		"responsible_team":  "Security",
-		"risk_level":        "medium",
+		"framework":        "fedramp",
+		"family":           "Access Control",
+		"title":            "AC-001: Access Control Policy",
+		"description":      "Test access control policy",
+		"implementation":   "Implemented via LDAP",
+		"status":           "pending",
+		"next_review":      time.Now().AddDate(0, 0, 30).Format(time.RFC3339),
+		"responsible_team": "Security",
+		"risk_level":       "medium",
 	}
 
 	body, _ := json.Marshal(control)

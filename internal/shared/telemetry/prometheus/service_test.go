@@ -244,9 +244,9 @@ func TestGetEnvServiceConfig(t *testing.T) {
 
 		assert.Equal(t, "default-test-service", cfg.ServiceName)
 		assert.Equal(t, "1.0.0", cfg.ServiceVersion) // Default version
-		assert.True(t, cfg.EnableMetrics)          // Default: true
-		assert.False(t, cfg.EnableTracing)         // Default: false
-		assert.Equal(t, 0, cfg.MetricsPort)        // Default: 0 (use service default)
+		assert.True(t, cfg.EnableMetrics)            // Default: true
+		assert.False(t, cfg.EnableTracing)           // Default: false
+		assert.Equal(t, 0, cfg.MetricsPort)          // Default: 0 (use service default)
 		assert.Empty(t, cfg.JaegerEndpoint)
 	})
 
@@ -308,11 +308,11 @@ func TestGetEnvServiceConfig(t *testing.T) {
 
 func TestGetEnvBool(t *testing.T) {
 	tests := []struct {
-		name     string
-		key      string
-		value    string
+		name       string
+		key        string
+		value      string
 		defaultVal bool
-		expected bool
+		expected   bool
 	}{
 		{"true value", "TEST_BOOL", "true", false, true},
 		{"false value", "TEST_BOOL", "false", true, false},
@@ -335,11 +335,11 @@ func TestGetEnvBool(t *testing.T) {
 
 func TestGetEnvInt(t *testing.T) {
 	tests := []struct {
-		name     string
-		key      string
-		value    string
+		name       string
+		key        string
+		value      string
 		defaultVal int
-		expected int
+		expected   int
 	}{
 		{"valid int", "TEST_INT", "12345", 0, 12345},
 		{"zero", "TEST_INT", "0", 100, 0},

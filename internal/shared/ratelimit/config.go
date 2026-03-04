@@ -70,23 +70,23 @@ type Violation struct {
 
 // TrustedClient represents a client that bypasses rate limiting.
 type TrustedClient struct {
-	ID           string    `json:"id" db:"id"`
-	Name         string    `json:"name" db:"name"`
-	APIKey       string    `json:"api_key" db:"api_key"`
-	IPWhitelist  []string  `json:"ip_whitelist" db:"ip_whitelist"`
-	Description  string    `json:"description" db:"description"`
-	IsActive     bool      `json:"is_active" db:"is_active"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
-	LastUsedAt   *time.Time `json:"last_used_at" db:"last_used_at"`
+	ID          string     `json:"id" db:"id"`
+	Name        string     `json:"name" db:"name"`
+	APIKey      string     `json:"api_key" db:"api_key"`
+	IPWhitelist []string   `json:"ip_whitelist" db:"ip_whitelist"`
+	Description string     `json:"description" db:"description"`
+	IsActive    bool       `json:"is_active" db:"is_active"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+	LastUsedAt  *time.Time `json:"last_used_at" db:"last_used_at"`
 }
 
 // CircuitBreakerState represents the state of a circuit breaker.
 type CircuitBreakerState struct {
-	Path          string    `json:"path"`
-	State         string    `json:"state"` // "closed", "open", "half_open"
-	FailureCount  int       `json:"failure_count"`
-	LastFailureAt time.Time `json:"last_failure_at"`
+	Path          string     `json:"path"`
+	State         string     `json:"state"` // "closed", "open", "half_open"
+	FailureCount  int        `json:"failure_count"`
+	LastFailureAt time.Time  `json:"last_failure_at"`
 	OpensAt       *time.Time `json:"opens_at,omitempty"`
 	ClosesAt      *time.Time `json:"closes_at,omitempty"`
 }
@@ -118,104 +118,104 @@ type PolicyStats struct {
 // DefaultGlobalPolicy returns the default global rate limit policy.
 func DefaultGlobalPolicy() *Policy {
 	return &Policy{
-		ID:          "global-default",
-		Name:        "Global Default",
-		Description: "Default rate limit for all requests",
-		Priority:    0,
-		Scope:       "global",
-		Identifier:  "*",
-		Limit:       1000,
-		Window:      time.Hour,
-		BurstLimit:  100,
+		ID:            "global-default",
+		Name:          "Global Default",
+		Description:   "Default rate limit for all requests",
+		Priority:      0,
+		Scope:         "global",
+		Identifier:    "*",
+		Limit:         1000,
+		Window:        time.Hour,
+		BurstLimit:    100,
 		BurstDuration: time.Minute,
-		EnableQueue: false,
-		Severity:    "low",
-		Action:      "reject",
-		IsActive:    true,
+		EnableQueue:   false,
+		Severity:      "low",
+		Action:        "reject",
+		IsActive:      true,
 	}
 }
 
 // DefaultIPPolicy returns a default IP-based rate limit policy.
 func DefaultIPPolicy() *Policy {
 	return &Policy{
-		ID:          "ip-default",
-		Name:        "IP Default",
-		Description: "Default rate limit per IP address",
-		Priority:    10,
-		Scope:       "ip",
-		Identifier:  "*",
-		Limit:       100,
-		Window:      time.Minute,
-		BurstLimit:  20,
+		ID:            "ip-default",
+		Name:          "IP Default",
+		Description:   "Default rate limit per IP address",
+		Priority:      10,
+		Scope:         "ip",
+		Identifier:    "*",
+		Limit:         100,
+		Window:        time.Minute,
+		BurstLimit:    20,
 		BurstDuration: 10 * time.Second,
-		EnableQueue: true,
-		MaxQueueSize: 10,
-		Severity:    "medium",
-		Action:      "reject",
-		IsActive:    true,
+		EnableQueue:   true,
+		MaxQueueSize:  10,
+		Severity:      "medium",
+		Action:        "reject",
+		IsActive:      true,
 	}
 }
 
 // DefaultUserPolicy returns a default user-based rate limit policy.
 func DefaultUserPolicy() *Policy {
 	return &Policy{
-		ID:          "user-default",
-		Name:        "User Default",
-		Description: "Default rate limit per user",
-		Priority:    20,
-		Scope:       "user",
-		Identifier:  "*",
-		Limit:       500,
-		Window:      time.Hour,
-		BurstLimit:  50,
+		ID:            "user-default",
+		Name:          "User Default",
+		Description:   "Default rate limit per user",
+		Priority:      20,
+		Scope:         "user",
+		Identifier:    "*",
+		Limit:         500,
+		Window:        time.Hour,
+		BurstLimit:    50,
 		BurstDuration: time.Minute,
-		EnableQueue: true,
-		MaxQueueSize: 20,
-		Severity:    "medium",
-		Action:      "reject",
-		IsActive:    true,
+		EnableQueue:   true,
+		MaxQueueSize:  20,
+		Severity:      "medium",
+		Action:        "reject",
+		IsActive:      true,
 	}
 }
 
 // DefaultAPIKeyPolicy returns a default API key-based rate limit policy.
 func DefaultAPIKeyPolicy() *Policy {
 	return &Policy{
-		ID:          "apikey-default",
-		Name:        "API Key Default",
-		Description: "Default rate limit per API key",
-		Priority:    30,
-		Scope:       "api_key",
-		Identifier:  "*",
-		Limit:       1000,
-		Window:      time.Hour,
-		BurstLimit:  100,
+		ID:            "apikey-default",
+		Name:          "API Key Default",
+		Description:   "Default rate limit per API key",
+		Priority:      30,
+		Scope:         "api_key",
+		Identifier:    "*",
+		Limit:         1000,
+		Window:        time.Hour,
+		BurstLimit:    100,
 		BurstDuration: time.Minute,
-		EnableQueue: false,
-		Severity:    "low",
-		Action:      "reject",
-		IsActive:    true,
+		EnableQueue:   false,
+		Severity:      "low",
+		Action:        "reject",
+		IsActive:      true,
 	}
 }
 
 // StrictEndpointPolicy returns a strict policy for sensitive endpoints.
 func StrictEndpointPolicy() *Policy {
 	return &Policy{
-		ID:          "endpoint-strict",
-		Name:        "Strict Endpoint",
-		Description: "Strict rate limit for sensitive endpoints",
-		Priority:    100,
-		Scope:       "endpoint",
-		PathPattern: "/api/auth/*",
-		Limit:       10,
-		Window:      time.Minute,
-		BurstLimit:  3,
-		BurstDuration: 10 * time.Second,
+		ID:                      "endpoint-strict",
+		Name:                    "Strict Endpoint",
+		Description:             "Strict rate limit for sensitive endpoints",
+		Priority:                100,
+		Scope:                   "endpoint",
+		PathPattern:             "/api/auth/*",
+		Limit:                   10,
+		Window:                  time.Minute,
+		BurstLimit:              3,
+		BurstDuration:           10 * time.Second,
 		CircuitBreakerThreshold: 50,
-		CircuitBreakerTimeout: 5 * time.Minute,
-		EnableQueue: false,
-		Severity:    "high",
-		Action:      "reject",
-		IsActive:    true,
+		CircuitBreakerTimeout:   5 * time.Minute,
+		EnableQueue:             false,
+		Severity:                "high",
+		Action:                  "reject",
+		IsActive:                true,
 	}
 }
 
@@ -281,14 +281,14 @@ func (p *Policy) GetWindowInSeconds() int64 {
 func (p Policy) MarshalJSON() ([]byte, error) {
 	type Alias Policy
 	return json.Marshal(&struct {
-		WindowSec int64 `json:"window_sec"`
-		BurstDurationSec int64 `json:"burst_duration_sec,omitempty"`
+		WindowSec                int64 `json:"window_sec"`
+		BurstDurationSec         int64 `json:"burst_duration_sec,omitempty"`
 		CircuitBreakerTimeoutSec int64 `json:"circuit_breaker_timeout_sec,omitempty"`
 		*Alias
 	}{
-		WindowSec: p.GetWindowInSeconds(),
-		BurstDurationSec: int64(p.BurstDuration.Seconds()),
+		WindowSec:                p.GetWindowInSeconds(),
+		BurstDurationSec:         int64(p.BurstDuration.Seconds()),
 		CircuitBreakerTimeoutSec: int64(p.CircuitBreakerTimeout.Seconds()),
-		Alias: (*Alias)(&p),
+		Alias:                    (*Alias)(&p),
 	})
 }

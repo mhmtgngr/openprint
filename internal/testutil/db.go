@@ -28,8 +28,8 @@ const (
 
 // TestDB holds resources for a test database container.
 type TestDB struct {
-	Container testcontainers.Container
-	Pool      *pgxpool.Pool
+	Container  testcontainers.Container
+	Pool       *pgxpool.Pool
 	ConnString string
 }
 
@@ -150,8 +150,8 @@ func SetupPostgresContainer(ctx context.Context) (*TestDB, error) {
 	}
 
 	return &TestDB{
-		Container:   container,
-		Pool:        pool,
+		Container:  container,
+		Pool:       pool,
 		ConnString: connString,
 	}, nil
 }

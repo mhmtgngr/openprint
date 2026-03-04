@@ -61,12 +61,12 @@ func NewMobileHandler(db *pgxpool.Pool) *MobileHandler {
 
 // RegisterDeviceRequest represents a request to register a mobile device.
 type RegisterDeviceRequest struct {
-	UserID        string `json:"user_id"`
-	DeviceName    string `json:"device_name"`
-	DeviceType    string `json:"device_type"`
-	DeviceToken   string `json:"device_token"`
-	AppVersion    string `json:"app_version"`
-	OSVersion     string `json:"os_version"`
+	UserID      string `json:"user_id"`
+	DeviceName  string `json:"device_name"`
+	DeviceType  string `json:"device_type"`
+	DeviceToken string `json:"device_token"`
+	AppVersion  string `json:"app_version"`
+	OSVersion   string `json:"os_version"`
 }
 
 // PairPrinterRequest represents a request to pair a printer with a mobile device.
@@ -77,11 +77,11 @@ type PairPrinterRequest struct {
 
 // SendNotificationRequest represents a request to send a push notification.
 type SendNotificationRequest struct {
-	UserID  string                 `json:"user_id"`
+	UserID   string                 `json:"user_id"`
 	DeviceID string                 `json:"device_id,omitempty"`
-	Title   string                 `json:"title"`
-	Body    string                 `json:"body"`
-	Data    map[string]interface{} `json:"data,omitempty"`
+	Title    string                 `json:"title"`
+	Body     string                 `json:"body"`
+	Data     map[string]interface{} `json:"data,omitempty"`
 }
 
 // RegisterDeviceHandler handles mobile device registration.
@@ -116,18 +116,18 @@ func (h *MobileHandler) RegisterDeviceHandler(w http.ResponseWriter, r *http.Req
 	pairingCode, _ := generatePairingCode()
 
 	device := &MobileDevice{
-		ID:           uuid.New().String(),
-		UserID:       req.UserID,
-		DeviceName:   req.DeviceName,
-		DeviceType:   req.DeviceType,
-		DeviceToken:  req.DeviceToken,
-		AppVersion:   req.AppVersion,
-		OSVersion:    req.OSVersion,
-		IsActive:     true,
-		LastSeen:     time.Now(),
-		PairingCode:  pairingCode,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:          uuid.New().String(),
+		UserID:      req.UserID,
+		DeviceName:  req.DeviceName,
+		DeviceType:  req.DeviceType,
+		DeviceToken: req.DeviceToken,
+		AppVersion:  req.AppVersion,
+		OSVersion:   req.OSVersion,
+		IsActive:    true,
+		LastSeen:    time.Now(),
+		PairingCode: pairingCode,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// Store device
@@ -167,15 +167,15 @@ func (h *MobileHandler) ListDevicesHandler(w http.ResponseWriter, r *http.Reques
 	response := make([]map[string]interface{}, len(devices))
 	for i, d := range devices {
 		response[i] = map[string]interface{}{
-			"device_id":     d.ID,
-			"device_name":   d.DeviceName,
-			"device_type":   d.DeviceType,
-			"app_version":   d.AppVersion,
-			"os_version":    d.OSVersion,
-			"is_active":     d.IsActive,
-			"last_seen":     d.LastSeen.Format(time.RFC3339),
+			"device_id":      d.ID,
+			"device_name":    d.DeviceName,
+			"device_type":    d.DeviceType,
+			"app_version":    d.AppVersion,
+			"os_version":     d.OSVersion,
+			"is_active":      d.IsActive,
+			"last_seen":      d.LastSeen.Format(time.RFC3339),
 			"paired_printer": d.PairedPrinterID,
-			"created_at":    d.CreatedAt.Format(time.RFC3339),
+			"created_at":     d.CreatedAt.Format(time.RFC3339),
 		}
 	}
 
@@ -468,14 +468,14 @@ func (h *MobileHandler) NearbyPrintersHandler(w http.ResponseWriter, r *http.Req
 		}
 
 		printers = append(printers, map[string]interface{}{
-			"printer_id":       id,
-			"name":             name,
-			"location":         location,
-			"status":           status,
-			"capabilities":     capabilities,
-			"organization_id":  orgID,
+			"printer_id":        id,
+			"name":              name,
+			"location":          location,
+			"status":            status,
+			"capabilities":      capabilities,
+			"organization_id":   orgID,
 			"organization_name": orgName,
-			"distance":         nil, // Would contain actual distance if using geolocation
+			"distance":          nil, // Would contain actual distance if using geolocation
 		})
 	}
 

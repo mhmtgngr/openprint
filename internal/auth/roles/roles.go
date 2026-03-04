@@ -170,12 +170,12 @@ func NormalizeRole(role string) string {
 // Returns true if r > other in the privilege hierarchy.
 func (r Role) HasHigherPrivilegeThan(other Role) bool {
 	privilegeOrder := map[Role]int{
-		RoleViewer:       0,
-		RoleOrgViewer:    0,
-		RoleUser:         1,
-		RoleOrgUser:      1,
-		RoleOrgAdmin:     2,
-		RoleAdmin:        3,
+		RoleViewer:        0,
+		RoleOrgViewer:     0,
+		RoleUser:          1,
+		RoleOrgUser:       1,
+		RoleOrgAdmin:      2,
+		RoleAdmin:         3,
 		RolePlatformAdmin: 3,
 	}
 

@@ -16,9 +16,9 @@ import (
 
 // mockPGXPool is a mock implementation of pgxpool.Pool for testing.
 type mockPGXPool struct {
-	queryRowFunc  func(ctx context.Context, sql string, args ...interface{}) pgx.Row
-	queryFunc     func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
-	execFunc      func(ctx context.Context, sql string, args ...interface{}) interface{}
+	queryRowFunc func(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	queryFunc    func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	execFunc     func(ctx context.Context, sql string, args ...interface{}) interface{}
 }
 
 func (m *mockPGXPool) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
@@ -335,12 +335,12 @@ func TestOrganizationRepository_GetBySlug(t *testing.T) {
 
 func TestOrganizationRepository_List(t *testing.T) {
 	tests := []struct {
-		name        string
-		limit       int
-		offset      int
-		status      OrganizationStatus
-		wantMinLen  int
-		wantMaxLen  int
+		name       string
+		limit      int
+		offset     int
+		status     OrganizationStatus
+		wantMinLen int
+		wantMaxLen int
 	}{
 		{
 			name:       "list all organizations",
@@ -710,23 +710,23 @@ func TestOrganization_Settings(t *testing.T) {
 		settings map[string]interface{}
 	}{
 		{
-			name: "nil settings",
+			name:     "nil settings",
 			settings: nil,
 		},
 		{
-			name: "empty settings",
+			name:     "empty settings",
 			settings: map[string]interface{}{},
 		},
 		{
 			name: "settings with values",
 			settings: map[string]interface{}{
-				"feature_flags":     []string{"beta", "alpha"},
-				"max_users":         100,
-				"storage_quota_gb":  50,
-				"custom_domain":     "portal.example.com",
-				"billing_email":     "billing@example.com",
-				"trial_days":        30,
-				"require_2fa":       true,
+				"feature_flags":    []string{"beta", "alpha"},
+				"max_users":        100,
+				"storage_quota_gb": 50,
+				"custom_domain":    "portal.example.com",
+				"billing_email":    "billing@example.com",
+				"trial_days":       30,
+				"require_2fa":      true,
 			},
 		},
 	}
@@ -744,10 +744,10 @@ func TestOrganization_Settings(t *testing.T) {
 
 func TestOrganizationRepository_Pagination(t *testing.T) {
 	tests := []struct {
-		name           string
-		limit          int
-		expectedLimit  int
-		offset         int
+		name          string
+		limit         int
+		expectedLimit int
+		offset        int
 	}{
 		{
 			name:          "default limit",
@@ -823,12 +823,12 @@ func TestOrganization_SoftDelete(t *testing.T) {
 func BenchmarkOrganization(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		org := &Organization{
-			ID:          uuid.New().String(),
-			Name:        "Benchmark Org",
-			Slug:        "benchmark-org",
-			Status:      OrgStatusActive,
-			CreatedAt:   time.Now().UTC(),
-			UpdatedAt:   time.Now().UTC(),
+			ID:        uuid.New().String(),
+			Name:      "Benchmark Org",
+			Slug:      "benchmark-org",
+			Status:    OrgStatusActive,
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
 		}
 		_ = org
 	}

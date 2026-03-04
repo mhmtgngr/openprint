@@ -9,23 +9,23 @@ import (
 
 // Standard error variables for common error conditions.
 var (
-	ErrNotFound       = New("resource not found", http.StatusNotFound)
-	ErrUnauthorized   = New("unauthorized access", http.StatusUnauthorized)
-	ErrForbidden      = New("forbidden", http.StatusForbidden)
-	ErrConflict       = New("resource conflict", http.StatusConflict)
-	ErrInvalidInput   = New("invalid input", http.StatusBadRequest)
-	ErrInternal       = New("internal server error", http.StatusInternalServerError)
+	ErrNotFound           = New("resource not found", http.StatusNotFound)
+	ErrUnauthorized       = New("unauthorized access", http.StatusUnauthorized)
+	ErrForbidden          = New("forbidden", http.StatusForbidden)
+	ErrConflict           = New("resource conflict", http.StatusConflict)
+	ErrInvalidInput       = New("invalid input", http.StatusBadRequest)
+	ErrInternal           = New("internal server error", http.StatusInternalServerError)
 	ErrServiceUnavailable = New("service unavailable", http.StatusServiceUnavailable)
-	ErrDuplicate      = New("duplicate resource", http.StatusConflict)
-	ErrExpired        = New("resource expired", http.StatusUnauthorized)
+	ErrDuplicate          = New("duplicate resource", http.StatusConflict)
+	ErrExpired            = New("resource expired", http.StatusUnauthorized)
 )
 
 // AppError represents an application error with HTTP status code and optional details.
 type AppError struct {
-	Code       string `json:"code"`
-	Message    string `json:"message"`
-	StatusCode int    `json:"-"`
-	Err        error  `json:"-"`
+	Code       string                 `json:"code"`
+	Message    string                 `json:"message"`
+	StatusCode int                    `json:"-"`
+	Err        error                  `json:"-"`
 	Details    map[string]interface{} `json:"details,omitempty"`
 }
 

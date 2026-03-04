@@ -83,12 +83,24 @@ func (m *mockJobHandlerRepo) CountByStatus(ctx context.Context, status string) (
 
 // No-op implementations for unused methods
 func (m *mockJobHandlerRepo) Delete(ctx context.Context, id string) error { return nil }
-func (m *mockJobHandlerRepo) FindByPrinter(ctx context.Context, printerID string, limit, offset int) ([]*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobHandlerRepo) FindByUser(ctx context.Context, userEmail string, limit, offset int) ([]*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobHandlerRepo) GetNextPendingJob(ctx context.Context, printerID string) (*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobHandlerRepo) UpdateJobProgress(ctx context.Context, jobID string, progress int) error { return nil }
-func (m *mockJobHandlerRepo) GetJobsNeedingRetry(ctx context.Context, maxRetries, limit int) ([]*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobHandlerRepo) AssignAgent(ctx context.Context, jobID, agentID string) error { return nil }
+func (m *mockJobHandlerRepo) FindByPrinter(ctx context.Context, printerID string, limit, offset int) ([]*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobHandlerRepo) FindByUser(ctx context.Context, userEmail string, limit, offset int) ([]*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobHandlerRepo) GetNextPendingJob(ctx context.Context, printerID string) (*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobHandlerRepo) UpdateJobProgress(ctx context.Context, jobID string, progress int) error {
+	return nil
+}
+func (m *mockJobHandlerRepo) GetJobsNeedingRetry(ctx context.Context, maxRetries, limit int) ([]*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobHandlerRepo) AssignAgent(ctx context.Context, jobID, agentID string) error {
+	return nil
+}
 
 type mockHistoryHandlerRepo struct {
 	entries map[string][]*repository.JobHistory
@@ -107,19 +119,33 @@ func (m *mockHistoryHandlerRepo) FindByJobID(ctx context.Context, jobID string) 
 }
 
 // No-op implementations
-func (m *mockHistoryHandlerRepo) FindByID(ctx context.Context, id string) (*repository.JobHistory, error) { return nil, nil }
-func (m *mockHistoryHandlerRepo) FindByStatus(ctx context.Context, status string, limit, offset int) ([]*repository.JobHistory, error) { return nil, nil }
+func (m *mockHistoryHandlerRepo) FindByID(ctx context.Context, id string) (*repository.JobHistory, error) {
+	return nil, nil
+}
+func (m *mockHistoryHandlerRepo) FindByStatus(ctx context.Context, status string, limit, offset int) ([]*repository.JobHistory, error) {
+	return nil, nil
+}
 func (m *mockHistoryHandlerRepo) DeleteByJobID(ctx context.Context, jobID string) error { return nil }
-func (m *mockHistoryHandlerRepo) DeleteOld(ctx context.Context, olderThan time.Duration) (int64, error) { return 0, nil }
-func (m *mockHistoryHandlerRepo) GetLatestByJobID(ctx context.Context, jobID string) (*repository.JobHistory, error) { return nil, nil }
-func (m *mockHistoryHandlerRepo) CountByJobID(ctx context.Context, jobID string) (int, error) { return 0, nil }
-func (m *mockHistoryHandlerRepo) List(ctx context.Context, limit, offset int) ([]*repository.JobHistory, int, error) { return nil, 0, nil }
-func (m *mockHistoryHandlerRepo) CreateBatch(ctx context.Context, entries []*repository.JobHistory) error { return nil }
+func (m *mockHistoryHandlerRepo) DeleteOld(ctx context.Context, olderThan time.Duration) (int64, error) {
+	return 0, nil
+}
+func (m *mockHistoryHandlerRepo) GetLatestByJobID(ctx context.Context, jobID string) (*repository.JobHistory, error) {
+	return nil, nil
+}
+func (m *mockHistoryHandlerRepo) CountByJobID(ctx context.Context, jobID string) (int, error) {
+	return 0, nil
+}
+func (m *mockHistoryHandlerRepo) List(ctx context.Context, limit, offset int) ([]*repository.JobHistory, int, error) {
+	return nil, 0, nil
+}
+func (m *mockHistoryHandlerRepo) CreateBatch(ctx context.Context, entries []*repository.JobHistory) error {
+	return nil
+}
 
 type mockProcessor struct{}
 
 func (m *mockProcessor) Enqueue(ctx context.Context, job *repository.PrintJob) error { return nil }
-func (m *mockProcessor) Cancel(ctx context.Context, jobID string)                       {}
+func (m *mockProcessor) Cancel(ctx context.Context, jobID string)                    {}
 func (m *mockProcessor) GetStats(ctx context.Context) (*processor.Stats, error) {
 	return &processor.Stats{Queued: 1, Processing: 2, Completed: 10, Failed: 0, Workers: 4}, nil
 }

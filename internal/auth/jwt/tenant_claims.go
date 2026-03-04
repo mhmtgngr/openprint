@@ -35,8 +35,8 @@ type contextKey = sharedcontext.ContextKey
 
 // Context key constants - delegated to shared context package.
 const (
-	TenantIDKey       = sharedcontext.TenantIDKey
-	TenantRoleKey     = sharedcontext.TenantRoleKey
+	TenantIDKey        = sharedcontext.TenantIDKey
+	TenantRoleKey      = sharedcontext.TenantRoleKey
 	IsPlatformAdminKey = sharedcontext.IsPlatformAdminKey
 )
 
@@ -120,11 +120,11 @@ func WithTenantContext(ctx context.Context, tenantID, tenantRole string, isPlatf
 
 // TenantRole constants for multi-tenant users.
 const (
-	TenantRoleOwner      = "owner"
-	TenantRoleAdmin      = "admin"
-	TenantRoleUser       = "user"
-	TenantRoleViewer     = "viewer"
-	TenantRoleBilling    = "billing"
+	TenantRoleOwner   = "owner"
+	TenantRoleAdmin   = "admin"
+	TenantRoleUser    = "user"
+	TenantRoleViewer  = "viewer"
+	TenantRoleBilling = "billing"
 )
 
 // IsValidTenantRole checks if a role is a valid tenant role.

@@ -34,32 +34,32 @@ type SecureReleaseRepository interface {
 
 // SecurePrintJob represents a print job requiring secure release.
 type SecurePrintJob struct {
-	ID                   string
-	JobID                string
-	UserID               string
-	ReleaseMethod        string // 'pin', 'card', 'biometric', 'nfc', 'app'
-	ReleaseData          map[string]interface{} // Encrypted PIN, card ID, etc.
-	Status               string // 'pending', 'released', 'expired', 'cancelled'
-	ExpiresAt            time.Time
-	ReleasedAt           *time.Time
-	ReleasedPrinterID    string
-	ReleaseAttempts      int
-	MaxReleaseAttempts   int
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
+	ID                 string
+	JobID              string
+	UserID             string
+	ReleaseMethod      string                 // 'pin', 'card', 'biometric', 'nfc', 'app'
+	ReleaseData        map[string]interface{} // Encrypted PIN, card ID, etc.
+	Status             string                 // 'pending', 'released', 'expired', 'cancelled'
+	ExpiresAt          time.Time
+	ReleasedAt         *time.Time
+	ReleasedPrinterID  string
+	ReleaseAttempts    int
+	MaxReleaseAttempts int
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 // ReleaseAttempt represents a logged release attempt.
 type ReleaseAttempt struct {
-	ID             string
-	SecureJobID    string
-	AttemptedAt    time.Time
+	ID              string
+	SecureJobID     string
+	AttemptedAt     time.Time
 	AttemptedMethod string
-	AttemptedBy    string
-	Success        bool
-	FailureReason  string
-	IPAddress      string
-	PrinterID      string
+	AttemptedBy     string
+	Success         bool
+	FailureReason   string
+	IPAddress       string
+	PrinterID       string
 }
 
 // ReleaseStation represents a physical print release station.
@@ -78,8 +78,8 @@ type ReleaseStation struct {
 
 // SecureReleaseHandler handles secure print release HTTP endpoints.
 type SecureReleaseHandler struct {
-	db    *pgxpool.Pool
-	repo  SecureReleaseRepository
+	db   *pgxpool.Pool
+	repo SecureReleaseRepository
 }
 
 // NewSecureReleaseHandler creates a new secure release handler instance.
@@ -92,11 +92,11 @@ func NewSecureReleaseHandler(db *pgxpool.Pool) *SecureReleaseHandler {
 
 // HoldJobRequest represents a request to hold a job for secure release.
 type HoldJobRequest struct {
-	JobID              string                 `json:"job_id"`
-	UserID             string                 `json:"user_id"`
-	ReleaseMethod      string                 `json:"release_method"`
-	ReleaseData        map[string]interface{} `json:"release_data,omitempty"`
-	ExpirationHours    int                    `json:"expiration_hours,omitempty"`
+	JobID           string                 `json:"job_id"`
+	UserID          string                 `json:"user_id"`
+	ReleaseMethod   string                 `json:"release_method"`
+	ReleaseData     map[string]interface{} `json:"release_data,omitempty"`
+	ExpirationHours int                    `json:"expiration_hours,omitempty"`
 }
 
 // ReleaseJobRequest represents a request to release a held job.
@@ -167,7 +167,7 @@ func (h *SecureReleaseHandler) HoldJobHandler(w http.ResponseWriter, r *http.Req
 	if releaseData == nil && req.ReleaseMethod == "pin" {
 		pin, _ := generatePIN(6)
 		releaseData = map[string]interface{}{
-			"pin": pin,
+			"pin":      pin,
 			"pin_hash": hashPIN(pin), // In production, use proper hashing
 		}
 	}
@@ -203,11 +203,11 @@ func (h *SecureReleaseHandler) HoldJobHandler(w http.ResponseWriter, r *http.Req
 
 	// Prepare response
 	response := map[string]interface{}{
-		"secure_job_id":       secureJob.ID,
-		"job_id":              secureJob.JobID,
-		"release_method":      secureJob.ReleaseMethod,
-		"status":              secureJob.Status,
-		"expires_at":          secureJob.ExpiresAt.Format(time.RFC3339),
+		"secure_job_id":        secureJob.ID,
+		"job_id":               secureJob.JobID,
+		"release_method":       secureJob.ReleaseMethod,
+		"status":               secureJob.Status,
+		"expires_at":           secureJob.ExpiresAt.Format(time.RFC3339),
 		"max_release_attempts": secureJob.MaxReleaseAttempts,
 	}
 
@@ -281,11 +281,11 @@ func (h *SecureReleaseHandler) ReleaseJobHandler(w http.ResponseWriter, r *http.
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"secure_job_id":  secureJob.ID,
-		"job_id":         secureJob.JobID,
-		"status":         secureJob.Status,
-		"released_at":    secureJob.ReleasedAt.Format(time.RFC3339),
-		"printer_id":     secureJob.ReleasedPrinterID,
+		"secure_job_id": secureJob.ID,
+		"job_id":        secureJob.JobID,
+		"status":        secureJob.Status,
+		"released_at":   secureJob.ReleasedAt.Format(time.RFC3339),
+		"printer_id":    secureJob.ReleasedPrinterID,
 	})
 }
 
@@ -319,9 +319,9 @@ func (h *SecureReleaseHandler) PendingJobsHandler(w http.ResponseWriter, r *http
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"jobs":  response,
-		"total": total,
-		"limit": limit,
+		"jobs":   response,
+		"total":  total,
+		"limit":  limit,
 		"offset": offset,
 	})
 }
@@ -356,9 +356,9 @@ func (h *SecureReleaseHandler) ReleasedJobsHandler(w http.ResponseWriter, r *htt
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"jobs":  response,
-		"total": total,
-		"limit": limit,
+		"jobs":   response,
+		"total":  total,
+		"limit":  limit,
 		"offset": offset,
 	})
 }
@@ -688,13 +688,13 @@ func secureJobToResponse(job *SecurePrintJob) map[string]interface{} {
 
 func releaseStationToResponse(station *ReleaseStation) map[string]interface{} {
 	resp := map[string]interface{}{
-		"id":               station.ID,
-		"name":             station.Name,
-		"organization_id":  station.OrganizationID,
+		"id":                station.ID,
+		"name":              station.Name,
+		"organization_id":   station.OrganizationID,
 		"supported_methods": station.SupportedMethods,
-		"is_active":        station.IsActive,
-		"created_at":       station.CreatedAt.Format(time.RFC3339),
-		"updated_at":       station.UpdatedAt.Format(time.RFC3339),
+		"is_active":         station.IsActive,
+		"created_at":        station.CreatedAt.Format(time.RFC3339),
+		"updated_at":        station.UpdatedAt.Format(time.RFC3339),
 	}
 	if station.Location != "" {
 		resp["location"] = station.Location

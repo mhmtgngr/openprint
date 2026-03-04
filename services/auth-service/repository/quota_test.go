@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	multitenant "github.com/openprint/openprint/internal/multi-tenant"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,15 +24,15 @@ func TestQuotaConfig_Fields(t *testing.T) {
 	now := time.Now().UTC()
 
 	config := &QuotaConfig{
-		ID:               "quota-123",
-		TenantID:         "tenant-456",
-		MaxPrinters:      100,
-		MaxStorageGB:     50,
-		MaxJobsPerMonth:  10000,
-		MaxUsers:         25,
-		AlertThreshold:   80,
-		CreatedAt:        now,
-		UpdatedAt:        now,
+		ID:              "quota-123",
+		TenantID:        "tenant-456",
+		MaxPrinters:     100,
+		MaxStorageGB:    50,
+		MaxJobsPerMonth: 10000,
+		MaxUsers:        25,
+		AlertThreshold:  80,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	assert.Equal(t, "quota-123", config.ID)
@@ -80,36 +80,36 @@ func TestQuotaRepository_CreateConfig(t *testing.T) {
 		{
 			name: "create with valid config",
 			config: &QuotaConfig{
-				TenantID:         "tenant-123",
-				MaxPrinters:      100,
-				MaxStorageGB:     50,
-				MaxJobsPerMonth:  10000,
-				MaxUsers:         25,
-				AlertThreshold:   80,
+				TenantID:        "tenant-123",
+				MaxPrinters:     100,
+				MaxStorageGB:    50,
+				MaxJobsPerMonth: 10000,
+				MaxUsers:        25,
+				AlertThreshold:  80,
 			},
 			wantErr: nil,
 		},
 		{
 			name: "create with default alert threshold",
 			config: &QuotaConfig{
-				TenantID:         "tenant-456",
-				MaxPrinters:      200,
-				MaxStorageGB:     100,
-				MaxJobsPerMonth:  20000,
-				MaxUsers:         50,
-				AlertThreshold:   0, // Should default to 80
+				TenantID:        "tenant-456",
+				MaxPrinters:     200,
+				MaxStorageGB:    100,
+				MaxJobsPerMonth: 20000,
+				MaxUsers:        50,
+				AlertThreshold:  0, // Should default to 80
 			},
 			wantErr: nil,
 		},
 		{
 			name: "unlimited quota (0 values)",
 			config: &QuotaConfig{
-				TenantID:         "tenant-789",
-				MaxPrinters:      0, // Unlimited
-				MaxStorageGB:     0, // Unlimited
-				MaxJobsPerMonth:  0, // Unlimited
-				MaxUsers:         0, // Unlimited
-				AlertThreshold:   80,
+				TenantID:        "tenant-789",
+				MaxPrinters:     0, // Unlimited
+				MaxStorageGB:    0, // Unlimited
+				MaxJobsPerMonth: 0, // Unlimited
+				MaxUsers:        0, // Unlimited
+				AlertThreshold:  80,
 			},
 			wantErr: nil,
 		},
@@ -150,11 +150,11 @@ func TestQuotaRepository_GetConfig(t *testing.T) {
 			tenantID: "tenant-new",
 			wantErr:  nil,
 			wantConfig: &QuotaConfig{
-				MaxPrinters:     100, // Default
-				MaxStorageGB:    100, // Default
+				MaxPrinters:     100,   // Default
+				MaxStorageGB:    100,   // Default
 				MaxJobsPerMonth: 10000, // Default
-				MaxUsers:        50, // Default
-				AlertThreshold:  80, // Default
+				MaxUsers:        50,    // Default
+				AlertThreshold:  80,    // Default
 			},
 		},
 	}
@@ -193,24 +193,24 @@ func TestQuotaRepository_UpdateConfig(t *testing.T) {
 		{
 			name: "update existing config",
 			config: &QuotaConfig{
-				TenantID:         "tenant-123",
-				MaxPrinters:      200,
-				MaxStorageGB:     100,
-				MaxJobsPerMonth:  20000,
-				MaxUsers:         50,
-				AlertThreshold:   90,
+				TenantID:        "tenant-123",
+				MaxPrinters:     200,
+				MaxStorageGB:    100,
+				MaxJobsPerMonth: 20000,
+				MaxUsers:        50,
+				AlertThreshold:  90,
 			},
 			wantErr: nil,
 		},
 		{
 			name: "update non-existent creates new",
 			config: &QuotaConfig{
-				TenantID:         "tenant-new",
-				MaxPrinters:      150,
-				MaxStorageGB:     75,
-				MaxJobsPerMonth:  15000,
-				MaxUsers:         30,
-				AlertThreshold:   85,
+				TenantID:        "tenant-new",
+				MaxPrinters:     150,
+				MaxStorageGB:    75,
+				MaxJobsPerMonth: 15000,
+				MaxUsers:        30,
+				AlertThreshold:  85,
 			},
 			wantErr: nil,
 		},
@@ -229,10 +229,10 @@ func TestQuotaRepository_GetUsage(t *testing.T) {
 	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name        string
-		tenantID    string
-		wantErr     error
-		wantUsage   *QuotaUsage
+		name      string
+		tenantID  string
+		wantErr   error
+		wantUsage *QuotaUsage
 	}{
 		{
 			name:     "existing usage",
@@ -332,19 +332,19 @@ func TestQuotaRepository_UpdateUsage(t *testing.T) {
 
 func TestQuotaRepository_GetQuotaInfo(t *testing.T) {
 	tests := []struct {
-		name    string
+		name     string
 		tenantID string
 		wantErr  error
 	}{
 		{
-			name:    "combined quota info",
+			name:     "combined quota info",
 			tenantID: "tenant-123",
-			wantErr: nil,
+			wantErr:  nil,
 		},
 		{
-			name:    "quota info for new tenant",
+			name:     "quota info for new tenant",
 			tenantID: "tenant-new",
-			wantErr: nil,
+			wantErr:  nil,
 		},
 	}
 
@@ -359,28 +359,28 @@ func TestQuotaRepository_GetTenantUsageForMonth(t *testing.T) {
 	now := time.Now().UTC()
 
 	tests := []struct {
-		name    string
+		name     string
 		tenantID string
-		month   time.Time
-		wantErr error
+		month    time.Time
+		wantErr  error
 	}{
 		{
-			name:    "current month usage",
+			name:     "current month usage",
 			tenantID: "tenant-123",
-			month:   now,
-			wantErr: nil,
+			month:    now,
+			wantErr:  nil,
 		},
 		{
-			name:    "previous month usage",
+			name:     "previous month usage",
 			tenantID: "tenant-123",
-			month:   now.AddDate(0, -1, 0),
-			wantErr: nil,
+			month:    now.AddDate(0, -1, 0),
+			wantErr:  nil,
 		},
 		{
-			name:    "non-existent month",
+			name:     "non-existent month",
 			tenantID: "tenant-123",
-			month:   now.AddDate(0, -2, 0),
-			wantErr: apperrors.ErrNotFound,
+			month:    now.AddDate(0, -2, 0),
+			wantErr:  apperrors.ErrNotFound,
 		},
 	}
 
@@ -431,15 +431,15 @@ func TestQuotaRepository_ListQuotaConfigs(t *testing.T) {
 
 func TestQuotaRepository_DeleteConfig(t *testing.T) {
 	tests := []struct {
-		name    string
+		name     string
 		tenantID string
 	}{
 		{
-			name:    "delete existing config",
+			name:     "delete existing config",
 			tenantID: "tenant-123",
 		},
 		{
-			name:    "delete non-existent config",
+			name:     "delete non-existent config",
 			tenantID: "tenant-999",
 		},
 	}
@@ -453,11 +453,11 @@ func TestQuotaRepository_DeleteConfig(t *testing.T) {
 
 func TestQuotaRepository_ResetMonthlyUsage(t *testing.T) {
 	tests := []struct {
-		name    string
+		name     string
 		tenantID string
 	}{
 		{
-			name:    "reset monthly job counters",
+			name:     "reset monthly job counters",
 			tenantID: "tenant-123",
 		},
 	}
@@ -522,11 +522,11 @@ func TestQuotaRepository_ResourceTypeValidation(t *testing.T) {
 
 func TestQuotaRepository_QuotaCalculations(t *testing.T) {
 	tests := []struct {
-		name         string
-		current      int64
-		maximum      int64
-		percentage   float64
-		remaining    int64
+		name       string
+		current    int64
+		maximum    int64
+		percentage float64
+		remaining  int64
 	}{
 		{
 			name:       "50% used",
@@ -619,23 +619,23 @@ func TestQuotaRepository_NearLimitDetection(t *testing.T) {
 
 func TestQuotaRepository_UnlimitedQuota(t *testing.T) {
 	tests := []struct {
-		name    string
-		maximum int32
+		name        string
+		maximum     int32
 		isUnlimited bool
 	}{
 		{
-			name:       "zero is unlimited",
-			maximum:    0,
+			name:        "zero is unlimited",
+			maximum:     0,
 			isUnlimited: true,
 		},
 		{
-			name:       "negative is unlimited",
-			maximum:    -1,
+			name:        "negative is unlimited",
+			maximum:     -1,
 			isUnlimited: true,
 		},
 		{
-			name:       "positive is limited",
-			maximum:    100,
+			name:        "positive is limited",
+			maximum:     100,
 			isUnlimited: false,
 		},
 	}
@@ -710,9 +710,9 @@ func TestQuotaUsage_Timestamps(t *testing.T) {
 
 func TestQuota_BytesToGB(t *testing.T) {
 	tests := []struct {
-		name        string
-		bytes       int64
-		expectedGB  float64
+		name       string
+		bytes      int64
+		expectedGB float64
 	}{
 		{
 			name:       "1 GB in bytes",
@@ -796,11 +796,11 @@ func TestQuotaRepository_OnConflict(t *testing.T) {
 func TestQuotaIntegration_DefaultQuotas(t *testing.T) {
 	t.Run("new tenant gets default quotas", func(t *testing.T) {
 		defaults := &struct {
-			MaxPrinters      int32
-			MaxStorageGB     int32
-			MaxJobsPerMonth  int32
-			MaxUsers         int32
-			AlertThreshold   int32
+			MaxPrinters     int32
+			MaxStorageGB    int32
+			MaxJobsPerMonth int32
+			MaxUsers        int32
+			AlertThreshold  int32
 		}{
 			MaxPrinters:     100,
 			MaxStorageGB:    100,
@@ -843,14 +843,14 @@ func TestQuotaIntegration_CrossMonthQueries(t *testing.T) {
 func BenchmarkQuotaConfig(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		config := &QuotaConfig{
-			TenantID:         "tenant-123",
-			MaxPrinters:      100,
-			MaxStorageGB:     50,
-			MaxJobsPerMonth:  10000,
-			MaxUsers:         25,
-			AlertThreshold:   80,
-			CreatedAt:        time.Now().UTC(),
-			UpdatedAt:        time.Now().UTC(),
+			TenantID:        "tenant-123",
+			MaxPrinters:     100,
+			MaxStorageGB:    50,
+			MaxJobsPerMonth: 10000,
+			MaxUsers:        25,
+			AlertThreshold:  80,
+			CreatedAt:       time.Now().UTC(),
+			UpdatedAt:       time.Now().UTC(),
 		}
 		_ = config
 	}

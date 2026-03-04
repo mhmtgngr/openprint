@@ -23,19 +23,19 @@ type contextKey = sharedcontext.ContextKey
 
 // Context key constants - delegated to shared context package.
 const (
-	UserIDKey  = sharedcontext.UserIDKey
-	EmailKey   = sharedcontext.EmailKey
-	OrgIDKey   = sharedcontext.OrgIDKey
-	RoleKey    = sharedcontext.RoleKey
-	ScopesKey  = sharedcontext.ScopesKey
-	TokenKey   = sharedcontext.TokenKey
+	UserIDKey = sharedcontext.UserIDKey
+	EmailKey  = sharedcontext.EmailKey
+	OrgIDKey  = sharedcontext.OrgIDKey
+	RoleKey   = sharedcontext.RoleKey
+	ScopesKey = sharedcontext.ScopesKey
+	TokenKey  = sharedcontext.TokenKey
 )
 
 // JWTConfig holds JWT authentication configuration.
 type JWTConfig struct {
-	SecretKey   string
-	SkipPaths   []string
-	JWTManager  *jwt.Manager
+	SecretKey  string
+	SkipPaths  []string
+	JWTManager *jwt.Manager
 }
 
 // AuthMiddleware creates JWT authentication middleware.

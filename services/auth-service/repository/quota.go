@@ -11,33 +11,33 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	multitenant "github.com/openprint/openprint/internal/multi-tenant"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
 // QuotaConfig represents the quota configuration for a tenant.
 type QuotaConfig struct {
-	ID           string        `json:"id" db:"id"`
-	TenantID     string        `json:"tenant_id" db:"tenant_id"`
-	MaxPrinters  int32         `json:"max_printers" db:"max_printers"`
-	MaxStorageGB int32         `json:"max_storage_gb" db:"max_storage_gb"`
-	MaxJobsPerMonth int32      `json:"max_jobs_per_month" db:"max_jobs_per_month"`
-	MaxUsers     int32         `json:"max_users" db:"max_users"`
-	AlertThreshold int32       `json:"alert_threshold" db:"alert_threshold"`
-	CreatedAt    time.Time     `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at" db:"updated_at"`
+	ID              string    `json:"id" db:"id"`
+	TenantID        string    `json:"tenant_id" db:"tenant_id"`
+	MaxPrinters     int32     `json:"max_printers" db:"max_printers"`
+	MaxStorageGB    int32     `json:"max_storage_gb" db:"max_storage_gb"`
+	MaxJobsPerMonth int32     `json:"max_jobs_per_month" db:"max_jobs_per_month"`
+	MaxUsers        int32     `json:"max_users" db:"max_users"`
+	AlertThreshold  int32     `json:"alert_threshold" db:"alert_threshold"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // QuotaUsage represents the current resource usage for a tenant.
 type QuotaUsage struct {
-	ID              string    `json:"id" db:"id"`
-	TenantID        string    `json:"tenant_id" db:"tenant_id"`
-	PrintersCount   int32     `json:"printers_count" db:"printers_count"`
-	StorageUsedGB   int64     `json:"storage_used_gb" db:"storage_used_gb"` // Stored as bytes, reported as GB
-	JobsThisMonth   int32     `json:"jobs_this_month" db:"jobs_this_month"`
-	UsersCount      int32     `json:"users_count" db:"users_count"`
-	Month           time.Time `json:"month" db:"month"`
-	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
+	ID            string    `json:"id" db:"id"`
+	TenantID      string    `json:"tenant_id" db:"tenant_id"`
+	PrintersCount int32     `json:"printers_count" db:"printers_count"`
+	StorageUsedGB int64     `json:"storage_used_gb" db:"storage_used_gb"` // Stored as bytes, reported as GB
+	JobsThisMonth int32     `json:"jobs_this_month" db:"jobs_this_month"`
+	UsersCount    int32     `json:"users_count" db:"users_count"`
+	Month         time.Time `json:"month" db:"month"`
+	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // QuotaRepository provides data access for quota management.

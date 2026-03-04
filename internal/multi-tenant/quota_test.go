@@ -54,18 +54,18 @@ func TestQuotaEnforcer_SetWarningThreshold(t *testing.T) {
 
 func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 	tests := []struct {
-		name         string
-		quota        *QuotaInfo
-		tenantID     string
-		count        int
-		threshold    float64
-		wantStatus   QuotaStatus
-		wantAllowed  bool
-		wantCurrent  int64
-		wantMaximum  int64
-		wantPercent  float64
+		name          string
+		quota         *QuotaInfo
+		tenantID      string
+		count         int
+		threshold     float64
+		wantStatus    QuotaStatus
+		wantAllowed   bool
+		wantCurrent   int64
+		wantMaximum   int64
+		wantPercent   float64
 		wantRemaining int64
-		wantErr      error
+		wantErr       error
 	}{
 		{
 			name: "unlimited quota",
@@ -73,14 +73,14 @@ func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 				MaxPrinters:     0, // 0 = unlimited
 				CurrentPrinters: 5,
 			},
-			tenantID:     "tenant-123",
-			count:        1,
-			threshold:    80.0,
-			wantStatus:   QuotaStatusOK,
-			wantAllowed:  true,
-			wantCurrent:  5,
-			wantMaximum:  -1, // -1 indicates unlimited
-			wantPercent:  0,
+			tenantID:      "tenant-123",
+			count:         1,
+			threshold:     80.0,
+			wantStatus:    QuotaStatusOK,
+			wantAllowed:   true,
+			wantCurrent:   5,
+			wantMaximum:   -1, // -1 indicates unlimited
+			wantPercent:   0,
 			wantRemaining: -1,
 		},
 		{
@@ -89,14 +89,14 @@ func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 				MaxPrinters:     100,
 				CurrentPrinters: 50,
 			},
-			tenantID:     "tenant-123",
-			count:        1,
-			threshold:    80.0,
-			wantStatus:   QuotaStatusOK,
-			wantAllowed:  true,
-			wantCurrent:  50,
-			wantMaximum:  100,
-			wantPercent:  50.0,
+			tenantID:      "tenant-123",
+			count:         1,
+			threshold:     80.0,
+			wantStatus:    QuotaStatusOK,
+			wantAllowed:   true,
+			wantCurrent:   50,
+			wantMaximum:   100,
+			wantPercent:   50.0,
 			wantRemaining: 50,
 		},
 		{
@@ -105,14 +105,14 @@ func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 				MaxPrinters:     100,
 				CurrentPrinters: 85,
 			},
-			tenantID:     "tenant-123",
-			count:        1,
-			threshold:    80.0,
-			wantStatus:   QuotaStatusNearLimit,
-			wantAllowed:  true,
-			wantCurrent:  85,
-			wantMaximum:  100,
-			wantPercent:  85.0,
+			tenantID:      "tenant-123",
+			count:         1,
+			threshold:     80.0,
+			wantStatus:    QuotaStatusNearLimit,
+			wantAllowed:   true,
+			wantCurrent:   85,
+			wantMaximum:   100,
+			wantPercent:   85.0,
 			wantRemaining: 15,
 		},
 		{
@@ -121,14 +121,14 @@ func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 				MaxPrinters:     100,
 				CurrentPrinters: 99,
 			},
-			tenantID:     "tenant-123",
-			count:        2, // Adding 2 would exceed
-			threshold:    80.0,
-			wantStatus:   QuotaStatusExceeded,
-			wantAllowed:  false,
-			wantCurrent:  99,
-			wantMaximum:  100,
-			wantPercent:  99.0,
+			tenantID:      "tenant-123",
+			count:         2, // Adding 2 would exceed
+			threshold:     80.0,
+			wantStatus:    QuotaStatusExceeded,
+			wantAllowed:   false,
+			wantCurrent:   99,
+			wantMaximum:   100,
+			wantPercent:   99.0,
 			wantRemaining: 1,
 		},
 		{
@@ -137,14 +137,14 @@ func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 				MaxPrinters:     100,
 				CurrentPrinters: 100,
 			},
-			tenantID:     "tenant-123",
-			count:        1,
-			threshold:    80.0,
-			wantStatus:   QuotaStatusExceeded,
-			wantAllowed:  false,
-			wantCurrent:  100,
-			wantMaximum:  100,
-			wantPercent:  100.0,
+			tenantID:      "tenant-123",
+			count:         1,
+			threshold:     80.0,
+			wantStatus:    QuotaStatusExceeded,
+			wantAllowed:   false,
+			wantCurrent:   100,
+			wantMaximum:   100,
+			wantPercent:   100.0,
 			wantRemaining: 0,
 		},
 		{
@@ -153,14 +153,14 @@ func TestQuotaEnforcer_CheckPrinterQuota(t *testing.T) {
 				MaxPrinters:     100,
 				CurrentPrinters: 80,
 			},
-			tenantID:     "tenant-123",
-			count:        5,
-			threshold:    80.0,
-			wantStatus:   QuotaStatusNearLimit,
-			wantAllowed:  true,
-			wantCurrent:  80,
-			wantMaximum:  100,
-			wantPercent:  80.0,
+			tenantID:      "tenant-123",
+			count:         5,
+			threshold:     80.0,
+			wantStatus:    QuotaStatusNearLimit,
+			wantAllowed:   true,
+			wantCurrent:   80,
+			wantMaximum:   100,
+			wantPercent:   80.0,
 			wantRemaining: 20,
 		},
 	}
@@ -204,48 +204,48 @@ func TestQuotaEnforcer_CheckPrinterQuota_NoTenantContext(t *testing.T) {
 
 func TestQuotaEnforcer_CheckStorageQuota(t *testing.T) {
 	tests := []struct {
-		name         string
-		quota        *QuotaInfo
-		tenantID     string
-		bytes        int64
-		threshold    float64
-		wantStatus   QuotaStatus
-		wantAllowed  bool
-		wantCurrent  int64
-		wantMaximum  int64
-		wantPercent  float64
+		name          string
+		quota         *QuotaInfo
+		tenantID      string
+		bytes         int64
+		threshold     float64
+		wantStatus    QuotaStatus
+		wantAllowed   bool
+		wantCurrent   int64
+		wantMaximum   int64
+		wantPercent   float64
 		wantRemaining int64
 	}{
 		{
 			name: "unlimited storage",
 			quota: &QuotaInfo{
-				MaxStorageGB:     0, // Unlimited
+				MaxStorageGB:     0,                      // Unlimited
 				CurrentStorageGB: 5 * 1024 * 1024 * 1024, // 5GB
 			},
-			tenantID:     "tenant-123",
-			bytes:        1024 * 1024 * 1024, // 1GB
-			threshold:    80.0,
-			wantStatus:   QuotaStatusOK,
-			wantAllowed:  true,
-			wantCurrent:  5 * 1024 * 1024 * 1024,
-			wantMaximum:  -1,
-			wantPercent:  0,
+			tenantID:      "tenant-123",
+			bytes:         1024 * 1024 * 1024, // 1GB
+			threshold:     80.0,
+			wantStatus:    QuotaStatusOK,
+			wantAllowed:   true,
+			wantCurrent:   5 * 1024 * 1024 * 1024,
+			wantMaximum:   -1,
+			wantPercent:   0,
 			wantRemaining: -1,
 		},
 		{
 			name: "under storage limit",
 			quota: &QuotaInfo{
-				MaxStorageGB:     10, // 10GB
+				MaxStorageGB:     10,                     // 10GB
 				CurrentStorageGB: 5 * 1024 * 1024 * 1024, // 5GB
 			},
-			tenantID:     "tenant-123",
-			bytes:        1024 * 1024 * 1024, // 1GB
-			threshold:    80.0,
-			wantStatus:   QuotaStatusOK,
-			wantAllowed:  true,
-			wantCurrent:  5 * 1024 * 1024 * 1024,
-			wantMaximum:  10 * 1024 * 1024 * 1024,
-			wantPercent:  50.0,
+			tenantID:      "tenant-123",
+			bytes:         1024 * 1024 * 1024, // 1GB
+			threshold:     80.0,
+			wantStatus:    QuotaStatusOK,
+			wantAllowed:   true,
+			wantCurrent:   5 * 1024 * 1024 * 1024,
+			wantMaximum:   10 * 1024 * 1024 * 1024,
+			wantPercent:   50.0,
 			wantRemaining: 5 * 1024 * 1024 * 1024,
 		},
 		{
@@ -254,30 +254,30 @@ func TestQuotaEnforcer_CheckStorageQuota(t *testing.T) {
 				MaxStorageGB:     10,
 				CurrentStorageGB: 9 * 1024 * 1024 * 1024, // 9GB
 			},
-			tenantID:     "tenant-123",
-			bytes:        512 * 1024 * 1024, // 512MB
-			threshold:    80.0,
-			wantStatus:   QuotaStatusNearLimit,
-			wantAllowed:  true,
-			wantCurrent:  9 * 1024 * 1024 * 1024,
-			wantMaximum:  10 * 1024 * 1024 * 1024,
-			wantPercent:  90.0,
+			tenantID:      "tenant-123",
+			bytes:         512 * 1024 * 1024, // 512MB
+			threshold:     80.0,
+			wantStatus:    QuotaStatusNearLimit,
+			wantAllowed:   true,
+			wantCurrent:   9 * 1024 * 1024 * 1024,
+			wantMaximum:   10 * 1024 * 1024 * 1024,
+			wantPercent:   90.0,
 			wantRemaining: 1 * 1024 * 1024 * 1024,
 		},
 		{
 			name: "would exceed storage quota",
 			quota: &QuotaInfo{
 				MaxStorageGB:     10,
-				CurrentStorageGB: 9 * 1024 * 1024 * 1024 + 500 * 1024 * 1024, // 9.5GB
+				CurrentStorageGB: 9*1024*1024*1024 + 500*1024*1024, // 9.5GB
 			},
-			tenantID:     "tenant-123",
-			bytes:        1024 * 1024 * 1024, // 1GB
-			threshold:    80.0,
-			wantStatus:   QuotaStatusExceeded,
-			wantAllowed:  false,
-			wantCurrent:  9*1024*1024*1024 + 500*1024*1024,
-			wantMaximum:  10 * 1024 * 1024 * 1024,
-			wantPercent:  95.0,
+			tenantID:      "tenant-123",
+			bytes:         1024 * 1024 * 1024, // 1GB
+			threshold:     80.0,
+			wantStatus:    QuotaStatusExceeded,
+			wantAllowed:   false,
+			wantCurrent:   9*1024*1024*1024 + 500*1024*1024,
+			wantMaximum:   10 * 1024 * 1024 * 1024,
+			wantPercent:   95.0,
 			wantRemaining: 512 * 1024 * 1024,
 		},
 	}
@@ -301,18 +301,18 @@ func TestQuotaEnforcer_CheckStorageQuota(t *testing.T) {
 
 func TestQuotaEnforcer_CheckJobQuota(t *testing.T) {
 	tests := []struct {
-		name         string
-		quota        *QuotaInfo
-		tenantID     string
-		count        int
-		wantStatus   QuotaStatus
-		wantAllowed  bool
+		name        string
+		quota       *QuotaInfo
+		tenantID    string
+		count       int
+		wantStatus  QuotaStatus
+		wantAllowed bool
 	}{
 		{
 			name: "unlimited jobs",
 			quota: &QuotaInfo{
-				MaxJobsPerMonth:  0,
-				CurrentJobs:      1000,
+				MaxJobsPerMonth: 0,
+				CurrentJobs:     1000,
 			},
 			tenantID:    "tenant-123",
 			count:       100,
@@ -322,8 +322,8 @@ func TestQuotaEnforcer_CheckJobQuota(t *testing.T) {
 		{
 			name: "under job limit",
 			quota: &QuotaInfo{
-				MaxJobsPerMonth:  1000,
-				CurrentJobs:      500,
+				MaxJobsPerMonth: 1000,
+				CurrentJobs:     500,
 			},
 			tenantID:    "tenant-123",
 			count:       100,
@@ -333,8 +333,8 @@ func TestQuotaEnforcer_CheckJobQuota(t *testing.T) {
 		{
 			name: "would exceed job quota",
 			quota: &QuotaInfo{
-				MaxJobsPerMonth:  1000,
-				CurrentJobs:      950,
+				MaxJobsPerMonth: 1000,
+				CurrentJobs:     950,
 			},
 			tenantID:    "tenant-123",
 			count:       100,
@@ -361,12 +361,12 @@ func TestQuotaEnforcer_CheckJobQuota(t *testing.T) {
 
 func TestQuotaEnforcer_CheckUserQuota(t *testing.T) {
 	tests := []struct {
-		name         string
-		quota        *QuotaInfo
-		tenantID     string
-		count        int
-		wantStatus   QuotaStatus
-		wantAllowed  bool
+		name        string
+		quota       *QuotaInfo
+		tenantID    string
+		count       int
+		wantStatus  QuotaStatus
+		wantAllowed bool
 	}{
 		{
 			name: "unlimited users",
@@ -528,8 +528,8 @@ func TestQuotaEnforcer_RequireJobQuota(t *testing.T) {
 		{
 			name: "allowed",
 			quota: &QuotaInfo{
-				MaxJobsPerMonth:  1000,
-				CurrentJobs:      500,
+				MaxJobsPerMonth: 1000,
+				CurrentJobs:     500,
 			},
 			count:   100,
 			wantErr: false,
@@ -537,8 +537,8 @@ func TestQuotaEnforcer_RequireJobQuota(t *testing.T) {
 		{
 			name: "denied",
 			quota: &QuotaInfo{
-				MaxJobsPerMonth:  1000,
-				CurrentJobs:      1000,
+				MaxJobsPerMonth: 1000,
+				CurrentJobs:     1000,
 			},
 			count:   1,
 			wantErr: true,
@@ -788,7 +788,7 @@ func TestQuotaCheckResult_IsAllowed(t *testing.T) {
 func TestResourceTypeValues(t *testing.T) {
 	tests := []struct {
 		resourceType ResourceType
-		wantVal       string
+		wantVal      string
 	}{
 		{ResourcePrinters, "printers"},
 		{ResourceStorage, "storage"},

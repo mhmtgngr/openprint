@@ -17,7 +17,7 @@ import (
 
 // testDB holds the test database connection and cleanup function.
 type testDB struct {
-	pool *pgxpool.Pool
+	pool    *pgxpool.Pool
 	cleanup func()
 }
 
@@ -111,11 +111,11 @@ func TestEnrollmentTokenRepository_Create(t *testing.T) {
 	repo := NewEnrollmentTokenRepository(db.pool)
 
 	token := &EnrollmentToken{
-		Token:         "test-token-" + time.Now().Format("20060102150405"),
+		Token:          "test-token-" + time.Now().Format("20060102150405"),
 		OrganizationID: "org-123",
-		Name:          "Test Token",
-		CreatedBy:     "admin@example.com",
-		MaxUses:       10,
+		Name:           "Test Token",
+		CreatedBy:      "admin@example.com",
+		MaxUses:        10,
 	}
 
 	err := repo.Create(ctx, token)
@@ -140,11 +140,11 @@ func TestEnrollmentTokenRepository_FindByToken(t *testing.T) {
 
 	// Create a token first
 	token := &EnrollmentToken{
-		Token:         "find-test-token",
+		Token:          "find-test-token",
 		OrganizationID: "org-123",
-		Name:          "Find Test Token",
-		CreatedBy:     "admin@example.com",
-		MaxUses:       5,
+		Name:           "Find Test Token",
+		CreatedBy:      "admin@example.com",
+		MaxUses:        5,
 	}
 	err := repo.Create(ctx, token)
 	require.NoError(t, err)
@@ -172,11 +172,11 @@ func TestEnrollmentTokenRepository_Validate(t *testing.T) {
 
 	t.Run("valid token", func(t *testing.T) {
 		token := &EnrollmentToken{
-			Token:         "valid-token",
+			Token:          "valid-token",
 			OrganizationID: "org-123",
-			Name:          "Valid Token",
-			CreatedBy:     "admin@example.com",
-			MaxUses:       10,
+			Name:           "Valid Token",
+			CreatedBy:      "admin@example.com",
+			MaxUses:        10,
 		}
 		err := repo.Create(ctx, token)
 		require.NoError(t, err)
@@ -195,11 +195,11 @@ func TestEnrollmentTokenRepository_Validate(t *testing.T) {
 	t.Run("expired token", func(t *testing.T) {
 		past := time.Now().Add(-1 * time.Hour)
 		token := &EnrollmentToken{
-			Token:         "expired-token",
+			Token:          "expired-token",
 			OrganizationID: "org-123",
-			Name:          "Expired Token",
-			CreatedBy:     "admin@example.com",
-			ExpiresAt:     &past,
+			Name:           "Expired Token",
+			CreatedBy:      "admin@example.com",
+			ExpiresAt:      &past,
 		}
 		err := repo.Create(ctx, token)
 		require.NoError(t, err)
@@ -211,11 +211,11 @@ func TestEnrollmentTokenRepository_Validate(t *testing.T) {
 
 	t.Run("revoked token", func(t *testing.T) {
 		token := &EnrollmentToken{
-			Token:         "revoke-test-token",
+			Token:          "revoke-test-token",
 			OrganizationID: "org-123",
-			Name:          "Revoke Test Token",
-			CreatedBy:     "admin@example.com",
-			MaxUses:       10,
+			Name:           "Revoke Test Token",
+			CreatedBy:      "admin@example.com",
+			MaxUses:        10,
 		}
 		err := repo.Create(ctx, token)
 		require.NoError(t, err)
@@ -231,11 +231,11 @@ func TestEnrollmentTokenRepository_Validate(t *testing.T) {
 
 	t.Run("max uses exceeded", func(t *testing.T) {
 		token := &EnrollmentToken{
-			Token:         "max-uses-token",
+			Token:          "max-uses-token",
 			OrganizationID: "org-123",
-			Name:          "Max Uses Token",
-			CreatedBy:     "admin@example.com",
-			MaxUses:       2,
+			Name:           "Max Uses Token",
+			CreatedBy:      "admin@example.com",
+			MaxUses:        2,
 		}
 		err := repo.Create(ctx, token)
 		require.NoError(t, err)
@@ -254,11 +254,11 @@ func TestEnrollmentTokenRepository_Validate(t *testing.T) {
 
 	t.Run("wrong organization", func(t *testing.T) {
 		token := &EnrollmentToken{
-			Token:         "org-specific-token",
+			Token:          "org-specific-token",
 			OrganizationID: "org-123",
-			Name:          "Org Specific Token",
-			CreatedBy:     "admin@example.com",
-			MaxUses:       10,
+			Name:           "Org Specific Token",
+			CreatedBy:      "admin@example.com",
+			MaxUses:        10,
 		}
 		err := repo.Create(ctx, token)
 		require.NoError(t, err)
@@ -284,11 +284,11 @@ func TestEnrollmentTokenRepository_IncrementUseCount(t *testing.T) {
 	repo := NewEnrollmentTokenRepository(db.pool)
 
 	token := &EnrollmentToken{
-		Token:         "increment-test-token",
+		Token:          "increment-test-token",
 		OrganizationID: "org-123",
-		Name:          "Increment Test Token",
-		CreatedBy:     "admin@example.com",
-		MaxUses:       10,
+		Name:           "Increment Test Token",
+		CreatedBy:      "admin@example.com",
+		MaxUses:        10,
 	}
 	err := repo.Create(ctx, token)
 	require.NoError(t, err)
@@ -320,11 +320,11 @@ func TestEnrollmentTokenRepository_Revoke(t *testing.T) {
 	repo := NewEnrollmentTokenRepository(db.pool)
 
 	token := &EnrollmentToken{
-		Token:         "revoke-token",
+		Token:          "revoke-token",
 		OrganizationID: "org-123",
-		Name:          "Revoke Token",
-		CreatedBy:     "admin@example.com",
-		MaxUses:       10,
+		Name:           "Revoke Token",
+		CreatedBy:      "admin@example.com",
+		MaxUses:        10,
 	}
 	err := repo.Create(ctx, token)
 	require.NoError(t, err)
@@ -356,11 +356,11 @@ func TestEnrollmentTokenRepository_List(t *testing.T) {
 	// Create tokens for two orgs
 	for i := 0; i < 3; i++ {
 		token := &EnrollmentToken{
-			Token:         fmt.Sprintf("list-test-token-%c", 'a'+i),
+			Token:          fmt.Sprintf("list-test-token-%c", 'a'+i),
 			OrganizationID: "org-123",
-			Name:          "List Test Token",
-			CreatedBy:     "admin@example.com",
-			MaxUses:       10,
+			Name:           "List Test Token",
+			CreatedBy:      "admin@example.com",
+			MaxUses:        10,
 		}
 		err := repo.Create(ctx, token)
 		require.NoError(t, err)
@@ -368,11 +368,11 @@ func TestEnrollmentTokenRepository_List(t *testing.T) {
 
 	// Create token for different org
 	token := &EnrollmentToken{
-		Token:         "other-org-token",
+		Token:          "other-org-token",
 		OrganizationID: "org-456",
-		Name:          "Other Org Token",
-		CreatedBy:     "admin@example.com",
-		MaxUses:       10,
+		Name:           "Other Org Token",
+		CreatedBy:      "admin@example.com",
+		MaxUses:        10,
 	}
 	err := repo.Create(ctx, token)
 	require.NoError(t, err)

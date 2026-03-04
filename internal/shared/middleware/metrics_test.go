@@ -193,7 +193,7 @@ func TestNormalizePath(t *testing.T) {
 		{"token", "/api/auth/abc123def456ghi789jkl012mno345pq", "/api/auth/:token"},
 		{"multiple IDs", "/api/users/123/posts/456", "/api/users/:id/posts/:id"},
 		{"trailing slash", "/api/users/", "/api/users/"},
-		{"path with query", "/api/users?active=true", "/api/users?active=true"},  // Query string not stripped
+		{"path with query", "/api/users?active=true", "/api/users?active=true"}, // Query string not stripped
 		{"complex path", "/api/v1/org/123/users/456/profile", "/api/v1/org/:id/users/:id/profile"},
 	}
 
@@ -243,7 +243,7 @@ func TestLooksLikeUUID(t *testing.T) {
 		{"too short", "550e8400-e29b-41d4", false},
 		{"too long", "550e8400-e29b-41d4-a716-446655440000-extra", false},
 		{"wrong format", "550e8400-e29b-41d4-a716-44665544000", false},
-		{"with g at end (invalid hex)", "550e8400-e29b-41d4-a716-44665544000g", true},  // Format/length check only, not full hex validation
+		{"with g at end (invalid hex)", "550e8400-e29b-41d4-a716-44665544000g", true}, // Format/length check only, not full hex validation
 		{"empty string", "", false},
 		{"with spaces", "550e8400-e29b-41d4-a716-446655440000 ", false},
 	}
@@ -267,8 +267,8 @@ func TestLooksLikeToken(t *testing.T) {
 		{"too short", "short", false},
 		{"too long", string(make([]byte, 300)), false},
 		{"only letters", "abcdefghijklmnopqrstuvwxyz", false},
-		{"letters and digits (too short)", "abc123def456", false},  // Only 12 chars, needs 20+
-		{"with special chars", "abc-def_ghi.jkl~mnopqr", true},  // 20+ chars with special chars
+		{"letters and digits (too short)", "abc123def456", false}, // Only 12 chars, needs 20+
+		{"with special chars", "abc-def_ghi.jkl~mnopqr", true},    // 20+ chars with special chars
 		{"empty string", "", false},
 	}
 
@@ -470,7 +470,7 @@ func TestParseStatusCode(t *testing.T) {
 		{"valid 500", "500", 500},
 		{"invalid", "not-a-number", 200},
 		{"empty", "", 200},
-		{"negative", "-1", -1},  // ParseInt returns -1 for valid negative number
+		{"negative", "-1", -1}, // ParseInt returns -1 for valid negative number
 	}
 
 	for _, tt := range tests {
@@ -491,7 +491,7 @@ func TestStatusCodeClass(t *testing.T) {
 		{"3xx", 301, "3xx"},
 		{"4xx", 404, "4xx"},
 		{"5xx", 500, "5xx"},
-		{"unknown", 600, "5xx"},  // >= 500 returns 5xx
+		{"unknown", 600, "5xx"}, // >= 500 returns 5xx
 	}
 
 	for _, tt := range tests {

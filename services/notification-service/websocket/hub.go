@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/gorilla/websocket"
+	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 )
 
 // Connection defines the interface for a WebSocket connection.
@@ -33,13 +33,13 @@ type Message struct {
 
 // Client represents a WebSocket client connection.
 type Client struct {
-	ID       string
-	UserID   string
-	OrgID    string
-	Hub      *Hub
-	Conn     Connection
-	Send     chan *Message
-	mu       sync.Mutex
+	ID     string
+	UserID string
+	OrgID  string
+	Hub    *Hub
+	Conn   Connection
+	Send   chan *Message
+	mu     sync.Mutex
 }
 
 // Config holds hub configuration.
@@ -104,7 +104,7 @@ func NewHub(cfg Config) *Hub {
 	}
 
 	return &Hub{
-		clients:        make(map[*Client]bool),
+		clients:         make(map[*Client]bool),
 		clientsByUserID: make(map[string][]*Client),
 		clientsByOrgID:  make(map[string][]*Client),
 		broadcast:       make(chan *Message, 256),
@@ -112,9 +112,9 @@ func NewHub(cfg Config) *Hub {
 		unregister:      make(chan *Client),
 		sendToUser:      make(chan *UserMessage, 256),
 		broadcastToOrg:  make(chan *OrgMessage, 256),
-		cfg:            cfg,
-		metrics:        cfg.Metrics,
-		serviceName:    serviceName,
+		cfg:             cfg,
+		metrics:         cfg.Metrics,
+		serviceName:     serviceName,
 	}
 }
 
@@ -397,8 +397,8 @@ func NewNotification(title, body string, data map[string]interface{}) *Message {
 	}
 
 	return &Message{
-		Type: "notification",
-		Data: msgData,
+		Type:      "notification",
+		Data:      msgData,
 		Timestamp: time.Now(),
 	}
 }

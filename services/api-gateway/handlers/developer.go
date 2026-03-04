@@ -19,8 +19,8 @@ import (
 
 // DeveloperHandler handles developer portal HTTP endpoints.
 type DeveloperHandler struct {
-	db         *pgxpool.Pool
-	jwtSecret  string
+	db        *pgxpool.Pool
+	jwtSecret string
 }
 
 // NewDeveloperHandler creates a new developer handler instance.
@@ -33,42 +33,42 @@ func NewDeveloperHandler(db *pgxpool.Pool, jwtSecret string) *DeveloperHandler {
 
 // APIKey represents an API key for developer access.
 type APIKey struct {
-	ID           string
+	ID             string
 	OrganizationID string
-	Name         string
-	Key          string // SHA256 hashed
-	KeyPrefix    string // First 8 characters for identification
-	Scopes       []string
-	IsActive     bool
-	ExpiresAt    *time.Time
-	RateLimit    int // requests per minute
-	CreatedBy    string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	LastUsedAt   *time.Time
+	Name           string
+	Key            string // SHA256 hashed
+	KeyPrefix      string // First 8 characters for identification
+	Scopes         []string
+	IsActive       bool
+	ExpiresAt      *time.Time
+	RateLimit      int // requests per minute
+	CreatedBy      string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	LastUsedAt     *time.Time
 }
 
 // Webhook represents a webhook configuration.
 type Webhook struct {
-	ID              string
-	OrganizationID  string
-	Name            string
-	URL             string
-	Secret          string
-	Events          []string
-	IsActive        bool
-	Headers         map[string]string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID             string
+	OrganizationID string
+	Name           string
+	URL            string
+	Secret         string
+	Events         []string
+	IsActive       bool
+	Headers        map[string]string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // UsageStats represents API usage statistics.
 type UsageStats struct {
-	APIKeyID    string
-	Date        string
+	APIKeyID     string
+	Date         string
 	RequestCount int
 	ErrorCount   int
-	AvgLatency  int // milliseconds
+	AvgLatency   int // milliseconds
 }
 
 // CreateAPIKeyRequest represents a request to create an API key.
@@ -90,11 +90,11 @@ type UpdateAPIKeyRequest struct {
 
 // CreateWebhookRequest represents a request to create a webhook.
 type CreateWebhookRequest struct {
-	OrganizationID string   `json:"organization_id"`
-	Name           string   `json:"name"`
-	URL            string   `json:"url"`
-	Events         []string `json:"events"`
-	Secret         string   `json:"secret,omitempty"`
+	OrganizationID string            `json:"organization_id"`
+	Name           string            `json:"name"`
+	URL            string            `json:"url"`
+	Events         []string          `json:"events"`
+	Secret         string            `json:"secret,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`
 }
 
@@ -191,7 +191,7 @@ func (h *DeveloperHandler) APIDocsHandler(w http.ResponseWriter, r *http.Request
 				"apiKeyAuth": map[string]interface{}{
 					"type": "apiKey",
 					"in":   "header",
-					"name":  "X-API-Key",
+					"name": "X-API-Key",
 				},
 			},
 		},
@@ -281,13 +281,13 @@ func (h *DeveloperHandler) listAPIKeysEndpoint(w http.ResponseWriter, r *http.Re
 	response := make([]map[string]interface{}, len(keys))
 	for i, k := range keys {
 		response[i] = map[string]interface{}{
-			"id":          k.ID,
-			"name":        k.Name,
-			"key_prefix":  k.KeyPrefix,
-			"scopes":      k.Scopes,
-			"is_active":   k.IsActive,
-			"rate_limit":  k.RateLimit,
-			"created_at":  k.CreatedAt.Format(time.RFC3339),
+			"id":         k.ID,
+			"name":       k.Name,
+			"key_prefix": k.KeyPrefix,
+			"scopes":     k.Scopes,
+			"is_active":  k.IsActive,
+			"rate_limit": k.RateLimit,
+			"created_at": k.CreatedAt.Format(time.RFC3339),
 			"last_used_at": func() string {
 				if k.LastUsedAt != nil {
 					return k.LastUsedAt.Format(time.RFC3339)
@@ -352,18 +352,18 @@ func (h *DeveloperHandler) createAPIKey(w http.ResponseWriter, r *http.Request, 
 	}
 
 	key := &APIKey{
-		ID:            uuid.New().String(),
+		ID:             uuid.New().String(),
 		OrganizationID: req.OrganizationID,
-		Name:          req.Name,
-		Key:           hex.EncodeToString(keyHash[:]),
-		KeyPrefix:     keyPrefix,
-		Scopes:        req.Scopes,
-		IsActive:      true,
-		ExpiresAt:     expiresAt,
-		RateLimit:     req.RateLimit,
-		CreatedBy:     createdBy,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		Name:           req.Name,
+		Key:            hex.EncodeToString(keyHash[:]),
+		KeyPrefix:      keyPrefix,
+		Scopes:         req.Scopes,
+		IsActive:       true,
+		ExpiresAt:      expiresAt,
+		RateLimit:      req.RateLimit,
+		CreatedBy:      createdBy,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	if err := h.storeAPIKey(ctx, key); err != nil {
@@ -373,19 +373,19 @@ func (h *DeveloperHandler) createAPIKey(w http.ResponseWriter, r *http.Request, 
 
 	// Only return the full key once
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
-		"id":          key.ID,
-		"name":        key.Name,
-		"api_key":     rawKey,
-		"key_prefix":  key.KeyPrefix,
-		"scopes":      key.Scopes,
-		"rate_limit":  key.RateLimit,
-		"expires_at":  func() string {
+		"id":         key.ID,
+		"name":       key.Name,
+		"api_key":    rawKey,
+		"key_prefix": key.KeyPrefix,
+		"scopes":     key.Scopes,
+		"rate_limit": key.RateLimit,
+		"expires_at": func() string {
 			if key.ExpiresAt != nil {
 				return key.ExpiresAt.Format(time.RFC3339)
 			}
 			return ""
 		}(),
-		"created_at":  key.CreatedAt.Format(time.RFC3339),
+		"created_at": key.CreatedAt.Format(time.RFC3339),
 	})
 }
 
@@ -421,13 +421,13 @@ func (h *DeveloperHandler) getAPIKey(w http.ResponseWriter, r *http.Request, ctx
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"id":          key.ID,
-		"name":        key.Name,
-		"key_prefix":  key.KeyPrefix,
-		"scopes":      key.Scopes,
-		"is_active":   key.IsActive,
-		"rate_limit":  key.RateLimit,
-		"created_at":  key.CreatedAt.Format(time.RFC3339),
+		"id":         key.ID,
+		"name":       key.Name,
+		"key_prefix": key.KeyPrefix,
+		"scopes":     key.Scopes,
+		"is_active":  key.IsActive,
+		"rate_limit": key.RateLimit,
+		"created_at": key.CreatedAt.Format(time.RFC3339),
 		"last_used_at": func() string {
 			if key.LastUsedAt != nil {
 				return key.LastUsedAt.Format(time.RFC3339)
@@ -542,11 +542,11 @@ func (h *DeveloperHandler) UsageStatsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"organization_id":  orgID,
-		"start_date":       startDate,
-		"end_date":         endDate,
-		"stats":            response,
-		"total_requests":   totalRequests,
+		"organization_id": orgID,
+		"start_date":      startDate,
+		"end_date":        endDate,
+		"stats":           response,
+		"total_requests":  totalRequests,
 	})
 }
 
@@ -581,11 +581,11 @@ func (h *DeveloperHandler) listWebhooksEndpoint(w http.ResponseWriter, r *http.R
 	response := make([]map[string]interface{}, len(webhooks))
 	for i, wh := range webhooks {
 		response[i] = map[string]interface{}{
-			"id":       wh.ID,
-			"name":     wh.Name,
-			"url":      wh.URL,
-			"events":   wh.Events,
-			"is_active": wh.IsActive,
+			"id":         wh.ID,
+			"name":       wh.Name,
+			"url":        wh.URL,
+			"events":     wh.Events,
+			"is_active":  wh.IsActive,
 			"created_at": wh.CreatedAt.Format(time.RFC3339),
 		}
 	}
@@ -644,13 +644,13 @@ func (h *DeveloperHandler) createWebhook(w http.ResponseWriter, r *http.Request,
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
-		"id":          webhook.ID,
-		"name":        webhook.Name,
-		"url":         webhook.URL,
-		"events":      webhook.Events,
-		"secret":      webhook.Secret,
-		"is_active":   webhook.IsActive,
-		"created_at":  webhook.CreatedAt.Format(time.RFC3339),
+		"id":         webhook.ID,
+		"name":       webhook.Name,
+		"url":        webhook.URL,
+		"events":     webhook.Events,
+		"secret":     webhook.Secret,
+		"is_active":  webhook.IsActive,
+		"created_at": webhook.CreatedAt.Format(time.RFC3339),
 	})
 }
 
@@ -691,9 +691,9 @@ func (h *DeveloperHandler) testWebhook(w http.ResponseWriter, r *http.Request, c
 
 	// Send test webhook
 	testPayload := map[string]interface{}{
-		"test": true,
+		"test":      true,
 		"timestamp": time.Now().Format(time.RFC3339),
-		"event": "test",
+		"event":     "test",
 	}
 
 	// In production, actually send the webhook

@@ -14,7 +14,7 @@ func TestRateLimitFailOpen(t *testing.T) {
 	// Note: This test verifies the degraded mode behavior
 	// When Redis is unavailable but DegradedLimit is set, basic in-memory limiting applies
 	cfg := &RateLimitConfig{
-		Limiter:         nil, // Limiter not configured - passes through
+		Limiter:         nil,   // Limiter not configured - passes through
 		EnableByDefault: false, // Disabled to avoid nil limiter check
 		FailClosed:      false, // Fail-open mode
 		DegradedLimit:   10,
@@ -44,9 +44,9 @@ func TestRateLimitFailClosed(t *testing.T) {
 	// Note: This test verifies fail-closed configuration
 	// When Limiter is nil, the middleware passes through (current behavior)
 	cfg := &RateLimitConfig{
-		Limiter:         nil, // Limiter not configured
+		Limiter:         nil,   // Limiter not configured
 		EnableByDefault: false, // Disabled to avoid nil limiter check
-		FailClosed:      true, // Fail-closed mode (only applies when Check() returns error)
+		FailClosed:      true,  // Fail-closed mode (only applies when Check() returns error)
 	}
 
 	middleware := RateLimit(cfg)
@@ -149,7 +149,7 @@ func TestRateLimitSkipPaths(t *testing.T) {
 		{"/health", http.StatusOK},
 		{"/metrics", http.StatusOK},
 		{"/api/v1/test", http.StatusOK}, // Passes through when rate limiting disabled
-		{"/healthz", http.StatusOK},      // Passes through when rate limiting disabled
+		{"/healthz", http.StatusOK},     // Passes through when rate limiting disabled
 	}
 
 	for _, tt := range tests {
@@ -208,11 +208,11 @@ func TestRateLimitSkipIPs(t *testing.T) {
 // TestGetClientIP tests client IP extraction from various sources.
 func TestGetClientIP(t *testing.T) {
 	tests := []struct {
-		name           string
-		remoteAddr     string
-		xForwardedFor  string
-		xRealIP        string
-		expectedIP     string
+		name          string
+		remoteAddr    string
+		xForwardedFor string
+		xRealIP       string
+		expectedIP    string
 	}{
 		{
 			name:       "Direct connection",
@@ -268,10 +268,10 @@ func TestGetClientIP(t *testing.T) {
 // TestBuildRateLimitRequest tests building rate limit requests from HTTP requests.
 func TestBuildRateLimitRequest(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupRequest   func(*http.Request)
-		expectedType   string
-		expectedIdent  string
+		name          string
+		setupRequest  func(*http.Request)
+		expectedType  string
+		expectedIdent string
 	}{
 		{
 			name: "API key from X-API-Key header",
@@ -339,9 +339,9 @@ func TestBuildRateLimitRequest(t *testing.T) {
 func TestRateLimitWithPriority(t *testing.T) {
 	// Create a mock limiter that accepts requests
 	cfg := &RateLimitConfig{
-		Limiter: &ratelimit.Limiter{},
-		SkipPaths: []string{"/health"},
-		SkipIPs:   []string{},
+		Limiter:         &ratelimit.Limiter{},
+		SkipPaths:       []string{"/health"},
+		SkipIPs:         []string{},
 		EnableByDefault: false, // Disabled to avoid actual rate limit check
 	}
 

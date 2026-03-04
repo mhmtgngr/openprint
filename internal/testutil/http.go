@@ -290,11 +290,11 @@ func (ts *TestServer) RecordRequests() {
 		}
 
 		record := &RequestRecord{
-			Method:    r.Method,
-			URL:       r.URL.String(),
-			Headers:   r.Header.Clone(),
-			Body:      body,
-			Timestamp: time.Now(),
+			Method:      r.Method,
+			URL:         r.URL.String(),
+			Headers:     r.Header.Clone(),
+			Body:        body,
+			Timestamp:   time.Now(),
 			QueryParams: map[string][]string{},
 		}
 
@@ -568,8 +568,8 @@ func CreateMultipartRequest(method, requestURL string, fieldName, fileName strin
 
 // ParseErrorResponse parses an error response from the server.
 type ErrorResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
 	Details map[string]interface{} `json:"details,omitempty"`
 }
 

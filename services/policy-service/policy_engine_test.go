@@ -615,8 +615,6 @@ func TestRepositoryDelete(t *testing.T) {
 	}
 }
 
-
-
 func TestRepositoryGetNotFound(t *testing.T) {
 	if testDB == nil || testDB.Pool == nil {
 		t.Skip("Test database not available")

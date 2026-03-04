@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/auth/jwt"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
 // RefreshToken handles token refresh with rotation and explicit revocation checking.

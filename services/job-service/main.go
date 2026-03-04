@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 	"github.com/openprint/openprint/internal/auth/jwt"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
@@ -22,6 +21,7 @@ import (
 	"github.com/openprint/openprint/services/job-service/handler"
 	"github.com/openprint/openprint/services/job-service/processor"
 	"github.com/openprint/openprint/services/job-service/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 // Config holds service configuration.
@@ -110,13 +110,13 @@ func main() {
 
 	// Initialize processor with metrics
 	jobProcessor := processor.New(processor.Config{
-		JobRepo:       jobRepo,
-		HistoryRepo:   historyRepo,
-		Redis:         redisClient,
-		Workers:       cfg.ProcessorWorkers,
-		PollInterval:  1 * time.Second,
-		Metrics:       metrics,
-		ServiceName:   cfg.ServiceName,
+		JobRepo:      jobRepo,
+		HistoryRepo:  historyRepo,
+		Redis:        redisClient,
+		Workers:      cfg.ProcessorWorkers,
+		PollInterval: 1 * time.Second,
+		Metrics:      metrics,
+		ServiceName:  cfg.ServiceName,
 	})
 
 	// Start processor in background

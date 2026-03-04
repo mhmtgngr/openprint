@@ -1,0 +1,13 @@
+# github.com/openprint/openprint/internal/testutil
+# [github.com/openprint/openprint/internal/testutil]
+internal/testutil/context.go:249:7: the cancel function returned by context.WithCancel should be called, not discarded, to avoid a context leak
+internal/testutil/context_test.go:381:7: the cancel function returned by context.WithTimeout should be called, not discarded, to avoid a context leak
+internal/testutil/context_test.go:402:7: the cancel function returned by context.WithTimeout should be called, not discarded, to avoid a context leak
+# github.com/openprint/openprint/services/compliance-service
+# [github.com/openprint/openprint/services/compliance-service]
+services/compliance-service/handlers_test.go:376:8: using resp2 before checking for errors
+services/compliance-service/handlers_test.go:1040:8: using resp2 before checking for errors
+services/compliance-service/handlers_test.go:1056:8: using resp3 before checking for errors
+services/compliance-service/handlers_test.go:1061:8: using resp4 before checking for errors
+services/compliance-service/handlers_test.go:1076:8: using resp5 before checking for errors
+services/compliance-service/handlers_test.go:1097:8: using resp6 before checking for errors

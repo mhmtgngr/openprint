@@ -585,8 +585,8 @@ func TestSpecialCharactersInPassword(t *testing.T) {
 	passwords := []string{
 		"Password!@#$%^&*()",
 		"密码123!Abc",     // Chinese characters
-		"Пароль123!Abc",   // Cyrillic characters
-		"Emoji123!🔒Abc",  // Emoji
+		"Пароль123!Abc", // Cyrillic characters
+		"Emoji123!🔒Abc", // Emoji
 	}
 
 	for _, password := range passwords {

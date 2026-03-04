@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openprint/openprint/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/openprint/openprint/internal/testutil"
 )
 
 func TestNewJobHistoryRepository(t *testing.T) {
@@ -334,7 +334,7 @@ func TestJobHistory_TimeFields(t *testing.T) {
 	past := now.Add(-1 * time.Hour)
 	future := now.Add(1 * time.Hour)
 
-histories := []*JobHistory{
+	histories := []*JobHistory{
 		{
 			JobID:     "test-job-id",
 			Status:    "queued",
@@ -385,7 +385,7 @@ func TestJobHistory_JobLifecycle(t *testing.T) {
 	var historyIDs []string
 	for _, step := range lifecycle {
 		history := &JobHistory{
-				JobID:     jobID,
+			JobID:     jobID,
 			Status:    step.status,
 			Message:   step.message,
 			CreatedAt: time.Now(),
@@ -418,7 +418,7 @@ func TestJobHistory_MultipleJobs(t *testing.T) {
 		jobIDs = append(jobIDs, jobID)
 
 		history := &JobHistory{
-				JobID:     jobID,
+			JobID:     jobID,
 			Status:    "queued",
 			Message:   "Job created",
 			CreatedAt: time.Now(),
@@ -479,7 +479,7 @@ func TestJobHistory_SpecialCharacters(t *testing.T) {
 
 	for _, msg := range messages {
 		history := &JobHistory{
-				JobID:     jobID,
+			JobID:     jobID,
 			Status:    "processing",
 			Message:   msg,
 			CreatedAt: time.Now(),
@@ -507,7 +507,7 @@ func TestJobHistoryRepository_FindByStatus_Pagination(t *testing.T) {
 	status := "queued"
 	for i := 0; i < 5; i++ {
 		history := &JobHistory{
-				JobID:     jobID,
+			JobID:     jobID,
 			Status:    status,
 			Message:   "Test entry",
 			CreatedAt: time.Now(),
@@ -540,7 +540,7 @@ func TestJobHistoryRepository_List_Pagination(t *testing.T) {
 		require.NoError(t, err)
 
 		history := &JobHistory{
-				JobID:     jobID,
+			JobID:     jobID,
 			Status:    "queued",
 			Message:   "Test entry",
 			CreatedAt: time.Now(),

@@ -9,9 +9,9 @@ import (
 
 func TestAppError_Error(t *testing.T) {
 	tests := []struct {
-		name    string
-		appErr  *AppError
-		want    string
+		name   string
+		appErr *AppError
+		want   string
 	}{
 		{
 			name: "error without underlying error",
@@ -159,7 +159,7 @@ func TestIsNotFound(t *testing.T) {
 		},
 		{
 			name: "AppError with 404 status",
-			err: &AppError{StatusCode: http.StatusNotFound},
+			err:  &AppError{StatusCode: http.StatusNotFound},
 			want: true,
 		},
 		{

@@ -101,10 +101,10 @@ func TestWithTenantContext(t *testing.T) {
 
 func TestGetTenantID(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupCtx    func() context.Context
-		wantID      string
-		wantErr     error
+		name     string
+		setupCtx func() context.Context
+		wantID   string
+		wantErr  error
 	}{
 		{
 			name: "valid tenant ID",
@@ -185,7 +185,7 @@ func TestGetTenantName(t *testing.T) {
 			wantName: "Acme Corp",
 		},
 		{
-			name:     "missing tenant name",
+			name: "missing tenant name",
 			setupCtx: func() context.Context {
 				return context.Background()
 			},
@@ -244,7 +244,7 @@ func TestGetTenantRole(t *testing.T) {
 			wantRole: RoleOrgViewer,
 		},
 		{
-			name:     "missing role",
+			name: "missing role",
 			setupCtx: func() context.Context {
 				return context.Background()
 			},
@@ -305,7 +305,7 @@ func TestIsPlatformAdmin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := tt.setupCtx()
-		 isAdmin := IsPlatformAdmin(ctx)
+			isAdmin := IsPlatformAdmin(ctx)
 			assert.Equal(t, tt.wantBool, isAdmin)
 		})
 	}
@@ -347,7 +347,7 @@ func TestIsOrgAdmin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.WithValue(context.Background(), TenantRoleKey, tt.role)
- isAdmin := IsOrgAdmin(ctx)
+			isAdmin := IsOrgAdmin(ctx)
 			assert.Equal(t, tt.wantBool, isAdmin)
 		})
 	}
@@ -355,10 +355,10 @@ func TestIsOrgAdmin(t *testing.T) {
 
 func TestGetQuota(t *testing.T) {
 	tests := []struct {
-		name     string
-		setupCtx func() context.Context
+		name      string
+		setupCtx  func() context.Context
 		wantQuota *QuotaInfo
-		wantOK   bool
+		wantOK    bool
 	}{
 		{
 			name: "quota exists",
@@ -376,10 +376,10 @@ func TestGetQuota(t *testing.T) {
 			wantOK: true,
 		},
 		{
-			name:     "quota missing",
-			setupCtx: func() context.Context { return context.Background() },
+			name:      "quota missing",
+			setupCtx:  func() context.Context { return context.Background() },
 			wantQuota: nil,
-			wantOK:   false,
+			wantOK:    false,
 		},
 		{
 			name: "wrong type in context",
@@ -387,7 +387,7 @@ func TestGetQuota(t *testing.T) {
 				return context.WithValue(context.Background(), QuotaKey, "not a quota")
 			},
 			wantQuota: nil,
-			wantOK:   false,
+			wantOK:    false,
 		},
 	}
 
@@ -577,7 +577,7 @@ func TestQuotaInfo_UsagePercentage(t *testing.T) {
 		{
 			name: "storage usage",
 			quota: &QuotaInfo{
-				MaxStorageGB:     10, // 10 GB
+				MaxStorageGB:     10,                     // 10 GB
 				CurrentStorageGB: 5 * 1024 * 1024 * 1024, // 5 GB in bytes
 			},
 			resourceType: "storage",
@@ -595,8 +595,8 @@ func TestQuotaInfo_UsagePercentage(t *testing.T) {
 		{
 			name: "jobs usage",
 			quota: &QuotaInfo{
-				MaxJobsPerMonth:  1000,
-				CurrentJobs:      250,
+				MaxJobsPerMonth: 1000,
+				CurrentJobs:     250,
 			},
 			resourceType: "jobs",
 			wantPercent:  25.0,
@@ -631,11 +631,11 @@ func TestQuotaInfo_UsagePercentage(t *testing.T) {
 
 func TestQuotaInfo_IsNearLimit(t *testing.T) {
 	tests := []struct {
-		name              string
-		quota             *QuotaInfo
-		resourceType      string
-		threshold         float64
-		wantNearLimit     bool
+		name          string
+		quota         *QuotaInfo
+		resourceType  string
+		threshold     float64
+		wantNearLimit bool
 	}{
 		{
 			name: "below threshold",
@@ -689,7 +689,7 @@ func TestQuotaInfo_IsNearLimit(t *testing.T) {
 
 func TestRoleValues(t *testing.T) {
 	tests := []struct {
-		role   Role
+		role    Role
 		wantVal string
 	}{
 		{RolePlatformAdmin, "platform_admin"},

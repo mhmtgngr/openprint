@@ -26,7 +26,7 @@ func TestHTTPStatusLabel(t *testing.T) {
 		{"Not Found", http.StatusNotFound, "Not_Found"},
 		{"Internal Server Error", http.StatusInternalServerError, "Internal_Server_Error"},
 		{"Service Unavailable", http.StatusServiceUnavailable, "Service_Unavailable"},
-		{"Unknown status", 599, ""},  // Unknown returns empty string
+		{"Unknown status", 599, ""}, // Unknown returns empty string
 		{"Custom status", 499, ""},
 	}
 
@@ -60,7 +60,7 @@ func TestHTTPStatusClass(t *testing.T) {
 		{"5xx - Gateway Timeout", 504, "5xx"},
 		{"unknown - 0", 0, "unknown"},
 		{"unknown - 99", 99, "unknown"},
-		{"unknown - 600", 600, "5xx"},  // >= 500 returns 5xx
+		{"unknown - 600", 600, "5xx"}, // >= 500 returns 5xx
 	}
 
 	for _, tt := range tests {
@@ -73,9 +73,9 @@ func TestHTTPStatusClass(t *testing.T) {
 
 func TestSanitizeLabelValue(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		input string
-		want string
+		want  string
 	}{
 		{"alphanumeric", "abc123", "abc123"},
 		{"with underscore", "test_value", "test_value"},
@@ -87,11 +87,11 @@ func TestSanitizeLabelValue(t *testing.T) {
 		{"mixed valid and invalid", "a1_b2:c3", "a1_b2:c3"},
 		{"long string truncated", string(make([]byte, 300)), string(make([]byte, 201))},
 		{"empty string", "", ""},
-		{"only invalid", "@#$%^&*()", "_________"},  // 9 invalid chars
-	{"unicode", "test日本語", "test___"},  // 3 Japanese chars become 3 underscores
+		{"only invalid", "@#$%^&*()", "_________"}, // 9 invalid chars
+		{"unicode", "test日本語", "test___"},          // 3 Japanese chars become 3 underscores
 		{"path-like", "/api/v1/users", "_api_v1_users"},
 		{"email-like", "user@example.com", "user_example_com"},
-		{"url-like", "https://example.com", "https:__example_com"},  // Colon preserved, slashes become underscores
+		{"url-like", "https://example.com", "https:__example_com"}, // Colon preserved, slashes become underscores
 	}
 
 	for _, tt := range tests {
@@ -109,9 +109,9 @@ func TestSanitizeLabelValue(t *testing.T) {
 
 func TestSanitizeLabelName(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		input string
-		want string
+		want  string
 	}{
 		{"valid name", "valid_name", "valid_name"},
 		{"starts with letter", "testName", "testName"},
@@ -124,7 +124,7 @@ func TestSanitizeLabelName(t *testing.T) {
 		{"long string truncated", string(make([]byte, 300)), string(make([]byte, 201))},
 		{"empty string", "", ""},
 		{"only invalid", "123", "_123"},
-		{"mixed", "a1_b2-c3", "a1_b2_c3"},  // Dash becomes underscore
+		{"mixed", "a1_b2-c3", "a1_b2_c3"}, // Dash becomes underscore
 	}
 
 	for _, tt := range tests {

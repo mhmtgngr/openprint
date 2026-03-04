@@ -20,9 +20,9 @@ type ComplianceFramework string
 
 const (
 	FrameworkFedRAMP ComplianceFramework = "fedramp"
-	FrameworkHIPAA  ComplianceFramework = "hipaa"
-	FrameworkGDPR   ComplianceFramework = "gdpr"
-	FrameworkSOC2   ComplianceFramework = "soc2"
+	FrameworkHIPAA   ComplianceFramework = "hipaa"
+	FrameworkGDPR    ComplianceFramework = "gdpr"
+	FrameworkSOC2    ComplianceFramework = "soc2"
 )
 
 // ComplianceStatus represents the status of compliance requirements.
@@ -38,20 +38,20 @@ const (
 
 // Control represents a compliance control requirement.
 type Control struct {
-	ID               string               `json:"id"`
-	Framework        ComplianceFramework  `json:"framework"`
-	Family           string               `json:"family"`
-	Title            string               `json:"title"`
-	Description      string               `json:"description"`
-	Implementation   string               `json:"implementation"`
-	Status           ComplianceStatus     `json:"status"`
-	LastAssessed     *time.Time           `json:"last_assessed"`
-	NextReview       *time.Time           `json:"next_review"`
-	EvidenceCount    int                  `json:"evidence_count"`
-	Policies         []string             `json:"policies"`
-	ResponsibleTeam  string               `json:"responsible_team"`
-	RiskLevel        string               `json:"risk_level"`
-	Remediation      *RemediationPlan     `json:"remediation,omitempty"`
+	ID              string              `json:"id"`
+	Framework       ComplianceFramework `json:"framework"`
+	Family          string              `json:"family"`
+	Title           string              `json:"title"`
+	Description     string              `json:"description"`
+	Implementation  string              `json:"implementation"`
+	Status          ComplianceStatus    `json:"status"`
+	LastAssessed    *time.Time          `json:"last_assessed"`
+	NextReview      *time.Time          `json:"next_review"`
+	EvidenceCount   int                 `json:"evidence_count"`
+	Policies        []string            `json:"policies"`
+	ResponsibleTeam string              `json:"responsible_team"`
+	RiskLevel       string              `json:"risk_level"`
+	Remediation     *RemediationPlan    `json:"remediation,omitempty"`
 }
 
 // RemediationPlan represents a plan to address compliance gaps.
@@ -87,50 +87,50 @@ type AuditEvent struct {
 
 // DataBreach represents a data breach incident for tracking.
 type DataBreach struct {
-	ID                string    `json:"id"`
-	DiscoveredAt      time.Time `json:"discovered_at"`
-	ReportedAt        time.Time `json:"reported_at"`
-	Severity          string    `json:"severity"`
-	AffectedRecords   int       `json:"affected_records"`
-	DataTypes         []string  `json:"data_types"`
-	Description       string    `json:"description"`
-	ContainmentStatus string    `json:"containment_status"`
-	NotificationSent  bool      `json:"notification_sent"`
+	ID                string     `json:"id"`
+	DiscoveredAt      time.Time  `json:"discovered_at"`
+	ReportedAt        time.Time  `json:"reported_at"`
+	Severity          string     `json:"severity"`
+	AffectedRecords   int        `json:"affected_records"`
+	DataTypes         []string   `json:"data_types"`
+	Description       string     `json:"description"`
+	ContainmentStatus string     `json:"containment_status"`
+	NotificationSent  bool       `json:"notification_sent"`
 	ResolvedAt        *time.Time `json:"resolved_at"`
-	LessonsLearned    string    `json:"lessons_learned"`
+	LessonsLearned    string     `json:"lessons_learned"`
 }
 
 // ComplianceReport represents a generated compliance report.
 type ComplianceReport struct {
-	ID              string                 `json:"id"`
-	Framework       ComplianceFramework    `json:"framework"`
-	PeriodStart     time.Time              `json:"period_start"`
-	PeriodEnd       time.Time              `json:"period_end"`
-	OverallStatus   ComplianceStatus       `json:"overall_status"`
-	CompliantCount  int                    `json:"compliant_count"`
-	NonCompliant    int                    `json:"non_compliant_count"`
-	PendingCount    int                    `json:"pending_count"`
-	TotalControls   int                    `json:"total_controls"`
-	HighRiskCount   int                    `json:"high_risk_count"`
-	Findings        []Finding              `json:"findings"`
-	GeneratedAt     time.Time              `json:"generated_at"`
-	GeneratedBy     string                 `json:"generated_by"`
-	ReportHash      string                 `json:"report_hash"`
-	Signature       string                 `json:"signature,omitempty"`
+	ID             string              `json:"id"`
+	Framework      ComplianceFramework `json:"framework"`
+	PeriodStart    time.Time           `json:"period_start"`
+	PeriodEnd      time.Time           `json:"period_end"`
+	OverallStatus  ComplianceStatus    `json:"overall_status"`
+	CompliantCount int                 `json:"compliant_count"`
+	NonCompliant   int                 `json:"non_compliant_count"`
+	PendingCount   int                 `json:"pending_count"`
+	TotalControls  int                 `json:"total_controls"`
+	HighRiskCount  int                 `json:"high_risk_count"`
+	Findings       []Finding           `json:"findings"`
+	GeneratedAt    time.Time           `json:"generated_at"`
+	GeneratedBy    string              `json:"generated_by"`
+	ReportHash     string              `json:"report_hash"`
+	Signature      string              `json:"signature,omitempty"`
 }
 
 // Finding represents a compliance finding or issue.
 type Finding struct {
-	ID            string         `json:"id"`
-	ControlID     string         `json:"control_id"`
-	Severity      string         `json:"severity"`
-	Title         string         `json:"title"`
-	Description   string         `json:"description"`
-	Evidence      []EvidenceItem `json:"evidence"`
-	Recommendation string        `json:"recommendation"`
-	Status        string         `json:"status"`
-	OpenedAt      time.Time      `json:"opened_at"`
-	ClosedAt      *time.Time     `json:"closed_at,omitempty"`
+	ID             string         `json:"id"`
+	ControlID      string         `json:"control_id"`
+	Severity       string         `json:"severity"`
+	Title          string         `json:"title"`
+	Description    string         `json:"description"`
+	Evidence       []EvidenceItem `json:"evidence"`
+	Recommendation string         `json:"recommendation"`
+	Status         string         `json:"status"`
+	OpenedAt       time.Time      `json:"opened_at"`
+	ClosedAt       *time.Time     `json:"closed_at,omitempty"`
 }
 
 // EvidenceItem represents evidence for a compliance finding.
@@ -517,14 +517,14 @@ func (s *Service) GenerateReport(ctx context.Context, framework ComplianceFramew
 			}
 			// Add finding for non-compliant control
 			report.Findings = append(report.Findings, Finding{
-				ID:          uuid.New().String(),
-				ControlID:   control.ID,
-				Severity:    control.RiskLevel,
-				Title:       control.Title + " - Non-Compliant",
-				Description: control.Description,
+				ID:             uuid.New().String(),
+				ControlID:      control.ID,
+				Severity:       control.RiskLevel,
+				Title:          control.Title + " - Non-Compliant",
+				Description:    control.Description,
 				Recommendation: "Update implementation to meet " + string(framework) + " requirements",
-				Status:      "open",
-				OpenedAt:    time.Now(),
+				Status:         "open",
+				OpenedAt:       time.Now(),
 			})
 		case StatusPending:
 			pendingCount++

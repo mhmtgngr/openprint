@@ -24,19 +24,19 @@ import (
 
 // Config holds service configuration.
 type Config struct {
-	ServerAddr       string
-	MetricsPort      int
-	DatabaseURL      string
-	S3Endpoint       string
-	S3Bucket         string
-	S3AccessKey      string
-	S3SecretKey      string
-	S3Region         string
-	EncryptionKey    string
-	JWTSecret        string
-	JaegerEndpoint   string
-	ServiceName      string
-	MaxUploadSize    int64
+	ServerAddr     string
+	MetricsPort    int
+	DatabaseURL    string
+	S3Endpoint     string
+	S3Bucket       string
+	S3AccessKey    string
+	S3SecretKey    string
+	S3Region       string
+	EncryptionKey  string
+	JWTSecret      string
+	JaegerEndpoint string
+	ServiceName    string
+	MaxUploadSize  int64
 }
 
 func main() {
@@ -123,11 +123,11 @@ func main() {
 
 	// Create handlers with metrics
 	h := handler.New(handler.Config{
-		Backend:       backend,
-		DB:            db,
-		MaxUploadSize: cfg.MaxUploadSize,
-		Metrics:       metrics,
-		ServiceName:   cfg.ServiceName,
+		Backend:        backend,
+		DB:             db,
+		MaxUploadSize:  cfg.MaxUploadSize,
+		Metrics:        metrics,
+		ServiceName:    cfg.ServiceName,
 		StorageBackend: storageBackend,
 	})
 

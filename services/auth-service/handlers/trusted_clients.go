@@ -158,7 +158,7 @@ type UpdateTrustedClientRequest struct {
 	Name        string   `json:"name"`
 	IPWhitelist []string `json:"ip_whitelist"`
 	Description string   `json:"description"`
-	IsActive     *bool    `json:"is_active"`
+	IsActive    *bool    `json:"is_active"`
 }
 
 // UpdateTrustedClient handles trusted client update requests.
@@ -309,14 +309,14 @@ func (h *TrustedClientsHandler) RegenerateAPIKey(w http.ResponseWriter, r *http.
 
 func trustedClientToResponse(c *ratelimit.TrustedClient) map[string]interface{} {
 	return map[string]interface{}{
-		"id":          c.ID,
-		"name":        c.Name,
-		"api_key":     maskAPIKey(c.APIKey),
+		"id":           c.ID,
+		"name":         c.Name,
+		"api_key":      maskAPIKey(c.APIKey),
 		"ip_whitelist": c.IPWhitelist,
-		"description": c.Description,
-		"is_active":   c.IsActive,
-		"created_at":  c.CreatedAt.Format(time.RFC3339),
-		"updated_at":  c.UpdatedAt.Format(time.RFC3339),
+		"description":  c.Description,
+		"is_active":    c.IsActive,
+		"created_at":   c.CreatedAt.Format(time.RFC3339),
+		"updated_at":   c.UpdatedAt.Format(time.RFC3339),
 		"last_used_at": func() string {
 			if c.LastUsedAt != nil {
 				return c.LastUsedAt.Format(time.RFC3339)

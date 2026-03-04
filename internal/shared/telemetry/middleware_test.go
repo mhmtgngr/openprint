@@ -232,40 +232,40 @@ func TestLooksLikeID(t *testing.T) {
 
 func TestFmtSpanName(t *testing.T) {
 	tests := []struct {
-		name string
-		path string
+		name   string
+		path   string
 		method string
-		want string
+		want   string
 	}{
 		{
-			name:  "simple path",
-			path:  "/users",
+			name:   "simple path",
+			path:   "/users",
 			method: "GET",
-			want:  "GET /users",
+			want:   "GET /users",
 		},
 		{
-			name:  "path with ID",
-			path:  "/users/123",
+			name:   "path with ID",
+			path:   "/users/123",
 			method: "GET",
-			want:  "GET /users/:id",
+			want:   "GET /users/:id",
 		},
 		{
-			name:  "nested path with ID",
-			path:  "/api/v1/users/123/posts",
+			name:   "nested path with ID",
+			path:   "/api/v1/users/123/posts",
 			method: "GET",
-			want:  "GET /api",
+			want:   "GET /api",
 		},
 		{
-			name:  "root path",
-			path:  "/",
+			name:   "root path",
+			path:   "/",
 			method: "GET",
-			want:  "GET /",
+			want:   "GET /",
 		},
 		{
-			name:  "path with internal prefix",
-			path:  "/internal/health",
+			name:   "path with internal prefix",
+			path:   "/internal/health",
 			method: "GET",
-			want:  "GET /internal",
+			want:   "GET /internal",
 		},
 	}
 
@@ -408,8 +408,8 @@ func TestHTTPMiddleware_status_capture(t *testing.T) {
 	mw := HTTPMiddleware("test-service")
 
 	tests := []struct {
-		name           string
-		statusCode     int
+		name       string
+		statusCode int
 	}{
 		{"OK", http.StatusOK},
 		{"Created", http.StatusCreated},

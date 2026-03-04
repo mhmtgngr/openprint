@@ -79,18 +79,18 @@ func New(cfg Config) *Handler {
 
 // CreateJobRequest represents a print job creation request.
 type CreateJobRequest struct {
-	DocumentID   string              `json:"document_id"`
-	PrinterID    string              `json:"printer_id"`
-	UserName     string              `json:"user_name"`
-	UserEmail    string              `json:"user_email"`
-	Title        string              `json:"title"`
-	Copies       int                 `json:"copies"`
-	ColorMode    string              `json:"color_mode"`    // "color" or "monochrome"
-	Duplex       bool                `json:"duplex"`
-	MediaType    string              `json:"media_type"`    // e.g., "a4", "letter"
-	Quality      string              `json:"quality"`       // e.g., "draft", "normal", "high"
-	Pages        int                 `json:"pages,omitempty"`
-	Options      map[string]string   `json:"options,omitempty"`
+	DocumentID string            `json:"document_id"`
+	PrinterID  string            `json:"printer_id"`
+	UserName   string            `json:"user_name"`
+	UserEmail  string            `json:"user_email"`
+	Title      string            `json:"title"`
+	Copies     int               `json:"copies"`
+	ColorMode  string            `json:"color_mode"` // "color" or "monochrome"
+	Duplex     bool              `json:"duplex"`
+	MediaType  string            `json:"media_type"` // e.g., "a4", "letter"
+	Quality    string            `json:"quality"`    // e.g., "draft", "normal", "high"
+	Pages      int               `json:"pages,omitempty"`
+	Options    map[string]string `json:"options,omitempty"`
 }
 
 // JobsHandler handles job list and creation.
@@ -144,22 +144,22 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request, ctx context.
 
 	// Create job
 	job := &repository.PrintJob{
-		ID:          uuid.New().String(),
-		DocumentID:  req.DocumentID,
-		PrinterID:   req.PrinterID,
-		UserName:    req.UserName,
-		UserEmail:   req.UserEmail,
-		Title:       req.Title,
-		Copies:      req.Copies,
-		ColorMode:   req.ColorMode,
-		Duplex:      req.Duplex,
-		MediaType:   req.MediaType,
-		Quality:     req.Quality,
-		Pages:       req.Pages,
-		Status:      "queued",
-		Priority:    5,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:         uuid.New().String(),
+		DocumentID: req.DocumentID,
+		PrinterID:  req.PrinterID,
+		UserName:   req.UserName,
+		UserEmail:  req.UserEmail,
+		Title:      req.Title,
+		Copies:     req.Copies,
+		ColorMode:  req.ColorMode,
+		Duplex:     req.Duplex,
+		MediaType:  req.MediaType,
+		Quality:    req.Quality,
+		Pages:      req.Pages,
+		Status:     "queued",
+		Priority:   5,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	// Serialize options
@@ -194,9 +194,9 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request, ctx context.
 
 	// Create history entry
 	history := &repository.JobHistory{
-		JobID:    job.ID,
-		Status:   job.Status,
-		Message:  "Job created and queued",
+		JobID:     job.ID,
+		Status:    job.Status,
+		Message:   "Job created and queued",
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)
@@ -304,9 +304,9 @@ func (h *Handler) cancelJob(w http.ResponseWriter, r *http.Request, ctx context.
 
 	// Create history entry
 	history := &repository.JobHistory{
-		JobID:    jobID,
-		Status:   "cancelled",
-		Message:  "Job cancelled by user",
+		JobID:     jobID,
+		Status:    "cancelled",
+		Message:   "Job cancelled by user",
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)
@@ -344,9 +344,9 @@ func (h *Handler) retryJob(w http.ResponseWriter, r *http.Request, ctx context.C
 
 	// Create history entry
 	history := &repository.JobHistory{
-		JobID:    jobID,
-		Status:   "queued",
-		Message:  fmt.Sprintf("Job retry #%d", job.Retries),
+		JobID:     jobID,
+		Status:    "queued",
+		Message:   fmt.Sprintf("Job retry #%d", job.Retries),
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)
@@ -372,9 +372,9 @@ func (h *Handler) pauseJob(w http.ResponseWriter, r *http.Request, ctx context.C
 	}
 
 	history := &repository.JobHistory{
-		JobID:    jobID,
-		Status:   "paused",
-		Message:  "Job paused",
+		JobID:     jobID,
+		Status:    "paused",
+		Message:   "Job paused",
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)
@@ -404,9 +404,9 @@ func (h *Handler) resumeJob(w http.ResponseWriter, r *http.Request, ctx context.
 	h.processor.Enqueue(ctx, job)
 
 	history := &repository.JobHistory{
-		JobID:    jobID,
-		Status:   "queued",
-		Message:  "Job resumed",
+		JobID:     jobID,
+		Status:    "queued",
+		Message:   "Job resumed",
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)
@@ -468,9 +468,9 @@ func (h *Handler) JobStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create history entry
 	history := &repository.JobHistory{
-		JobID:    jobID,
-		Status:   req.Status,
-		Message:  req.Message,
+		JobID:     jobID,
+		Status:    req.Status,
+		Message:   req.Message,
 		CreatedAt: time.Now(),
 	}
 	h.historyRepo.Create(ctx, history)

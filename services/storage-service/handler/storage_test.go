@@ -92,8 +92,8 @@ type mockRows struct {
 	db *mockDB
 }
 
-func (r *mockRows) Close() error                 { return nil }
-func (r *mockRows) Next() bool                   { return false }
+func (r *mockRows) Close() error                   { return nil }
+func (r *mockRows) Next() bool                     { return false }
 func (r *mockRows) Scan(dest ...interface{}) error { return nil }
 
 type mockRow struct {
@@ -129,7 +129,7 @@ func TestNewHandler(t *testing.T) {
 
 	cfg := Config{
 		Backend:       backend,
-		DB:            nil, // Use nil for unit tests
+		DB:            nil,               // Use nil for unit tests
 		MaxUploadSize: 100 * 1024 * 1024, // 100MB
 	}
 
@@ -181,11 +181,11 @@ func TestDocumentMetadata_Struct(t *testing.T) {
 func TestCreateJobRequest_Validation(t *testing.T) {
 	// This tests the validation logic conceptually
 	tests := []struct {
-		name    string
-		docID   string
+		name      string
+		docID     string
 		printerID string
 		userEmail string
-		wantErr bool
+		wantErr   bool
 	}{
 		{
 			name:      "valid request",
@@ -633,7 +633,7 @@ func TestHandler_PathExtraction(t *testing.T) {
 	}{
 		{"/documents/doc-123", "doc-123"},
 		{"/documents/", ""},
-		{"/documents", "/documents"},  // No trailing slash, so full path remains
+		{"/documents", "/documents"}, // No trailing slash, so full path remains
 		{"/documents/folder/subfolder/doc-456", "folder/subfolder/doc-456"},
 	}
 

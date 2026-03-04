@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/agent"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/registry-service/repository"
 )
 
@@ -115,10 +115,10 @@ func (h *AgentHeartbeatHandler) HandleHeartbeat(w http.ResponseWriter, r *http.R
 
 	// Build response
 	response := agent.HeartbeatResponse{
-		Status:        "ok",
-		ServerTime:    now,
-		PendingJobs:   pendingJobs,
-		Commands:      commands,
+		Status:               "ok",
+		ServerTime:           now,
+		PendingJobs:          pendingJobs,
+		Commands:             commands,
 		ConfigurationUpdates: make(map[string]interface{}),
 	}
 
@@ -157,13 +157,13 @@ func (h *AgentHeartbeatHandler) GetHeartbeatStatus(w http.ResponseWriter, r *htt
 	isOnline := timeSinceHeartbeat < h.heartbeatTimeout
 
 	response := map[string]interface{}{
-		"agent_id":        agentInfo.ID,
-		"status":          agentInfo.Status,
-		"is_online":       isOnline,
-		"last_heartbeat":  agentInfo.LastHeartbeat.Format(time.RFC3339),
-		"time_since_heartbeat": timeSinceHeartbeat.String(),
+		"agent_id":                  agentInfo.ID,
+		"status":                    agentInfo.Status,
+		"is_online":                 isOnline,
+		"last_heartbeat":            agentInfo.LastHeartbeat.Format(time.RFC3339),
+		"time_since_heartbeat":      timeSinceHeartbeat.String(),
 		"heartbeat_timeout_seconds": int(h.heartbeatTimeout.Seconds()),
-		"next_heartbeat_expected": agentInfo.LastHeartbeat.Add(h.heartbeatTimeout).Format(time.RFC3339),
+		"next_heartbeat_expected":   agentInfo.LastHeartbeat.Add(h.heartbeatTimeout).Format(time.RFC3339),
 	}
 
 	respondJSON(w, http.StatusOK, response)
@@ -220,18 +220,18 @@ func (h *AgentHeartbeatHandler) BatchHeartbeat(w http.ResponseWriter, r *http.Re
 		}
 
 		responses[i] = map[string]interface{}{
-			"agent_id":     hb.AgentID,
-			"status":       "ok",
-			"server_time":  now.Format(time.RFC3339),
+			"agent_id":    hb.AgentID,
+			"status":      "ok",
+			"server_time": now.Format(time.RFC3339),
 		}
 		successCount++
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"processed":      len(req.Heartbeats),
-		"successful":     successCount,
-		"failed":         len(req.Heartbeats) - successCount,
-		"responses":      responses,
+		"processed":  len(req.Heartbeats),
+		"successful": successCount,
+		"failed":     len(req.Heartbeats) - successCount,
+		"responses":  responses,
 	})
 }
 
@@ -281,13 +281,13 @@ func (h *AgentHeartbeatHandler) GetAgentMetrics(w http.ResponseWriter, r *http.R
 	}
 
 	metrics := map[string]interface{}{
-		"total_agents":        len(agents),
-		"online_agents":       onlineCount,
-		"offline_agents":      offlineCount,
-		"error_agents":        errorCount,
-		"stale_agents":        staleCount,
+		"total_agents":              len(agents),
+		"online_agents":             onlineCount,
+		"offline_agents":            offlineCount,
+		"error_agents":              errorCount,
+		"stale_agents":              staleCount,
 		"heartbeat_timeout_seconds": int(h.heartbeatTimeout.Seconds()),
-		"timestamp":           now.Format(time.RFC3339),
+		"timestamp":                 now.Format(time.RFC3339),
 	}
 
 	respondJSON(w, http.StatusOK, metrics)
@@ -311,10 +311,10 @@ func (h *AgentHeartbeatHandler) generateCommands(agentInfo *repository.Agent, re
 	// Command to refresh printers if printer count is zero
 	if req.PrinterCount == 0 {
 		commands = append(commands, agent.AgentCommand{
-			CommandID:  fmt.Sprintf("cmd-%d", time.Now().Unix()),
-			Type:       "refresh_printers",
-			IssuedAt:   time.Now(),
-			ExpiresAt:  time.Now().Add(5 * time.Minute),
+			CommandID: fmt.Sprintf("cmd-%d", time.Now().Unix()),
+			Type:      "refresh_printers",
+			IssuedAt:  time.Now(),
+			ExpiresAt: time.Now().Add(5 * time.Minute),
 		})
 	}
 
@@ -322,10 +322,10 @@ func (h *AgentHeartbeatHandler) generateCommands(agentInfo *repository.Agent, re
 	// This is a placeholder for version checking logic
 	if agentInfo.Version != "" && agentInfo.Version < "2.0.0" {
 		commands = append(commands, agent.AgentCommand{
-			CommandID:  fmt.Sprintf("update-%d", time.Now().Unix()),
-			Type:       "update_available",
-			IssuedAt:   time.Now(),
-			ExpiresAt:  time.Now().Add(24 * time.Hour),
+			CommandID: fmt.Sprintf("update-%d", time.Now().Unix()),
+			Type:      "update_available",
+			IssuedAt:  time.Now(),
+			ExpiresAt: time.Now().Add(24 * time.Hour),
 		})
 	}
 
@@ -350,4 +350,3 @@ func extractAgentIDFromPath(path string) string {
 	}
 	return ""
 }
-

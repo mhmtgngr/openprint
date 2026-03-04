@@ -189,14 +189,14 @@ func (h *AgentDownloadHandler) GetDocumentMetadata(w http.ResponseWriter, r *htt
 	}
 
 	response := map[string]interface{}{
-		"document_id":    metadata.ID,
-		"name":           metadata.Name,
-		"content_type":   metadata.ContentType,
-		"size":           metadata.Size,
-		"checksum":       metadata.Checksum,
-		"checksum_algo":  "sha256",
+		"document_id":     metadata.ID,
+		"name":            metadata.Name,
+		"content_type":    metadata.ContentType,
+		"size":            metadata.Size,
+		"checksum":        metadata.Checksum,
+		"checksum_algo":   "sha256",
 		"supports_resume": true,
-		"created_at":     metadata.CreatedAt.Format(time.RFC3339),
+		"created_at":      metadata.CreatedAt.Format(time.RFC3339),
 	}
 
 	if metadata.ExpiresAt != nil {

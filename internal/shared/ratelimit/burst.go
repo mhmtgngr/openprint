@@ -174,13 +174,13 @@ func (bm *BurstManager) GetBurstStatus(ctx context.Context, key string, policy *
 
 // BurstStatus represents the current burst status.
 type BurstStatus struct {
-	Key               string        `json:"key"`
-	BurstTokens       int64         `json:"burst_tokens"`
-	BurstCapacity     int64         `json:"burst_capacity"`
-	SustainedRate     int64         `json:"sustained_rate"`
-	InBurstPeriod     bool          `json:"in_burst_period"`
-	BurstRemaining    time.Duration `json:"burst_remaining"`
-	LastRefill        time.Time     `json:"last_refill"`
+	Key            string        `json:"key"`
+	BurstTokens    int64         `json:"burst_tokens"`
+	BurstCapacity  int64         `json:"burst_capacity"`
+	SustainedRate  int64         `json:"sustained_rate"`
+	InBurstPeriod  bool          `json:"in_burst_period"`
+	BurstRemaining time.Duration `json:"burst_remaining"`
+	LastRefill     time.Time     `json:"last_refill"`
 }
 
 // CheckSustained checks if the sustained rate allows a request.
@@ -347,10 +347,10 @@ func (bm *BurstManager) ResetBurst(ctx context.Context, key string, policy *Poli
 	now := time.Now()
 
 	hashData := map[string]string{
-		"tokens":        fmt.Sprintf("%d", policy.BurstLimit),
-		"capacity":      fmt.Sprintf("%d", policy.Limit),
-		"last_refill":   fmt.Sprintf("%d", now.Unix()),
-		"window_start":  fmt.Sprintf("%d", now.Unix()),
+		"tokens":         fmt.Sprintf("%d", policy.BurstLimit),
+		"capacity":       fmt.Sprintf("%d", policy.Limit),
+		"last_refill":    fmt.Sprintf("%d", now.Unix()),
+		"window_start":   fmt.Sprintf("%d", now.Unix()),
 		"burst_duration": fmt.Sprintf("%d", int64(policy.BurstDuration.Seconds())),
 	}
 

@@ -704,10 +704,10 @@ func TestTestConfig_GetAllWithParent(t *testing.T) {
 
 func TestSplitEnv(t *testing.T) {
 	tests := []struct {
-		input    string
-		wantKey  string
-		wantVal  string
-		wantOk   bool
+		input   string
+		wantKey string
+		wantVal string
+		wantOk  bool
 	}{
 		{"KEY=value", "KEY", "value", true},
 		{"KEY=", "KEY", "", true},

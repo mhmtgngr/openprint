@@ -13,9 +13,9 @@ import (
 
 // PaginationParams holds validated pagination parameters.
 type PaginationParams struct {
-	Limit  int
-	Offset int
-	Page   int
+	Limit   int
+	Offset  int
+	Page    int
 	PerPage int
 }
 

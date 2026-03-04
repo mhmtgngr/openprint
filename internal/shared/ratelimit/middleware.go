@@ -309,12 +309,12 @@ func IPBasedMiddleware(limiter *Limiter, requestsPerMinute int, skipPaths []stri
 			ip := getClientIP(r)
 
 			req := &Request{
-				Type:      "ip",
+				Type:       "ip",
 				Identifier: ip,
-				Method:    r.Method,
-				Path:      r.URL.Path,
-				IP:        ip,
-				Timestamp: time.Now(),
+				Method:     r.Method,
+				Path:       r.URL.Path,
+				IP:         ip,
+				Timestamp:  time.Now(),
 			}
 
 			result, err := limiter.Check(r.Context(), req)
@@ -348,10 +348,10 @@ func IPBasedMiddleware(limiter *Limiter, requestsPerMinute int, skipPaths []stri
 
 // TokenBucketMiddleware implements token bucket rate limiting.
 type TokenBucketMiddleware struct {
-	limiter    *Limiter
-	rate       int64
-	capacity   int64
-	skipPaths  []string
+	limiter   *Limiter
+	rate      int64
+	capacity  int64
+	skipPaths []string
 }
 
 // NewTokenBucketMiddleware creates a token bucket rate limiter.
@@ -381,12 +381,12 @@ func (tb *TokenBucketMiddleware) Handler(next http.Handler) http.Handler {
 
 		// Token bucket is implemented via a specific policy
 		req := &Request{
-			Type:      "ip",
+			Type:       "ip",
 			Identifier: ip,
-			Method:    r.Method,
-			Path:      r.URL.Path,
-			IP:        ip,
-			Timestamp: time.Now(),
+			Method:     r.Method,
+			Path:       r.URL.Path,
+			IP:         ip,
+			Timestamp:  time.Now(),
 		}
 
 		result, err := tb.limiter.Check(r.Context(), req)
@@ -467,12 +467,12 @@ func (am *AdaptiveMiddleware) Handler(next http.Handler) http.Handler {
 		// Use the adjusted limit for checking
 		ip := getClientIP(r)
 		req := &Request{
-			Type:      "ip",
+			Type:       "ip",
 			Identifier: ip,
-			Method:    r.Method,
-			Path:      r.URL.Path,
-			IP:        ip,
-			Timestamp: time.Now(),
+			Method:     r.Method,
+			Path:       r.URL.Path,
+			IP:         ip,
+			Timestamp:  time.Now(),
 		}
 
 		result, err := am.limiter.Check(r.Context(), req)
@@ -514,12 +514,12 @@ func GradientDelayMiddleware(limiter *Limiter, skipPaths []string) func(http.Han
 
 			ip := getClientIP(r)
 			req := &Request{
-				Type:      "ip",
+				Type:       "ip",
 				Identifier: ip,
-				Method:    r.Method,
-				Path:      r.URL.Path,
-				IP:        ip,
-				Timestamp: time.Now(),
+				Method:     r.Method,
+				Path:       r.URL.Path,
+				IP:         ip,
+				Timestamp:  time.Now(),
 			}
 
 			result, err := limiter.Check(r.Context(), req)
@@ -531,7 +531,7 @@ func GradientDelayMiddleware(limiter *Limiter, skipPaths []string) func(http.Han
 			// Calculate delay based on remaining capacity
 			if result.Remaining < result.Limit/4 {
 				// Near limit, add delay
-				delay := time.Duration((result.Limit - result.Remaining) * int64(time.Second)/result.Limit)
+				delay := time.Duration((result.Limit - result.Remaining) * int64(time.Second) / result.Limit)
 				if delay > 5*time.Second {
 					delay = 5 * time.Second
 				}

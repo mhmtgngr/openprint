@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
-	"github.com/redis/go-redis/v9"
 	"github.com/openprint/openprint/services/job-service/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 // JobRepository defines the interface for job repository operations.
@@ -69,23 +69,23 @@ type Stats struct {
 
 // Processor handles background job processing.
 type Processor struct {
-	jobRepo     JobRepository
-	historyRepo JobHistoryRepository
-	redis       *redis.Client
-	workers     int
+	jobRepo      JobRepository
+	historyRepo  JobHistoryRepository
+	redis        *redis.Client
+	workers      int
 	pollInterval time.Duration
-	metrics     *prometheus.Metrics
-	serviceName string
+	metrics      *prometheus.Metrics
+	serviceName  string
 
 	// Channels for job distribution
-	jobQueue    chan *repository.PrintJob
-	workerStop  chan struct{}
-	wg          sync.WaitGroup
+	jobQueue   chan *repository.PrintJob
+	workerStop chan struct{}
+	wg         sync.WaitGroup
 
 	// Tracking
-	mu           sync.Mutex
-	processing   map[string]*repository.PrintJob
-	cancelled    map[string]struct{}
+	mu         sync.Mutex
+	processing map[string]*repository.PrintJob
+	cancelled  map[string]struct{}
 }
 
 // New creates a new job processor.
@@ -467,9 +467,9 @@ func (p *Processor) IsPaused(ctx context.Context) (bool, error) {
 // addHistory adds a history entry for a job.
 func (p *Processor) addHistory(ctx context.Context, jobID, status, message string) {
 	history := &repository.JobHistory{
-		JobID:    jobID,
-		Status:   status,
-		Message:  message,
+		JobID:     jobID,
+		Status:    status,
+		Message:   message,
 		CreatedAt: time.Now(),
 	}
 	p.historyRepo.Create(ctx, history)

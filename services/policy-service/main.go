@@ -235,17 +235,17 @@ func policiesHandler(engine *Engine) http.HandlerFunc {
 
 			// Validate policy type
 			validTypes := map[PolicyType]bool{
-				PolicyTypeQuota:       true,
-				PolicyTypeAccess:      true,
-				PolicyTypeContent:     true,
-				PolicyTypeRouting:     true,
-				PolicyTypeWatermark:   true,
-				PolicyTypeRetention:   true,
-				PolicyTypeCostCenter:  true,
+				PolicyTypeQuota:      true,
+				PolicyTypeAccess:     true,
+				PolicyTypeContent:    true,
+				PolicyTypeRouting:    true,
+				PolicyTypeWatermark:  true,
+				PolicyTypeRetention:  true,
+				PolicyTypeCostCenter: true,
 			}
 			if req.Type == "" || !validTypes[req.Type] {
 				respondJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "invalid policy type",
+					"error":       "invalid policy type",
 					"valid_types": "quota, access, content, routing, watermark, retention, cost_center",
 				})
 				return
@@ -261,7 +261,7 @@ func policiesHandler(engine *Engine) http.HandlerFunc {
 				req.Status = PolicyStatusDraft
 			} else if !validStatuses[req.Status] {
 				respondJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "invalid status",
+					"error":          "invalid status",
 					"valid_statuses": "active, inactive, draft",
 				})
 				return
@@ -472,10 +472,10 @@ func evaluateHandler(engine *Engine) http.HandlerFunc {
 		}
 
 		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"action":          finalAction,
-			"message":         finalMessage,
+			"action":           finalAction,
+			"message":          finalMessage,
 			"matched_policies": matchedPolicies,
-			"total_evaluated": len(results),
+			"total_evaluated":  len(results),
 		})
 	}
 }
@@ -504,7 +504,7 @@ func validateRulesHandler(engine *Engine) http.HandlerFunc {
 
 		validFields := map[string]bool{
 			"user.id": true, "user.email": true, "user.groups": true,
-			"printer.id": true,
+			"printer.id":    true,
 			"document.name": true, "document.type": true, "document.page_count": true,
 			"document.color_mode": true, "document.duplex_mode": true, "document.cost": true,
 			"time.hour": true, "time.day_of_week": true,
@@ -544,8 +544,8 @@ func validateRulesHandler(engine *Engine) http.HandlerFunc {
 		}
 
 		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"valid":   valid,
-			"errors":  errors,
+			"valid":    valid,
+			"errors":   errors,
 			"warnings": warnings,
 		})
 	}

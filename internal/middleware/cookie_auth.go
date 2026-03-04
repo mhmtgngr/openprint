@@ -4,19 +4,19 @@
 //
 // This package provides secure cookie helpers that enforce the following security attributes:
 //
-// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
-//    interception on the network. Always use Secure=true in production.
+//  1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
+//     interception on the network. Always use Secure=true in production.
 //
-// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
-//    protecting against XSS attacks that attempt to steal session tokens.
+//  2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
+//     protecting against XSS attacks that attempt to steal session tokens.
 //
 // 3. SameSite Attribute - Controls cross-site cookie behavior:
-//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
-//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
-//    - SameSiteNone: Allows cross-site requests; requires Secure=true
+//   - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
+//   - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
+//   - SameSiteNone: Allows cross-site requests; requires Secure=true
 //
-// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
-//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
+//  4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
+//     for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
 //
 // USAGE EXAMPLE:
 //
@@ -54,12 +54,12 @@ const (
 	// RefreshCookieName is the name of the refresh token cookie
 	RefreshCookieName = "openprint_refresh"
 
-	UserIDKey  contextKey = "user_id"
-	EmailKey   contextKey = "email"
-	OrgIDKey   contextKey = "org_id"
-	RoleKey    contextKey = "role"
-	ScopesKey  contextKey = "scopes"
-	TokenKey   contextKey = "token"
+	UserIDKey contextKey = "user_id"
+	EmailKey  contextKey = "email"
+	OrgIDKey  contextKey = "org_id"
+	RoleKey   contextKey = "role"
+	ScopesKey contextKey = "scopes"
+	TokenKey  contextKey = "token"
 )
 
 // CookieSecurityConfig defines security attributes for session cookies.
@@ -90,8 +90,8 @@ type CookieSecurityConfig struct {
 // These settings prioritize security while maintaining reasonable usability.
 func DefaultCookieSecurity() *CookieSecurityConfig {
 	return &CookieSecurityConfig{
-		Secure:   true,  // Always use HTTPS in production
-		HttpOnly: true,  // Prevent XSS access
+		Secure:   true,                 // Always use HTTPS in production
+		HttpOnly: true,                 // Prevent XSS access
 		SameSite: http.SameSiteLaxMode, // Balance CSRF protection with usability
 		Path:     "/",
 	}
@@ -106,8 +106,8 @@ func DefaultCookieSecurity() *CookieSecurityConfig {
 // - XSS attacks stealing session tokens (HttpOnly flag)
 func ProductionCookieSecurity() *CookieSecurityConfig {
 	return &CookieSecurityConfig{
-		Secure:   true,  // REQUIRED: Only send cookies over HTTPS
-		HttpOnly: true,  // REQUIRED: Prevent JavaScript access
+		Secure:   true,                    // REQUIRED: Only send cookies over HTTPS
+		HttpOnly: true,                    // REQUIRED: Prevent JavaScript access
 		SameSite: http.SameSiteStrictMode, // Stricter CSRF protection for production
 		Path:     "/",
 	}

@@ -84,11 +84,11 @@ func NewRegistry(cfg Config) (*Registry, error) {
 	}
 
 	r := &Registry{
-		registry:        reg,
-		serviceName:     cfg.ServiceName,
-		serviceVersion:  cfg.ServiceVersion,
-		labels:          labels,
-		collectors:      make(map[string]prometheus.Collector),
+		registry:       reg,
+		serviceName:    cfg.ServiceName,
+		serviceVersion: cfg.ServiceVersion,
+		labels:         labels,
+		collectors:     make(map[string]prometheus.Collector),
 	}
 
 	// Register default collectors for Go runtime metrics

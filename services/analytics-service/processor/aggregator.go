@@ -21,15 +21,15 @@ func NewAggregator(db *pgxpool.Pool) *Aggregator {
 
 // JobsStats holds aggregated job statistics.
 type JobsStats struct {
-	TotalJobs       int                     `json:"total_jobs"`
-	CompletedJobs   int                     `json:"completed_jobs"`
-	FailedJobs      int                     `json:"failed_jobs"`
-	PendingJobs     int                     `json:"pending_jobs"`
-	TotalPages      int                     `json:"total_pages"`
-	AveragePagesPerJob float64              `json:"average_pages_per_job"`
-	StatusBreakdown map[string]int         `json:"status_breakdown"`
-	DailyTrends     []DailyJobCount         `json:"daily_trends"`
-	Trends          Trends                  `json:"trends"`
+	TotalJobs          int             `json:"total_jobs"`
+	CompletedJobs      int             `json:"completed_jobs"`
+	FailedJobs         int             `json:"failed_jobs"`
+	PendingJobs        int             `json:"pending_jobs"`
+	TotalPages         int             `json:"total_pages"`
+	AveragePagesPerJob float64         `json:"average_pages_per_job"`
+	StatusBreakdown    map[string]int  `json:"status_breakdown"`
+	DailyTrends        []DailyJobCount `json:"daily_trends"`
+	Trends             Trends          `json:"trends"`
 }
 
 // DailyJobCount represents job count for a single day.
@@ -47,12 +47,12 @@ type Trends struct {
 
 // PrinterStats holds aggregated printer statistics.
 type PrinterStats struct {
-	TotalPrinters        int                  `json:"total_printers"`
-	OnlinePrinters       int                  `json:"online_printers"`
-	OfflinePrinters      int                  `json:"offline_printers"`
-	TopPrinters          []PrinterUsage       `json:"top_printers"`
-	StatusDistribution   map[string]int       `json:"status_distribution"`
-	TotalJobsProcessed   int                  `json:"total_jobs_processed"`
+	TotalPrinters      int            `json:"total_printers"`
+	OnlinePrinters     int            `json:"online_printers"`
+	OfflinePrinters    int            `json:"offline_printers"`
+	TopPrinters        []PrinterUsage `json:"top_printers"`
+	StatusDistribution map[string]int `json:"status_distribution"`
+	TotalJobsProcessed int            `json:"total_jobs_processed"`
 }
 
 // PrinterUsage represents usage statistics for a single printer.
@@ -65,17 +65,17 @@ type PrinterUsage struct {
 
 // UserStats holds aggregated user statistics.
 type UserStats struct {
-	TotalUsers       int           `json:"total_users"`
-	ActiveUsersCount int           `json:"active_users_count"`
+	TotalUsers       int            `json:"total_users"`
+	ActiveUsersCount int            `json:"active_users_count"`
 	TopUsers         []UserActivity `json:"top_users"`
-	TotalJobsByUsers int           `json:"total_jobs_by_users"`
+	TotalJobsByUsers int            `json:"total_jobs_by_users"`
 }
 
 // UserActivity represents activity statistics for a single user.
 type UserActivity struct {
-	UserEmail  string `json:"user_email"`
-	JobCount   int    `json:"job_count"`
-	PageCount  int    `json:"page_count"`
+	UserEmail string `json:"user_email"`
+	JobCount  int    `json:"job_count"`
+	PageCount int    `json:"page_count"`
 }
 
 // AggregateJobsByDate aggregates job statistics by date.

@@ -677,10 +677,10 @@ func splitToken(token string) []string {
 func TestManager_ExpiredToken(t *testing.T) {
 	// Create a manager with very short token duration
 	cfg := &Config{
-		SecretKey:                     "this-is-a-secure-secret-key-32-chars-long",
-		AccessDuration:                1 * time.Millisecond,
-		RefreshDuration:               7 * 24 * time.Hour,
-		Issuer:                        "openprint.cloud",
+		SecretKey:                        "this-is-a-secure-secret-key-32-chars-long",
+		AccessDuration:                   1 * time.Millisecond,
+		RefreshDuration:                  7 * 24 * time.Hour,
+		Issuer:                           "openprint.cloud",
 		DisableRequireAudienceValidation: true, // Only for testing
 	}
 	mgr, _ := NewManager(cfg)
@@ -917,10 +917,10 @@ func TestSecurity_AudienceValidationEnforced(t *testing.T) {
 	t.Run("DisableRequireAudienceValidation allows skipping for testing", func(t *testing.T) {
 		// Create a config with audience validation explicitly disabled for testing
 		cfg := &Config{
-			SecretKey:                      "this-is-a-secure-secret-key-32-chars-long",
-			AccessDuration:                 15 * time.Minute,
-			RefreshDuration:                7 * 24 * time.Hour,
-			Issuer:                         "openprint.cloud",
+			SecretKey:                        "this-is-a-secure-secret-key-32-chars-long",
+			AccessDuration:                   15 * time.Minute,
+			RefreshDuration:                  7 * 24 * time.Hour,
+			Issuer:                           "openprint.cloud",
 			DisableRequireAudienceValidation: true,
 		}
 		mgr, err := NewManager(cfg)

@@ -34,16 +34,16 @@ type TestClaims struct {
 
 // TokenOptions holds options for generating test tokens.
 type TokenOptions struct {
-	Secret     string
-	UserID     string
-	Email      string
-	OrgID      string
-	Role       string
-	Scopes     []string
-	TokenType  string
-	Expiry     time.Duration
-	NotBefore  time.Time
-	Issuer     string
+	Secret    string
+	UserID    string
+	Email     string
+	OrgID     string
+	Role      string
+	Scopes    []string
+	TokenType string
+	Expiry    time.Duration
+	NotBefore time.Time
+	Issuer    string
 }
 
 // DefaultTokenOptions returns default token options for testing.

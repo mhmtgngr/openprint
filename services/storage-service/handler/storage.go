@@ -24,21 +24,21 @@ import (
 
 // Config holds handler dependencies.
 type Config struct {
-	Backend       storage.Backend
-	DB            *pgxpool.Pool
-	MaxUploadSize int64
-	Metrics       *prometheus.Metrics
-	ServiceName   string
+	Backend        storage.Backend
+	DB             *pgxpool.Pool
+	MaxUploadSize  int64
+	Metrics        *prometheus.Metrics
+	ServiceName    string
 	StorageBackend string
 }
 
 // Handler provides storage service HTTP handlers.
 type Handler struct {
-	backend       storage.Backend
-	db            *pgxpool.Pool
-	maxUploadSize int64
-	metrics       *prometheus.Metrics
-	serviceName   string
+	backend        storage.Backend
+	db             *pgxpool.Pool
+	maxUploadSize  int64
+	metrics        *prometheus.Metrics
+	serviceName    string
 	storageBackend string
 }
 
@@ -405,9 +405,9 @@ func (h *Handler) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
-		"document_id": docID,
-		"filename":    header.Filename,
-		"size":        len(content),
+		"document_id":  docID,
+		"filename":     header.Filename,
+		"size":         len(content),
 		"content_type": header.Header.Get("Content-Type"),
 	})
 }

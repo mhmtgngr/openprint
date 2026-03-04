@@ -46,36 +46,36 @@ type Service struct {
 
 // M365Document represents a document from Microsoft 365.
 type M365Document struct {
-	ID              string                 `json:"id"`
-	Name            string                 `json:"name"`
-	DriveID         string                 `json:"drive_id"`
-	ItemID          string                 `json:"item_id"`
-	DownloadURL     string                 `json:"download_url"`
-	Size            int64                  `json:"size"`
-	MimeType        string                 `json:"mime_type"`
-	CreatedBy       string                 `json:"created_by"`
-	CreatedAt       time.Time              `json:"created_at"`
-	ModifiedAt      time.Time              `json:"modified_at"`
-	SharePointURL   string                 `json:"sharepoint_url,omitempty"`
-	OneDriveURL     string                 `json:"onedrive_url,omitempty"`
-	Path            string                 `json:"path"`
-	WebURL          string                 `json:"web_url"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+	ID            string                 `json:"id"`
+	Name          string                 `json:"name"`
+	DriveID       string                 `json:"drive_id"`
+	ItemID        string                 `json:"item_id"`
+	DownloadURL   string                 `json:"download_url"`
+	Size          int64                  `json:"size"`
+	MimeType      string                 `json:"mime_type"`
+	CreatedBy     string                 `json:"created_by"`
+	CreatedAt     time.Time              `json:"created_at"`
+	ModifiedAt    time.Time              `json:"modified_at"`
+	SharePointURL string                 `json:"sharepoint_url,omitempty"`
+	OneDriveURL   string                 `json:"onedrive_url,omitempty"`
+	Path          string                 `json:"path"`
+	WebURL        string                 `json:"web_url"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // PrintJobSource represents the source of a print job from Microsoft 365.
 type PrintJobSource struct {
-	SourceID    string                 `json:"source_id"`
-	SourceType  string                 `json:"source_type"` // onedrive, sharepoint, outlook
-	DocumentID  string                 `json:"document_id"`
-	DocumentURL string                 `json:"document_url"`
-	UserID      string                 `json:"user_id"`
-	UserEmail   string                 `json:"user_email"`
-	FileName    string                 `json:"file_name"`
-	FileSize    int64                  `json:"file_size"`
-	AccessToken string                 `json:"access_token"`
+	SourceID     string                 `json:"source_id"`
+	SourceType   string                 `json:"source_type"` // onedrive, sharepoint, outlook
+	DocumentID   string                 `json:"document_id"`
+	DocumentURL  string                 `json:"document_url"`
+	UserID       string                 `json:"user_id"`
+	UserEmail    string                 `json:"user_email"`
+	FileName     string                 `json:"file_name"`
+	FileSize     int64                  `json:"file_size"`
+	AccessToken  string                 `json:"access_token"`
 	RefreshToken string                 `json:"refresh_token"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // SharePointSite represents a SharePoint site.
@@ -116,17 +116,17 @@ type M365Connection struct {
 
 // PrintJobM365Metadata stores metadata for Microsoft 365 print jobs.
 type PrintJobM365Metadata struct {
-	JobID         string                 `json:"job_id"`
-	SourceID      string                 `json:"source_id"`
-	SourceType    string                 `json:"source_type"`
-	DocumentID    string                 `json:"document_id"`
-	DocumentName  string                 `json:"document_name"`
-	OriginalURL   string                 `json:"original_url"`
-	DownloadedAt  time.Time              `json:"downloaded_at"`
-	DownloadedSize int64                 `json:"downloaded_size"`
-	StoredPath    string                 `json:"stored_path"`
-	HashCode      string                 `json:"hash_code"`
-	Properties    map[string]interface{} `json:"properties,omitempty"`
+	JobID          string                 `json:"job_id"`
+	SourceID       string                 `json:"source_id"`
+	SourceType     string                 `json:"source_type"`
+	DocumentID     string                 `json:"document_id"`
+	DocumentName   string                 `json:"document_name"`
+	OriginalURL    string                 `json:"original_url"`
+	DownloadedAt   time.Time              `json:"downloaded_at"`
+	DownloadedSize int64                  `json:"downloaded_size"`
+	StoredPath     string                 `json:"stored_path"`
+	HashCode       string                 `json:"hash_code"`
+	Properties     map[string]interface{} `json:"properties,omitempty"`
 }
 
 // GraphAPIResponse represents a standard Microsoft Graph API response.
@@ -552,22 +552,22 @@ func (s *Service) sharePointSitesHandler(w http.ResponseWriter, r *http.Request)
 
 	sites := []SharePointSite{
 		{
-			ID:          "site-1",
-			Name:        "Marketing",
-			URL:         "https://contoso.sharepoint.com/sites/marketing",
-			Description: "Marketing team site",
-			CreatedAt:   time.Now().Add(-365 * 24 * time.Hour),
+			ID:           "site-1",
+			Name:         "Marketing",
+			URL:          "https://contoso.sharepoint.com/sites/marketing",
+			Description:  "Marketing team site",
+			CreatedAt:    time.Now().Add(-365 * 24 * time.Hour),
 			LastModified: time.Now().Add(-1 * 24 * time.Hour),
-			WebURL:      "https://contoso.sharepoint.com/sites/marketing",
+			WebURL:       "https://contoso.sharepoint.com/sites/marketing",
 		},
 		{
-			ID:          "site-2",
-			Name:        "Documents",
-			URL:         "https://contoso.sharepoint.com/sites/documents",
-			Description: "Company documents",
-			CreatedAt:   time.Now().Add(-730 * 24 * time.Hour),
+			ID:           "site-2",
+			Name:         "Documents",
+			URL:          "https://contoso.sharepoint.com/sites/documents",
+			Description:  "Company documents",
+			CreatedAt:    time.Now().Add(-730 * 24 * time.Hour),
 			LastModified: time.Now().Add(-2 * 24 * time.Hour),
-			WebURL:      "https://contoso.sharepoint.com/sites/documents",
+			WebURL:       "https://contoso.sharepoint.com/sites/documents",
 		},
 	}
 
@@ -588,17 +588,17 @@ func (s *Service) sharePointFilesHandler(w http.ResponseWriter, r *http.Request)
 
 	files := []M365Document{
 		{
-			ID:           "sp-file-1",
-			Name:         "Brochure.pdf",
-			DriveID:      "drive-sp-1",
-			ItemID:       "item-sp-1",
-			Size:         2048000,
-			MimeType:     "application/pdf",
+			ID:            "sp-file-1",
+			Name:          "Brochure.pdf",
+			DriveID:       "drive-sp-1",
+			ItemID:        "item-sp-1",
+			Size:          2048000,
+			MimeType:      "application/pdf",
 			SharePointURL: "https://contoso.sharepoint.com/sites/marketing/Shared%20Documents/Brochure.pdf",
-			CreatedAt:    time.Now().Add(-7 * 24 * time.Hour),
-			ModifiedAt:   time.Now().Add(-1 * 24 * time.Hour),
-			Path:         "/Shared Documents/Brochure.pdf",
-			WebURL:       "https://contoso.sharepoint.com/:b:/g/sites/marketing/Shared%20Documents/Brochure.pdf",
+			CreatedAt:     time.Now().Add(-7 * 24 * time.Hour),
+			ModifiedAt:    time.Now().Add(-1 * 24 * time.Hour),
+			Path:          "/Shared Documents/Brochure.pdf",
+			WebURL:        "https://contoso.sharepoint.com/:b:/g/sites/marketing/Shared%20Documents/Brochure.pdf",
 		},
 	}
 
@@ -663,13 +663,13 @@ func (s *Service) printStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// In production, query the actual job status
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"job_id":      jobID,
-		"status":      "completed",
-		"created_at":  time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
-		"updated_at":  time.Now().Add(-1 * time.Minute).Format(time.RFC3339),
-		"pages":       10,
-		"color":       true,
-		"duplex":      true,
+		"job_id":     jobID,
+		"status":     "completed",
+		"created_at": time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
+		"updated_at": time.Now().Add(-1 * time.Minute).Format(time.RFC3339),
+		"pages":      10,
+		"color":      true,
+		"duplex":     true,
 	})
 }
 

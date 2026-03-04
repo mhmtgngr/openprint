@@ -548,7 +548,7 @@ func TestMetricsServer_HandlerComposition(t *testing.T) {
 		}
 
 		serverWithAuth := NewMetricsServer(ServerConfig{
-			Registry: reg,
+			Registry:  reg,
 			BasicAuth: auth,
 		})
 
@@ -558,8 +558,8 @@ func TestMetricsServer_HandlerComposition(t *testing.T) {
 	t.Run("TLS config is stored", func(t *testing.T) {
 		serverWithTLS := NewMetricsServer(ServerConfig{
 			Registry: reg,
-			CertFile:  "/path/to/cert.pem",
-			KeyFile:   "/path/to/key.pem",
+			CertFile: "/path/to/cert.pem",
+			KeyFile:  "/path/to/key.pem",
 		})
 
 		assert.Equal(t, "/path/to/cert.pem", serverWithTLS.certFile)
@@ -638,12 +638,12 @@ func TestServerConfig(t *testing.T) {
 	}
 
 	serverCfg := ServerConfig{
-		Registry:   reg,
-		Port:       9100,
-		Host:       "localhost",
-		CertFile:   "cert.pem",
-		KeyFile:    "key.pem",
-		BasicAuth:  auth,
+		Registry:  reg,
+		Port:      9100,
+		Host:      "localhost",
+		CertFile:  "cert.pem",
+		KeyFile:   "key.pem",
+		BasicAuth: auth,
 	}
 
 	assert.Equal(t, reg, serverCfg.Registry)

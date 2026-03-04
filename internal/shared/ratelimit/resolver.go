@@ -225,13 +225,13 @@ func (r *PolicyResolver) RemovePolicy(policyID string) {
 
 // PolicyChain represents a chain of policies for debugging.
 type PolicyChain struct {
-	Global        *Policy `json:"global,omitempty"`
-	Organization  *Policy `json:"organization,omitempty"`
-	User          *Policy `json:"user,omitempty"`
-	APIKey        *Policy `json:"api_key,omitempty"`
-	Endpoint      *Policy `json:"endpoint,omitempty"`
-	IP            *Policy `json:"ip,omitempty"`
-	Applied       *Policy `json:"applied"`
+	Global       *Policy `json:"global,omitempty"`
+	Organization *Policy `json:"organization,omitempty"`
+	User         *Policy `json:"user,omitempty"`
+	APIKey       *Policy `json:"api_key,omitempty"`
+	Endpoint     *Policy `json:"endpoint,omitempty"`
+	IP           *Policy `json:"ip,omitempty"`
+	Applied      *Policy `json:"applied"`
 }
 
 // ResolveWithChain resolves the policy and returns the full chain for debugging.
@@ -345,12 +345,12 @@ func ValidatePolicy(policy *Policy) error {
 	}
 
 	validScopes := map[string]bool{
-		"global":      true,
-		"endpoint":    true,
-		"user":        true,
-		"api_key":     true,
+		"global":       true,
+		"endpoint":     true,
+		"user":         true,
+		"api_key":      true,
 		"organization": true,
-		"ip":          true,
+		"ip":           true,
 	}
 
 	if !validScopes[policy.Scope] {

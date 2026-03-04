@@ -363,18 +363,18 @@ func (b *BypassManager) GetBypassStats(ctx context.Context) (*BypassStats, error
 	}
 
 	return &BypassStats{
-		TotalTrustedAPIKeys: len(cache.apiKeys),
+		TotalTrustedAPIKeys:  len(cache.apiKeys),
 		ActiveTrustedAPIKeys: activeAPIKeys,
-		TotalTrustedIPs:     len(cache.ips),
+		TotalTrustedIPs:      len(cache.ips),
 		ActiveTrustedIPs:     activeIPs,
 	}, nil
 }
 
 // BypassStats represents bypass manager statistics.
 type BypassStats struct {
-	TotalTrustedAPIKeys int `json:"total_trusted_api_keys"`
+	TotalTrustedAPIKeys  int `json:"total_trusted_api_keys"`
 	ActiveTrustedAPIKeys int `json:"active_trusted_api_keys"`
-	TotalTrustedIPs     int `json:"total_trusted_ips"`
+	TotalTrustedIPs      int `json:"total_trusted_ips"`
 	ActiveTrustedIPs     int `json:"active_trusted_ips"`
 }
 
@@ -460,9 +460,9 @@ func (b *BypassManager) refreshCache(ctx context.Context) error {
 
 				// Create a minimal client for IP lookup
 				newCache.ips[ip] = &TrustedClient{
-					ID:        clientID,
+					ID:          clientID,
 					IPWhitelist: []string{ip},
-					IsActive:  active,
+					IsActive:    active,
 				}
 			}
 		}

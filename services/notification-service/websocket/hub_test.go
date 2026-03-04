@@ -44,8 +44,8 @@ func (m *mockConn) Close() error {
 	return nil
 }
 
-func (m *mockConn) SetReadDeadline(t time.Time) error  { return nil }
-func (m *mockConn) SetWriteDeadline(t time.Time) error { return nil }
+func (m *mockConn) SetReadDeadline(t time.Time) error           { return nil }
+func (m *mockConn) SetWriteDeadline(t time.Time) error          { return nil }
 func (m *mockConn) SetPongHandler(h func(appData string) error) {}
 func (m *mockConn) ReadMessage() (int, []byte, error) {
 	<-m.closeChan

@@ -26,18 +26,18 @@ type ReportsRepository interface {
 
 // UsageSummary represents aggregated usage statistics.
 type UsageSummary struct {
-	TotalJobs        int
-	TotalPages       int
-	ColorPages       int
-	DuplexPages      int
-	CompletedJobs    int
-	FailedJobs       int
-	CancelledJobs    int
-	AverageJobTime   int // in seconds
-	TotalCost        float64
-	Currency         string
-	CO2Emission      float64 // in kg
-	TreesSaved       float64 // number of trees equivalent
+	TotalJobs      int
+	TotalPages     int
+	ColorPages     int
+	DuplexPages    int
+	CompletedJobs  int
+	FailedJobs     int
+	CancelledJobs  int
+	AverageJobTime int // in seconds
+	TotalCost      float64
+	Currency       string
+	CO2Emission    float64 // in kg
+	TreesSaved     float64 // number of trees equivalent
 }
 
 // UserUsageStats represents usage statistics for a user.
@@ -55,16 +55,16 @@ type UserUsageStats struct {
 
 // PrinterUsageStats represents usage statistics for a printer.
 type PrinterUsageStats struct {
-	PrinterID       string
-	PrinterName     string
-	TotalJobs       int
-	TotalPages      int
-	ColorPages      int
-	DuplexPages     int
-	TotalCost       float64
-	Uptime          float64 // percentage
-	ErrorRate       float64 // percentage
-	Rank            int
+	PrinterID   string
+	PrinterName string
+	TotalJobs   int
+	TotalPages  int
+	ColorPages  int
+	DuplexPages int
+	TotalCost   float64
+	Uptime      float64 // percentage
+	ErrorRate   float64 // percentage
+	Rank        int
 }
 
 // DepartmentReport represents report data for a department/cost center.
@@ -80,27 +80,27 @@ type DepartmentReport struct {
 
 // EnvironmentalReport represents environmental impact metrics.
 type EnvironmentalReport struct {
-	TotalPages         int
-	TreesSaved         float64 // Number of trees saved due to duplex printing
-	CO2Emission        float64 // CO2 emitted in kg
-	CO2Offset          float64 // CO2 offset in kg
-	EnergyConsumption   float64 // kWh
-	WasteReduction     float64 // kg of paper waste reduced
+	TotalPages        int
+	TreesSaved        float64 // Number of trees saved due to duplex printing
+	CO2Emission       float64 // CO2 emitted in kg
+	CO2Offset         float64 // CO2 offset in kg
+	EnergyConsumption float64 // kWh
+	WasteReduction    float64 // kg of paper waste reduced
 }
 
 // TrendDataPoint represents a single data point in a trend.
 type TrendDataPoint struct {
-	Date       string
-	Jobs       int
-	Pages      int
-	Cost       float64
-	CO2        float64
+	Date  string
+	Jobs  int
+	Pages int
+	Cost  float64
+	CO2   float64
 }
 
 // ReportsHandler handles reporting HTTP endpoints.
 type ReportsHandler struct {
-	db    *pgxpool.Pool
-	repo  ReportsRepository
+	db   *pgxpool.Pool
+	repo ReportsRepository
 }
 
 // NewReportsHandler creates a new reports handler instance.
@@ -159,7 +159,7 @@ func (h *ReportsHandler) UsageSummaryHandler(w http.ResponseWriter, r *http.Requ
 		"currency":         summary.Currency,
 		"environmental": map[string]interface{}{
 			"co2_emission": summary.CO2Emission,
-			"trees_saved":   summary.TreesSaved,
+			"trees_saved":  summary.TreesSaved,
 		},
 	})
 }
@@ -267,16 +267,16 @@ func (h *ReportsHandler) TopPrintersHandler(w http.ResponseWriter, r *http.Reque
 	response := make([]map[string]interface{}, len(printers))
 	for i, p := range printers {
 		response[i] = map[string]interface{}{
-			"printer_id":    p.PrinterID,
-			"printer_name":  p.PrinterName,
-			"total_jobs":    p.TotalJobs,
-			"total_pages":   p.TotalPages,
-			"color_pages":   p.ColorPages,
-			"duplex_pages":  p.DuplexPages,
-			"total_cost":    p.TotalCost,
-			"uptime":        p.Uptime,
-			"error_rate":    p.ErrorRate,
-			"rank":          p.Rank,
+			"printer_id":   p.PrinterID,
+			"printer_name": p.PrinterName,
+			"total_jobs":   p.TotalJobs,
+			"total_pages":  p.TotalPages,
+			"color_pages":  p.ColorPages,
+			"duplex_pages": p.DuplexPages,
+			"total_cost":   p.TotalCost,
+			"uptime":       p.Uptime,
+			"error_rate":   p.ErrorRate,
+			"rank":         p.Rank,
 		}
 	}
 
@@ -386,18 +386,18 @@ func (h *ReportsHandler) EnvironmentalReportHandler(w http.ResponseWriter, r *ht
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"organization_id":   orgID,
-		"start_date":        startDate,
-		"end_date":          endDate,
-		"total_pages":       report.TotalPages,
-		"trees_saved":       report.TreesSaved,
-		"co2_emission":      report.CO2Emission,
-		"co2_offset":        report.CO2Offset,
+		"organization_id":    orgID,
+		"start_date":         startDate,
+		"end_date":           endDate,
+		"total_pages":        report.TotalPages,
+		"trees_saved":        report.TreesSaved,
+		"co2_emission":       report.CO2Emission,
+		"co2_offset":         report.CO2Offset,
 		"energy_consumption": report.EnergyConsumption,
-		"waste_reduction":   report.WasteReduction,
+		"waste_reduction":    report.WasteReduction,
 		"metrics": map[string]interface{}{
-			"pages_per_tree":       8000, // Average pages per tree
-			"co2_per_page":        0.01, // kg CO2 per page
+			"pages_per_tree":      8000,  // Average pages per tree
+			"co2_per_page":        0.01,  // kg CO2 per page
 			"energy_kwh_per_page": 0.005, // kWh per page
 		},
 	})
@@ -469,12 +469,12 @@ func (h *ReportsHandler) ExportReportHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req struct {
-		ReportType    string `json:"report_type"`    // 'usage', 'environmental', 'department', 'user', 'printer'
+		ReportType     string `json:"report_type"` // 'usage', 'environmental', 'department', 'user', 'printer'
 		OrganizationID string `json:"organization_id"`
-		StartDate     string `json:"start_date"`
-		EndDate       string `json:"end_date"`
-		Format        string `json:"format"`        // 'csv', 'json', 'pdf'
-		EmailTo       string `json:"email_to"`      // Optional: email report to this address
+		StartDate      string `json:"start_date"`
+		EndDate        string `json:"end_date"`
+		Format         string `json:"format"`   // 'csv', 'json', 'pdf'
+		EmailTo        string `json:"email_to"` // Optional: email report to this address
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -554,12 +554,12 @@ func (h *ReportsHandler) CustomReportHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req struct {
-		OrganizationID string   `json:"organization_id"`
-		StartDate      string   `json:"start_date"`
-		EndDate        string   `json:"end_date"`
-		Metrics        []string `json:"metrics"`        // 'jobs', 'pages', 'cost', 'co2', etc.
-		GroupBy        []string `json:"group_by"`       // 'user', 'printer', 'department', 'date'
-		Filters        map[string]string `json:"filters"` // Additional filters
+		OrganizationID string            `json:"organization_id"`
+		StartDate      string            `json:"start_date"`
+		EndDate        string            `json:"end_date"`
+		Metrics        []string          `json:"metrics"`  // 'jobs', 'pages', 'cost', 'co2', etc.
+		GroupBy        []string          `json:"group_by"` // 'user', 'printer', 'department', 'date'
+		Filters        map[string]string `json:"filters"`  // Additional filters
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -637,9 +637,9 @@ func (h *ReportsHandler) createScheduledReport(w http.ResponseWriter, r *http.Re
 	var req struct {
 		OrganizationID string   `json:"organization_id"`
 		ReportType     string   `json:"report_type"`
-		Schedule       string   `json:"schedule"`       // 'daily', 'weekly', 'monthly'
-		Recipients     []string `json:"recipients"`     // Email addresses
-		Format         string   `json:"format"`         // 'csv', 'json', 'pdf'
+		Schedule       string   `json:"schedule"`   // 'daily', 'weekly', 'monthly'
+		Recipients     []string `json:"recipients"` // Email addresses
+		Format         string   `json:"format"`     // 'csv', 'json', 'pdf'
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -690,12 +690,12 @@ func (h *ReportsHandler) createScheduledReport(w http.ResponseWriter, r *http.Re
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
-		"report_id":        id,
-		"organization_id":  req.OrganizationID,
-		"report_type":      req.ReportType,
-		"schedule":         req.Schedule,
-		"recipients":       req.Recipients,
-		"format":           req.Format,
+		"report_id":       id,
+		"organization_id": req.OrganizationID,
+		"report_type":     req.ReportType,
+		"schedule":        req.Schedule,
+		"recipients":      req.Recipients,
+		"format":          req.Format,
 	})
 }
 

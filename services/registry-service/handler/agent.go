@@ -53,11 +53,11 @@ func New(cfg Config) *Handler {
 
 // RegisterAgentRequest represents an agent registration request.
 type RegisterAgentRequest struct {
-	Name         string `json:"name"`
-	Version      string `json:"version"`
-	OS           string `json:"os"`
-	Architecture string `json:"architecture"`
-	Hostname     string `json:"hostname"`
+	Name           string `json:"name"`
+	Version        string `json:"version"`
+	OS             string `json:"os"`
+	Architecture   string `json:"architecture"`
+	Hostname       string `json:"hostname"`
 	OrganizationID string `json:"organization_id,omitempty"`
 }
 
@@ -116,10 +116,10 @@ func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]string{
-		"agent_id":    agentID,
-		"name":        agent.Name,
-		"status":      agent.Status,
-		"created_at":  agent.CreatedAt.Format(time.RFC3339),
+		"agent_id":   agentID,
+		"name":       agent.Name,
+		"status":     agent.Status,
+		"created_at": agent.CreatedAt.Format(time.RFC3339),
 	})
 }
 
@@ -656,15 +656,15 @@ func (h *Handler) ListPrinters(w http.ResponseWriter, r *http.Request) {
 
 func agentToResponse(agent *repository.Agent) map[string]interface{} {
 	return map[string]interface{}{
-		"agent_id":      agent.ID,
-		"name":          agent.Name,
-		"version":       agent.Version,
-		"os":            agent.OS,
-		"architecture":  agent.Architecture,
-		"hostname":      agent.Hostname,
-		"status":        agent.Status,
+		"agent_id":       agent.ID,
+		"name":           agent.Name,
+		"version":        agent.Version,
+		"os":             agent.OS,
+		"architecture":   agent.Architecture,
+		"hostname":       agent.Hostname,
+		"status":         agent.Status,
 		"last_heartbeat": agent.LastHeartbeat.Format(time.RFC3339),
-		"created_at":    agent.CreatedAt.Format(time.RFC3339),
+		"created_at":     agent.CreatedAt.Format(time.RFC3339),
 	}
 }
 

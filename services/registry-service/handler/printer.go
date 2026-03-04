@@ -13,13 +13,13 @@ import (
 
 // PrinterCapabilities represents the capabilities of a printer.
 type PrinterCapabilities struct {
-	SupportsColor      bool     `json:"supports_color"`
-	SupportsDuplex     bool     `json:"supports_duplex"`
-	SupportsStapling   bool     `json:"supports_stapling"`
-	SupportedMedia     []string `json:"supported_media"`
-	SupportedQuality   []string `json:"supported_quality"`
-	MaxPaperSize       string   `json:"max_paper_size"`
-	MinPaperSize       string   `json:"min_paper_size"`
+	SupportsColor    bool     `json:"supports_color"`
+	SupportsDuplex   bool     `json:"supports_duplex"`
+	SupportsStapling bool     `json:"supports_stapling"`
+	SupportedMedia   []string `json:"supported_media"`
+	SupportedQuality []string `json:"supported_quality"`
+	MaxPaperSize     string   `json:"max_paper_size"`
+	MinPaperSize     string   `json:"min_paper_size"`
 }
 
 // UpdatePrinterCapabilitiesRequest represents a request to update printer capabilities.
@@ -189,13 +189,13 @@ func (h *Handler) GetAgentPrinters(w http.ResponseWriter, r *http.Request) {
 		}
 
 		result = append(result, map[string]interface{}{
-			"agent_id":      agent.ID,
-			"agent_name":    agent.Name,
-			"agent_status":  agent.Status,
-			"hostname":      agent.Hostname,
+			"agent_id":       agent.ID,
+			"agent_name":     agent.Name,
+			"agent_status":   agent.Status,
+			"hostname":       agent.Hostname,
 			"last_heartbeat": agent.LastHeartbeat.Format(time.RFC3339),
-			"printers":      printerInfos,
-			"printer_count": len(printers),
+			"printers":       printerInfos,
+			"printer_count":  len(printers),
 		})
 	}
 
@@ -207,13 +207,13 @@ func (h *Handler) GetAgentPrinters(w http.ResponseWriter, r *http.Request) {
 
 // AgentStatusResponse represents the combined status of an agent and its printers.
 type AgentStatusResponse struct {
-	AgentID       string               `json:"agent_id"`
-	AgentName     string               `json:"agent_name"`
-	AgentStatus   string               `json:"agent_status"`
-	Hostname      string               `json:"hostname"`
-	LastHeartbeat string               `json:"last_heartbeat"`
-	Printers      []PrinterInfo        `json:"printers"`
-	PrinterCount  int                  `json:"printer_count"`
+	AgentID       string        `json:"agent_id"`
+	AgentName     string        `json:"agent_name"`
+	AgentStatus   string        `json:"agent_status"`
+	Hostname      string        `json:"hostname"`
+	LastHeartbeat string        `json:"last_heartbeat"`
+	Printers      []PrinterInfo `json:"printers"`
+	PrinterCount  int           `json:"printer_count"`
 }
 
 // PrinterInfo represents basic printer information.
@@ -241,9 +241,9 @@ func (h *Handler) GetOnlineAgents(w http.ResponseWriter, r *http.Request) {
 	response := make([]map[string]interface{}, len(agents))
 	for i, agent := range agents {
 		response[i] = map[string]interface{}{
-			"agent_id":      agent.ID,
-			"name":          agent.Name,
-			"hostname":      agent.Hostname,
+			"agent_id":       agent.ID,
+			"name":           agent.Name,
+			"hostname":       agent.Hostname,
 			"last_heartbeat": agent.LastHeartbeat.Format(time.RFC3339),
 		}
 	}

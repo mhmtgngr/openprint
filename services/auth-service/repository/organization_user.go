@@ -302,7 +302,7 @@ func (r *OrganizationUserRepository) HasRole(ctx context.Context, orgID, userID 
 // compareRoles returns true if userRole is at least as high as minRole.
 func (r *OrganizationUserRepository) compareRoles(userRole, minRole OrganizationUserRole) bool {
 	roleHierarchy := map[OrganizationUserRole]int{
-		OrgRoleViewer: 0,
+		OrgRoleViewer:  0,
 		OrgRoleBilling: 1,
 		OrgRoleMember:  2,
 		OrgRoleAdmin:   3,

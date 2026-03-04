@@ -8,8 +8,8 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/pem"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"math/big"
@@ -240,7 +240,7 @@ func CombinedAgentAuthMiddleware(jwtCfg AgentJWTConfig, certValidator Certificat
 
 // AgentClaims represents JWT claims for agents.
 type AgentClaims struct {
-	AgentID              string `json:"agent_id"`
+	AgentID               string `json:"agent_id"`
 	CertificateThumbprint string `json:"certificate_thumbprint,omitempty"`
 	Hostname              string `json:"hostname,omitempty"`
 	jwt.RegisteredClaims
@@ -377,8 +377,8 @@ func respondAgentAuthError(w http.ResponseWriter, message string) {
 // GenerateAgentToken generates a JWT token for an agent.
 func GenerateAgentToken(agentID, hostname, thumbprint, secret string, expiry time.Duration) (string, error) {
 	claims := AgentClaims{
-		AgentID:              agentID,
-		Hostname:             hostname,
+		AgentID:               agentID,
+		Hostname:              hostname,
 		CertificateThumbprint: thumbprint,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

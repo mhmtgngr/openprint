@@ -169,10 +169,10 @@ func (h *Handler) BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Type    string                 `json:"type"`
-		Data    map[string]interface{} `json:"data"`
-		UserID  string                 `json:"user_id,omitempty"`
-		OrgID   string                 `json:"org_id,omitempty"`
+		Type   string                 `json:"type"`
+		Data   map[string]interface{} `json:"data"`
+		UserID string                 `json:"user_id,omitempty"`
+		OrgID  string                 `json:"org_id,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

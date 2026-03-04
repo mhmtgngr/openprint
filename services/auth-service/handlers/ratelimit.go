@@ -76,25 +76,25 @@ func (h *RateLimitHandler) GetRepository() *ratelimit.Repository {
 
 // CreatePolicyRequest represents a request to create a rate limit policy.
 type CreatePolicyRequest struct {
-	Name                      string   `json:"name"`
-	Description               string   `json:"description"`
-	Priority                  int      `json:"priority"`
-	Scope                     string   `json:"scope"`
-	Identifier                string   `json:"identifier"`
-	Methods                   []string `json:"methods"`
-	PathPattern               string   `json:"path_pattern"`
-	Limit                     int64    `json:"limit"`
-	Window                    int      `json:"window"` // seconds
-	BurstLimit                int64    `json:"burst_limit"`
-	BurstDuration             int      `json:"burst_duration"` // seconds
-	EnableQueue               bool     `json:"enable_queue"`
-	MaxQueueSize              int      `json:"max_queue_size"`
-	CircuitBreakerThreshold   int      `json:"circuit_breaker_threshold"`
-	CircuitBreakerTimeout     int      `json:"circuit_breaker_timeout"` // seconds
-	Severity                  string   `json:"severity"`
-	Action                    string   `json:"action"`
-	ThrottleRate              float64  `json:"throttle_rate"`
-	IsActive                  bool     `json:"is_active"`
+	Name                    string   `json:"name"`
+	Description             string   `json:"description"`
+	Priority                int      `json:"priority"`
+	Scope                   string   `json:"scope"`
+	Identifier              string   `json:"identifier"`
+	Methods                 []string `json:"methods"`
+	PathPattern             string   `json:"path_pattern"`
+	Limit                   int64    `json:"limit"`
+	Window                  int      `json:"window"` // seconds
+	BurstLimit              int64    `json:"burst_limit"`
+	BurstDuration           int      `json:"burst_duration"` // seconds
+	EnableQueue             bool     `json:"enable_queue"`
+	MaxQueueSize            int      `json:"max_queue_size"`
+	CircuitBreakerThreshold int      `json:"circuit_breaker_threshold"`
+	CircuitBreakerTimeout   int      `json:"circuit_breaker_timeout"` // seconds
+	Severity                string   `json:"severity"`
+	Action                  string   `json:"action"`
+	ThrottleRate            float64  `json:"throttle_rate"`
+	IsActive                bool     `json:"is_active"`
 }
 
 // CreatePolicy handles policy creation requests.
@@ -128,28 +128,28 @@ func (h *RateLimitHandler) CreatePolicy(w http.ResponseWriter, r *http.Request) 
 
 	// Create policy
 	policy := &ratelimit.Policy{
-		ID:                 uuid.New().String(),
-		Name:               req.Name,
-		Description:        req.Description,
-		Priority:           req.Priority,
-		Scope:              req.Scope,
-		Identifier:         req.Identifier,
-		Methods:            req.Methods,
-		PathPattern:        req.PathPattern,
-		Limit:              req.Limit,
-		Window:             time.Duration(req.Window) * time.Second,
-		BurstLimit:         req.BurstLimit,
-		BurstDuration:      time.Duration(req.BurstDuration) * time.Second,
-		EnableQueue:        req.EnableQueue,
-		MaxQueueSize:       req.MaxQueueSize,
+		ID:                      uuid.New().String(),
+		Name:                    req.Name,
+		Description:             req.Description,
+		Priority:                req.Priority,
+		Scope:                   req.Scope,
+		Identifier:              req.Identifier,
+		Methods:                 req.Methods,
+		PathPattern:             req.PathPattern,
+		Limit:                   req.Limit,
+		Window:                  time.Duration(req.Window) * time.Second,
+		BurstLimit:              req.BurstLimit,
+		BurstDuration:           time.Duration(req.BurstDuration) * time.Second,
+		EnableQueue:             req.EnableQueue,
+		MaxQueueSize:            req.MaxQueueSize,
 		CircuitBreakerThreshold: req.CircuitBreakerThreshold,
 		CircuitBreakerTimeout:   time.Duration(req.CircuitBreakerTimeout) * time.Second,
-		Severity:           req.Severity,
-		Action:             req.Action,
-		ThrottleRate:       req.ThrottleRate,
-		IsActive:           req.IsActive,
-		CreatedAt:          time.Now(),
-		UpdatedAt:          time.Now(),
+		Severity:                req.Severity,
+		Action:                  req.Action,
+		ThrottleRate:            req.ThrottleRate,
+		IsActive:                req.IsActive,
+		CreatedAt:               time.Now(),
+		UpdatedAt:               time.Now(),
 	}
 
 	// Validate policy
@@ -259,25 +259,25 @@ func (h *RateLimitHandler) GetPolicy(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePolicyRequest represents a request to update a rate limit policy.
 type UpdatePolicyRequest struct {
-	Name                      string   `json:"name"`
-	Description               string   `json:"description"`
-	Priority                  int      `json:"priority"`
-	Scope                     string   `json:"scope"`
-	Identifier                string   `json:"identifier"`
-	Methods                   []string `json:"methods"`
-	PathPattern               string   `json:"path_pattern"`
-	Limit                     int64    `json:"limit"`
-	Window                    int      `json:"window"`
-	BurstLimit                int64    `json:"burst_limit"`
-	BurstDuration             int      `json:"burst_duration"`
-	EnableQueue               bool     `json:"enable_queue"`
-	MaxQueueSize              int      `json:"max_queue_size"`
-	CircuitBreakerThreshold   int      `json:"circuit_breaker_threshold"`
-	CircuitBreakerTimeout     int      `json:"circuit_breaker_timeout"`
-	Severity                  string   `json:"severity"`
-	Action                    string   `json:"action"`
-	ThrottleRate              float64  `json:"throttle_rate"`
-	IsActive                  *bool    `json:"is_active"`
+	Name                    string   `json:"name"`
+	Description             string   `json:"description"`
+	Priority                int      `json:"priority"`
+	Scope                   string   `json:"scope"`
+	Identifier              string   `json:"identifier"`
+	Methods                 []string `json:"methods"`
+	PathPattern             string   `json:"path_pattern"`
+	Limit                   int64    `json:"limit"`
+	Window                  int      `json:"window"`
+	BurstLimit              int64    `json:"burst_limit"`
+	BurstDuration           int      `json:"burst_duration"`
+	EnableQueue             bool     `json:"enable_queue"`
+	MaxQueueSize            int      `json:"max_queue_size"`
+	CircuitBreakerThreshold int      `json:"circuit_breaker_threshold"`
+	CircuitBreakerTimeout   int      `json:"circuit_breaker_timeout"`
+	Severity                string   `json:"severity"`
+	Action                  string   `json:"action"`
+	ThrottleRate            float64  `json:"throttle_rate"`
+	IsActive                *bool    `json:"is_active"`
 }
 
 // UpdatePolicy handles policy update requests.

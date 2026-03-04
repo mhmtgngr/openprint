@@ -67,13 +67,25 @@ func (m *mockJobRepo) CountByStatus(ctx context.Context, status string) (int64, 
 
 // Implement other required methods with no-ops
 func (m *mockJobRepo) UpdateStatus(ctx context.Context, jobID, status string) error { return nil }
-func (m *mockJobRepo) Delete(ctx context.Context, id string) error { return nil }
-func (m *mockJobRepo) FindByPrinter(ctx context.Context, printerID string, limit, offset int) ([]*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobRepo) FindByUser(ctx context.Context, userEmail string, limit, offset int) ([]*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobRepo) ListWithFilters(ctx context.Context, limit, offset int, printerID, status, userEmail string) ([]*repository.PrintJob, int, error) { return nil, 0, nil }
-func (m *mockJobRepo) GetNextPendingJob(ctx context.Context, printerID string) (*repository.PrintJob, error) { return nil, nil }
-func (m *mockJobRepo) UpdateJobProgress(ctx context.Context, jobID string, progress int) error { return nil }
-func (m *mockJobRepo) GetJobsNeedingRetry(ctx context.Context, maxRetries, limit int) ([]*repository.PrintJob, error) { return nil, nil }
+func (m *mockJobRepo) Delete(ctx context.Context, id string) error                  { return nil }
+func (m *mockJobRepo) FindByPrinter(ctx context.Context, printerID string, limit, offset int) ([]*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobRepo) FindByUser(ctx context.Context, userEmail string, limit, offset int) ([]*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobRepo) ListWithFilters(ctx context.Context, limit, offset int, printerID, status, userEmail string) ([]*repository.PrintJob, int, error) {
+	return nil, 0, nil
+}
+func (m *mockJobRepo) GetNextPendingJob(ctx context.Context, printerID string) (*repository.PrintJob, error) {
+	return nil, nil
+}
+func (m *mockJobRepo) UpdateJobProgress(ctx context.Context, jobID string, progress int) error {
+	return nil
+}
+func (m *mockJobRepo) GetJobsNeedingRetry(ctx context.Context, maxRetries, limit int) ([]*repository.PrintJob, error) {
+	return nil, nil
+}
 func (m *mockJobRepo) AssignAgent(ctx context.Context, jobID, agentID string) error { return nil }
 
 type testError struct {
@@ -95,15 +107,29 @@ func (m *mockHistoryRepo) Create(ctx context.Context, history *repository.JobHis
 }
 
 // Implement other required methods
-func (m *mockHistoryRepo) FindByID(ctx context.Context, id string) (*repository.JobHistory, error) { return nil, nil }
-func (m *mockHistoryRepo) FindByJobID(ctx context.Context, jobID string) ([]*repository.JobHistory, error) { return nil, nil }
-func (m *mockHistoryRepo) FindByStatus(ctx context.Context, status string, limit, offset int) ([]*repository.JobHistory, error) { return nil, nil }
+func (m *mockHistoryRepo) FindByID(ctx context.Context, id string) (*repository.JobHistory, error) {
+	return nil, nil
+}
+func (m *mockHistoryRepo) FindByJobID(ctx context.Context, jobID string) ([]*repository.JobHistory, error) {
+	return nil, nil
+}
+func (m *mockHistoryRepo) FindByStatus(ctx context.Context, status string, limit, offset int) ([]*repository.JobHistory, error) {
+	return nil, nil
+}
 func (m *mockHistoryRepo) DeleteByJobID(ctx context.Context, jobID string) error { return nil }
-func (m *mockHistoryRepo) DeleteOld(ctx context.Context, olderThan time.Duration) (int64, error) { return 0, nil }
-func (m *mockHistoryRepo) GetLatestByJobID(ctx context.Context, jobID string) (*repository.JobHistory, error) { return nil, nil }
+func (m *mockHistoryRepo) DeleteOld(ctx context.Context, olderThan time.Duration) (int64, error) {
+	return 0, nil
+}
+func (m *mockHistoryRepo) GetLatestByJobID(ctx context.Context, jobID string) (*repository.JobHistory, error) {
+	return nil, nil
+}
 func (m *mockHistoryRepo) CountByJobID(ctx context.Context, jobID string) (int, error) { return 0, nil }
-func (m *mockHistoryRepo) List(ctx context.Context, limit, offset int) ([]*repository.JobHistory, int, error) { return nil, 0, nil }
-func (m *mockHistoryRepo) CreateBatch(ctx context.Context, entries []*repository.JobHistory) error { return nil }
+func (m *mockHistoryRepo) List(ctx context.Context, limit, offset int) ([]*repository.JobHistory, int, error) {
+	return nil, 0, nil
+}
+func (m *mockHistoryRepo) CreateBatch(ctx context.Context, entries []*repository.JobHistory) error {
+	return nil
+}
 
 func TestNewProcessor(t *testing.T) {
 	jobRepo := &mockJobRepo{jobs: make(map[string]*repository.PrintJob)}
@@ -202,8 +228,8 @@ func TestProcessor_Cancel(t *testing.T) {
 	// Add a job to processing
 	job := &repository.PrintJob{
 		ID:        "job-to-cancel",
-		Status:     "processing",
-		CreatedAt:  time.Now(),
+		Status:    "processing",
+		CreatedAt: time.Now(),
 	}
 	proc.processing[job.ID] = job
 

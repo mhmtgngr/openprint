@@ -25,30 +25,30 @@ const (
 	ServicePort = 8000
 
 	// Backend service ports.
-	AuthServicePort    = 8001
-	RegistryServicePort = 8002
-	JobServicePort      = 8003
-	StorageServicePort  = 8004
+	AuthServicePort         = 8001
+	RegistryServicePort     = 8002
+	JobServicePort          = 8003
+	StorageServicePort      = 8004
 	NotificationServicePort = 8005
 )
 
 // Config holds gateway configuration.
 type Config struct {
-	ServerAddr              string
-	JWTSecret               string
-	RequestsPerMinute       int
-	ServiceHost             string
-	AuthServiceURL          string
-	RegistryServiceURL      string
-	JobServiceURL           string
-	StorageServiceURL       string
-	NotificationServiceURL  string
+	ServerAddr             string
+	JWTSecret              string
+	RequestsPerMinute      int
+	ServiceHost            string
+	AuthServiceURL         string
+	RegistryServiceURL     string
+	JobServiceURL          string
+	StorageServiceURL      string
+	NotificationServiceURL string
 }
 
 // ServiceRoute defines a route to a backend service.
 type ServiceRoute struct {
-	Pattern    string
-	TargetURL  string
+	Pattern     string
+	TargetURL   string
 	RequireAuth bool
 }
 

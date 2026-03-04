@@ -23,10 +23,10 @@ func TestBypassManagerShouldBypass(t *testing.T) {
 
 	// Add a trusted client
 	client := &TrustedClient{
-		ID:        "test-client-1",
-		APIKey:    "test-api-key-123",
-		Name:      "Test Client",
-		IsActive:  true,
+		ID:          "test-client-1",
+		APIKey:      "test-api-key-123",
+		Name:        "Test Client",
+		IsActive:    true,
 		IPWhitelist: []string{"192.168.1.100"},
 	}
 
@@ -124,10 +124,10 @@ func TestBypassManagerAddRemoveTrustedClient(t *testing.T) {
 	bm := NewBypassManager(redisClient)
 
 	client := &TrustedClient{
-		ID:        "test-add-remove",
-		APIKey:    "test-key-add-remove",
-		Name:      "Test Add Remove",
-		IsActive:  true,
+		ID:          "test-add-remove",
+		APIKey:      "test-key-add-remove",
+		Name:        "Test Add Remove",
+		IsActive:    true,
 		IPWhitelist: []string{"10.0.0.1"},
 	}
 
@@ -179,10 +179,10 @@ func TestBypassManagerGetTrustedClient(t *testing.T) {
 	bm := NewBypassManager(redisClient)
 
 	client := &TrustedClient{
-		ID:        "test-get-client",
-		APIKey:    "test-key-get",
-		Name:      "Test Get Client",
-		IsActive:  true,
+		ID:       "test-get-client",
+		APIKey:   "test-key-get",
+		Name:     "Test Get Client",
+		IsActive: true,
 	}
 
 	err = bm.AddTrustedClient(ctx, client)
@@ -262,9 +262,9 @@ func TestBypassManagerIsTrustedIP(t *testing.T) {
 	bm := NewBypassManager(redisClient)
 
 	client := &TrustedClient{
-		ID:        "test-ip-trust",
+		ID:          "test-ip-trust",
 		IPWhitelist: []string{"10.0.0.0/24"},
-		IsActive:  true,
+		IsActive:    true,
 	}
 
 	err = bm.AddTrustedClient(ctx, client)
@@ -299,9 +299,9 @@ func TestBypassManagerSetClientActive(t *testing.T) {
 	bm := NewBypassManager(redisClient)
 
 	client := &TrustedClient{
-		ID:        "test-activate",
-		APIKey:    "test-key-activate",
-		IsActive:  true,
+		ID:       "test-activate",
+		APIKey:   "test-key-activate",
+		IsActive: true,
 	}
 
 	err = bm.AddTrustedClient(ctx, client)

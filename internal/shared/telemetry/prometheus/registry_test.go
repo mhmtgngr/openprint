@@ -21,7 +21,7 @@ func TestNewRegistry(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, reg)
 		assert.Equal(t, "test-service", reg.ServiceName())
-		assert.Equal(t, "", reg.ServiceVersion())  // Empty when not set
+		assert.Equal(t, "", reg.ServiceVersion()) // Empty when not set
 		assert.NotNil(t, reg.Registry())
 	})
 
@@ -412,8 +412,8 @@ func TestRegistry_ConcurrentRegistration(t *testing.T) {
 
 			collector := prometheus.NewCounter(
 				prometheus.CounterOpts{
-					Name:  "concurrent_counter_test",
-					Help:  "A concurrent test counter",
+					Name: "concurrent_counter_test",
+					Help: "A concurrent test counter",
 				},
 			)
 

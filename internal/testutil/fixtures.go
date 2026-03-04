@@ -322,7 +322,7 @@ func ValidOrganizationID() string {
 
 // ValidPrinterID returns a valid UUID string formatted as a printer ID.
 func ValidPrinterID() string {
-	return ValidUUID();
+	return ValidUUID()
 }
 
 // CreateTestComplianceControl creates a test compliance control in the database.

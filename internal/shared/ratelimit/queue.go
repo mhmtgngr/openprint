@@ -45,8 +45,8 @@ type queuedRequest struct {
 // NewRequestQueue creates a new request queue.
 func NewRequestQueue(redis *RedisClient) *RequestQueue {
 	rq := &RequestQueue{
-		redis:            redis,
-		queues:           make(map[string]*priorityQueue),
+		redis:             redis,
+		queues:            make(map[string]*priorityQueue),
 		defaultMaxSize:    100,
 		defaultMaxWait:    5 * time.Minute,
 		defaultProcessing: 10,
@@ -279,7 +279,7 @@ func (rq *RequestQueue) GetQueueStatus(req *Request) *QueueStatus {
 
 	if !ok {
 		return &QueueStatus{
-			Key:      queueKey,
+			Key:       queueKey,
 			QueueSize: 0,
 		}
 	}
@@ -308,11 +308,11 @@ func (rq *RequestQueue) GetQueueStatus(req *Request) *QueueStatus {
 	}
 
 	return &QueueStatus{
-		Key:         queueKey,
-		QueueSize:   count,
+		Key:          queueKey,
+		QueueSize:    count,
 		MaxQueueSize: queue.maxSize,
-		AvgWaitTime: avgWait,
-		MaxWaitTime: maxWait,
+		AvgWaitTime:  avgWait,
+		MaxWaitTime:  maxWait,
 	}
 }
 

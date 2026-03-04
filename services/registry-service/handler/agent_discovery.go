@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/agent"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/registry-service/repository"
 )
 
@@ -102,10 +102,10 @@ func (h *AgentDiscoveryHandler) RegisterPrinters(w http.ResponseWriter, r *http.
 	}
 
 	response := agent.PrinterDiscoveryResponse{
-		Registered: len(req.Printers),
-		Updated:    0,
+		Registered:   len(req.Printers),
+		Updated:      0,
 		Unregistered: 0,
-		PrinterIDs:  printerIDs,
+		PrinterIDs:   printerIDs,
 	}
 
 	respondJSON(w, http.StatusOK, response)
@@ -287,9 +287,9 @@ func (h *AgentDiscoveryHandler) UpdatePrinterCapabilities(w http.ResponseWriter,
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"printer_id":  printerID,
+		"printer_id":   printerID,
 		"capabilities": req.Capabilities,
-		"updated_at":  time.Now().Format(time.RFC3339),
+		"updated_at":   time.Now().Format(time.RFC3339),
 	})
 }
 
@@ -554,4 +554,3 @@ func extractAgentAndPrinterID(path string) (agentID, printerID string) {
 	}
 	return "", ""
 }
-

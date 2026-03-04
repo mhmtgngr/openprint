@@ -19,23 +19,23 @@ import (
 type PolicyType string
 
 const (
-	PolicyTypeQuota       PolicyType = "quota"
-	PolicyTypeAccess      PolicyType = "access"
-	PolicyTypeContent     PolicyType = "content"
-	PolicyTypeRouting     PolicyType = "routing"
-	PolicyTypeWatermark   PolicyType = "watermark"
-	PolicyTypeRetention   PolicyType = "retention"
-	PolicyTypeCostCenter  PolicyType = "cost_center"
+	PolicyTypeQuota      PolicyType = "quota"
+	PolicyTypeAccess     PolicyType = "access"
+	PolicyTypeContent    PolicyType = "content"
+	PolicyTypeRouting    PolicyType = "routing"
+	PolicyTypeWatermark  PolicyType = "watermark"
+	PolicyTypeRetention  PolicyType = "retention"
+	PolicyTypeCostCenter PolicyType = "cost_center"
 )
 
 // PolicyStatus represents the status of a policy.
 type PolicyStatus string
 
 const (
-	PolicyStatusActive    PolicyStatus = "active"
-	PolicyStatusInactive  PolicyStatus = "inactive"
-	PolicyStatusDraft     PolicyStatus = "draft"
-	PolicyStatusArchived  PolicyStatus = "archived"
+	PolicyStatusActive   PolicyStatus = "active"
+	PolicyStatusInactive PolicyStatus = "inactive"
+	PolicyStatusDraft    PolicyStatus = "draft"
+	PolicyStatusArchived PolicyStatus = "archived"
 )
 
 // PolicyAction represents the action to take when a policy is triggered.
@@ -55,55 +55,55 @@ const (
 type Operator string
 
 const (
-	OpEquals         Operator = "equals"
-	OpNotEquals      Operator = "not_equals"
-	OpGreaterThan    Operator = "greater_than"
-	OpLessThan       Operator = "less_than"
-	OpContains       Operator = "contains"
-	OpNotContains    Operator = "not_contains"
-	OpMatches        Operator = "matches"
-	OpIn             Operator = "in"
-	OpNotIn          Operator = "not_in"
-	OpBetween        Operator = "between"
-	OpAlways         Operator = "always"
-	OpNever          Operator = "never"
+	OpEquals      Operator = "equals"
+	OpNotEquals   Operator = "not_equals"
+	OpGreaterThan Operator = "greater_than"
+	OpLessThan    Operator = "less_than"
+	OpContains    Operator = "contains"
+	OpNotContains Operator = "not_contains"
+	OpMatches     Operator = "matches"
+	OpIn          Operator = "in"
+	OpNotIn       Operator = "not_in"
+	OpBetween     Operator = "between"
+	OpAlways      Operator = "always"
+	OpNever       Operator = "never"
 )
 
 // Policy represents a print policy with rules and actions.
 type Policy struct {
-	ID             string                 `json:"id"`
-	Name           string                 `json:"name"`
-	Description    string                 `json:"description"`
-	Type           PolicyType             `json:"type"`
-	Status         PolicyStatus           `json:"status"`
-	Priority       int                    `json:"priority"`
-	Rules          []Rule                 `json:"rules"`
-	Actions        []PolicyActionConfig   `json:"actions"`
-	Scope          PolicyScope            `json:"scope"`
-	CreatedAt      time.Time              `json:"created_at"`
-	UpdatedAt      time.Time              `json:"updated_at"`
-	CreatedBy      string                 `json:"created_by"`
-	ModifiedBy     string                 `json:"modified_by"`
-	Version        int                    `json:"version"`
-	EvaluatedCount int                    `json:"evaluated_count"`
-	TriggeredCount int                    `json:"triggered_count"`
+	ID             string               `json:"id"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description"`
+	Type           PolicyType           `json:"type"`
+	Status         PolicyStatus         `json:"status"`
+	Priority       int                  `json:"priority"`
+	Rules          []Rule               `json:"rules"`
+	Actions        []PolicyActionConfig `json:"actions"`
+	Scope          PolicyScope          `json:"scope"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+	CreatedBy      string               `json:"created_by"`
+	ModifiedBy     string               `json:"modified_by"`
+	Version        int                  `json:"version"`
+	EvaluatedCount int                  `json:"evaluated_count"`
+	TriggeredCount int                  `json:"triggered_count"`
 }
 
 // Rule represents a single rule condition.
 type Rule struct {
-	ID         string          `json:"id"`
-	Field      string          `json:"field"`
-	Operator   Operator        `json:"operator"`
-	Value      interface{}     `json:"value"`
-	LogicalOp  string          `json:"logical_op,omitempty"` // AND, OR
-	Metadata   map[string]string `json:"metadata,omitempty"`
+	ID        string            `json:"id"`
+	Field     string            `json:"field"`
+	Operator  Operator          `json:"operator"`
+	Value     interface{}       `json:"value"`
+	LogicalOp string            `json:"logical_op,omitempty"` // AND, OR
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
 // PolicyActionConfig represents an action configuration.
 type PolicyActionConfig struct {
-	Type        PolicyAction          `json:"type"`
-	Parameters  map[string]interface{} `json:"parameters"`
-	Order       int                   `json:"order"`
+	Type       PolicyAction           `json:"type"`
+	Parameters map[string]interface{} `json:"parameters"`
+	Order      int                    `json:"order"`
 }
 
 // PolicyScope defines the scope where the policy applies.
@@ -117,33 +117,33 @@ type PolicyScope struct {
 
 // EvaluationContext provides data for policy evaluation.
 type EvaluationContext struct {
-	UserID        string                 `json:"user_id"`
-	UserName      string                 `json:"user_name"`
-	UserEmail     string                 `json:"user_email"`
-	UserGroups    []string               `json:"user_groups"`
-	PrinterID     string                 `json:"printer_id"`
-	DocumentName  string                 `json:"document_name"`
-	DocumentType  string                 `json:"document_type"`
-	PageCount     int                    `json:"page_count"`
-	ColorMode     string                 `json:"color_mode"`
-	DuplexMode    string                 `json:"duplex_mode"`
-	Cost          float64                `json:"cost"`
-	TimeOfDay     time.Time              `json:"time_of_day"`
-	DayOfWeek     int                    `json:"day_of_week"`
-	Metadata      map[string]interface{} `json:"metadata"`
-	IPAddress     string                 `json:"ip_address"`
-	DeviceID      string                 `json:"device_id"`
-	Quota         *QuotaInfo             `json:"quota,omitempty"`
-	Tags          []string               `json:"tags"`
+	UserID       string                 `json:"user_id"`
+	UserName     string                 `json:"user_name"`
+	UserEmail    string                 `json:"user_email"`
+	UserGroups   []string               `json:"user_groups"`
+	PrinterID    string                 `json:"printer_id"`
+	DocumentName string                 `json:"document_name"`
+	DocumentType string                 `json:"document_type"`
+	PageCount    int                    `json:"page_count"`
+	ColorMode    string                 `json:"color_mode"`
+	DuplexMode   string                 `json:"duplex_mode"`
+	Cost         float64                `json:"cost"`
+	TimeOfDay    time.Time              `json:"time_of_day"`
+	DayOfWeek    int                    `json:"day_of_week"`
+	Metadata     map[string]interface{} `json:"metadata"`
+	IPAddress    string                 `json:"ip_address"`
+	DeviceID     string                 `json:"device_id"`
+	Quota        *QuotaInfo             `json:"quota,omitempty"`
+	Tags         []string               `json:"tags"`
 }
 
 // QuotaInfo represents quota usage information.
 type QuotaInfo struct {
-	Limit      int       `json:"limit"`
-	Used       int       `json:"used"`
-	Remaining  int       `json:"remaining"`
-	Period     string    `json:"period"`
-	ResetsAt   time.Time `json:"resets_at"`
+	Limit     int       `json:"limit"`
+	Used      int       `json:"used"`
+	Remaining int       `json:"remaining"`
+	Period    string    `json:"period"`
+	ResetsAt  time.Time `json:"resets_at"`
 }
 
 // EvaluationResult represents the result of policy evaluation.

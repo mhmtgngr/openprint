@@ -14,20 +14,20 @@ type Metrics struct {
 	mu sync.RWMutex
 
 	// OpenTelemetry instruments
-	requestsAllowed  metric.Int64Counter
-	requestsDenied   metric.Int64Counter
-	violations       metric.Int64Counter
-	currentUsage     metric.Int64Gauge
-	queueSize        metric.Int64Gauge
-	circuitState     metric.Int64Gauge
+	requestsAllowed metric.Int64Counter
+	requestsDenied  metric.Int64Counter
+	violations      metric.Int64Counter
+	currentUsage    metric.Int64Gauge
+	queueSize       metric.Int64Gauge
+	circuitState    metric.Int64Gauge
 
 	// Common attributes
-	attrPolicy      attribute.Key
-	attrType         attribute.Key
-	attrPath         attribute.Key
-	attrSeverity     attribute.Key
-	attrState        attribute.Key
-	attrBypassed     attribute.Key
+	attrPolicy   attribute.Key
+	attrType     attribute.Key
+	attrPath     attribute.Key
+	attrSeverity attribute.Key
+	attrState    attribute.Key
+	attrBypassed attribute.Key
 }
 
 // NewMetrics creates a new metrics instance.
@@ -35,11 +35,11 @@ func NewMetrics() *Metrics {
 	meter := otel.Meter("github.com/openprint/openprint/ratelimit")
 
 	m := &Metrics{
-		attrPolicy:  attribute.Key("policy"),
-		attrType:    attribute.Key("type"),
-		attrPath:    attribute.Key("path"),
+		attrPolicy:   attribute.Key("policy"),
+		attrType:     attribute.Key("type"),
+		attrPath:     attribute.Key("path"),
 		attrSeverity: attribute.Key("severity"),
-		attrState:   attribute.Key("state"),
+		attrState:    attribute.Key("state"),
 		attrBypassed: attribute.Key("bypassed"),
 	}
 
@@ -212,25 +212,25 @@ func (m *Metrics) RecordThrottle(requestType, path string, throttleRate float64)
 
 // MetricsSnapshot represents a snapshot of metrics at a point in time.
 type MetricsSnapshot struct {
-	Timestamp        time.Time `json:"timestamp"`
-	TotalAllowed     int64     `json:"total_allowed"`
-	TotalDenied      int64     `json:"total_denied"`
-	TotalViolations  int64     `json:"total_violations"`
-	AvgUsage         float64   `json:"avg_usage"`
-	PeakUsage        int64     `json:"peak_usage"`
-	DenyRate         float64   `json:"deny_rate"`
-	ViolationRate    float64   `json:"violation_rate"`
+	Timestamp       time.Time `json:"timestamp"`
+	TotalAllowed    int64     `json:"total_allowed"`
+	TotalDenied     int64     `json:"total_denied"`
+	TotalViolations int64     `json:"total_violations"`
+	AvgUsage        float64   `json:"avg_usage"`
+	PeakUsage       int64     `json:"peak_usage"`
+	DenyRate        float64   `json:"deny_rate"`
+	ViolationRate   float64   `json:"violation_rate"`
 }
 
 // InMemoryMetrics provides an in-memory metrics collector for testing.
 type InMemoryMetrics struct {
-	mu               sync.RWMutex
-	allowedCount     map[string]int64
-	deniedCount      map[string]int64
-	violationCount   map[string]int64
-	usageHistory     map[string][]int64
-	snapshots        []MetricsSnapshot
-	maxHistorySize   int
+	mu             sync.RWMutex
+	allowedCount   map[string]int64
+	deniedCount    map[string]int64
+	violationCount map[string]int64
+	usageHistory   map[string][]int64
+	snapshots      []MetricsSnapshot
+	maxHistorySize int
 }
 
 // NewInMemoryMetrics creates an in-memory metrics collector.
@@ -335,14 +335,14 @@ func (m *InMemoryMetrics) GetSnapshot() MetricsSnapshot {
 	}
 
 	return MetricsSnapshot{
-		Timestamp:     time.Now(),
-		TotalAllowed:  totalAllowed,
-		TotalDenied:   totalDenied,
+		Timestamp:       time.Now(),
+		TotalAllowed:    totalAllowed,
+		TotalDenied:     totalDenied,
 		TotalViolations: totalViolations,
-		AvgUsage:      avgUsage,
-		PeakUsage:     peakUsage,
-		DenyRate:      denyRate,
-		ViolationRate: violationRate,
+		AvgUsage:        avgUsage,
+		PeakUsage:       peakUsage,
+		DenyRate:        denyRate,
+		ViolationRate:   violationRate,
 	}
 }
 

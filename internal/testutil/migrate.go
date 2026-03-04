@@ -16,8 +16,9 @@ import (
 // It reads .up.sql files in ascending order and executes them against the database.
 //
 // Migration files should follow the naming pattern:
-//   XXX_description.up.sql - for applying the migration
-//   XXX_description.down.sql - for rolling back the migration (not used in tests)
+//
+//	XXX_description.up.sql - for applying the migration
+//	XXX_description.down.sql - for rolling back the migration (not used in tests)
 //
 // The function skips migrations that have already been applied by tracking
 // applied migrations in a test-specific table.

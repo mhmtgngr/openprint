@@ -27,27 +27,27 @@ type CostRepository interface {
 
 // PrintCost represents a cost configuration for printing.
 type PrintCost struct {
-	ID            string
+	ID             string
 	OrganizationID string
-	PrinterID     string
-	CostType      string // 'monochrome_a4', 'color_a4', 'duplex_a4', etc.
-	CostPerPage   float64
-	Currency      string
-	EffectiveFrom time.Time
-	EffectiveTo   *time.Time
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	PrinterID      string
+	CostType       string // 'monochrome_a4', 'color_a4', 'duplex_a4', etc.
+	CostPerPage    float64
+	Currency       string
+	EffectiveFrom  time.Time
+	EffectiveTo    *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // JobCost represents the calculated cost for a print job.
 type JobCost struct {
-	ID          string
-	JobID       string
-	PageCount   int
-	ColorPages  int
-	DuplexPages int
-	Cost        float64
-	Currency    string
+	ID           string
+	JobID        string
+	PageCount    int
+	ColorPages   int
+	DuplexPages  int
+	Cost         float64
+	Currency     string
 	CalculatedAt time.Time
 }
 
@@ -89,7 +89,7 @@ type PrinterCostSummary struct {
 
 // CostHandler handles cost management HTTP endpoints.
 type CostHandler struct {
-	db     *pgxpool.Pool
+	db       *pgxpool.Pool
 	costRepo CostRepository
 }
 
@@ -103,11 +103,11 @@ func NewCostHandler(db *pgxpool.Pool) *CostHandler {
 
 // CostConfigRequest represents a request to set cost configuration.
 type CostConfigRequest struct {
-	PrinterID    string   `json:"printer_id"`
-	CostType     string   `json:"cost_type"`
-	CostPerPage  float64  `json:"cost_per_page"`
-	Currency     string   `json:"currency"`
-	EffectiveTo  *string  `json:"effective_to,omitempty"`
+	PrinterID   string  `json:"printer_id"`
+	CostType    string  `json:"cost_type"`
+	CostPerPage float64 `json:"cost_per_page"`
+	Currency    string  `json:"currency"`
+	EffectiveTo *string `json:"effective_to,omitempty"`
 }
 
 // isNonEmptyString returns true if s is not nil and points to a non-empty string.
@@ -117,10 +117,10 @@ func isNonEmptyString(s *string) bool {
 
 // CalculateCostRequest represents a request to calculate print job cost.
 type CalculateCostRequest struct {
-	PrinterID    string  `json:"printer_id"`
-	PageCount    int     `json:"page_count"`
-	ColorPages   int     `json:"color_pages"`
-	DuplexPages  int     `json:"duplex_pages"`
+	PrinterID   string `json:"printer_id"`
+	PageCount   int    `json:"page_count"`
+	ColorPages  int    `json:"color_pages"`
+	DuplexPages int    `json:"duplex_pages"`
 }
 
 // CostConfigListHandler handles listing cost configurations.
@@ -201,16 +201,16 @@ func (h *CostHandler) CostConfigSetHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	cost := &PrintCost{
-		ID:            uuid.New().String(),
+		ID:             uuid.New().String(),
 		OrganizationID: orgID,
-		PrinterID:     req.PrinterID,
-		CostType:      req.CostType,
-		CostPerPage:   req.CostPerPage,
-		Currency:      req.Currency,
-		EffectiveFrom: time.Now(),
-		EffectiveTo:   effectiveTo,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		PrinterID:      req.PrinterID,
+		CostType:       req.CostType,
+		CostPerPage:    req.CostPerPage,
+		Currency:       req.Currency,
+		EffectiveFrom:  time.Now(),
+		EffectiveTo:    effectiveTo,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	if err := h.costRepo.SetCostConfig(ctx, cost); err != nil {
@@ -422,17 +422,17 @@ func (h *CostHandler) CostReportHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"organization_id":   orgID,
-		"start_date":        startDate,
-		"end_date":          endDate,
-		"summaries":         response,
+		"organization_id": orgID,
+		"start_date":      startDate,
+		"end_date":        endDate,
+		"summaries":       response,
 		"totals": map[string]interface{}{
-			"total_jobs":      totalJobs,
-			"total_pages":     totalPages,
-			"color_pages":     totalColorPages,
-			"duplex_pages":    totalDuplexPages,
-			"total_cost":      totalCost,
-			"currency":        currency,
+			"total_jobs":   totalJobs,
+			"total_pages":  totalPages,
+			"color_pages":  totalColorPages,
+			"duplex_pages": totalDuplexPages,
+			"total_cost":   totalCost,
+			"currency":     currency,
 		},
 	})
 }
@@ -473,15 +473,15 @@ func (h *CostHandler) CostByUserHandler(w http.ResponseWriter, r *http.Request) 
 	response := make([]map[string]interface{}, len(summaries))
 	for i, s := range summaries {
 		response[i] = map[string]interface{}{
-			"user_id":       s.UserID,
-			"user_email":    s.UserEmail,
-			"user_name":     s.UserName,
-			"total_jobs":    s.TotalJobs,
-			"total_pages":   s.TotalPages,
-			"color_pages":   s.ColorPages,
-			"duplex_pages":  s.DuplexPages,
-			"total_cost":    s.TotalCost,
-			"currency":      s.Currency,
+			"user_id":      s.UserID,
+			"user_email":   s.UserEmail,
+			"user_name":    s.UserName,
+			"total_jobs":   s.TotalJobs,
+			"total_pages":  s.TotalPages,
+			"color_pages":  s.ColorPages,
+			"duplex_pages": s.DuplexPages,
+			"total_cost":   s.TotalCost,
+			"currency":     s.Currency,
 		}
 	}
 
@@ -530,14 +530,14 @@ func (h *CostHandler) CostByPrinterHandler(w http.ResponseWriter, r *http.Reques
 	response := make([]map[string]interface{}, len(summaries))
 	for i, s := range summaries {
 		response[i] = map[string]interface{}{
-			"printer_id":    s.PrinterID,
-			"printer_name":  s.PrinterName,
-			"total_jobs":    s.TotalJobs,
-			"total_pages":   s.TotalPages,
-			"color_pages":   s.ColorPages,
-			"duplex_pages":  s.DuplexPages,
-			"total_cost":    s.TotalCost,
-			"currency":      s.Currency,
+			"printer_id":   s.PrinterID,
+			"printer_name": s.PrinterName,
+			"total_jobs":   s.TotalJobs,
+			"total_pages":  s.TotalPages,
+			"color_pages":  s.ColorPages,
+			"duplex_pages": s.DuplexPages,
+			"total_cost":   s.TotalCost,
+			"currency":     s.Currency,
 		}
 	}
 
@@ -606,16 +606,16 @@ func (h *CostHandler) getBudgetAllocations(w http.ResponseWriter, r *http.Reques
 		}
 
 		allocations = append(allocations, map[string]interface{}{
-			"id":              id,
-			"cost_center_id":  costCenterID,
+			"id":               id,
+			"cost_center_id":   costCenterID,
 			"cost_center_name": costCenterName,
-			"budget_amount":   budgetAmount,
-			"spent_amount":    spentAmount,
-			"remaining":       remaining,
-			"percentage_used": percentageUsed,
-			"currency":        currency,
-			"period_start":    periodStart.Format(time.RFC3339),
-			"period_end":      periodEnd.Format(time.RFC3339),
+			"budget_amount":    budgetAmount,
+			"spent_amount":     spentAmount,
+			"remaining":        remaining,
+			"percentage_used":  percentageUsed,
+			"currency":         currency,
+			"period_start":     periodStart.Format(time.RFC3339),
+			"period_end":       periodEnd.Format(time.RFC3339),
 		})
 	}
 
@@ -714,13 +714,13 @@ func (h *CostHandler) setBudgetAllocation(w http.ResponseWriter, r *http.Request
 	}
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
-		"id":              id,
-		"cost_center_id":  req.CostCenterID,
+		"id":               id,
+		"cost_center_id":   req.CostCenterID,
 		"cost_center_name": req.CostCenterName,
-		"budget_amount":   req.BudgetAmount,
-		"currency":        req.Currency,
-		"period_start":    periodStart.Format(time.RFC3339),
-		"period_end":      periodEnd.Format(time.RFC3339),
+		"budget_amount":    req.BudgetAmount,
+		"currency":         req.Currency,
+		"period_start":     periodStart.Format(time.RFC3339),
+		"period_end":       periodEnd.Format(time.RFC3339),
 	})
 }
 
@@ -765,11 +765,11 @@ func (h *CostHandler) updateBudgetAllocation(w http.ResponseWriter, r *http.Requ
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"id":           id,
+		"id":            id,
 		"budget_amount": budgetAmount,
 		"spent_amount":  spentAmount,
-		"remaining":    budgetAmount - spentAmount,
-		"currency":     currency,
+		"remaining":     budgetAmount - spentAmount,
+		"currency":      currency,
 	})
 }
 

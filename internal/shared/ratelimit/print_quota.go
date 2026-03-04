@@ -19,20 +19,20 @@ type PrintQuotaManager struct {
 
 // PrintQuotaState tracks the state of a print quota.
 type PrintQuotaState struct {
-	mu                sync.RWMutex
-	EntityID          string
-	EntityType        string // "user" or "organization"
-	QuotaType         string // "pages", "jobs", "color_pages", "duplex_pages"
-	Period            string // "daily", "weekly", "monthly", "quarterly", "yearly"
-	Limit             int
-	Used              int
-	Remaining         int
-	PeriodStart       time.Time
-	PeriodEnd         time.Time
-	LastReset         time.Time
-	History           []QuotaEvent
-	OverageAllowed    bool
-	OverageLimit      int
+	mu             sync.RWMutex
+	EntityID       string
+	EntityType     string // "user" or "organization"
+	QuotaType      string // "pages", "jobs", "color_pages", "duplex_pages"
+	Period         string // "daily", "weekly", "monthly", "quarterly", "yearly"
+	Limit          int
+	Used           int
+	Remaining      int
+	PeriodStart    time.Time
+	PeriodEnd      time.Time
+	LastReset      time.Time
+	History        []QuotaEvent
+	OverageAllowed bool
+	OverageLimit   int
 }
 
 // QuotaEvent represents a quota usage event.
@@ -48,28 +48,28 @@ type QuotaEvent struct {
 
 // PrintJobRequest represents a print job for quota checking.
 type PrintJobRequest struct {
-	JobID           string
-	UserID          string
-	OrgID           string
-	PageCount       int
-	ColorPages      int
-	DuplexPages     int
-	Priority        int
-	IsOverridable   bool
+	JobID         string
+	UserID        string
+	OrgID         string
+	PageCount     int
+	ColorPages    int
+	DuplexPages   int
+	Priority      int
+	IsOverridable bool
 }
 
 // QuotaCheckResult represents the result of a quota check.
 type QuotaCheckResult struct {
-	Allowed          bool      `json:"allowed"`
-	QuotaType        string    `json:"quota_type"`
-	Used             int       `json:"used"`
-	Limit            int       `json:"limit"`
-	Remaining        int       `json:"remaining"`
-	PeriodStart      time.Time `json:"period_start"`
-	PeriodEnd        time.Time `json:"period_end"`
-	OverageUsed      int       `json:"overage_used,omitempty"`
-	Reason           string    `json:"reason,omitempty"`
-	RetryAfter       time.Time `json:"retry_after,omitempty"`
+	Allowed     bool      `json:"allowed"`
+	QuotaType   string    `json:"quota_type"`
+	Used        int       `json:"used"`
+	Limit       int       `json:"limit"`
+	Remaining   int       `json:"remaining"`
+	PeriodStart time.Time `json:"period_start"`
+	PeriodEnd   time.Time `json:"period_end"`
+	OverageUsed int       `json:"overage_used,omitempty"`
+	Reason      string    `json:"reason,omitempty"`
+	RetryAfter  time.Time `json:"retry_after,omitempty"`
 }
 
 // NewPrintQuotaManager creates a new print quota manager.

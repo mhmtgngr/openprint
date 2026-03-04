@@ -158,11 +158,11 @@ func (r *costRepository) CalculateJobCost(ctx context.Context, jobID string) (*J
 
 	// Store the calculated cost
 	cost := &JobCost{
-		ID:       uuid.New().String(),
-		JobID:    jobID,
-		PageCount: pageCount,
-		Cost:     totalCost,
-		Currency: "USD",
+		ID:           uuid.New().String(),
+		JobID:        jobID,
+		PageCount:    pageCount,
+		Cost:         totalCost,
+		Currency:     "USD",
 		CalculatedAt: time.Now(),
 	}
 

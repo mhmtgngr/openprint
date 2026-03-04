@@ -13,18 +13,18 @@ import (
 
 // EnrollmentToken represents an enrollment token for agent registration.
 type EnrollmentToken struct {
-	ID           string
-	Token        string
+	ID             string
+	Token          string
 	OrganizationID string
-	Name         string
-	CreatedBy    string
-	MaxUses      int
-	UseCount     int
-	ExpiresAt    *time.Time
-	RevokedAt    *time.Time
-	RevokedBy    string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Name           string
+	CreatedBy      string
+	MaxUses        int
+	UseCount       int
+	ExpiresAt      *time.Time
+	RevokedAt      *time.Time
+	RevokedBy      string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // EnrollmentTokenRepository handles enrollment token data operations.

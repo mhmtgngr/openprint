@@ -23,14 +23,14 @@ var (
 
 // Hash represents a password hash with its parameters.
 type Hash struct {
-	Version  int
-	Memory   uint32
-	Time     uint32
-	Threads  uint8
-	KeyLen   uint32
-	SaltLen  uint32
-	Salt     []byte
-	Hash     []byte
+	Version int
+	Memory  uint32
+	Time    uint32
+	Threads uint8
+	KeyLen  uint32
+	SaltLen uint32
+	Salt    []byte
+	Hash    []byte
 }
 
 // String returns the string representation of the hash.
@@ -111,14 +111,14 @@ func (h *Hasher) Generate(password string) (string, error) {
 	)
 
 	hashResult := &Hash{
-		Version:  argon2.Version,
-		Memory:   h.memory,
-		Time:     h.time,
-		Threads:  h.threads,
-		KeyLen:   h.keyLen,
-		SaltLen:  h.saltLen,
-		Salt:     salt,
-		Hash:     hash,
+		Version: argon2.Version,
+		Memory:  h.memory,
+		Time:    h.time,
+		Threads: h.threads,
+		KeyLen:  h.keyLen,
+		SaltLen: h.saltLen,
+		Salt:    salt,
+		Hash:    hash,
 	}
 
 	return hashResult.String(), nil
@@ -216,23 +216,23 @@ func decodeHash(encodedHash string) (*Hash, error) {
 	saltLen := uint32(len(salt)) // #nosec G115 -- bounded by argon2 salt size
 
 	return &Hash{
-		Version:  version,
-		Memory:   memory,
-		Time:     time,
-		Threads:  threads,
-		Salt:     salt,
-		Hash:     hash,
-		KeyLen:   hashLen,
-		SaltLen:  saltLen,
+		Version: version,
+		Memory:  memory,
+		Time:    time,
+		Threads: threads,
+		Salt:    salt,
+		Hash:    hash,
+		KeyLen:  hashLen,
+		SaltLen: saltLen,
 	}, nil
 }
 
 // StrengthChecker evaluates password strength.
 type StrengthChecker struct {
-	minLength     int
-	requireUpper  bool
-	requireLower  bool
-	requireNumber bool
+	minLength      int
+	requireUpper   bool
+	requireLower   bool
+	requireNumber  bool
 	requireSpecial bool
 }
 

@@ -166,8 +166,8 @@ func (h *CircuitBreakerHandler) ForceOpenCircuit(w http.ResponseWriter, r *http.
 	cb.ForceOpen(req.Path, duration)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"message": "Circuit opened",
-		"path":    req.Path,
+		"message":  "Circuit opened",
+		"path":     req.Path,
 		"duration": duration.String(),
 	})
 }

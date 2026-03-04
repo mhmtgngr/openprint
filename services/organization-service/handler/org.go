@@ -36,9 +36,9 @@ func New(cfg Config) *Handler {
 
 // CreateOrganizationRequest represents a create organization request.
 type CreateOrganizationRequest struct {
-	Name    string                 `json:"name"`
-	Slug    string                 `json:"slug"`
-	Plan    string                 `json:"plan,omitempty"`
+	Name     string                 `json:"name"`
+	Slug     string                 `json:"slug"`
+	Plan     string                 `json:"plan,omitempty"`
 	Settings map[string]interface{} `json:"settings,omitempty"`
 }
 
@@ -159,10 +159,10 @@ func (h *Handler) CreateOrganization(w http.ResponseWriter, r *http.Request) {
 
 	// Create organization
 	org := &repository.Organization{
-		ID:      uuid.New().String(),
-		Name:    req.Name,
-		Slug:    req.Slug,
-		Plan:    req.Plan,
+		ID:       uuid.New().String(),
+		Name:     req.Name,
+		Slug:     req.Slug,
+		Plan:     req.Plan,
 		Settings: req.Settings,
 	}
 

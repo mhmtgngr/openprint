@@ -25,17 +25,17 @@ import (
 
 // Config holds service configuration.
 type Config struct {
-	ServerAddr          string
-	DatabaseURL         string
-	JWTSecret           string
-	JaegerEndpoint      string
-	ServiceName         string
-	AuthServiceURL      string
-	JobServiceURL       string
-	RegistryServiceURL  string
-	StorageServiceURL   string
+	ServerAddr             string
+	DatabaseURL            string
+	JWTSecret              string
+	JaegerEndpoint         string
+	ServiceName            string
+	AuthServiceURL         string
+	JobServiceURL          string
+	RegistryServiceURL     string
+	StorageServiceURL      string
 	NotificationServiceURL string
-	AnalyticsServiceURL string
+	AnalyticsServiceURL    string
 	OrganizationServiceURL string
 }
 
@@ -279,7 +279,7 @@ func createTransport(serviceName string) *http.Transport {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		// Disable HTTP/2 for better compatibility with service-to-service communication
-		ForceAttemptHTTP2:     false,
+		ForceAttemptHTTP2: false,
 	}
 }
 

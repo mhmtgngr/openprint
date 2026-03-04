@@ -16,10 +16,10 @@ import (
 
 // mockAuditRepository is a mock implementation for testing.
 type mockAuditRepository struct {
-	events     map[string]map[string]*AuditEvent // tenantID -> eventID -> event
-	storeErr   error
-	queryErr   error
-	queryByID  map[string]*AuditEvent
+	events    map[string]map[string]*AuditEvent // tenantID -> eventID -> event
+	storeErr  error
+	queryErr  error
+	queryByID map[string]*AuditEvent
 }
 
 func newMockAuditRepository() *mockAuditRepository {
@@ -98,8 +98,8 @@ func TestLogger_Log(t *testing.T) {
 			wantErr:     nil,
 		},
 		{
-			name:        "log event with pre-set tenant ID",
-			setupCtx:    func() context.Context { return context.Background() },
+			name:     "log event with pre-set tenant ID",
+			setupCtx: func() context.Context { return context.Background() },
 			event: &AuditEvent{
 				TenantID:  "tenant-456",
 				UserID:    "user-123",
@@ -112,8 +112,8 @@ func TestLogger_Log(t *testing.T) {
 			wantErr:     nil,
 		},
 		{
-			name:        "log event without tenant",
-			setupCtx:    func() context.Context { return context.Background() },
+			name:     "log event without tenant",
+			setupCtx: func() context.Context { return context.Background() },
 			event: &AuditEvent{
 				UserID:    "user-123",
 				UserEmail: "user@example.com",
@@ -496,11 +496,11 @@ func TestLogger_LogSecurityEvent(t *testing.T) {
 
 func TestLogger_Query(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupCtx    func() context.Context
-		setupRepo   func() *mockAuditRepository
-		wantLen     int
-		wantErr     error
+		name      string
+		setupCtx  func() context.Context
+		setupRepo func() *mockAuditRepository
+		wantLen   int
+		wantErr   error
 	}{
 		{
 			name: "query with tenant context",
@@ -538,7 +538,7 @@ func TestLogger_Query(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "query without tenant context returns error",
+			name:     "query without tenant context returns error",
 			setupCtx: func() context.Context { return context.Background() },
 			setupRepo: func() *mockAuditRepository {
 				return newMockAuditRepository()
@@ -603,8 +603,8 @@ func TestLogger_QueryWithFilter(t *testing.T) {
 	ctx := context.WithValue(context.Background(), TenantIDKey, "tenant-123")
 
 	tests := []struct {
-		name   string
-		filter *AuditFilter
+		name    string
+		filter  *AuditFilter
 		wantLen int
 	}{
 		{
@@ -848,10 +848,10 @@ func TestInMemoryAuditRepository_Query(t *testing.T) {
 	repo.Store(ctx, &AuditEvent{ID: "event3", TenantID: "tenant-456", UserID: "user-1", Action: ActionCreate, Level: AuditLevelInfo, Timestamp: now})
 
 	tests := []struct {
-		name   string
+		name     string
 		tenantID string
-		filter *AuditFilter
-		wantLen int
+		filter   *AuditFilter
+		wantLen  int
 	}{
 		{
 			name:     "query all for tenant",

@@ -18,18 +18,18 @@ var validSQLIdentifier = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // validTables is a whitelist of allowed table names for DDL operations.
 var validTables = map[string]bool{
-	"printers":        true,
-	"print_jobs":      true,
-	"documents":       true,
-	"quota_configs":   true,
-	"quota_usage":     true,
+	"printers":           true,
+	"print_jobs":         true,
+	"documents":          true,
+	"quota_configs":      true,
+	"quota_usage":        true,
 	"organization_users": true,
-	"organizations":   true,
-	"users":           true,
-	"sessions":        true,
-	"agents":          true,
-	"api_keys":        true,
-	"webhooks":        true,
+	"organizations":      true,
+	"users":              true,
+	"sessions":           true,
+	"agents":             true,
+	"api_keys":           true,
+	"webhooks":           true,
 }
 
 // validateSQLIdentifier checks if a string is a valid SQL identifier.
@@ -179,7 +179,7 @@ func (b *TenantQueryBuilder) injectWhereBefore(query string, keywords []string) 
 
 	if lowestIndex < len(query) {
 		// No extra space needed before query[lowestIndex:] since keywords have leading space
-		return query[:lowestIndex] + " WHERE "+b.WhereClause()+query[lowestIndex:]
+		return query[:lowestIndex] + " WHERE " + b.WhereClause() + query[lowestIndex:]
 	}
 
 	return query + " WHERE " + b.WhereClause()

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	redisotel "github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 // RedisConfig holds Redis configuration for metrics collection.

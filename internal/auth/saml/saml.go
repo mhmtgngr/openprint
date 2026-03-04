@@ -30,7 +30,7 @@ import (
 // but this wrapper provides explicit security controls for defense-in-depth.
 type secureXMLDecoder struct {
 	*xml.Decoder
-	maxBytes int64
+	maxBytes  int64
 	bytesRead int64
 }
 
@@ -42,7 +42,7 @@ type secureXMLDecoder struct {
 func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
 	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
 	return &secureXMLDecoder{
-		Decoder: xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
+		Decoder:  xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
 		maxBytes: maxXMLSize,
 	}
 }
@@ -89,7 +89,7 @@ var (
 	ErrMissingAttribute = errors.New("missing required SAML attribute")
 	// ErrInvalidSignature is returned when the signature is invalid.
 	ErrInvalidSignature = errors.New("invalid SAML signature")
-	ErrNotConfigured  = errors.New("SAML not configured")
+	ErrNotConfigured    = errors.New("SAML not configured")
 )
 
 // Config holds SAML configuration.
@@ -118,8 +118,8 @@ type Config struct {
 
 // Manager handles SAML authentication operations.
 type Manager struct {
-	config    *Config
-	idpMeta   []byte
+	config  *Config
+	idpMeta []byte
 }
 
 // NewManager creates a new SAML manager.
@@ -430,8 +430,8 @@ func (m *Manager) verifySignature(response []byte) error {
 	var samlResp struct {
 		XMLName   xml.Name `xml:"urn:oasis:names:tc:SAML:2.0:protocol Response"`
 		Signature *struct {
-			XMLName        xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# Signature"`
-			SignedInfo     struct {
+			XMLName    xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# Signature"`
+			SignedInfo struct {
 				XMLName                xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# SignedInfo"`
 				CanonicalizationMethod struct {
 					XMLName   xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# CanonicalizationMethod"`
@@ -442,8 +442,8 @@ func (m *Manager) verifySignature(response []byte) error {
 					Algorithm string   `xml:"Algorithm,attr"`
 				} `xml:"SignatureMethod"`
 				Reference struct {
-					XMLName     xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# Reference"`
-					URI         string   `xml:"URI,attr"`
+					XMLName    xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# Reference"`
+					URI        string   `xml:"URI,attr"`
 					Transforms []struct {
 						XMLName   xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# Transform"`
 						Algorithm string   `xml:"Algorithm,attr"`
@@ -457,10 +457,10 @@ func (m *Manager) verifySignature(response []byte) error {
 			} `xml:"SignedInfo"`
 			SignatureValue string `xml:"SignatureValue"`
 			KeyInfo        *struct {
-				XMLName     xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# KeyInfo"`
-				X509Data    *struct {
-					XMLName           xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# X509Data"`
-					X509Certificates  []string `xml:"X509Certificate"`
+				XMLName  xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# KeyInfo"`
+				X509Data *struct {
+					XMLName          xml.Name `xml:"http://www.w3.org/2000/09/xmldsig# X509Data"`
+					X509Certificates []string `xml:"X509Certificate"`
 				} `xml:"X509Data"`
 			} `xml:"KeyInfo"`
 		} `xml:"Signature"`
@@ -496,7 +496,7 @@ func (m *Manager) verifySignature(response []byte) error {
 		return fmt.Errorf("find signed info")
 	}
 
-	signedInfo := response[signedInfoStart:signedInfoEnd+len("</ds:SignedInfo>")]
+	signedInfo := response[signedInfoStart : signedInfoEnd+len("</ds:SignedInfo>")]
 
 	// Hash based on algorithm
 	// SHA-1 signatures are rejected due to cryptographic vulnerabilities (CVE-2005-4905, CVE-2017-14042)
@@ -689,25 +689,25 @@ func validateXMLSecurity(xmlData []byte) error {
 
 // SAMLResponse represents a SAML response.
 type SAMLResponse struct {
-	XMLName     xml.Name `xml:"urn:oasis:names:tc:SAML:2.0:protocol Response"`
-	ID          string   `xml:"ID,attr"`
-	InResponseTo string   `xml:"InResponseTo,attr,omitempty"`
-	Version     string   `xml:"Version,attr"`
-	IssueInstant string   `xml:"IssueInstant,attr,omitempty"`
-	Destination string   `xml:"Destination,attr,omitempty"`
-	Assertions []SAMLAssertion `xml:"Assertion"`
+	XMLName      xml.Name        `xml:"urn:oasis:names:tc:SAML:2.0:protocol Response"`
+	ID           string          `xml:"ID,attr"`
+	InResponseTo string          `xml:"InResponseTo,attr,omitempty"`
+	Version      string          `xml:"Version,attr"`
+	IssueInstant string          `xml:"IssueInstant,attr,omitempty"`
+	Destination  string          `xml:"Destination,attr,omitempty"`
+	Assertions   []SAMLAssertion `xml:"Assertion"`
 }
 
 // SAMLAssertion represents a SAML assertion.
 type SAMLAssertion struct {
-	XMLName              xml.Name              `xml:"urn:oasis:names:tc:SAML:2.0:assertion Assertion"`
-	ID                   string                `xml:"ID,attr"`
-	IssueInstant         string                `xml:"IssueInstant,attr,omitempty"`
-	Version              string                `xml:"Version,attr,omitempty"`
-	Issuer               *SAMLIssuer           `xml:"Issuer"`
-	Subject              *SAMLSubject           `xml:"Subject"`
-	Conditions           *SAMLConditions        `xml:"Conditions"`
-	AttributeStatements  []*SAMLAttributeStatement `xml:"AttributeStatement"`
+	XMLName             xml.Name                  `xml:"urn:oasis:names:tc:SAML:2.0:assertion Assertion"`
+	ID                  string                    `xml:"ID,attr"`
+	IssueInstant        string                    `xml:"IssueInstant,attr,omitempty"`
+	Version             string                    `xml:"Version,attr,omitempty"`
+	Issuer              *SAMLIssuer               `xml:"Issuer"`
+	Subject             *SAMLSubject              `xml:"Subject"`
+	Conditions          *SAMLConditions           `xml:"Conditions"`
+	AttributeStatements []*SAMLAttributeStatement `xml:"AttributeStatement"`
 }
 
 // SAMLIssuer represents the assertion issuer.
@@ -718,8 +718,8 @@ type SAMLIssuer struct {
 
 // SAMLSubject represents the assertion subject.
 type SAMLSubject struct {
-	NameID       string                  `xml:"NameID"`
-	SessionIndex string                  `xml:"SessionIndex,omitempty"`
+	NameID       string `xml:"NameID"`
+	SessionIndex string `xml:"SessionIndex,omitempty"`
 }
 
 // SAMLConditions represents assertion conditions.
@@ -735,6 +735,6 @@ type SAMLAttributeStatement struct {
 
 // SAMLAttribute represents a single attribute.
 type SAMLAttribute struct {
-	Name   string        `xml:"Name,attr"`
-	Values []string      `xml:"AttributeValue"`
+	Name   string   `xml:"Name,attr"`
+	Values []string `xml:"AttributeValue"`
 }

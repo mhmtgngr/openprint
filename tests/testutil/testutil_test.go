@@ -385,7 +385,7 @@ func TestTestDB(t *testing.T) {
 // Mock transaction for testing InTransaction
 type mockTx struct {
 	pgx.Tx
-	commitCalled bool
+	commitCalled   bool
 	rollbackCalled bool
 }
 
@@ -413,7 +413,7 @@ func TestTestReadCloser_EOF_Error(t *testing.T) {
 		rc := &testReadCloser{Reader: data}
 
 		buf := make([]byte, 10)
-		rc.Read(buf)          // Read all data
+		rc.Read(buf)           // Read all data
 		_, err := rc.Read(buf) // Try to read more
 
 		assert.Error(t, err)

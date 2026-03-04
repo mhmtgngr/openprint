@@ -10,9 +10,9 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
-	"github.com/openprint/openprint/internal/auth/password"
 	"github.com/openprint/openprint/internal/auth/jwt"
+	"github.com/openprint/openprint/internal/auth/password"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/auth-service/repository"
 )
 

@@ -131,9 +131,9 @@ func (r *RedisClient) GetWindowStats(ctx context.Context, key string, min, max f
 
 // WindowStats represents statistics about a time window.
 type WindowStats struct {
-	Count            int    `json:"count"`
-	OldestTimestamp  string `json:"oldest_timestamp,omitempty"`
-	NewestTimestamp  string `json:"newest_timestamp,omitempty"`
+	Count           int    `json:"count"`
+	OldestTimestamp string `json:"oldest_timestamp,omitempty"`
+	NewestTimestamp string `json:"newest_timestamp,omitempty"`
 }
 
 // SetKeyExpiration sets an expiration time for a key.

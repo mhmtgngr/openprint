@@ -59,19 +59,19 @@ func New(cfg Config) *Handler {
 
 // RegisterRequest represents a user registration request.
 type RegisterRequest struct {
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	FirstName       string `json:"first_name"`
-	LastName        string `json:"last_name"`
-	OrganizationID  string `json:"organization_id,omitempty"`
-	InviteToken     string `json:"invite_token,omitempty"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	OrganizationID string `json:"organization_id,omitempty"`
+	InviteToken    string `json:"invite_token,omitempty"`
 }
 
 // RegisterResponse represents a registration response.
 type RegisterResponse struct {
-	UserID      string `json:"user_id"`
-	Email       string `json:"email"`
-	AccessToken string `json:"access_token"`
+	UserID       string `json:"user_id"`
+	Email        string `json:"email"`
+	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
@@ -339,14 +339,14 @@ func (h *Handler) findOrCreateUserBySAML(ctx context.Context, assertion *saml.As
 
 func userToResponse(user *repository.User) map[string]interface{} {
 	return map[string]interface{}{
-		"user_id":     user.ID,
-		"email":       user.Email,
-		"first_name":  user.FirstName,
-		"last_name":   user.LastName,
-		"role":        user.Role,
-		"is_active":   user.IsActive,
-		"created_at":  user.CreatedAt,
-		"last_login":  user.LastLoginAt,
+		"user_id":    user.ID,
+		"email":      user.Email,
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
+		"role":       user.Role,
+		"is_active":  user.IsActive,
+		"created_at": user.CreatedAt,
+		"last_login": user.LastLoginAt,
 	}
 }
 

@@ -14,12 +14,12 @@ import (
 
 func TestNewTenantQueryBuilder(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupCtx    func() context.Context
-		tableAlias  string
+		name         string
+		setupCtx     func() context.Context
+		tableAlias   string
 		wantTenantID string
-		wantColumn  string
-		wantErr     error
+		wantColumn   string
+		wantErr      error
 	}{
 		{
 			name: "valid tenant context without alias",
@@ -42,12 +42,12 @@ func TestNewTenantQueryBuilder(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
-			name:        "missing tenant context",
-			setupCtx:    func() context.Context { return context.Background() },
-			tableAlias:  "",
+			name:         "missing tenant context",
+			setupCtx:     func() context.Context { return context.Background() },
+			tableAlias:   "",
 			wantTenantID: "",
-			wantColumn:  "",
-			wantErr:     ErrNoTenantContext,
+			wantColumn:   "",
+			wantErr:      ErrNoTenantContext,
 		},
 	}
 
@@ -126,28 +126,28 @@ func TestTenantQueryBuilder_WhereClause(t *testing.T) {
 
 func TestTenantQueryBuilder_WhereClauseWith(t *testing.T) {
 	tests := []struct {
-		name          string
+		name           string
 		existingClause string
-		tableAlias    string
-		wantClause    string
+		tableAlias     string
+		wantClause     string
 	}{
 		{
-			name:          "no existing clause",
+			name:           "no existing clause",
 			existingClause: "",
-			tableAlias:    "",
-			wantClause:    "tenant_id = @tenant_id",
+			tableAlias:     "",
+			wantClause:     "tenant_id = @tenant_id",
 		},
 		{
-			name:          "with existing clause",
+			name:           "with existing clause",
 			existingClause: "status = 'active'",
-			tableAlias:    "",
-			wantClause:    "(status = 'active') AND tenant_id = @tenant_id",
+			tableAlias:     "",
+			wantClause:     "(status = 'active') AND tenant_id = @tenant_id",
 		},
 		{
-			name:          "with existing clause and alias",
+			name:           "with existing clause and alias",
 			existingClause: "status = 'active'",
-			tableAlias:    "org",
-			wantClause:    "(status = 'active') AND org.tenant_id = @tenant_id",
+			tableAlias:     "org",
+			wantClause:     "(status = 'active') AND org.tenant_id = @tenant_id",
 		},
 	}
 
@@ -236,51 +236,51 @@ func TestTenantQueryBuilder_MergeArgs(t *testing.T) {
 
 func TestTenantQueryBuilder_ApplyToQuery(t *testing.T) {
 	tests := []struct {
-		name     string
-		query    string
-		tenantID string
+		name      string
+		query     string
+		tenantID  string
 		wantQuery string
 	}{
 		{
-			name:     "simple select",
-			query:    "SELECT * FROM organizations",
-			tenantID: "tenant-123",
+			name:      "simple select",
+			query:     "SELECT * FROM organizations",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT * FROM organizations WHERE tenant_id = @tenant_id",
 		},
 		{
-			name:     "select with order by",
-			query:    "SELECT * FROM organizations ORDER BY name",
-			tenantID: "tenant-123",
+			name:      "select with order by",
+			query:     "SELECT * FROM organizations ORDER BY name",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT * FROM organizations WHERE tenant_id = @tenant_id ORDER BY name",
 		},
 		{
-			name:     "select with existing where",
-			query:    "SELECT * FROM organizations WHERE status = 'active'",
-			tenantID: "tenant-123",
+			name:      "select with existing where",
+			query:     "SELECT * FROM organizations WHERE status = 'active'",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT * FROM organizations WHERE (status = 'active') AND tenant_id = @tenant_id",
 		},
 		{
-			name:     "select with where and order by",
-			query:    "SELECT * FROM organizations WHERE status = 'active' ORDER BY name",
-			tenantID: "tenant-123",
+			name:      "select with where and order by",
+			query:     "SELECT * FROM organizations WHERE status = 'active' ORDER BY name",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT * FROM organizations WHERE (status = 'active') AND tenant_id = @tenant_id ORDER BY name",
 		},
 		{
-			name:     "select with limit",
-			query:    "SELECT * FROM organizations LIMIT 10",
-			tenantID: "tenant-123",
+			name:      "select with limit",
+			query:     "SELECT * FROM organizations LIMIT 10",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT * FROM organizations WHERE tenant_id = @tenant_id LIMIT 10",
 		},
 		{
-			name:     "select with group by",
-			query:    "SELECT status, COUNT(*) FROM organizations GROUP BY status",
-			tenantID: "tenant-123",
+			name:      "select with group by",
+			query:     "SELECT status, COUNT(*) FROM organizations GROUP BY status",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT status, COUNT(*) FROM organizations WHERE tenant_id = @tenant_id GROUP BY status",
 		},
 		{
-			name:     "select with offset",
-			query:    "SELECT * FROM organizations OFFSET 10",
-			tenantID: "tenant-123",
+			name:      "select with offset",
+			query:     "SELECT * FROM organizations OFFSET 10",
+			tenantID:  "tenant-123",
 			wantQuery: "SELECT * FROM organizations WHERE tenant_id = @tenant_id OFFSET 10",
 		},
 	}
@@ -304,33 +304,33 @@ func TestTenantQueryBuilder_injectWhereBefore(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		query    string
-		keywords []string
+		name      string
+		query     string
+		keywords  []string
 		wantQuery string
 	}{
 		{
-			name:     "inject before ORDER BY",
-			query:    "SELECT * FROM organizations ORDER BY name",
-			keywords: []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
+			name:      "inject before ORDER BY",
+			query:     "SELECT * FROM organizations ORDER BY name",
+			keywords:  []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
 			wantQuery: "SELECT * FROM organizations ORDER BY name WHERE tenant_id = @tenant_id",
 		},
 		{
-			name:     "inject before GROUP BY",
-			query:    "SELECT status, COUNT(*) FROM organizations GROUP BY status",
-			keywords: []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
+			name:      "inject before GROUP BY",
+			query:     "SELECT status, COUNT(*) FROM organizations GROUP BY status",
+			keywords:  []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
 			wantQuery: "SELECT status, COUNT(*) FROM organizations GROUP BY status WHERE tenant_id = @tenant_id",
 		},
 		{
-			name:     "inject before LIMIT",
-			query:    "SELECT * FROM organizations LIMIT 10",
-			keywords: []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
+			name:      "inject before LIMIT",
+			query:     "SELECT * FROM organizations LIMIT 10",
+			keywords:  []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
 			wantQuery: "SELECT * FROM organizations LIMIT 10 WHERE tenant_id = @tenant_id",
 		},
 		{
-			name:     "no keywords - append",
-			query:    "SELECT * FROM organizations",
-			keywords: []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
+			name:      "no keywords - append",
+			query:     "SELECT * FROM organizations",
+			keywords:  []string{" ORDER BY ", " GROUP BY ", " LIMIT "},
 			wantQuery: "SELECT * FROM organizations WHERE tenant_id = @tenant_id",
 		},
 	}
@@ -474,10 +474,10 @@ func TestRowLevelSecurity_SetPlatformAdmin(t *testing.T) {
 
 func TestScanner_MustScanTenantID(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupRow    func() *mockRow
-		setupCtx    func() context.Context
-		wantErr     error
+		name     string
+		setupRow func() *mockRow
+		setupCtx func() context.Context
+		wantErr  error
 	}{
 		{
 			name: "matching tenant ID",
@@ -552,11 +552,11 @@ func TestScanner_MustScanTenantID(t *testing.T) {
 
 func TestScanWithTenant(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupRow    func() *mockRow
-		setupCtx    func() context.Context
-		numDest     int
-		wantErr     error
+		name     string
+		setupRow func() *mockRow
+		setupCtx func() context.Context
+		numDest  int
+		wantErr  error
 	}{
 		{
 			name: "matching tenant ID",
@@ -643,10 +643,10 @@ func TestScanWithTenant(t *testing.T) {
 
 func TestSafeQuery(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupCtx    func() context.Context
-		baseQuery   string
-		wantErr     error
+		name      string
+		setupCtx  func() context.Context
+		baseQuery string
+		wantErr   error
 	}{
 		{
 			name: "valid query with tenant context",
@@ -657,10 +657,10 @@ func TestSafeQuery(t *testing.T) {
 			wantErr:   nil,
 		},
 		{
-			name:        "no tenant context",
-			setupCtx:    func() context.Context { return context.Background() },
-			baseQuery:   "SELECT * FROM organizations",
-			wantErr:     ErrNoTenantContext,
+			name:      "no tenant context",
+			setupCtx:  func() context.Context { return context.Background() },
+			baseQuery: "SELECT * FROM organizations",
+			wantErr:   ErrNoTenantContext,
 		},
 	}
 
@@ -686,10 +686,10 @@ func TestSafeQuery(t *testing.T) {
 
 func TestSafeQueryRow(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupCtx    func() context.Context
-		baseQuery   string
-		wantErr     bool
+		name      string
+		setupCtx  func() context.Context
+		baseQuery string
+		wantErr   bool
 	}{
 		{
 			name: "valid query with tenant context",
@@ -700,10 +700,10 @@ func TestSafeQueryRow(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:        "no tenant context",
-			setupCtx:    func() context.Context { return context.Background() },
-			baseQuery:   "SELECT * FROM organizations WHERE id = $1",
-			wantErr:     true,
+			name:      "no tenant context",
+			setupCtx:  func() context.Context { return context.Background() },
+			baseQuery: "SELECT * FROM organizations WHERE id = $1",
+			wantErr:   true,
 		},
 	}
 
@@ -727,10 +727,10 @@ func TestSafeQueryRow(t *testing.T) {
 
 func TestSafeExec(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupCtx    func() context.Context
-		baseQuery   string
-		wantErr     error
+		name      string
+		setupCtx  func() context.Context
+		baseQuery string
+		wantErr   error
 	}{
 		{
 			name: "valid exec with tenant context",
@@ -741,10 +741,10 @@ func TestSafeExec(t *testing.T) {
 			wantErr:   nil,
 		},
 		{
-			name:        "no tenant context",
-			setupCtx:    func() context.Context { return context.Background() },
-			baseQuery:   "UPDATE organizations SET name = $1 WHERE id = $2",
-			wantErr:     ErrNoTenantContext,
+			name:      "no tenant context",
+			setupCtx:  func() context.Context { return context.Background() },
+			baseQuery: "UPDATE organizations SET name = $1 WHERE id = $2",
+			wantErr:   ErrNoTenantContext,
 		},
 	}
 
@@ -799,8 +799,8 @@ func TestErrorRow(t *testing.T) {
 // Mock implementations for testing
 
 type mockQuerier struct {
-	lastSQL   string
-	lastArgs  []interface{}
+	lastSQL    string
+	lastArgs   []interface{}
 	execResult pgconn.CommandTag
 	execErr    error
 }
@@ -825,16 +825,16 @@ func (m *mockQuerier) QueryRow(ctx context.Context, sql string, args ...interfac
 
 type mockRows struct{}
 
-func (m *mockRows) Close() {}
-func (m *mockRows) Err() error { return nil }
-func (m *mockRows) CommandTag() pgconn.CommandTag { return pgconn.NewCommandTag("") }
-func (m *mockRows) Fields() []string { return []string{} }
+func (m *mockRows) Close()                                       {}
+func (m *mockRows) Err() error                                   { return nil }
+func (m *mockRows) CommandTag() pgconn.CommandTag                { return pgconn.NewCommandTag("") }
+func (m *mockRows) Fields() []string                             { return []string{} }
 func (m *mockRows) FieldDescriptions() []pgconn.FieldDescription { return []pgconn.FieldDescription{} }
-func (m *mockRows) Next() bool { return false }
-func (m *mockRows) Values() ([]interface{}, error) { return []interface{}{}, nil }
-func (m *mockRows) Scan(dest ...interface{}) error { return nil }
-func (m *mockRows) RawValues() [][]byte { return nil }
-func (m *mockRows) Conn() *pgx.Conn { return nil }
+func (m *mockRows) Next() bool                                   { return false }
+func (m *mockRows) Values() ([]interface{}, error)               { return []interface{}{}, nil }
+func (m *mockRows) Scan(dest ...interface{}) error               { return nil }
+func (m *mockRows) RawValues() [][]byte                          { return nil }
+func (m *mockRows) Conn() *pgx.Conn                              { return nil }
 
 type mockRow struct {
 	scanValues []interface{}

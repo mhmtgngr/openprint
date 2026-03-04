@@ -19,23 +19,23 @@ import (
 
 // Microsoft365Config holds Microsoft 365 OIDC configuration.
 type Microsoft365Config struct {
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	RedirectURL    string
-	IsTestMode     bool
-	TestUsers      []TestUser
+	TenantID     string
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	IsTestMode   bool
+	TestUsers    []TestUser
 }
 
 // TestUser represents a mock user for E2E testing.
 type TestUser struct {
-	Email         string   `json:"email"`
-	ID            string   `json:"id"`
-	DisplayName   string   `json:"display_name"`
-	GivenName     string   `json:"given_name"`
-	FamilyName    string   `json:"family_name"`
-	Groups        []string `json:"groups"`
-	RefreshToken  string   `json:"refresh_token"`
+	Email        string   `json:"email"`
+	ID           string   `json:"id"`
+	DisplayName  string   `json:"display_name"`
+	GivenName    string   `json:"given_name"`
+	FamilyName   string   `json:"family_name"`
+	Groups       []string `json:"groups"`
+	RefreshToken string   `json:"refresh_token"`
 }
 
 // OIDCHandler provides Microsoft 365 OIDC authentication with test mocking.
@@ -373,7 +373,7 @@ func (h *OIDCHandler) Microsoft365ConfigHandler(w http.ResponseWriter, r *http.R
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"configured": configured,
 		"test_mode":  h.config.IsTestMode,
-		"tenant_id":  func() string {
+		"tenant_id": func() string {
 			if h.config.TenantID != "" {
 				return h.config.TenantID
 			}

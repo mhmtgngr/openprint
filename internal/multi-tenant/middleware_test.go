@@ -118,12 +118,12 @@ func TestTenantMiddleware(t *testing.T) {
 
 func TestExtractFromJWT(t *testing.T) {
 	tests := []struct {
-		name              string
-		setupRequest      func() *http.Request
-		wantTenantID      string
-		wantRole          Role
+		name                string
+		setupRequest        func() *http.Request
+		wantTenantID        string
+		wantRole            Role
 		wantIsPlatformAdmin bool
-		wantErr           bool
+		wantErr             bool
 	}{
 		{
 			name: "platform admin",
@@ -133,10 +133,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-User-ID", "admin-123")
 				return req
 			},
-			wantTenantID:       "",
-			wantRole:           RolePlatformAdmin,
+			wantTenantID:        "",
+			wantRole:            RolePlatformAdmin,
 			wantIsPlatformAdmin: true,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "platform_admin role",
@@ -146,10 +146,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-User-ID", "admin-123")
 				return req
 			},
-			wantTenantID:       "",
-			wantRole:           RolePlatformAdmin,
+			wantTenantID:        "",
+			wantRole:            RolePlatformAdmin,
 			wantIsPlatformAdmin: true,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "org admin with organization",
@@ -160,10 +160,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-Org-ID", "org-456")
 				return req
 			},
-			wantTenantID:       "org-456",
-			wantRole:           RoleOrgAdmin,
+			wantTenantID:        "org-456",
+			wantRole:            RoleOrgAdmin,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "org user",
@@ -174,10 +174,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-Org-ID", "org-456")
 				return req
 			},
-			wantTenantID:       "org-456",
-			wantRole:           RoleOrgUser,
+			wantTenantID:        "org-456",
+			wantRole:            RoleOrgUser,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "user role maps to org_user",
@@ -188,10 +188,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-Org-ID", "org-456")
 				return req
 			},
-			wantTenantID:       "org-456",
-			wantRole:           RoleOrgUser,
+			wantTenantID:        "org-456",
+			wantRole:            RoleOrgUser,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "viewer role",
@@ -202,10 +202,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-Org-ID", "org-456")
 				return req
 			},
-			wantTenantID:       "org-456",
-			wantRole:           RoleOrgViewer,
+			wantTenantID:        "org-456",
+			wantRole:            RoleOrgViewer,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "org_viewer role",
@@ -216,10 +216,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-Org-ID", "org-456")
 				return req
 			},
-			wantTenantID:       "org-456",
-			wantRole:           RoleOrgViewer,
+			wantTenantID:        "org-456",
+			wantRole:            RoleOrgViewer,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "unknown role defaults to org_user",
@@ -230,20 +230,20 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-Org-ID", "org-456")
 				return req
 			},
-			wantTenantID:       "org-456",
-			wantRole:           RoleOrgUser,
+			wantTenantID:        "org-456",
+			wantRole:            RoleOrgUser,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
 			name: "no user context",
 			setupRequest: func() *http.Request {
 				return httptest.NewRequest("GET", "/", nil)
 			},
-			wantTenantID: "",
-			wantRole:     "",
+			wantTenantID:        "",
+			wantRole:            "",
 			wantIsPlatformAdmin: false,
-			wantErr:      true,
+			wantErr:             true,
 		},
 		{
 			name: "regular user without organization",
@@ -253,10 +253,10 @@ func TestExtractFromJWT(t *testing.T) {
 				req.Header.Set("X-User-ID", "user-123")
 				return req
 			},
-			wantTenantID: "",
-			wantRole:     "",
+			wantTenantID:        "",
+			wantRole:            "",
 			wantIsPlatformAdmin: false,
-			wantErr:      true,
+			wantErr:             true,
 		},
 	}
 
@@ -286,7 +286,7 @@ func TestExtractFromJWT(t *testing.T) {
 					role := GetTenantRole(r.Context())
 					assert.Equal(t, tt.wantRole, role)
 
-				 isAdmin := IsPlatformAdmin(r.Context())
+					isAdmin := IsPlatformAdmin(r.Context())
 					assert.Equal(t, tt.wantIsPlatformAdmin, isAdmin)
 				}
 			}))
@@ -404,10 +404,10 @@ func TestRequirePlatformAdmin(t *testing.T) {
 			wantStatusCode: http.StatusForbidden,
 		},
 		{
-			name:      "skip path allowed",
-			skipPaths: []string{"/public"},
-			role:      "user",
-			path:      "/public/data",
+			name:           "skip path allowed",
+			skipPaths:      []string{"/public"},
+			role:           "user",
+			path:           "/public/data",
 			wantStatusCode: http.StatusOK,
 		},
 	}
@@ -475,9 +475,9 @@ func TestRequireOrgAdmin(t *testing.T) {
 			wantStatusCode: http.StatusForbidden,
 		},
 		{
-			name:      "skip path allowed",
-			skipPaths: []string{"/public"},
-			role:      "org_viewer",
+			name:           "skip path allowed",
+			skipPaths:      []string{"/public"},
+			role:           "org_viewer",
 			wantStatusCode: http.StatusOK,
 		},
 		{
@@ -581,7 +581,7 @@ func TestRequireTenantAccessMiddleware(t *testing.T) {
 			tenantIDFunc: func(r *http.Request) (string, error) {
 				return "tenant-456", nil
 			},
-			setupContext: func() context.Context { return context.Background() },
+			setupContext:   func() context.Context { return context.Background() },
 			targetTenantID: "tenant-456",
 			wantStatusCode: http.StatusForbidden,
 		},
@@ -610,36 +610,36 @@ func TestTenantFromHeader(t *testing.T) {
 	extractor := TenantFromHeader("X-Tenant-ID")
 
 	tests := []struct {
-		name               string
-		headerValue        string
-		wantTenantID       string
-		wantRole           Role
+		name                string
+		headerValue         string
+		wantTenantID        string
+		wantRole            Role
 		wantIsPlatformAdmin bool
-		wantErr            bool
+		wantErr             bool
 	}{
 		{
-			name:               "valid tenant ID",
-			headerValue:        "tenant-123",
-			wantTenantID:       "tenant-123",
-			wantRole:           RoleOrgUser,
+			name:                "valid tenant ID",
+			headerValue:         "tenant-123",
+			wantTenantID:        "tenant-123",
+			wantRole:            RoleOrgUser,
 			wantIsPlatformAdmin: false,
-			wantErr:            false,
+			wantErr:             false,
 		},
 		{
-			name:               "empty header",
-			headerValue:        "",
-			wantTenantID:       "",
-			wantRole:           "",
+			name:                "empty header",
+			headerValue:         "",
+			wantTenantID:        "",
+			wantRole:            "",
 			wantIsPlatformAdmin: false,
-			wantErr:            true,
+			wantErr:             true,
 		},
 		{
-			name:               "missing header",
-			headerValue:        "",
-			wantTenantID:       "",
-			wantRole:           "",
+			name:                "missing header",
+			headerValue:         "",
+			wantTenantID:        "",
+			wantRole:            "",
 			wantIsPlatformAdmin: false,
-			wantErr:            true,
+			wantErr:             true,
 		},
 	}
 
@@ -668,28 +668,28 @@ func TestTenantFromQuery(t *testing.T) {
 	extractor := TenantFromQuery("tenant_id")
 
 	tests := []struct {
-		name               string
-		queryParam         string
-		wantTenantID       string
-		wantErr            bool
+		name         string
+		queryParam   string
+		wantTenantID string
+		wantErr      bool
 	}{
 		{
-			name:       "valid tenant ID",
-			queryParam: "tenant-123",
+			name:         "valid tenant ID",
+			queryParam:   "tenant-123",
 			wantTenantID: "tenant-123",
-			wantErr:    false,
+			wantErr:      false,
 		},
 		{
-			name:       "empty query param",
-			queryParam: "",
+			name:         "empty query param",
+			queryParam:   "",
 			wantTenantID: "",
-			wantErr:    true,
+			wantErr:      true,
 		},
 		{
-			name:       "missing query param",
-			queryParam: "",
+			name:         "missing query param",
+			queryParam:   "",
 			wantTenantID: "",
-			wantErr:    true,
+			wantErr:      true,
 		},
 	}
 
@@ -782,8 +782,8 @@ func TestRespondForbidden(t *testing.T) {
 
 func TestMiddlewareConfig_Defaults(t *testing.T) {
 	config := MiddlewareConfig{
-		RequireTenant: true,
-		SkipPaths:     []string{"/health"},
+		RequireTenant:   true,
+		SkipPaths:       []string{"/health"},
 		TenantExtractor: nil,
 	}
 
@@ -904,8 +904,8 @@ func TestTenantMiddleware_RequireTenantFalse(t *testing.T) {
 // Test that error responses match expected format
 func TestErrorResponses(t *testing.T) {
 	tests := []struct {
-		name         string
-		setupHandler http.Handler
+		name          string
+		setupHandler  http.Handler
 		checkResponse func(*testing.T, *httptest.ResponseRecorder)
 	}{
 		{

@@ -198,8 +198,8 @@ func (h *ViolationsHandler) ClearOldViolations(w http.ResponseWriter, r *http.Re
 	// In a real implementation, this would call a cleanup function
 	// For now, just return success
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"message":      "Old violations cleared",
-		"days_kept":    req.DaysToKeep,
+		"message":   "Old violations cleared",
+		"days_kept": req.DaysToKeep,
 	})
 }
 
@@ -207,26 +207,26 @@ func (h *ViolationsHandler) ClearOldViolations(w http.ResponseWriter, r *http.Re
 
 func violationToResponse(v *ratelimit.Violation) map[string]interface{} {
 	return map[string]interface{}{
-		"id":               v.ID,
-		"policy_id":        v.PolicyID,
-		"policy_name":      v.PolicyName,
-		"identifier":       v.Identifier,
-		"identifier_type":  v.IdentifierType,
-		"path":             v.Path,
-		"method":           v.Method,
-		"current":          v.Current,
-		"limit":            v.Limit,
-		"severity":         v.Severity,
-		"occurred_at":      v.OccurredAt.Format(time.RFC3339),
+		"id":              v.ID,
+		"policy_id":       v.PolicyID,
+		"policy_name":     v.PolicyName,
+		"identifier":      v.Identifier,
+		"identifier_type": v.IdentifierType,
+		"path":            v.Path,
+		"method":          v.Method,
+		"current":         v.Current,
+		"limit":           v.Limit,
+		"severity":        v.Severity,
+		"occurred_at":     v.OccurredAt.Format(time.RFC3339),
 	}
 }
 
 func calculateViolationStats(violations []*ratelimit.Violation) map[string]interface{} {
 	stats := map[string]interface{}{
-		"total":      len(violations),
-		"by_severity": make(map[string]int),
-		"by_type":    make(map[string]int),
-		"by_policy":  make(map[string]int),
+		"total":         len(violations),
+		"by_severity":   make(map[string]int),
+		"by_type":       make(map[string]int),
+		"by_policy":     make(map[string]int),
 		"top_violators": make([]map[string]interface{}, 0, 10),
 	}
 

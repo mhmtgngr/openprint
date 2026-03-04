@@ -302,8 +302,8 @@ func (ts *TestS3) PutObject(ctx context.Context, bucketName, objectName string, 
 
 	_, err := ts.Client.PutObject(ctx, bucketName, objectName,
 		bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{
-		ContentType: contentType,
-	})
+			ContentType: contentType,
+		})
 	if err != nil {
 		return fmt.Errorf("put object %s: %w", objectName, err)
 	}
@@ -537,8 +537,7 @@ func isBucketExists(err error) bool {
 
 // contains checks if a string contains a substring (case-insensitive).
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (
-		s[:len(substr)] == substr ||
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (s[:len(substr)] == substr ||
 		s[len(s)-len(substr):] == substr ||
 		containsMiddle(s, substr)))
 }

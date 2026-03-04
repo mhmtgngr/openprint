@@ -436,13 +436,13 @@ func TestBusinessMetrics_DocumentTracking(t *testing.T) {
 	businessMetrics := NewBusinessMetrics(reg)
 
 	storeLabels := prometheus.Labels{
-		LabelServiceName:  "test-docs",
+		LabelServiceName:    "test-docs",
 		LabelStorageBackend: StorageBackendS3,
 		LabelDocumentType:   "application/pdf",
 	}
 
 	backendLabels := prometheus.Labels{
-		LabelServiceName:  "test-docs",
+		LabelServiceName:    "test-docs",
 		LabelStorageBackend: StorageBackendS3,
 	}
 
@@ -545,8 +545,8 @@ func TestMetrics_LabelConsistency(t *testing.T) {
 	metrics.DB.QueriesTotal.With(dbLabels).Inc()
 
 	redisLabels := prometheus.Labels{
-		LabelServiceName: serviceName,
-		LabelRedisDB:     "0",
+		LabelServiceName:  serviceName,
+		LabelRedisDB:      "0",
 		LabelRedisCommand: "GET",
 	}
 	metrics.Redis.CommandsTotal.With(redisLabels).Inc()

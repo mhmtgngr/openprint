@@ -319,14 +319,14 @@ func TestEvaluateHandler_DenyPolicy(t *testing.T) {
 
 	// Evaluate with a document that should be denied
 	evalCtx := map[string]interface{}{
-		"user_id":        uuid.New().String(),
-		"printer_id":     uuid.New().String(),
-		"document_name":  "large.pdf",
-		"document_type":  "pdf",
-		"page_count":     50,
-		"color_mode":     "color",
-		"duplex_mode":    "duplex",
-		"cost":           5.50,
+		"user_id":       uuid.New().String(),
+		"printer_id":    uuid.New().String(),
+		"document_name": "large.pdf",
+		"document_type": "pdf",
+		"page_count":    50,
+		"color_mode":    "color",
+		"duplex_mode":   "duplex",
+		"cost":          5.50,
 	}
 
 	body, _ := json.Marshal(evalCtx)
@@ -355,14 +355,14 @@ func TestEvaluateHandler_AllowPolicy(t *testing.T) {
 	defer ts.Cleanup()
 
 	evalCtx := map[string]interface{}{
-		"user_id":        uuid.New().String(),
-		"printer_id":     uuid.New().String(),
-		"document_name":  "small.pdf",
-		"document_type":  "pdf",
-		"page_count":     5,
-		"color_mode":     "color",
-		"duplex_mode":     "duplex",
-		"cost":           0.50,
+		"user_id":       uuid.New().String(),
+		"printer_id":    uuid.New().String(),
+		"document_name": "small.pdf",
+		"document_type": "pdf",
+		"page_count":    5,
+		"color_mode":    "color",
+		"duplex_mode":   "duplex",
+		"cost":          0.50,
 	}
 
 	body, _ := json.Marshal(evalCtx)
@@ -494,14 +494,14 @@ func TestTestPolicyHandler_Matched(t *testing.T) {
 	}
 
 	testCtx := map[string]interface{}{
-		"user_id":        uuid.New().String(),
-		"printer_id":     uuid.New().String(),
-		"document_name":  "test.pdf",
-		"document_type":  "pdf",
-		"page_count":     50,
-		"color_mode":     "color",
-		"duplex_mode":     "duplex",
-		"cost":           1.50,
+		"user_id":       uuid.New().String(),
+		"printer_id":    uuid.New().String(),
+		"document_name": "test.pdf",
+		"document_type": "pdf",
+		"page_count":    50,
+		"color_mode":    "color",
+		"duplex_mode":   "duplex",
+		"cost":          1.50,
 	}
 
 	req := map[string]interface{}{

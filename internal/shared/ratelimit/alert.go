@@ -26,29 +26,29 @@ type AlertChannel interface {
 
 // Alert represents a rate limit violation alert.
 type Alert struct {
-	ID          string                 `json:"id"`
-	Type        string                 `json:"type"`        // "violation", "circuit_open", "quota_exceeded"
-	Severity    string                 `json:"severity"`    // "low", "medium", "high", "critical"
-	PolicyID    string                 `json:"policy_id"`
-	PolicyName  string                 `json:"policy_name"`
-	Identifier  string                 `json:"identifier"`
-	IdentifierType string              `json:"identifier_type"`
-	Path        string                 `json:"path"`
-	Method      string                 `json:"method"`
-	Current     int64                  `json:"current"`
-	Limit       int64                  `json:"limit"`
-	Message     string                 `json:"message"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt   time.Time              `json:"created_at"`
+	ID             string                 `json:"id"`
+	Type           string                 `json:"type"`     // "violation", "circuit_open", "quota_exceeded"
+	Severity       string                 `json:"severity"` // "low", "medium", "high", "critical"
+	PolicyID       string                 `json:"policy_id"`
+	PolicyName     string                 `json:"policy_name"`
+	Identifier     string                 `json:"identifier"`
+	IdentifierType string                 `json:"identifier_type"`
+	Path           string                 `json:"path"`
+	Method         string                 `json:"method"`
+	Current        int64                  `json:"current"`
+	Limit          int64                  `json:"limit"`
+	Message        string                 `json:"message"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
 }
 
 // NewAlertManager creates a new alert manager.
 func NewAlertManager(redis *RedisClient) *AlertManager {
 	am := &AlertManager{
-		redis:          redis,
-		alertChannels:  make([]AlertChannel, 0),
+		redis:           redis,
+		alertChannels:   make([]AlertChannel, 0),
 		aggregateWindow: time.Minute,
-		aggregateMax:   100,
+		aggregateMax:    100,
 	}
 
 	return am
@@ -132,11 +132,11 @@ func (am *AlertManager) RemoveChannel(channel AlertChannel) {
 // SendCircuitBreakerAlert sends an alert when a circuit breaker opens.
 func (am *AlertManager) SendCircuitBreakerAlert(ctx context.Context, path string, failureCount int) {
 	alert := &Alert{
-		ID:        generateID(),
-		Type:      "circuit_open",
-		Severity:  "high",
-		Path:      path,
-		Message:   fmt.Sprintf("Circuit breaker opened for %s after %d failures", path, failureCount),
+		ID:       generateID(),
+		Type:     "circuit_open",
+		Severity: "high",
+		Path:     path,
+		Message:  fmt.Sprintf("Circuit breaker opened for %s after %d failures", path, failureCount),
 		Metadata: map[string]interface{}{
 			"failure_count": failureCount,
 		},
@@ -149,12 +149,12 @@ func (am *AlertManager) SendCircuitBreakerAlert(ctx context.Context, path string
 // SendQuotaExceededAlert sends an alert when a quota is exceeded.
 func (am *AlertManager) SendQuotaExceededAlert(ctx context.Context, entityID, entityType, quotaType string, used, limit int) {
 	alert := &Alert{
-		ID:        generateID(),
-		Type:      "quota_exceeded",
-		Severity:  "medium",
-		Identifier: entityID,
+		ID:             generateID(),
+		Type:           "quota_exceeded",
+		Severity:       "medium",
+		Identifier:     entityID,
 		IdentifierType: entityType,
-		Message:   fmt.Sprintf("Quota exceeded for %s: %d/%d %s", entityID, used, limit, quotaType),
+		Message:        fmt.Sprintf("Quota exceeded for %s: %d/%d %s", entityID, used, limit, quotaType),
 		Metadata: map[string]interface{}{
 			"quota_type": quotaType,
 			"used":       used,
@@ -218,11 +218,15 @@ func (wc *WebhookChannel) Send(ctx context.Context, alert *Alert) error {
 
 // LogChannel sends alerts to the log.
 type LogChannel struct {
-	Logger interface{ Printf(format string, args ...interface{}) }
+	Logger interface {
+		Printf(format string, args ...interface{})
+	}
 }
 
 // NewLogChannel creates a new log alert channel.
-func NewLogChannel(logger interface{ Printf(format string, args ...interface{}) }) *LogChannel {
+func NewLogChannel(logger interface {
+	Printf(format string, args ...interface{})
+}) *LogChannel {
 	return &LogChannel{Logger: logger}
 }
 
@@ -298,10 +302,10 @@ func (ac *AggregatingChannel) flush(ctx context.Context) error {
 
 	// Create aggregated alert
 	aggregated := &Alert{
-		ID:        generateID(),
-		Type:      "aggregated",
-		Severity:  "medium",
-		Message:   fmt.Sprintf("%d aggregated alerts", len(ac.pendingAlerts)),
+		ID:       generateID(),
+		Type:     "aggregated",
+		Severity: "medium",
+		Message:  fmt.Sprintf("%d aggregated alerts", len(ac.pendingAlerts)),
 		Metadata: map[string]interface{}{
 			"count":  len(ac.pendingAlerts),
 			"alerts": ac.pendingAlerts,
@@ -374,11 +378,11 @@ func (fc *FilteredChannel) RemovePolicyID(policyID string) {
 
 // AlertStats represents statistics about alerts.
 type AlertStats struct {
-	TotalAlerts    int64              `json:"total_alerts"`
-	ByType         map[string]int64   `json:"by_type"`
-	BySeverity     map[string]int64   `json:"by_severity"`
-	ByPolicy       map[string]int64   `json:"by_policy"`
-	RecentAlerts   []*Alert           `json:"recent_alerts"`
+	TotalAlerts  int64            `json:"total_alerts"`
+	ByType       map[string]int64 `json:"by_type"`
+	BySeverity   map[string]int64 `json:"by_severity"`
+	ByPolicy     map[string]int64 `json:"by_policy"`
+	RecentAlerts []*Alert         `json:"recent_alerts"`
 }
 
 // GetStats returns alert statistics.

@@ -193,7 +193,7 @@ func TestRecordDocumentStored(t *testing.T) {
 	RecordDocumentStored(metrics, "test-service", StorageBackendS3, "application/pdf", 1024000)
 
 	labels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendS3,
 		LabelDocumentType:   "application/pdf",
 	}
@@ -215,7 +215,7 @@ func TestRecordDocumentStored_ZeroSize(t *testing.T) {
 
 	// Should only increment counter
 	labels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendLocal,
 		LabelDocumentType:   "text/plain",
 	}
@@ -238,7 +238,7 @@ func TestRecordDocumentRetrieved(t *testing.T) {
 	RecordDocumentRetrieved(metrics, "test-service", StorageBackendS3)
 
 	labels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendS3,
 	}
 
@@ -263,7 +263,7 @@ func TestRecordDocumentDeleted(t *testing.T) {
 
 	// Storage size should be back to 0 (or very close)
 	labels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendLocal,
 	}
 
@@ -529,13 +529,13 @@ func TestStorageMetricsRecorder_Store(t *testing.T) {
 	recorder.Store("application/pdf", 2048000)
 
 	storeLabels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendLocal,
 		LabelDocumentType:   "application/pdf",
 	}
 
 	storageLabels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendLocal,
 	}
 
@@ -562,7 +562,7 @@ func TestStorageMetricsRecorder_Retrieve(t *testing.T) {
 	recorder.Retrieve()
 
 	labels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendS3,
 	}
 
@@ -588,7 +588,7 @@ func TestStorageMetricsRecorder_Delete(t *testing.T) {
 	recorder.Delete(1000000)
 
 	labels := prometheus.Labels{
-		LabelServiceName:  "test-service",
+		LabelServiceName:    "test-service",
 		LabelStorageBackend: StorageBackendLocal,
 	}
 
@@ -891,7 +891,7 @@ func TestBusinessMetrics_DocumentTypes(t *testing.T) {
 	// Each document type should be tracked
 	for _, d := range docTypes {
 		labels := prometheus.Labels{
-			LabelServiceName:  "test-service",
+			LabelServiceName:    "test-service",
 			LabelStorageBackend: d.backend,
 			LabelDocumentType:   d.docType,
 		}

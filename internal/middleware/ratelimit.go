@@ -11,23 +11,23 @@ import (
 	"time"
 
 	sharedcontext "github.com/openprint/openprint/internal/shared/context"
-	"github.com/openprint/openprint/internal/shared/ratelimit"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/ratelimit"
 )
 
 // RateLimitConfig holds configuration for rate limit middleware.
 type RateLimitConfig struct {
-	Limiter           *ratelimit.Limiter
-	SkipPaths         []string
-	SkipIPs           []string
-	EnableByDefault   bool
+	Limiter         *ratelimit.Limiter
+	SkipPaths       []string
+	SkipIPs         []string
+	EnableByDefault bool
 	// FailClosed determines behavior when rate limiter fails. If true, requests
 	// are blocked when the rate limiter is unavailable (more secure). If false,
 	// requests are allowed with degraded rate limiting (fail-open with logging).
-	FailClosed        bool
+	FailClosed bool
 	// DegradedLimit is the request limit per minute to apply when rate limiter
 	// is unavailable and FailClosed is false. Set to 0 to disable degraded limiting.
-	DegradedLimit     int
+	DegradedLimit int
 }
 
 // RateLimit returns a middleware function that enforces rate limits.
@@ -355,11 +355,11 @@ func IPOnlyRateLimit(cfg *RateLimitConfig, requestsPerMinute int) func(http.Hand
 			ip := getClientIP(r)
 
 			req := &ratelimit.Request{
-				Type:      "ip",
+				Type:       "ip",
 				Identifier: ip,
-				Method:    r.Method,
-				Path:      r.URL.Path,
-				Timestamp: time.Now(),
+				Method:     r.Method,
+				Path:       r.URL.Path,
+				Timestamp:  time.Now(),
 			}
 
 			result, err := cfg.Limiter.Check(r.Context(), req)
@@ -427,8 +427,8 @@ func DefaultRateLimitConfig(redisAddr string) *RateLimitConfig {
 			SkipPaths:       []string{"/health", "/metrics"},
 			SkipIPs:         []string{},
 			EnableByDefault: false,
-			FailClosed:      true,     // SECURITY: Fail-closed by default in production
-			DegradedLimit:   10,       // 10 requests per minute when degraded
+			FailClosed:      true, // SECURITY: Fail-closed by default in production
+			DegradedLimit:   10,   // 10 requests per minute when degraded
 		}
 	}
 
@@ -437,8 +437,8 @@ func DefaultRateLimitConfig(redisAddr string) *RateLimitConfig {
 		SkipPaths:       []string{"/health", "/metrics", "/api/v1/docs"},
 		SkipIPs:         []string{"127.0.0.1", "::1"},
 		EnableByDefault: true,
-		FailClosed:      true,        // SECURITY: Fail-closed by default in production
-		DegradedLimit:   10,          // 10 requests per minute when degraded
+		FailClosed:      true, // SECURITY: Fail-closed by default in production
+		DegradedLimit:   10,   // 10 requests per minute when degraded
 	}
 }
 

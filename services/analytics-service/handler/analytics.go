@@ -134,7 +134,7 @@ func (h *Handler) UsersAnalyticsHandler(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) calculateTrends(dailyStats []processor.DailyJobCount) processor.Trends {
 	if len(dailyStats) < 2 {
 		return processor.Trends{
-			JobsChangePercent: 0,
+			JobsChangePercent:  0,
 			PagesChangePercent: 0,
 		}
 	}

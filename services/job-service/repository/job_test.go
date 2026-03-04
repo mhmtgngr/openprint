@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openprint/openprint/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/openprint/openprint/internal/testutil"
 )
 
 func TestNewJobRepository(t *testing.T) {
@@ -358,10 +358,10 @@ func TestPrintJob_TimeFields(t *testing.T) {
 	completedAt := now
 
 	job := &PrintJob{
-		StartedAt:    now,
-		CompletedAt:  &completedAt,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		StartedAt:   now,
+		CompletedAt: &completedAt,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	if job.StartedAt.IsZero() {
@@ -619,11 +619,11 @@ func TestJobRepository_Update_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	job := &PrintJob{
-		ID:        "00000000-0000-0000-0000-000000000001",
+		ID:         "00000000-0000-0000-0000-000000000001",
 		DocumentID: "doc-123",
 		PrinterID:  "printer-123",
-		UserEmail: "test@example.com",
-		Status:    "queued",
+		UserEmail:  "test@example.com",
+		Status:     "queued",
 	}
 
 	err := repo.Update(ctx, job)

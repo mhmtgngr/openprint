@@ -17,10 +17,10 @@ type CircuitBreaker struct {
 	circuits map[string]*circuitState
 
 	// Default configuration
-	defaultThreshold     int
-	defaultTimeout       time.Duration
-	defaultHalfOpenMax   int
-	halfOpenRetryDelay   time.Duration
+	defaultThreshold   int
+	defaultTimeout     time.Duration
+	defaultHalfOpenMax int
+	halfOpenRetryDelay time.Duration
 }
 
 // circuitState tracks the state of a circuit breaker.
@@ -40,9 +40,9 @@ type circuitState struct {
 type CircuitState string
 
 const (
-	StateClosed    CircuitState = "closed"
-	StateOpen      CircuitState = "open"
-	StateHalfOpen  CircuitState = "half_open"
+	StateClosed   CircuitState = "closed"
+	StateOpen     CircuitState = "open"
+	StateHalfOpen CircuitState = "half_open"
 )
 
 // NewCircuitBreaker creates a new circuit breaker.
@@ -50,9 +50,9 @@ func NewCircuitBreaker(redis *RedisClient) *CircuitBreaker {
 	cb := &CircuitBreaker{
 		redis:              redis,
 		circuits:           make(map[string]*circuitState),
-		defaultThreshold:   50,           // Open after 50 failures
-		defaultTimeout:     5 * time.Minute, // Stay open for 5 minutes
-		defaultHalfOpenMax: 5,            // Try 5 requests in half-open
+		defaultThreshold:   50,               // Open after 50 failures
+		defaultTimeout:     5 * time.Minute,  // Stay open for 5 minutes
+		defaultHalfOpenMax: 5,                // Try 5 requests in half-open
 		halfOpenRetryDelay: 30 * time.Second, // Wait 30s before half-open
 	}
 

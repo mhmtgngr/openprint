@@ -13,29 +13,29 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/openprint/openprint/internal/auth/jwt"
 	"github.com/openprint/openprint/internal/auth/oidc"
-	"github.com/openprint/openprint/internal/auth/saml"
 	"github.com/openprint/openprint/internal/auth/password"
+	"github.com/openprint/openprint/internal/auth/saml"
 	_ "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
 	"github.com/openprint/openprint/internal/shared/telemetry/prometheus"
 	"github.com/openprint/openprint/services/auth-service/handler"
 	"github.com/openprint/openprint/services/auth-service/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 // Config holds service configuration.
 type Config struct {
-	ServerAddr       string
-	MetricsPort      int
-	DatabaseURL      string
-	RedisURL         string
-	JWTSecret        string
-	JaegerEndpoint   string
-	ServiceName      string
+	ServerAddr     string
+	MetricsPort    int
+	DatabaseURL    string
+	RedisURL       string
+	JWTSecret      string
+	JaegerEndpoint string
+	ServiceName    string
 }
 
 func main() {
@@ -160,7 +160,7 @@ func main() {
 	// - Moderate rate limiting (10 per 5 minutes) for refresh token endpoint
 	// - Permissive rate limiting (60 per 5 minutes) for general endpoints
 	// Rate limiting is applied per IP address
-	strictRateLimiter := middleware.RateLimitMiddleware(5, 5*time.Minute)  // For login/register
+	strictRateLimiter := middleware.RateLimitMiddleware(5, 5*time.Minute)   // For login/register
 	authRateLimiter := middleware.RateLimitMiddleware(10, 5*time.Minute)    // For refresh/oidc/saml
 	generalRateLimiter := middleware.RateLimitMiddleware(60, 5*time.Minute) // For other endpoints
 

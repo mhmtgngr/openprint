@@ -217,15 +217,15 @@ func TestRegistry(t *testing.T) {
 		registry := NewRegistry()
 
 		googleCfg := &Config{
-			ClientID:    "google-client-id",
+			ClientID:     "google-client-id",
 			ClientSecret: "google-client-secret",
-			RedirectURL: "https://example.com/google/callback",
+			RedirectURL:  "https://example.com/google/callback",
 		}
 
 		azureCfg := &Config{
-			ClientID:    "azure-client-id",
+			ClientID:     "azure-client-id",
 			ClientSecret: "azure-client-secret",
-			RedirectURL: "https://example.com/azure/callback",
+			RedirectURL:  "https://example.com/azure/callback",
 		}
 
 		registry.Register(context.Background(), ProviderGoogle, googleCfg)
@@ -319,10 +319,10 @@ func TestBuildEndpoint(t *testing.T) {
 
 	t.Run("custom endpoint", func(t *testing.T) {
 		cfg := &Config{
-			ProviderType:  ProviderGenericOIDC,
-			EndpointURL:   "https://custom.example.com",
-			AuthURL:       "https://custom.example.com/auth",
-			IssuerURL:     "https://custom.example.com",
+			ProviderType: ProviderGenericOIDC,
+			EndpointURL:  "https://custom.example.com",
+			AuthURL:      "https://custom.example.com/auth",
+			IssuerURL:    "https://custom.example.com",
 		}
 		mgr := &Manager{config: cfg}
 
@@ -495,11 +495,11 @@ func TestProviderType_Constants(t *testing.T) {
 
 func TestDiscoveryDocument(t *testing.T) {
 	doc := &DiscoveryDocument{
-		Issuer:                  "https://accounts.google.com",
-		AuthorizationEndpoint:  "https://accounts.google.com/o/oauth2/v2/auth",
-		TokenEndpoint:          "https://oauth2.googleapis.com/token",
-		UserInfoEndpoint:       "https://www.googleapis.com/oauth2/v2/userinfo",
-		JWKSURI:                 "https://www.googleapis.com/oauth2/v3/certs",
+		Issuer:                "https://accounts.google.com",
+		AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+		TokenEndpoint:         "https://oauth2.googleapis.com/token",
+		UserInfoEndpoint:      "https://www.googleapis.com/oauth2/v2/userinfo",
+		JWKSURI:               "https://www.googleapis.com/oauth2/v3/certs",
 	}
 
 	if doc.Issuer != "https://accounts.google.com" {

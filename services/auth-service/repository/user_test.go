@@ -141,9 +141,9 @@ func TestUser_Validation(t *testing.T) {
 		{
 			name: "user with last login",
 			user: &User{
-				ID:         "user-123",
-				Email:      "test@example.com",
-				IsActive:   true,
+				ID:          "user-123",
+				Email:       "test@example.com",
+				IsActive:    true,
 				LastLoginAt: func() *time.Time { t := time.Now(); return &t }(),
 			},
 			wantErr: false,

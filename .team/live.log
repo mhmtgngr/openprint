@@ -3064,3 +3064,231 @@ ok  	github.com/openprint/openprint/tests/testutil	0.203s
 FAIL
 [0;32m[SUP 23:11:15][0m     🔧 Found nil pointer issues - marking for review
 [0;32m[SUP 23:11:16][0m   🔧 Direct decision mode (inside Claude session)
+[team/fix-failing-tests-in-servicescompliance--1772600773 dfb246c3] [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+ 5 files changed, 260 insertions(+), 205 deletions(-)
+[0;32m[SUP 23:11:22][0m     ✅ Task 1 complete
+[0;32m[SUP 23:11:22][0m   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[SUP 23:11:22][0m   ✅ Auto-exec complete: 1/1 tasks done
+=== Auto Iter 20 23:11:55 ===
+[0;32m[SUP 23:11:55][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 23:11:55][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 23:11:55][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 23:11:55][0m ╚═══════════════════════════════════════════════════════════╝
+[0;32m[SUP 23:11:57][0m   🔧 Direct decision mode (inside Claude session)
+[0;32m[SUP 23:12:32][0m     → Decision: Fix failing tests
+[0;32m[SUP 23:12:32][0m   📋 AI Decision:
+    Type: fix_bug
+    Priority: critical
+    Effort: small
+    Description: Fix failing Go tests
+    Files: 
+    Reasoning: Tests are failing - this is the highest priority issue.
+[0;32m[SUP 23:12:32][0m   ✅ Discovery complete
+[0;32m[SUP 23:12:32][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 23:12:32][0m ║  🤖 AI AUTO-EXEC — Executing 1 AI-decided tasks      ║
+[0;32m[SUP 23:12:32][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 23:12:32][0m ╚═══════════════════════════════════════════════════════════╝
+[0;32m[SUP 23:12:32][0m ║  🔧 DIRECT EDIT MODE (Claude session detected)              ║
+[0;32m[SUP 23:12:32][0m   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[SUP 23:12:32][0m   🔄 Task 1/1
+[0;32m[SUP 23:12:32][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 23:12:32][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 23:12:32][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 23:12:32][0m ╚═══════════════════════════════════════════════════════════╝
+[0;32m[SUP 23:12:34][0m   🔧 Direct decision mode (inside Claude session)
+[0;32m[SUP 23:13:12][0m     → Decision: Fix failing tests
+[0;32m[SUP 23:13:12][0m   📋 AI Decision:
+    Type: fix_bug
+    Priority: critical
+    Effort: small
+    Description: Fix failing Go tests
+    Files: 
+    Reasoning: Tests are failing - this is the highest priority issue.
+[0;32m[SUP 23:13:12][0m   ✅ Discovery complete
+[0;32m[SUP 23:13:12][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 23:13:12][0m ║  🤖 AI AUTO-EXEC — Executing 1 AI-decided tasks      ║
+[0;32m[SUP 23:13:12][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 23:13:12][0m ╚═══════════════════════════════════════════════════════════╝
+[0;32m[SUP 23:13:12][0m ║  🔧 DIRECT EDIT MODE (Claude session detected)              ║
+[0;32m[SUP 23:13:12][0m   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0;32m[SUP 23:13:12][0m   🔄 Task 1/1
+[0;32m[SUP 23:13:12][0m ╔═══════════════════════════════════════════════════════════╗
+[0;32m[SUP 23:13:12][0m ║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║
+[0;32m[SUP 23:13:12][0m ╠═══════════════════════════════════════════════════════════╣
+[0;32m[SUP 23:13:12][0m ╚═══════════════════════════════════════════════════════════╝
+[0;32m[SUP 23:13:14][0m   🔧 Direct decision mode (inside Claude session)
+[0;32m[SUP 23:13:49][0m     → Decision: Fix failing tests
+[0;32m[SUP 23:13:49][0m   📋 AI Decision:
+    Type: fix_bug
+    Priority: critical
+    Effort: small
+    Description: Fix failing Go tests
+    Files: 
+    Reasoning: Tests are failing - this is the highest priority issue.
+[0;32m[SUP 23:13:49][0m   ✅ Discovery complete
+[0;32m[SUP 23:13:49][0m     Action: fix_bug (critical)
+[0;32m[SUP 23:13:49][0m     Reason: Tests are failing - this is the highest priority issue.
+[0;32m[SUP 23:13:49][0m     → Direct edit mode
+[0;32m[SUP 23:13:49][0m     🧪 Running tests...
+[0;32m[23:13:49][0m ✓ go go1.24.0
+[0;32m[23:13:49][0m ✓ node v18.19.1
+[0;31m[23:13:49][0m Unknown: fg
+[0;32m[SUP 23:14:35][0m     → Decision: Address TODOs (2 found)
+[0;32m[SUP 23:14:35][0m   📋 AI Decision:
+    Type: refactor
+    Priority: medium
+    Effort: small
+    Description: Address TODO/FIXME items
+    Files: services/
+    Reasoning: Found TODO items that should be addressed.
+[0;32m[SUP 23:14:35][0m   ✅ Discovery complete
+[0;32m[SUP 23:14:36][0m     Action: refactor (medium)
+[0;32m[SUP 23:14:36][0m     Reason: Found TODO items that should be addressed.
+[0;32m[SUP 23:14:36][0m     → Direct edit mode
+[0;32m[SUP 23:14:36][0m     → Running go fmt and vet...
+internal/auth/jwt/jwt.go
+internal/auth/jwt/jwt_test.go
+internal/auth/jwt/tenant_claims.go
+internal/auth/oidc/oidc.go
+internal/auth/oidc/oidc_test.go
+internal/auth/password/password.go
+internal/auth/password/password_test.go
+internal/auth/roles/roles.go
+internal/auth/saml/saml.go
+internal/auth/saml/saml_test.go
+internal/middleware/cookie_auth.go
+internal/middleware/cookie_auth_test.go
+internal/middleware/ratelimit.go
+internal/middleware/ratelimit_test.go
+internal/multi-tenant/audit_test.go
+internal/multi-tenant/context.go
+internal/multi-tenant/context_test.go
+internal/multi-tenant/middleware_test.go
+internal/multi-tenant/quota.go
+internal/multi-tenant/quota_test.go
+internal/multi-tenant/repository.go
+internal/multi-tenant/repository_test.go
+internal/shared/context/keys.go
+internal/shared/errors/errors.go
+internal/shared/errors/errors_test.go
+internal/shared/middleware/agent_auth.go
+internal/shared/middleware/auth.go
+internal/shared/middleware/metrics_test.go
+internal/shared/middleware/validation.go
+internal/shared/ratelimit/alert.go
+internal/shared/ratelimit/burst.go
+internal/shared/ratelimit/burst_test.go
+internal/shared/ratelimit/bypass.go
+internal/shared/ratelimit/bypass_test.go
+internal/shared/ratelimit/circuit_breaker.go
+internal/shared/ratelimit/config.go
+internal/shared/ratelimit/limiter.go
+internal/shared/ratelimit/metrics.go
+internal/shared/ratelimit/middleware.go
+internal/shared/ratelimit/print_quota.go
+internal/shared/ratelimit/queue.go
+internal/shared/ratelimit/redis.go
+internal/shared/ratelimit/resolver.go
+internal/shared/telemetry/middleware_test.go
+internal/shared/telemetry/prometheus/business_test.go
+internal/shared/telemetry/prometheus/labels.go
+internal/shared/telemetry/prometheus/labels_test.go
+internal/shared/telemetry/prometheus/metrics_test.go
+internal/shared/telemetry/prometheus/redis.go
+internal/shared/telemetry/prometheus/registry.go
+internal/shared/telemetry/prometheus/registry_test.go
+internal/shared/telemetry/prometheus/server.go
+internal/shared/telemetry/prometheus/server_test.go
+internal/shared/telemetry/prometheus/service.go
+internal/shared/telemetry/prometheus/service_test.go
+internal/testutil/config.go
+internal/testutil/config_test.go
+internal/testutil/db.go
+internal/testutil/fixtures.go
+internal/testutil/http.go
+internal/testutil/jwt.go
+internal/testutil/metrics.go
+internal/testutil/migrate.go
+internal/testutil/s3.go
+services/analytics-service/handler/analytics.go
+services/analytics-service/processor/aggregator.go
+services/api-gateway/main.go
+services/api-gateway/handlers/developer.go
+services/api-gateway/middleware/audit.go
+services/api-gateway/middleware/rate_limit.go
+services/auth-service/main.go
+services/auth-service/handler/agent_registration.go
+services/auth-service/handler/http.go
+services/auth-service/handler/oidc.go
+services/auth-service/handler/refresh_token.go
+services/auth-service/handler/register.go
+services/auth-service/handlers/circuit_breaker.go
+services/auth-service/handlers/ratelimit.go
+services/auth-service/handlers/trusted_clients.go
+services/auth-service/handlers/violations.go
+services/auth-service/repository/enrollment_token.go
+services/auth-service/repository/enrollment_token_test.go
+services/auth-service/repository/organization.go
+services/auth-service/repository/organization_test.go
+services/auth-service/repository/organization_user.go
+services/auth-service/repository/organization_user_test.go
+services/auth-service/repository/quota.go
+services/auth-service/repository/quota_test.go
+services/auth-service/repository/user_test.go
+services/compliance-service/compliance.go
+services/compliance-service/handlers_test.go
+services/gateway/main.go
+services/job-service/main.go
+services/job-service/handler/agent_poll.go
+services/job-service/handler/agent_poll_test.go
+services/job-service/handler/job.go
+services/job-service/handler/job_test.go
+services/job-service/handlers/cost.go
+services/job-service/handlers/cost_repository.go
+services/job-service/handlers/quota.go
+services/job-service/handlers/reports.go
+services/job-service/handlers/secure_release.go
+services/job-service/processor/processor.go
+services/job-service/processor/processor_test.go
+services/job-service/repository/job_assignment.go
+services/job-service/repository/job_assignment_test.go
+services/job-service/repository/job_history_test.go
+services/job-service/repository/job_test.go
+services/m365-integration-service/main.go
+services/notification-service/main.go
+services/notification-service/websocket/agent.go
+services/notification-service/websocket/handler.go
+services/notification-service/websocket/hub.go
+services/notification-service/websocket/hub_test.go
+services/organization-service/handler/org.go
+services/policy-service/main.go
+services/policy-service/main_test.go
+services/policy-service/policy_engine.go
+services/policy-service/policy_engine_test.go
+services/registry-service/handler/agent.go
+services/registry-service/handler/agent_discovery.go
+services/registry-service/handler/agent_heartbeat.go
+services/registry-service/handler/printer.go
+services/registry-service/handlers/mobile.go
+services/registry-service/repository/agent_test.go
+services/registry-service/repository/printer_test.go
+services/storage-service/main.go
+services/storage-service/handler/agent_download.go
+services/storage-service/handler/storage.go
+services/storage-service/handler/storage_test.go
+services/storage-service/handlers/watermark.go
+tests/testutil/testutil.go
+tests/testutil/testutil_test.go
+# github.com/openprint/openprint/internal/testutil
+# [github.com/openprint/openprint/internal/testutil]
+internal/testutil/context.go:249:7: the cancel function returned by context.WithCancel should be called, not discarded, to avoid a context leak
+internal/testutil/context_test.go:381:7: the cancel function returned by context.WithTimeout should be called, not discarded, to avoid a context leak
+internal/testutil/context_test.go:402:7: the cancel function returned by context.WithTimeout should be called, not discarded, to avoid a context leak
+# github.com/openprint/openprint/services/compliance-service
+# [github.com/openprint/openprint/services/compliance-service]
+services/compliance-service/handlers_test.go:376:8: using resp2 before checking for errors
+services/compliance-service/handlers_test.go:1040:8: using resp2 before checking for errors
+services/compliance-service/handlers_test.go:1056:8: using resp3 before checking for errors
+services/compliance-service/handlers_test.go:1061:8: using resp4 before checking for errors
+services/compliance-service/handlers_test.go:1076:8: using resp5 before checking for errors
+services/compliance-service/handlers_test.go:1097:8: using resp6 before checking for errors

@@ -163,10 +163,10 @@ func TestOrganizationUserRepository_GetByOrganizationAndUser(t *testing.T) {
 
 func TestOrganizationUserRepository_ListByOrganization(t *testing.T) {
 	tests := []struct {
-		name        string
-		orgID       string
-		limit       int
-		offset      int
+		name         string
+		orgID        string
+		limit        int
+		offset       int
 		wantMinTotal int
 	}{
 		{
@@ -502,11 +502,11 @@ func TestOrganizationUserRepository_GetOwners(t *testing.T) {
 
 func TestOrganizationUserRepository_TransferOwnership(t *testing.T) {
 	tests := []struct {
-		name        string
-		orgID       string
-		fromUserID  string
-		toUserID    string
-		wantErr     error
+		name       string
+		orgID      string
+		fromUserID string
+		toUserID   string
+		wantErr    error
 	}{
 		{
 			name:       "successful transfer",
@@ -549,8 +549,8 @@ func TestOrganizationUserRepository_UpdateSettings(t *testing.T) {
 		wantErr  error
 	}{
 		{
-			name:  "update user settings",
-			orgID: "org-123",
+			name:   "update user settings",
+			orgID:  "org-123",
 			userID: "user-456",
 			settings: map[string]interface{}{
 				"notifications": true,
@@ -559,11 +559,11 @@ func TestOrganizationUserRepository_UpdateSettings(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:  "clear user settings",
-			orgID: "org-123",
-			userID: "user-456",
+			name:     "clear user settings",
+			orgID:    "org-123",
+			userID:   "user-456",
 			settings: map[string]interface{}{},
-			wantErr: nil,
+			wantErr:  nil,
 		},
 		{
 			name:     "update non-existent membership",
@@ -585,7 +585,7 @@ func TestOrganizationUserRepository_UpdateSettings(t *testing.T) {
 func TestOrganizationUser_RoleHierarchy(t *testing.T) {
 	// Test role hierarchy levels
 	hierarchy := map[OrganizationUserRole]int{
-		OrgRoleViewer: 0,
+		OrgRoleViewer:  0,
 		OrgRoleBilling: 1,
 		OrgRoleMember:  2,
 		OrgRoleAdmin:   3,
@@ -658,10 +658,10 @@ func TestOrganizationUser_Settings(t *testing.T) {
 		{
 			name: "ui preferences",
 			settings: map[string]interface{}{
-				"theme":        "dark",
-				"language":     "en",
-				"timezone":     "UTC",
-				"date_format":  "ISO",
+				"theme":       "dark",
+				"language":    "en",
+				"timezone":    "UTC",
+				"date_format": "ISO",
 			},
 		},
 	}

@@ -26,20 +26,20 @@ func NewAuditLogger(db *pgxpool.Pool) *AuditLogger {
 
 // AuditEntry represents an audit log entry.
 type AuditEntry struct {
-	ID           string
+	ID             string
 	OrganizationID string
-	UserID       string
-	APIKeyID     string
-	Action       string
-	Resource     string
-	Method       string
-	Path         string
-	StatusCode   int
-	IPAddress    string
-	UserAgent    string
-	RequestID    string
-	LatencyMs    int
-	CreatedAt    time.Time
+	UserID         string
+	APIKeyID       string
+	Action         string
+	Resource       string
+	Method         string
+	Path           string
+	StatusCode     int
+	IPAddress      string
+	UserAgent      string
+	RequestID      string
+	LatencyMs      int
+	CreatedAt      time.Time
 }
 
 // AuditMiddleware creates middleware that logs all API requests for audit purposes.
@@ -77,7 +77,7 @@ func AuditMiddleware(db *pgxpool.Pool) func(http.Handler) http.Handler {
 			go auditor.logEntry(context.Background(), &AuditEntry{
 				RequestID:  requestID,
 				Method:     r.Method,
-				Path:      r.URL.Path,
+				Path:       r.URL.Path,
 				StatusCode: rw.status,
 				IPAddress:  getClientIP(r),
 				UserAgent:  r.UserAgent(),

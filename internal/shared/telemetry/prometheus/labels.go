@@ -43,10 +43,10 @@ type LabelValues struct{}
 
 // Service names.
 const (
-	ServiceAuthService        = "auth-service"
-	ServiceRegistryService    = "registry-service"
-	ServiceJobService         = "job-service"
-	ServiceStorageService     = "storage-service"
+	ServiceAuthService         = "auth-service"
+	ServiceRegistryService     = "registry-service"
+	ServiceJobService          = "job-service"
+	ServiceStorageService      = "storage-service"
 	ServiceNotificationService = "notification-service"
 )
 

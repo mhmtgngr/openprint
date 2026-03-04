@@ -66,27 +66,27 @@ type Config struct {
 
 // UserInfo represents user information from an OIDC provider.
 type UserInfo struct {
-	Subject        string   `json:"sub"`
-	Email          string   `json:"email"`
-	EmailVerified  bool     `json:"email_verified"`
-	Name           string   `json:"name"`
-	GivenName      string   `json:"given_name"`
-	FamilyName     string   `json:"family_name"`
-	Picture        string   `json:"picture"`
-	Groups         []string `json:"groups"`
-	Provider       ProviderType
-	AccessToken    string
-	RefreshToken   string
-	Expiry         time.Time
+	Subject       string   `json:"sub"`
+	Email         string   `json:"email"`
+	EmailVerified bool     `json:"email_verified"`
+	Name          string   `json:"name"`
+	GivenName     string   `json:"given_name"`
+	FamilyName    string   `json:"family_name"`
+	Picture       string   `json:"picture"`
+	Groups        []string `json:"groups"`
+	Provider      ProviderType
+	AccessToken   string
+	RefreshToken  string
+	Expiry        time.Time
 }
 
 // Manager handles OIDC authentication operations.
 type Manager struct {
 	config       *Config
 	oauth2Config *oauth2.Config
-	stateStore   sync.Map              // state -> creation time (fallback, in-memory)
-	redisClient  *redis.Client         // Redis client for distributed state storage
-	stateSecret  []byte                // Secret key for HMAC state signing
+	stateStore   sync.Map      // state -> creation time (fallback, in-memory)
+	redisClient  *redis.Client // Redis client for distributed state storage
+	stateSecret  []byte        // Secret key for HMAC state signing
 	userInfoURL  string
 }
 
@@ -524,13 +524,13 @@ type TokenResponse struct {
 
 // DiscoveryDocument represents the OpenID Connect discovery document.
 type DiscoveryDocument struct {
-	Issuer                  string `json:"issuer"`
-	AuthorizationEndpoint  string `json:"authorization_endpoint"`
-	TokenEndpoint          string `json:"token_endpoint"`
-	UserInfoEndpoint       string `json:"userinfo_endpoint"`
-	JWKSURI                string `json:"jwks_uri"`
-	ResponseTypesSupported []string `json:"response_types_supported"`
-	SubjectTypesSupported  []string `json:"subject_types_supported"`
+	Issuer                           string   `json:"issuer"`
+	AuthorizationEndpoint            string   `json:"authorization_endpoint"`
+	TokenEndpoint                    string   `json:"token_endpoint"`
+	UserInfoEndpoint                 string   `json:"userinfo_endpoint"`
+	JWKSURI                          string   `json:"jwks_uri"`
+	ResponseTypesSupported           []string `json:"response_types_supported"`
+	SubjectTypesSupported            []string `json:"subject_types_supported"`
 	IDTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"`
 }
 

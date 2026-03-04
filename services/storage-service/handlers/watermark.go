@@ -33,31 +33,31 @@ type WatermarkRepository interface {
 
 // WatermarkTemplate represents a watermark configuration.
 type WatermarkTemplate struct {
-	ID              string
-	OrganizationID  string
-	Name            string
-	Type            string // 'text', 'image', 'overlay'
-	Content         string // Text content or base64 image data
-	Position        string // 'top-left', 'top-center', 'top-right', 'center', 'bottom-left', 'bottom-center', 'bottom-right'
-	Opacity         float64
-	Rotation        int
-	FontSize        int
-	FontColor       string
-	ImageData       []byte
-	IsDefault       bool
-	ApplyToAll      bool
-	CreatedBy       string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID             string
+	OrganizationID string
+	Name           string
+	Type           string // 'text', 'image', 'overlay'
+	Content        string // Text content or base64 image data
+	Position       string // 'top-left', 'top-center', 'top-right', 'center', 'bottom-left', 'bottom-center', 'bottom-right'
+	Opacity        float64
+	Rotation       int
+	FontSize       int
+	FontColor      string
+	ImageData      []byte
+	IsDefault      bool
+	ApplyToAll     bool
+	CreatedBy      string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // WatermarkHandler handles watermark HTTP endpoints.
 type WatermarkHandler struct {
-	db         *pgxpool.Pool
-	repo       WatermarkRepository
-	backend    storage.Backend
-	uploadDir  string
-	tempDir    string
+	db        *pgxpool.Pool
+	repo      WatermarkRepository
+	backend   storage.Backend
+	uploadDir string
+	tempDir   string
 }
 
 // NewWatermarkHandler creates a new watermark handler instance.
@@ -75,24 +75,24 @@ func NewWatermarkHandler(db *pgxpool.Pool, backend storage.Backend, uploadDir, t
 type TemplateRequest struct {
 	OrganizationID string  `json:"organization_id"`
 	Name           string  `json:"name"`
-	Type           string  `json:"type"`           // 'text', 'image', 'overlay'
-	Content        string  `json:"content"`        // Text content or image URL
-	Position       string  `json:"position"`       // 'top-left', 'top-center', 'top-right', 'center', 'bottom-left', 'bottom-center', 'bottom-right'
-	Opacity        float64 `json:"opacity"`        // 0.0 to 1.0
-	Rotation       int     `json:"rotation"`       // Rotation angle in degrees
-	FontSize       int     `json:"font_size"`      // Font size in points
-	FontColor      string  `json:"font_color"`     // Hex color code
-	ImageData      string  `json:"image_data"`     // Base64 encoded image data
+	Type           string  `json:"type"`       // 'text', 'image', 'overlay'
+	Content        string  `json:"content"`    // Text content or image URL
+	Position       string  `json:"position"`   // 'top-left', 'top-center', 'top-right', 'center', 'bottom-left', 'bottom-center', 'bottom-right'
+	Opacity        float64 `json:"opacity"`    // 0.0 to 1.0
+	Rotation       int     `json:"rotation"`   // Rotation angle in degrees
+	FontSize       int     `json:"font_size"`  // Font size in points
+	FontColor      string  `json:"font_color"` // Hex color code
+	ImageData      string  `json:"image_data"` // Base64 encoded image data
 	IsDefault      bool    `json:"is_default"`
 	ApplyToAll     bool    `json:"apply_to_all"`
 }
 
 // ApplyWatermarkRequest represents a request to apply a watermark to a document.
 type ApplyWatermarkRequest struct {
-	DocumentID   string `json:"document_id"`
-	TemplateID   string `json:"template_id"`
+	DocumentID   string           `json:"document_id"`
+	TemplateID   string           `json:"template_id"`
 	Watermark    *TemplateRequest `json:"watermark,omitempty"` // Custom watermark if template not provided
-	OutputFormat string `json:"output_format"` // 'pdf', 'original'
+	OutputFormat string           `json:"output_format"`       // 'pdf', 'original'
 }
 
 // TemplateListHandler handles listing watermark templates.
@@ -527,10 +527,10 @@ func (h *WatermarkHandler) BatchApplyWatermarkHandler(w http.ResponseWriter, r *
 		}
 
 		results = append(results, map[string]interface{}{
-			"document_id":     docID,
-			"success":         true,
-			"watermarked_id":  watermarkedID,
-			"size":            len(watermarkedContent),
+			"document_id":    docID,
+			"success":        true,
+			"watermarked_id": watermarkedID,
+			"size":           len(watermarkedContent),
 		})
 	}
 
@@ -706,20 +706,20 @@ func validateTemplateRequest(req *TemplateRequest) error {
 
 func templateToResponse(t *WatermarkTemplate) map[string]interface{} {
 	resp := map[string]interface{}{
-		"id":             t.ID,
+		"id":              t.ID,
 		"organization_id": t.OrganizationID,
-		"name":           t.Name,
-		"type":           t.Type,
-		"position":       t.Position,
-		"opacity":        t.Opacity,
-		"rotation":       t.Rotation,
-		"font_size":      t.FontSize,
-		"font_color":     t.FontColor,
-		"is_default":     t.IsDefault,
-		"apply_to_all":   t.ApplyToAll,
-		"created_by":     t.CreatedBy,
-		"created_at":     t.CreatedAt.Format(time.RFC3339),
-		"updated_at":     t.UpdatedAt.Format(time.RFC3339),
+		"name":            t.Name,
+		"type":            t.Type,
+		"position":        t.Position,
+		"opacity":         t.Opacity,
+		"rotation":        t.Rotation,
+		"font_size":       t.FontSize,
+		"font_color":      t.FontColor,
+		"is_default":      t.IsDefault,
+		"apply_to_all":    t.ApplyToAll,
+		"created_by":      t.CreatedBy,
+		"created_at":      t.CreatedAt.Format(time.RFC3339),
+		"updated_at":      t.UpdatedAt.Format(time.RFC3339),
 	}
 	if t.Content != "" {
 		resp["content"] = t.Content

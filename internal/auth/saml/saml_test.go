@@ -43,9 +43,9 @@ func TestNewManager(t *testing.T) {
 
 func TestManager_Metadata(t *testing.T) {
 	cfg := &Config{
-		EntityID:     "https://sp.example.com",
-		SSOURL:       "https://idp.example.com/sso",
-		ACSURL:       "https://sp.example.com/acs",
+		EntityID:       "https://sp.example.com",
+		SSOURL:         "https://idp.example.com/sso",
+		ACSURL:         "https://sp.example.com/acs",
 		SLOResponseURL: "https://sp.example.com/slo",
 	}
 
@@ -313,11 +313,11 @@ func TestExtractAssertion(t *testing.T) {
 			{
 				Attributes: []SAMLAttribute{
 					{
-						Name: "email",
+						Name:   "email",
 						Values: []string{"user@example.com"},
 					},
 					{
-						Name: "firstName",
+						Name:   "firstName",
 						Values: []string{"John"},
 					},
 				},
@@ -358,15 +358,15 @@ func TestGenerateID(t *testing.T) {
 
 func TestAssertion(t *testing.T) {
 	assertion := &Assertion{
-		SubjectID:   "user@example.com",
-		Email:       "user@example.com",
-		FirstName:   "John",
-		LastName:    "Doe",
-		DisplayName: "John Doe",
-		Groups:      []string{"admins", "users"},
+		SubjectID:    "user@example.com",
+		Email:        "user@example.com",
+		FirstName:    "John",
+		LastName:     "Doe",
+		DisplayName:  "John Doe",
+		Groups:       []string{"admins", "users"},
 		SessionIndex: "session-123",
-		Issuer:      "https://idp.example.com",
-		Attributes:  make(map[string]string),
+		Issuer:       "https://idp.example.com",
+		Attributes:   make(map[string]string),
 	}
 
 	if assertion.SubjectID != "user@example.com" {
@@ -430,7 +430,7 @@ func TestSAMLSubject(t *testing.T) {
 
 func TestSAMLAttributeStatement(t *testing.T) {
 	attr := SAMLAttribute{
-		Name: "email",
+		Name:   "email",
 		Values: []string{"user@example.com"},
 	}
 
@@ -477,7 +477,7 @@ func TestSecureXMLDecoder_SizeLimit(t *testing.T) {
 	// We'll create a smaller test by using a mock reader with a small limit
 	smallLimitDecoder := func(r io.Reader, limit int64) *secureXMLDecoder {
 		return &secureXMLDecoder{
-			Decoder: xml.NewDecoder(&countingReader{r: r, remaining: limit}),
+			Decoder:  xml.NewDecoder(&countingReader{r: r, remaining: limit}),
 			maxBytes: limit,
 		}
 	}
@@ -509,13 +509,13 @@ func TestCountingReader_RespectsLimit(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
-		limit        int64
-		expectRead   int
+		name           string
+		limit          int64
+		expectRead     int
 		expectFirstEOF bool // Whether first Read returns EOF
 	}{
 		{"read within limit", 500, 500, false},
-		{"read at limit", 1000, 1000, false}, // First read exhausts data, returns all bytes
+		{"read at limit", 1000, 1000, false},   // First read exhausts data, returns all bytes
 		{"read beyond limit", 100, 100, false}, // First read hits limit, returns 100 bytes
 	}
 
@@ -558,8 +558,8 @@ func TestValidateXMLSecurity(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name:    "valid SAML response",
-			xmlData: `<?xml version="1.0"?><Response xmlns="urn:oasis:names:tc:SAML:2.0:protocol"><Issuer>test</Issuer></Response>`,
+			name:      "valid SAML response",
+			xmlData:   `<?xml version="1.0"?><Response xmlns="urn:oasis:names:tc:SAML:2.0:protocol"><Issuer>test</Issuer></Response>`,
 			wantError: false,
 		},
 		{
@@ -583,8 +583,8 @@ func TestValidateXMLSecurity(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name:    "XML exceeds maximum size",
-			xmlData: string(make([]byte, 11*1024*1024)), // 11MB
+			name:      "XML exceeds maximum size",
+			xmlData:   string(make([]byte, 11*1024*1024)), // 11MB
 			wantError: true,
 		},
 	}

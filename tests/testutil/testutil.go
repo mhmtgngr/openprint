@@ -20,10 +20,10 @@ import (
 
 // TestDB wraps a database connection for testing.
 type TestDB struct {
-	Conn     *pgx.Conn
-	Pool     *pgxpool.Pool
-	Dsn      string
-	Cleanup  func()
+	Conn    *pgx.Conn
+	Pool    *pgxpool.Pool
+	Dsn     string
+	Cleanup func()
 }
 
 // TestHTTPClient wraps an HTTP client for testing.

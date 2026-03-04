@@ -24,10 +24,10 @@ func TestBurstManagerCheckBurst(t *testing.T) {
 	bm := NewBurstManager(redisClient)
 
 	policy := &Policy{
-		Limit:          100,
-		BurstLimit:     200,
-		BurstDuration:  time.Minute,
-		Window:         time.Minute,
+		Limit:         100,
+		BurstLimit:    200,
+		BurstDuration: time.Minute,
+		Window:        time.Minute,
 	}
 
 	// First request should be allowed

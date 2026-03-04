@@ -22,11 +22,11 @@ type contextKey = sharedcontext.ContextKey
 
 // Context key constants - delegated to shared context package.
 const (
-	TenantIDKey       = sharedcontext.TenantIDKey
-	TenantNameKey     = sharedcontext.TenantNameKey
-	TenantRoleKey     = sharedcontext.TenantRoleKey
+	TenantIDKey        = sharedcontext.TenantIDKey
+	TenantNameKey      = sharedcontext.TenantNameKey
+	TenantRoleKey      = sharedcontext.TenantRoleKey
 	IsPlatformAdminKey = sharedcontext.IsPlatformAdminKey
-	QuotaKey          = sharedcontext.QuotaKey
+	QuotaKey           = sharedcontext.QuotaKey
 )
 
 // Role represents user roles within the system.
@@ -45,11 +45,11 @@ const (
 
 // TenantContext holds tenant-specific context for a request.
 type TenantContext struct {
-	TenantID       string
-	TenantName     string
-	UserRole       Role
+	TenantID        string
+	TenantName      string
+	UserRole        Role
 	IsPlatformAdmin bool
-	Quota          *QuotaInfo
+	Quota           *QuotaInfo
 }
 
 // QuotaInfo holds quota information for the current tenant.

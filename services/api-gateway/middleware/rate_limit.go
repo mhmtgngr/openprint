@@ -18,17 +18,17 @@ type RateLimiter interface {
 
 // InMemoryRateLimiter provides an in-memory rate limiter.
 type InMemoryRateLimiter struct {
-	mu    sync.RWMutex
+	mu       sync.RWMutex
 	limiters map[string]*tokenBucketLimiter
 }
 
 // tokenBucketLimiter implements token bucket rate limiting.
 type tokenBucketLimiter struct {
-	tokens    int
-	maxTokens int
+	tokens     int
+	maxTokens  int
 	refillRate time.Duration
 	lastRefill time.Time
-	mu        sync.Mutex
+	mu         sync.Mutex
 }
 
 // NewInMemoryRateLimiter creates a new in-memory rate limiter.

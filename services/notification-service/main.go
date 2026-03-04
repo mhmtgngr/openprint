@@ -21,14 +21,14 @@ import (
 
 // Config holds service configuration.
 type Config struct {
-	ServerAddr       string
-	MetricsPort      int
-	DatabaseURL      string
-	RedisURL         string
-	JaegerEndpoint   string
-	ServiceName      string
-	PingInterval     time.Duration
-	PongTimeout      time.Duration
+	ServerAddr     string
+	MetricsPort    int
+	DatabaseURL    string
+	RedisURL       string
+	JaegerEndpoint string
+	ServiceName    string
+	PingInterval   time.Duration
+	PongTimeout    time.Duration
 }
 
 func main() {
@@ -87,8 +87,8 @@ func main() {
 	hub := websocket.NewHub(websocket.Config{
 		PingInterval: cfg.PingInterval,
 		PongTimeout:  cfg.PongTimeout,
-		Metrics:     metrics,
-		ServiceName: cfg.ServiceName,
+		Metrics:      metrics,
+		ServiceName:  cfg.ServiceName,
 	})
 
 	// Start hub
@@ -96,9 +96,9 @@ func main() {
 
 	// Create handlers
 	h := websocket.NewHandler(websocket.HandlerConfig{
-		Hub:       hub,
-		DB:        db,
-		Metrics:   metrics,
+		Hub:     hub,
+		DB:      db,
+		Metrics: metrics,
 	})
 
 	// Setup HTTP server with middleware

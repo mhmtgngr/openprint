@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 	redisotel "github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 // ServiceInitConfig holds configuration for initializing a service with metrics.
