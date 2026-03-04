@@ -5,7 +5,8 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: a990f8ec [auto-fix] 2 failing packages
+- Recent issues: 2312351b [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+a990f8ec [auto-fix] 2 failing packages
 5a9de9b9 Merge team/fix-7-failing-tests-in-servicespolicy-se-1772594821
 fe5f46a9 [🐳 DevOps] Fix startup failures:
 c4d8497d [🐳 DevOps] Read CLAUDE.md. Docker build failed for dashboard. Error:
@@ -24,7 +25,6 @@ e9dfa934 [🐳 DevOps] Fix startup failures:
 14aa6187 [🐳 DevOps] Fix startup failures:
 a636c554 [🧪 Frontend] Fix dashboard test assertions to match component implementation
 b3e3abc4 [🐳 DevOps] Fix startup failures:
-449b0094 Merge team/fix-4-failing-tests-in-servicesauth-serv-1772366882
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
