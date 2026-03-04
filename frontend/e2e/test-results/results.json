@@ -1,0 +1,5824 @@
+{
+  "config": {
+    "configFile": "/home/cmit/openprint/frontend/e2e/playwright.config.ts",
+    "rootDir": "/home/cmit/openprint/frontend/e2e/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/cmit/openprint/frontend/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/cmit/openprint/frontend/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/cmit/openprint/frontend/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/home/cmit/openprint/frontend/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/cmit/openprint/frontend/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/home/cmit/openprint/frontend/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/cmit/openprint/frontend/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/home/cmit/openprint/frontend/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/cmit/openprint/frontend/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/home/cmit/openprint/frontend/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 4,
+    "webServer": {
+      "command": "cd ../../web/dashboard && npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "stdout": "pipe",
+      "stderr": "pipe"
+    }
+  },
+  "suites": [
+    {
+      "title": "compliance.spec.ts",
+      "file": "compliance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Compliance - Overview",
+          "file": "compliance.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should access compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2123d3edee0efbdaf479",
+              "file": "compliance.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "should display compliance overview section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1ba498ceb365eab163ce",
+              "file": "compliance.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "should display FedRAMP status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4f39e7a1ab64a1013d1a",
+              "file": "compliance.spec.ts",
+              "line": 46,
+              "column": 3
+            },
+            {
+              "title": "should display HIPAA status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-51a7e6a650ea1e5db6d2",
+              "file": "compliance.spec.ts",
+              "line": 53,
+              "column": 3
+            },
+            {
+              "title": "should display GDPR status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-29fa5e9f0543b205488d",
+              "file": "compliance.spec.ts",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "should display SOC2 status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-9c94d9923f098092a50a",
+              "file": "compliance.spec.ts",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "should check FedRAMP compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b1f6b6d3e960826747e9",
+              "file": "compliance.spec.ts",
+              "line": 74,
+              "column": 3
+            },
+            {
+              "title": "should check HIPAA compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-83dc93d7cf7748a0f04b",
+              "file": "compliance.spec.ts",
+              "line": 80,
+              "column": 3
+            },
+            {
+              "title": "should get compliance overview statistics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f76f9db79e53a8e1da97",
+              "file": "compliance.spec.ts",
+              "line": 86,
+              "column": 3
+            },
+            {
+              "title": "should access compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-bc125965726531d841a2",
+              "file": "compliance.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "should display compliance overview section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-dee6766baa9beb38b85c",
+              "file": "compliance.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "should display FedRAMP status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5bba5e55b3892fda9a5e",
+              "file": "compliance.spec.ts",
+              "line": 46,
+              "column": 3
+            },
+            {
+              "title": "should display HIPAA status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a50ab0f5751e5181353d",
+              "file": "compliance.spec.ts",
+              "line": 53,
+              "column": 3
+            },
+            {
+              "title": "should display GDPR status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6e0b230b3e2a686d40b1",
+              "file": "compliance.spec.ts",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "should display SOC2 status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8c0a8787471e42adb405",
+              "file": "compliance.spec.ts",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "should check FedRAMP compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-61b548b04758e8edf358",
+              "file": "compliance.spec.ts",
+              "line": 74,
+              "column": 3
+            },
+            {
+              "title": "should check HIPAA compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-19cb421a8922134bfd0d",
+              "file": "compliance.spec.ts",
+              "line": 80,
+              "column": 3
+            },
+            {
+              "title": "should get compliance overview statistics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d7eef3b2383b589994cc",
+              "file": "compliance.spec.ts",
+              "line": 86,
+              "column": 3
+            },
+            {
+              "title": "should access compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b690d20f4510eba9210d",
+              "file": "compliance.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "should display compliance overview section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8e3bbaa8639f8bbfa402",
+              "file": "compliance.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "should display FedRAMP status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-325b450abb047213c0df",
+              "file": "compliance.spec.ts",
+              "line": 46,
+              "column": 3
+            },
+            {
+              "title": "should display HIPAA status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d80e0fcbfa7b0c5abae8",
+              "file": "compliance.spec.ts",
+              "line": 53,
+              "column": 3
+            },
+            {
+              "title": "should display GDPR status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1082e216f44fd41eb543",
+              "file": "compliance.spec.ts",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "should display SOC2 status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d679f7578b70700aa6d8",
+              "file": "compliance.spec.ts",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "should check FedRAMP compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ad75854dc9c51e8e4f77",
+              "file": "compliance.spec.ts",
+              "line": 74,
+              "column": 3
+            },
+            {
+              "title": "should check HIPAA compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6d5489f51ded75ed8c75",
+              "file": "compliance.spec.ts",
+              "line": 80,
+              "column": 3
+            },
+            {
+              "title": "should get compliance overview statistics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e26683c7947754272a81",
+              "file": "compliance.spec.ts",
+              "line": 86,
+              "column": 3
+            },
+            {
+              "title": "should access compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-478cb1b22a82d0040cd1",
+              "file": "compliance.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "should display compliance overview section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-cbafdbea87af65ff4d26",
+              "file": "compliance.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "should display FedRAMP status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e8ebee10b660208cf306",
+              "file": "compliance.spec.ts",
+              "line": 46,
+              "column": 3
+            },
+            {
+              "title": "should display HIPAA status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-94e99ce1cc2c21889889",
+              "file": "compliance.spec.ts",
+              "line": 53,
+              "column": 3
+            },
+            {
+              "title": "should display GDPR status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ccb31c08cf41461a71dd",
+              "file": "compliance.spec.ts",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "should display SOC2 status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3b8285c85f053b2d25be",
+              "file": "compliance.spec.ts",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "should check FedRAMP compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-116e339c101041ea220d",
+              "file": "compliance.spec.ts",
+              "line": 74,
+              "column": 3
+            },
+            {
+              "title": "should check HIPAA compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1764485e7185a9e066ac",
+              "file": "compliance.spec.ts",
+              "line": 80,
+              "column": 3
+            },
+            {
+              "title": "should get compliance overview statistics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4ff7a6928d6c567b7d28",
+              "file": "compliance.spec.ts",
+              "line": 86,
+              "column": 3
+            },
+            {
+              "title": "should access compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-60b165dce342571ba5aa",
+              "file": "compliance.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "should display compliance overview section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0879a34d4664aaabc299",
+              "file": "compliance.spec.ts",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "should display FedRAMP status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4e6b77792a3935cad891",
+              "file": "compliance.spec.ts",
+              "line": 46,
+              "column": 3
+            },
+            {
+              "title": "should display HIPAA status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4e013bf899aea89c2753",
+              "file": "compliance.spec.ts",
+              "line": 53,
+              "column": 3
+            },
+            {
+              "title": "should display GDPR status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2f2fb7475ed391cfd84f",
+              "file": "compliance.spec.ts",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "should display SOC2 status badge",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2a7da534fd8b60de82c3",
+              "file": "compliance.spec.ts",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "should check FedRAMP compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c97448b22f59a3a7e77d",
+              "file": "compliance.spec.ts",
+              "line": 74,
+              "column": 3
+            },
+            {
+              "title": "should check HIPAA compliance status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7daeb27cfc76d07be754",
+              "file": "compliance.spec.ts",
+              "line": 80,
+              "column": 3
+            },
+            {
+              "title": "should get compliance overview statistics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3c7d8a98ccf82dae0738",
+              "file": "compliance.spec.ts",
+              "line": 86,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Audit Logs",
+          "file": "compliance.spec.ts",
+          "line": 94,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display audit logs section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-68cfc58295428cd2ab93",
+              "file": "compliance.spec.ts",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4fcddd7726b60d66867d",
+              "file": "compliance.spec.ts",
+              "line": 149,
+              "column": 3
+            },
+            {
+              "title": "should get audit log count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1f23c0458f60cc9f6f4b",
+              "file": "compliance.spec.ts",
+              "line": 155,
+              "column": 3
+            },
+            {
+              "title": "should get audit log entry details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-44f2bbec8ade1924c656",
+              "file": "compliance.spec.ts",
+              "line": 162,
+              "column": 3
+            },
+            {
+              "title": "should search audit logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a0b31a14fcfa9fc044ca",
+              "file": "compliance.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e5d83afde547538ce011",
+              "file": "compliance.spec.ts",
+              "line": 178,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by user",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4a434493d93d8f95d2da",
+              "file": "compliance.spec.ts",
+              "line": 185,
+              "column": 3
+            },
+            {
+              "title": "should verify specific audit log entry exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-dad6e2c3b27c670eba8d",
+              "file": "compliance.spec.ts",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as CSV",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ba9d222a7e4e5d305f48",
+              "file": "compliance.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-931725cedd47091e774e",
+              "file": "compliance.spec.ts",
+              "line": 212,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as XLSX",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-acdb9bb304038edb2dae",
+              "file": "compliance.spec.ts",
+              "line": 222,
+              "column": 3
+            },
+            {
+              "title": "should clear audit logs with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-253d7a559af432b45b2f",
+              "file": "compliance.spec.ts",
+              "line": 232,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-67166f3ba6f881e3efff",
+              "file": "compliance.spec.ts",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f511e8d8c4805ca3a80e",
+              "file": "compliance.spec.ts",
+              "line": 149,
+              "column": 3
+            },
+            {
+              "title": "should get audit log count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-086112d18c1fa67b5556",
+              "file": "compliance.spec.ts",
+              "line": 155,
+              "column": 3
+            },
+            {
+              "title": "should get audit log entry details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f5ac5c1b4dfe6a2b61b2",
+              "file": "compliance.spec.ts",
+              "line": 162,
+              "column": 3
+            },
+            {
+              "title": "should search audit logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e07b6f1d2505c10a3392",
+              "file": "compliance.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ba2c0e19d6c8e167e0bc",
+              "file": "compliance.spec.ts",
+              "line": 178,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by user",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6450c448498dc89920e9",
+              "file": "compliance.spec.ts",
+              "line": 185,
+              "column": 3
+            },
+            {
+              "title": "should verify specific audit log entry exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7b473ac97bd1b6cce661",
+              "file": "compliance.spec.ts",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as CSV",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-edd98a9349414af32187",
+              "file": "compliance.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e6caa98acb89f2071afc",
+              "file": "compliance.spec.ts",
+              "line": 212,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as XLSX",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ccb3d14a2ca772fb34e1",
+              "file": "compliance.spec.ts",
+              "line": 222,
+              "column": 3
+            },
+            {
+              "title": "should clear audit logs with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c533b52225c961287ec6",
+              "file": "compliance.spec.ts",
+              "line": 232,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b18ae108864a8bcec37c",
+              "file": "compliance.spec.ts",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a4465b6c2d24eaedb663",
+              "file": "compliance.spec.ts",
+              "line": 149,
+              "column": 3
+            },
+            {
+              "title": "should get audit log count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-66c3604cf693cd7259e3",
+              "file": "compliance.spec.ts",
+              "line": 155,
+              "column": 3
+            },
+            {
+              "title": "should get audit log entry details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4ba9e5d1a68bc862ce60",
+              "file": "compliance.spec.ts",
+              "line": 162,
+              "column": 3
+            },
+            {
+              "title": "should search audit logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0e7ed7c715cb0e3ec57d",
+              "file": "compliance.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8306998d625ddea98b00",
+              "file": "compliance.spec.ts",
+              "line": 178,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by user",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-db4566bf069e60252b76",
+              "file": "compliance.spec.ts",
+              "line": 185,
+              "column": 3
+            },
+            {
+              "title": "should verify specific audit log entry exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4ba0032e2e495e842b97",
+              "file": "compliance.spec.ts",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as CSV",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-9d49b31e6fca67fd8c54",
+              "file": "compliance.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8488eea62c925f00637a",
+              "file": "compliance.spec.ts",
+              "line": 212,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as XLSX",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-faf46eaf4bb18e1f6cea",
+              "file": "compliance.spec.ts",
+              "line": 222,
+              "column": 3
+            },
+            {
+              "title": "should clear audit logs with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ec6461f724773f4415c3",
+              "file": "compliance.spec.ts",
+              "line": 232,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-07140718a711614f5ee2",
+              "file": "compliance.spec.ts",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a2a3d68bb92979f54cd5",
+              "file": "compliance.spec.ts",
+              "line": 149,
+              "column": 3
+            },
+            {
+              "title": "should get audit log count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1f3eb9a6e789bda82410",
+              "file": "compliance.spec.ts",
+              "line": 155,
+              "column": 3
+            },
+            {
+              "title": "should get audit log entry details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b34be46db1941b30fba3",
+              "file": "compliance.spec.ts",
+              "line": 162,
+              "column": 3
+            },
+            {
+              "title": "should search audit logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f8c32a9ed50190502fa2",
+              "file": "compliance.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2e6269505fdf7c337783",
+              "file": "compliance.spec.ts",
+              "line": 178,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by user",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d4544dd9ef708e5abd78",
+              "file": "compliance.spec.ts",
+              "line": 185,
+              "column": 3
+            },
+            {
+              "title": "should verify specific audit log entry exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-04c167573cc9898c1443",
+              "file": "compliance.spec.ts",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as CSV",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5702b6b0fad3c75f56c8",
+              "file": "compliance.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5464697bb3831dc577d0",
+              "file": "compliance.spec.ts",
+              "line": 212,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as XLSX",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-594b3b660942874d9bea",
+              "file": "compliance.spec.ts",
+              "line": 222,
+              "column": 3
+            },
+            {
+              "title": "should clear audit logs with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-430267ff3bf5d1376e34",
+              "file": "compliance.spec.ts",
+              "line": 232,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-723b1bc7ca9bf5f78f17",
+              "file": "compliance.spec.ts",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "should display audit logs table",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3ffc6bb6993c0c062b2a",
+              "file": "compliance.spec.ts",
+              "line": 149,
+              "column": 3
+            },
+            {
+              "title": "should get audit log count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-59dcaa12c84c9d387f1a",
+              "file": "compliance.spec.ts",
+              "line": 155,
+              "column": 3
+            },
+            {
+              "title": "should get audit log entry details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-23dffe82a1579e44d038",
+              "file": "compliance.spec.ts",
+              "line": 162,
+              "column": 3
+            },
+            {
+              "title": "should search audit logs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-261544e7408bcb701aab",
+              "file": "compliance.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by action",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5153cdb2e5746bb6d886",
+              "file": "compliance.spec.ts",
+              "line": 178,
+              "column": 3
+            },
+            {
+              "title": "should filter audit logs by user",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c7938436bff2aee4bafb",
+              "file": "compliance.spec.ts",
+              "line": 185,
+              "column": 3
+            },
+            {
+              "title": "should verify specific audit log entry exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-24912fb4760439b4f450",
+              "file": "compliance.spec.ts",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as CSV",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ce03b7505ca42af29853",
+              "file": "compliance.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as JSON",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-fbb7242fa9e1b50d02eb",
+              "file": "compliance.spec.ts",
+              "line": 212,
+              "column": 3
+            },
+            {
+              "title": "should export audit logs as XLSX",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-53773387afdc57116efa",
+              "file": "compliance.spec.ts",
+              "line": 222,
+              "column": 3
+            },
+            {
+              "title": "should clear audit logs with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5bbdef88cdfaa07c4c93",
+              "file": "compliance.spec.ts",
+              "line": 232,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Reports",
+          "file": "compliance.spec.ts",
+          "line": 252,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display compliance reports section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d03f82addb9d8315ef38",
+              "file": "compliance.spec.ts",
+              "line": 296,
+              "column": 3
+            },
+            {
+              "title": "should display reports list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6ced21fd01dff6f3f065",
+              "file": "compliance.spec.ts",
+              "line": 302,
+              "column": 3
+            },
+            {
+              "title": "should get reports count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-49de9122b80f02470411",
+              "file": "compliance.spec.ts",
+              "line": 308,
+              "column": 3
+            },
+            {
+              "title": "should generate compliance report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-dfeaefe58c3fff88b5c5",
+              "file": "compliance.spec.ts",
+              "line": 315,
+              "column": 3
+            },
+            {
+              "title": "should download report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2675d6f47d947d02c7a3",
+              "file": "compliance.spec.ts",
+              "line": 327,
+              "column": 3
+            },
+            {
+              "title": "should delete report with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-13404f3ca76ae8f70ac8",
+              "file": "compliance.spec.ts",
+              "line": 345,
+              "column": 3
+            },
+            {
+              "title": "should display compliance reports section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-61d77bb6fe80cca0ade6",
+              "file": "compliance.spec.ts",
+              "line": 296,
+              "column": 3
+            },
+            {
+              "title": "should display reports list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-622a84436db8edc413bc",
+              "file": "compliance.spec.ts",
+              "line": 302,
+              "column": 3
+            },
+            {
+              "title": "should get reports count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-73128c71ff51973bcf50",
+              "file": "compliance.spec.ts",
+              "line": 308,
+              "column": 3
+            },
+            {
+              "title": "should generate compliance report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-9a3d450f79ed990ac260",
+              "file": "compliance.spec.ts",
+              "line": 315,
+              "column": 3
+            },
+            {
+              "title": "should download report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0b21052c7976386a5772",
+              "file": "compliance.spec.ts",
+              "line": 327,
+              "column": 3
+            },
+            {
+              "title": "should delete report with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a87641a832458288ce61",
+              "file": "compliance.spec.ts",
+              "line": 345,
+              "column": 3
+            },
+            {
+              "title": "should display compliance reports section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0ac6bfa2060af4b80941",
+              "file": "compliance.spec.ts",
+              "line": 296,
+              "column": 3
+            },
+            {
+              "title": "should display reports list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-33bea6194e69ceef4374",
+              "file": "compliance.spec.ts",
+              "line": 302,
+              "column": 3
+            },
+            {
+              "title": "should get reports count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1d7a18635946ca27b56f",
+              "file": "compliance.spec.ts",
+              "line": 308,
+              "column": 3
+            },
+            {
+              "title": "should generate compliance report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-61916fdd10685c7e9ae0",
+              "file": "compliance.spec.ts",
+              "line": 315,
+              "column": 3
+            },
+            {
+              "title": "should download report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3fd4d71e8aa829a6c2e4",
+              "file": "compliance.spec.ts",
+              "line": 327,
+              "column": 3
+            },
+            {
+              "title": "should delete report with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-bf14dd7885e1c4caffb1",
+              "file": "compliance.spec.ts",
+              "line": 345,
+              "column": 3
+            },
+            {
+              "title": "should display compliance reports section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6f6a463d8addf61b9462",
+              "file": "compliance.spec.ts",
+              "line": 296,
+              "column": 3
+            },
+            {
+              "title": "should display reports list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5e23bbc523d8ddd7404c",
+              "file": "compliance.spec.ts",
+              "line": 302,
+              "column": 3
+            },
+            {
+              "title": "should get reports count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-18e35eca081cee007607",
+              "file": "compliance.spec.ts",
+              "line": 308,
+              "column": 3
+            },
+            {
+              "title": "should generate compliance report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-16ec28d3d6f96067314d",
+              "file": "compliance.spec.ts",
+              "line": 315,
+              "column": 3
+            },
+            {
+              "title": "should download report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d5eb3cbc9e6f9a5463f0",
+              "file": "compliance.spec.ts",
+              "line": 327,
+              "column": 3
+            },
+            {
+              "title": "should delete report with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d1b30a0fb5bb1d9fcc81",
+              "file": "compliance.spec.ts",
+              "line": 345,
+              "column": 3
+            },
+            {
+              "title": "should display compliance reports section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3aafb746dae39541d863",
+              "file": "compliance.spec.ts",
+              "line": 296,
+              "column": 3
+            },
+            {
+              "title": "should display reports list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5a5c59d2d6c2284e4caa",
+              "file": "compliance.spec.ts",
+              "line": 302,
+              "column": 3
+            },
+            {
+              "title": "should get reports count",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3542f572ffa04104e6c4",
+              "file": "compliance.spec.ts",
+              "line": 308,
+              "column": 3
+            },
+            {
+              "title": "should generate compliance report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-083a2b153f23e6172a28",
+              "file": "compliance.spec.ts",
+              "line": 315,
+              "column": 3
+            },
+            {
+              "title": "should download report",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f45f576dc53e44bd7271",
+              "file": "compliance.spec.ts",
+              "line": 327,
+              "column": 3
+            },
+            {
+              "title": "should delete report with confirmation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5c566f525381c78b8612",
+              "file": "compliance.spec.ts",
+              "line": 345,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Data Retention",
+          "file": "compliance.spec.ts",
+          "line": 364,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display data retention section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e50e10d6495745237ed8",
+              "file": "compliance.spec.ts",
+              "line": 382,
+              "column": 3
+            },
+            {
+              "title": "should enable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-714bee6508115b37459b",
+              "file": "compliance.spec.ts",
+              "line": 388,
+              "column": 3
+            },
+            {
+              "title": "should disable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3b38ab6d5546150bc6c9",
+              "file": "compliance.spec.ts",
+              "line": 395,
+              "column": 3
+            },
+            {
+              "title": "should set retention period",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7128cf06761f319fecb8",
+              "file": "compliance.spec.ts",
+              "line": 402,
+              "column": 3
+            },
+            {
+              "title": "should display data retention section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b70103f26643c8eddc11",
+              "file": "compliance.spec.ts",
+              "line": 382,
+              "column": 3
+            },
+            {
+              "title": "should enable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a92041ed783261389df4",
+              "file": "compliance.spec.ts",
+              "line": 388,
+              "column": 3
+            },
+            {
+              "title": "should disable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-46efa3504ec7551cebe1",
+              "file": "compliance.spec.ts",
+              "line": 395,
+              "column": 3
+            },
+            {
+              "title": "should set retention period",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5656500e5ee9469b153a",
+              "file": "compliance.spec.ts",
+              "line": 402,
+              "column": 3
+            },
+            {
+              "title": "should display data retention section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ddce63e29b783e9a52b8",
+              "file": "compliance.spec.ts",
+              "line": 382,
+              "column": 3
+            },
+            {
+              "title": "should enable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-35686b9beac9e813d72f",
+              "file": "compliance.spec.ts",
+              "line": 388,
+              "column": 3
+            },
+            {
+              "title": "should disable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f6e25dce1629a12e2dee",
+              "file": "compliance.spec.ts",
+              "line": 395,
+              "column": 3
+            },
+            {
+              "title": "should set retention period",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-cc2ecca1422d1aa95e51",
+              "file": "compliance.spec.ts",
+              "line": 402,
+              "column": 3
+            },
+            {
+              "title": "should display data retention section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-bf9983e505a855995a02",
+              "file": "compliance.spec.ts",
+              "line": 382,
+              "column": 3
+            },
+            {
+              "title": "should enable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-45f2b91162e15ed45ce9",
+              "file": "compliance.spec.ts",
+              "line": 388,
+              "column": 3
+            },
+            {
+              "title": "should disable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7a56f1ca9feafadae5f9",
+              "file": "compliance.spec.ts",
+              "line": 395,
+              "column": 3
+            },
+            {
+              "title": "should set retention period",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a369bcb147834e692429",
+              "file": "compliance.spec.ts",
+              "line": 402,
+              "column": 3
+            },
+            {
+              "title": "should display data retention section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-855b2557aee44eeadf72",
+              "file": "compliance.spec.ts",
+              "line": 382,
+              "column": 3
+            },
+            {
+              "title": "should enable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-87f438a96af74560b656",
+              "file": "compliance.spec.ts",
+              "line": 388,
+              "column": 3
+            },
+            {
+              "title": "should disable retention policy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d558786e53864e6b94bb",
+              "file": "compliance.spec.ts",
+              "line": 395,
+              "column": 3
+            },
+            {
+              "title": "should set retention period",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-803641f5e7f95949e088",
+              "file": "compliance.spec.ts",
+              "line": 402,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Security Settings",
+          "file": "compliance.spec.ts",
+          "line": 411,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display security settings section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a58a401eedf651f363cd",
+              "file": "compliance.spec.ts",
+              "line": 429,
+              "column": 3
+            },
+            {
+              "title": "should enable encryption",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b340217ee36200d3853f",
+              "file": "compliance.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "should enable two-factor authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b6768cd795fee0db8004",
+              "file": "compliance.spec.ts",
+              "line": 442,
+              "column": 3
+            },
+            {
+              "title": "should set session timeout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d0c4e3976532c6bf5180",
+              "file": "compliance.spec.ts",
+              "line": 449,
+              "column": 3
+            },
+            {
+              "title": "should add IP to whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c87e224a988bec417e4f",
+              "file": "compliance.spec.ts",
+              "line": 456,
+              "column": 3
+            },
+            {
+              "title": "should remove IP from whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f0f1d715643de702ae10",
+              "file": "compliance.spec.ts",
+              "line": 463,
+              "column": 3
+            },
+            {
+              "title": "should get whitelisted IPs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a2621270eb801a169abf",
+              "file": "compliance.spec.ts",
+              "line": 470,
+              "column": 3
+            },
+            {
+              "title": "should display security settings section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-892664eb87af9dae7c31",
+              "file": "compliance.spec.ts",
+              "line": 429,
+              "column": 3
+            },
+            {
+              "title": "should enable encryption",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c3ff1a0a2754ef802c00",
+              "file": "compliance.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "should enable two-factor authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7930df905186f4ff8ddf",
+              "file": "compliance.spec.ts",
+              "line": 442,
+              "column": 3
+            },
+            {
+              "title": "should set session timeout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-445a6babcf9a1533ec21",
+              "file": "compliance.spec.ts",
+              "line": 449,
+              "column": 3
+            },
+            {
+              "title": "should add IP to whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e4e46f096f5b3f9d5877",
+              "file": "compliance.spec.ts",
+              "line": 456,
+              "column": 3
+            },
+            {
+              "title": "should remove IP from whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f0998fa490328ecdee37",
+              "file": "compliance.spec.ts",
+              "line": 463,
+              "column": 3
+            },
+            {
+              "title": "should get whitelisted IPs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8a15b4dfdc76e3d6de97",
+              "file": "compliance.spec.ts",
+              "line": 470,
+              "column": 3
+            },
+            {
+              "title": "should display security settings section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-72982f02606438521e57",
+              "file": "compliance.spec.ts",
+              "line": 429,
+              "column": 3
+            },
+            {
+              "title": "should enable encryption",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-746930bd4bc2e818c086",
+              "file": "compliance.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "should enable two-factor authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-66dae52fb9e273db5c20",
+              "file": "compliance.spec.ts",
+              "line": 442,
+              "column": 3
+            },
+            {
+              "title": "should set session timeout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3f39f3b96858f24f1fea",
+              "file": "compliance.spec.ts",
+              "line": 449,
+              "column": 3
+            },
+            {
+              "title": "should add IP to whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-bb4fc0756f4611303c87",
+              "file": "compliance.spec.ts",
+              "line": 456,
+              "column": 3
+            },
+            {
+              "title": "should remove IP from whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-15f372182c6c6dda4e14",
+              "file": "compliance.spec.ts",
+              "line": 463,
+              "column": 3
+            },
+            {
+              "title": "should get whitelisted IPs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e4bd45093e3799b493f4",
+              "file": "compliance.spec.ts",
+              "line": 470,
+              "column": 3
+            },
+            {
+              "title": "should display security settings section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-350d14e4112bb004f30e",
+              "file": "compliance.spec.ts",
+              "line": 429,
+              "column": 3
+            },
+            {
+              "title": "should enable encryption",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1c8e016c8d6eaf0be92e",
+              "file": "compliance.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "should enable two-factor authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3a1b8991e2be44aba4c4",
+              "file": "compliance.spec.ts",
+              "line": 442,
+              "column": 3
+            },
+            {
+              "title": "should set session timeout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-9c759ba6ca09dc3322d2",
+              "file": "compliance.spec.ts",
+              "line": 449,
+              "column": 3
+            },
+            {
+              "title": "should add IP to whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b5046867b2116396fd85",
+              "file": "compliance.spec.ts",
+              "line": 456,
+              "column": 3
+            },
+            {
+              "title": "should remove IP from whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d783d5ada30e2d331a92",
+              "file": "compliance.spec.ts",
+              "line": 463,
+              "column": 3
+            },
+            {
+              "title": "should get whitelisted IPs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e2796c83015806bc9bd1",
+              "file": "compliance.spec.ts",
+              "line": 470,
+              "column": 3
+            },
+            {
+              "title": "should display security settings section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-00bcfa59cdf37afd1e3c",
+              "file": "compliance.spec.ts",
+              "line": 429,
+              "column": 3
+            },
+            {
+              "title": "should enable encryption",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8e6f60f4ddc9a8402a8d",
+              "file": "compliance.spec.ts",
+              "line": 435,
+              "column": 3
+            },
+            {
+              "title": "should enable two-factor authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0014c0b8618285598898",
+              "file": "compliance.spec.ts",
+              "line": 442,
+              "column": 3
+            },
+            {
+              "title": "should set session timeout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7cb68329dc4403712087",
+              "file": "compliance.spec.ts",
+              "line": 449,
+              "column": 3
+            },
+            {
+              "title": "should add IP to whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a989ad4a50c9a6d2c64a",
+              "file": "compliance.spec.ts",
+              "line": 456,
+              "column": 3
+            },
+            {
+              "title": "should remove IP from whitelist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b961e77683da887dd785",
+              "file": "compliance.spec.ts",
+              "line": 463,
+              "column": 3
+            },
+            {
+              "title": "should get whitelisted IPs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b9a695dcd3c8e28dd5c8",
+              "file": "compliance.spec.ts",
+              "line": 470,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Checklist",
+          "file": "compliance.spec.ts",
+          "line": 490,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6455dcf2c20ac8775a04",
+              "file": "compliance.spec.ts",
+              "line": 514,
+              "column": 3
+            },
+            {
+              "title": "should run compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-92a00d44238f9ca351db",
+              "file": "compliance.spec.ts",
+              "line": 520,
+              "column": 3
+            },
+            {
+              "title": "should get checklist item status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-13eaacf961b3bc44d031",
+              "file": "compliance.spec.ts",
+              "line": 527,
+              "column": 3
+            },
+            {
+              "title": "should display compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-9bfbef532e6de10cd16f",
+              "file": "compliance.spec.ts",
+              "line": 514,
+              "column": 3
+            },
+            {
+              "title": "should run compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-31b819f330c6a8c5db73",
+              "file": "compliance.spec.ts",
+              "line": 520,
+              "column": 3
+            },
+            {
+              "title": "should get checklist item status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d6e23a95429083b97ce3",
+              "file": "compliance.spec.ts",
+              "line": 527,
+              "column": 3
+            },
+            {
+              "title": "should display compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-29b6622bbec078b8b017",
+              "file": "compliance.spec.ts",
+              "line": 514,
+              "column": 3
+            },
+            {
+              "title": "should run compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1c0680199cb95d12599a",
+              "file": "compliance.spec.ts",
+              "line": 520,
+              "column": 3
+            },
+            {
+              "title": "should get checklist item status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c8f6a3082a9664255e7b",
+              "file": "compliance.spec.ts",
+              "line": 527,
+              "column": 3
+            },
+            {
+              "title": "should display compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2b8f785c11e9310c2631",
+              "file": "compliance.spec.ts",
+              "line": 514,
+              "column": 3
+            },
+            {
+              "title": "should run compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d7d9d4dfcc651b7fe139",
+              "file": "compliance.spec.ts",
+              "line": 520,
+              "column": 3
+            },
+            {
+              "title": "should get checklist item status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3c1ed927ad2a095bb293",
+              "file": "compliance.spec.ts",
+              "line": 527,
+              "column": 3
+            },
+            {
+              "title": "should display compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-10161d4ad046b3a55a6d",
+              "file": "compliance.spec.ts",
+              "line": 514,
+              "column": 3
+            },
+            {
+              "title": "should run compliance checklist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6d533561d073404886d1",
+              "file": "compliance.spec.ts",
+              "line": 520,
+              "column": 3
+            },
+            {
+              "title": "should get checklist item status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-9992d3b2c81110f3e39c",
+              "file": "compliance.spec.ts",
+              "line": 527,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Risk Assessment",
+          "file": "compliance.spec.ts",
+          "line": 535,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display risk assessment section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-72b0f067cc44c2d18a01",
+              "file": "compliance.spec.ts",
+              "line": 559,
+              "column": 3
+            },
+            {
+              "title": "should run risk assessment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d3e424d1e8bf29204899",
+              "file": "compliance.spec.ts",
+              "line": 565,
+              "column": 3
+            },
+            {
+              "title": "should get risk score",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f726e6d9a497e8b10c73",
+              "file": "compliance.spec.ts",
+              "line": 572,
+              "column": 3
+            },
+            {
+              "title": "should get risk mitigation suggestions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-96960f25e1edde8619e9",
+              "file": "compliance.spec.ts",
+              "line": 581,
+              "column": 3
+            },
+            {
+              "title": "should display risk assessment section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-057862ebc6b8d11478a2",
+              "file": "compliance.spec.ts",
+              "line": 559,
+              "column": 3
+            },
+            {
+              "title": "should run risk assessment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-fae11fc8a9edcc91b269",
+              "file": "compliance.spec.ts",
+              "line": 565,
+              "column": 3
+            },
+            {
+              "title": "should get risk score",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8f3a542496d43c1007dd",
+              "file": "compliance.spec.ts",
+              "line": 572,
+              "column": 3
+            },
+            {
+              "title": "should get risk mitigation suggestions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4cde9c5736f8458623af",
+              "file": "compliance.spec.ts",
+              "line": 581,
+              "column": 3
+            },
+            {
+              "title": "should display risk assessment section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-47f20e9b8efeb420ccec",
+              "file": "compliance.spec.ts",
+              "line": 559,
+              "column": 3
+            },
+            {
+              "title": "should run risk assessment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-85dc1bb8a7f0f9f6a6f7",
+              "file": "compliance.spec.ts",
+              "line": 565,
+              "column": 3
+            },
+            {
+              "title": "should get risk score",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0f07b0305002a24b2f62",
+              "file": "compliance.spec.ts",
+              "line": 572,
+              "column": 3
+            },
+            {
+              "title": "should get risk mitigation suggestions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-0d5f1796949d97474030",
+              "file": "compliance.spec.ts",
+              "line": 581,
+              "column": 3
+            },
+            {
+              "title": "should display risk assessment section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c8dc1503901c68ad72cc",
+              "file": "compliance.spec.ts",
+              "line": 559,
+              "column": 3
+            },
+            {
+              "title": "should run risk assessment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-705b85484a6634f200f3",
+              "file": "compliance.spec.ts",
+              "line": 565,
+              "column": 3
+            },
+            {
+              "title": "should get risk score",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-b7d5c8a700d9453267a1",
+              "file": "compliance.spec.ts",
+              "line": 572,
+              "column": 3
+            },
+            {
+              "title": "should get risk mitigation suggestions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-074872d5ce910d771311",
+              "file": "compliance.spec.ts",
+              "line": 581,
+              "column": 3
+            },
+            {
+              "title": "should display risk assessment section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2546d3c098d2358322d3",
+              "file": "compliance.spec.ts",
+              "line": 559,
+              "column": 3
+            },
+            {
+              "title": "should run risk assessment",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-fe5b05f9762895ebf67d",
+              "file": "compliance.spec.ts",
+              "line": 565,
+              "column": 3
+            },
+            {
+              "title": "should get risk score",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3241bef6d1327942f4dd",
+              "file": "compliance.spec.ts",
+              "line": 572,
+              "column": 3
+            },
+            {
+              "title": "should get risk mitigation suggestions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-893c9d8565aa1d56ccab",
+              "file": "compliance.spec.ts",
+              "line": 581,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Access Control",
+          "file": "compliance.spec.ts",
+          "line": 589,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should restrict compliance page to admin users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-462b04d178fb4fc9dee5",
+              "file": "compliance.spec.ts",
+              "line": 590,
+              "column": 3
+            },
+            {
+              "title": "should allow admin access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-64cfcaee1e4354d7455f",
+              "file": "compliance.spec.ts",
+              "line": 603,
+              "column": 3
+            },
+            {
+              "title": "should allow owner access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e4b8d79a868fac4b3b25",
+              "file": "compliance.spec.ts",
+              "line": 613,
+              "column": 3
+            },
+            {
+              "title": "should restrict compliance page to admin users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-8006febf99c88a87372a",
+              "file": "compliance.spec.ts",
+              "line": 590,
+              "column": 3
+            },
+            {
+              "title": "should allow admin access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-498826e021ac08a3e8b5",
+              "file": "compliance.spec.ts",
+              "line": 603,
+              "column": 3
+            },
+            {
+              "title": "should allow owner access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a5c73fbd58547f54eb90",
+              "file": "compliance.spec.ts",
+              "line": 613,
+              "column": 3
+            },
+            {
+              "title": "should restrict compliance page to admin users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a23d58b42301f30ec46c",
+              "file": "compliance.spec.ts",
+              "line": 590,
+              "column": 3
+            },
+            {
+              "title": "should allow admin access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-345973a939e682c12583",
+              "file": "compliance.spec.ts",
+              "line": 603,
+              "column": 3
+            },
+            {
+              "title": "should allow owner access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e5c074e905b269e56c10",
+              "file": "compliance.spec.ts",
+              "line": 613,
+              "column": 3
+            },
+            {
+              "title": "should restrict compliance page to admin users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-ff2f117becfddb3130d1",
+              "file": "compliance.spec.ts",
+              "line": 590,
+              "column": 3
+            },
+            {
+              "title": "should allow admin access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6c479941110fc5e95764",
+              "file": "compliance.spec.ts",
+              "line": 603,
+              "column": 3
+            },
+            {
+              "title": "should allow owner access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2e56d1a2517472745448",
+              "file": "compliance.spec.ts",
+              "line": 613,
+              "column": 3
+            },
+            {
+              "title": "should restrict compliance page to admin users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5f0d94803d4ba4c33397",
+              "file": "compliance.spec.ts",
+              "line": 590,
+              "column": 3
+            },
+            {
+              "title": "should allow admin access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1038a111f829f1083b4e",
+              "file": "compliance.spec.ts",
+              "line": 603,
+              "column": 3
+            },
+            {
+              "title": "should allow owner access to compliance page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-220c775418174e5b34a1",
+              "file": "compliance.spec.ts",
+              "line": 613,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Audit Log Columns",
+          "file": "compliance.spec.ts",
+          "line": 624,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display timestamp column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-5ca2a500ad113640ac68",
+              "file": "compliance.spec.ts",
+              "line": 652,
+              "column": 3
+            },
+            {
+              "title": "should display user column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-04e9839cd0518539c1ef",
+              "file": "compliance.spec.ts",
+              "line": 658,
+              "column": 3
+            },
+            {
+              "title": "should display action column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-71ef7d4b049e41798efd",
+              "file": "compliance.spec.ts",
+              "line": 664,
+              "column": 3
+            },
+            {
+              "title": "should display resource column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c12838c44d9339e5be6f",
+              "file": "compliance.spec.ts",
+              "line": 670,
+              "column": 3
+            },
+            {
+              "title": "should display details column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-c4a51c91dd0a733ca683",
+              "file": "compliance.spec.ts",
+              "line": 676,
+              "column": 3
+            },
+            {
+              "title": "should display IP address column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2d49d2c549802ef494c2",
+              "file": "compliance.spec.ts",
+              "line": 682,
+              "column": 3
+            },
+            {
+              "title": "should display timestamp column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-aaea73582e77c5489ff3",
+              "file": "compliance.spec.ts",
+              "line": 652,
+              "column": 3
+            },
+            {
+              "title": "should display user column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-25e95658ec4792f93637",
+              "file": "compliance.spec.ts",
+              "line": 658,
+              "column": 3
+            },
+            {
+              "title": "should display action column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6ee321f1828f3edc5c22",
+              "file": "compliance.spec.ts",
+              "line": 664,
+              "column": 3
+            },
+            {
+              "title": "should display resource column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4166b6f3d27d1b8e8c90",
+              "file": "compliance.spec.ts",
+              "line": 670,
+              "column": 3
+            },
+            {
+              "title": "should display details column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d93e2d810d8d779b399d",
+              "file": "compliance.spec.ts",
+              "line": 676,
+              "column": 3
+            },
+            {
+              "title": "should display IP address column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-296c1414f71c1eb95a95",
+              "file": "compliance.spec.ts",
+              "line": 682,
+              "column": 3
+            },
+            {
+              "title": "should display timestamp column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6a09261c2d523848e246",
+              "file": "compliance.spec.ts",
+              "line": 652,
+              "column": 3
+            },
+            {
+              "title": "should display user column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-19e47be7fea611a6e073",
+              "file": "compliance.spec.ts",
+              "line": 658,
+              "column": 3
+            },
+            {
+              "title": "should display action column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-7a31b816c71f8c836c1c",
+              "file": "compliance.spec.ts",
+              "line": 664,
+              "column": 3
+            },
+            {
+              "title": "should display resource column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3db76824644e1fc6acfa",
+              "file": "compliance.spec.ts",
+              "line": 670,
+              "column": 3
+            },
+            {
+              "title": "should display details column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-32c71848b7669125dd1c",
+              "file": "compliance.spec.ts",
+              "line": 676,
+              "column": 3
+            },
+            {
+              "title": "should display IP address column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3dd62e530ea0fea6e75d",
+              "file": "compliance.spec.ts",
+              "line": 682,
+              "column": 3
+            },
+            {
+              "title": "should display timestamp column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-78d947fcbce24f0acb75",
+              "file": "compliance.spec.ts",
+              "line": 652,
+              "column": 3
+            },
+            {
+              "title": "should display user column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3729a36348a7467e831d",
+              "file": "compliance.spec.ts",
+              "line": 658,
+              "column": 3
+            },
+            {
+              "title": "should display action column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-dab0185df2466922b4df",
+              "file": "compliance.spec.ts",
+              "line": 664,
+              "column": 3
+            },
+            {
+              "title": "should display resource column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-1c2688d807a91300298c",
+              "file": "compliance.spec.ts",
+              "line": 670,
+              "column": 3
+            },
+            {
+              "title": "should display details column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-a3d5bea3e72037d28488",
+              "file": "compliance.spec.ts",
+              "line": 676,
+              "column": 3
+            },
+            {
+              "title": "should display IP address column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-262789ea492528b68afe",
+              "file": "compliance.spec.ts",
+              "line": 682,
+              "column": 3
+            },
+            {
+              "title": "should display timestamp column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-93a994a2046583514a98",
+              "file": "compliance.spec.ts",
+              "line": 652,
+              "column": 3
+            },
+            {
+              "title": "should display user column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6f278d1c1380b7e1926e",
+              "file": "compliance.spec.ts",
+              "line": 658,
+              "column": 3
+            },
+            {
+              "title": "should display action column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-d5e2b190bf5121045582",
+              "file": "compliance.spec.ts",
+              "line": 664,
+              "column": 3
+            },
+            {
+              "title": "should display resource column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2ea0acda443cb054bad9",
+              "file": "compliance.spec.ts",
+              "line": 670,
+              "column": 3
+            },
+            {
+              "title": "should display details column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-646bb3d6b41807e7a33d",
+              "file": "compliance.spec.ts",
+              "line": 676,
+              "column": 3
+            },
+            {
+              "title": "should display IP address column",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-3867365d1c8b5b9521dc",
+              "file": "compliance.spec.ts",
+              "line": 682,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Compliance - Date Range Filtering",
+          "file": "compliance.spec.ts",
+          "line": 689,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should filter logs by date range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4b3a680aeba0ea672cba",
+              "file": "compliance.spec.ts",
+              "line": 696,
+              "column": 3
+            },
+            {
+              "title": "should display date filter button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-f4cb781cb613d841fcb9",
+              "file": "compliance.spec.ts",
+              "line": 703,
+              "column": 3
+            },
+            {
+              "title": "should filter logs by date range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-4d13a412b13d25c9a9fa",
+              "file": "compliance.spec.ts",
+              "line": 696,
+              "column": 3
+            },
+            {
+              "title": "should display date filter button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-e2357c035373f5d8e894",
+              "file": "compliance.spec.ts",
+              "line": 703,
+              "column": 3
+            },
+            {
+              "title": "should filter logs by date range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-2f486aef1874e507429a",
+              "file": "compliance.spec.ts",
+              "line": 696,
+              "column": 3
+            },
+            {
+              "title": "should display date filter button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-bbd6c0e849df58e8168c",
+              "file": "compliance.spec.ts",
+              "line": 703,
+              "column": 3
+            },
+            {
+              "title": "should filter logs by date range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-98d870a0df42b417e440",
+              "file": "compliance.spec.ts",
+              "line": 696,
+              "column": 3
+            },
+            {
+              "title": "should display date filter button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-dade54d2c67f07bb1f91",
+              "file": "compliance.spec.ts",
+              "line": 703,
+              "column": 3
+            },
+            {
+              "title": "should filter logs by date range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-48b1fa7bbad1cf1bc3d6",
+              "file": "compliance.spec.ts",
+              "line": 696,
+              "column": 3
+            },
+            {
+              "title": "should display date filter button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8235b007d48aa1a16924-6e886c16dc66948e3201",
+              "file": "compliance.spec.ts",
+              "line": 703,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-03-04T05:22:40.480Z",
+    "duration": 135.00599999999986,
+    "expected": 0,
+    "skipped": 280,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
