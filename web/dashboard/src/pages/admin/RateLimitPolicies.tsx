@@ -25,9 +25,6 @@ import type {
   RateLimitPolicyFilters,
   RateLimitScope,
   RateLimitDimension,
-  RateLimitWindow,
-  RateLimitAction,
-  RateLimitAlgorithm,
 } from '@/types/ratelimit';
 import { PolicyFormModal } from '@/components/ratelimit/PolicyFormModal';
 import { TestPolicyModal } from '@/components/ratelimit/TestPolicyModal';
@@ -241,7 +238,6 @@ export const RateLimitPolicies = () => {
   const [editingPolicy, setEditingPolicy] = useState<RateLimitPolicy | undefined>();
   const [testingPolicy, setTestingPolicy] = useState<RateLimitPolicy | undefined>();
   const [showViolationsFor, setShowViolationsFor] = useState<string | undefined>();
-  const [deletingPolicy, setDeletingPolicy] = useState<RateLimitPolicy | undefined>();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedScope, setSelectedScope] = useState<RateLimitScope | ''>('');
@@ -281,7 +277,6 @@ export const RateLimitPolicies = () => {
     mutationFn: (id: string) => rateLimitPoliciesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rate-limit-policies'] });
-      setDeletingPolicy(undefined);
     },
   });
 

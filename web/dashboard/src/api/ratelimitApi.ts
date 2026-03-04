@@ -37,8 +37,6 @@ import type {
   QueueStats,
 } from '@/types/ratelimit';
 
-import type { PaginatedResponse } from '@/types';
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 // ============================================================================
