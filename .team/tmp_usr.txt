@@ -1,130 +1,76 @@
-REQUIREMENTS: {
- "project_name": "Fix Policy Service Test Failures",
- "summary": "Fix 7 failing tests in services/policy-service/ caused by database schema constraints (organization_id NOT NULL), type assertion issues in rule operators (In/Between), missing test fixture data, and invalid UUID values",
- "functional_requirements": [
-  {
-   "id": "FR-001",
-   "title": "Nullable organization_id Column"
-  },
-  {
-   "id": "FR-002",
-   "title": "Fix In Operator Type Handling"
-  },
-  {
-   "id": "FR-003",
-   "title": "Fix Between Operator Type Handling"
-  },
-  {
-   "id": "FR-004",
-   "title": "Fix Test Fixture Data"
-  },
-  {
-   "id": "FR-005",
-   "title": "Fix ModifiedBy UUID Validation"
-  },
-  {
-   "id": "FR-006",
-   "title": "Ensure Response JSON Encoding"
-  },
-  {
-   "id": "FR-M007",
-   "title": "Secure Print Release"
-  },
-  {
-   "id": "FR-M008",
-   "title": "Follow-Me Printing"
-  },
-  {
-   "id": "FR-M009",
-   "title": "Content Filtering/DLP"
-  },
-  {
-   "id": "FR-M010",
-   "title": "Mobile Print Apps"
-  },
-  {
-   "id": "FR-M011",
-   "title": "Advanced Cost Allocation"
-  },
-  {
-   "id": "FR-M012",
-   "title": "Policy Templates Marketplace"
-  }
- ],
- "affected_services": [
-  "policy-service",
-  "api-gateway"
- ],
- "implementation_phases": [
-  {
-   "phase": 1,
-   "name": "Database Schema Fix",
-   "tasks": [
-    "Create migration to make organization_id nullable in print_policies table",
-    "Test migration on development database",
-    "Verify existing policies still work with nullable organization_id"
-   ]
-  },
-  {
-   "phase": 2,
-   "name": "Fix Type Assertion Issues",
-   "tasks": [
-    "Update compareIn function to handle strongly-typed slices",
-    "Update compareBetween function to handle strongly-typed slices",
-    "Add helper function for slice comparison using JSON marshaling"
-   ]
-  },
-  {
-   "phase": 3,
-   "name": "Fix Test Fixtures",
-   "tasks": [
-    "Update TestEngineAppliesToScope with DocumentType in evalCtx",
-    "Update TestRepositoryUpdate with valid UUID for ModifiedBy",
-CHANGES:  web/dashboard/src/features/policies/PolicyForm.tsx |  327 ++++++
- .../src/features/policies/PolicyHistory.tsx        |  110 ++
- web/dashboard/src/features/policies/PolicyList.tsx |  212 ++++
- .../src/features/policies/PolicyTemplates.tsx      |  149 +++
- web/dashboard/src/features/policies/api.ts         |  313 ++++++
- web/dashboard/src/features/policies/index.ts       |   14 +
- web/dashboard/src/features/policies/types.ts       |  120 +++
- web/dashboard/src/features/policies/usePolicies.ts |  144 +++
- .../src/features/policies/usePolicyEvaluation.ts   |   55 +
- .../src/features/policies/usePolicyTemplates.ts    |   44 +
- web/dashboard/src/pages/Policies.tsx               |  488 +++------
- web/dashboard/src/pages/PoliciesEngine.tsx         |  623 ++++-------
- .../src/pages/admin/RateLimitPolicies.tsx          |  638 +++++++++++
- web/dashboard/src/types/ratelimit.ts               |  677 ++++++++++++
- 99 files changed, 21190 insertions(+), 2427 deletions(-)
-FILES: internal/middleware/ratelimit.go
-internal/middleware/validation.go
-internal/shared/ratelimit/alert.go
-internal/shared/ratelimit/burst.go
-internal/shared/ratelimit/bypass.go
-internal/shared/ratelimit/circuit_breaker.go
-internal/shared/ratelimit/config.go
-internal/shared/ratelimit/limiter.go
-internal/shared/ratelimit/metrics.go
-internal/shared/ratelimit/middleware.go
-internal/shared/ratelimit/print_quota.go
-internal/shared/ratelimit/queue.go
-internal/shared/ratelimit/redis.go
-internal/shared/ratelimit/repository.go
-internal/shared/ratelimit/resolver.go
-internal/testutil/fixtures.go
-services/auth-service/handlers/circuit_breaker.go
-services/auth-service/handlers/ratelimit.go
-services/auth-service/handlers/trusted_clients.go
-services/auth-service/handlers/violations.go
-CODE: 
+AUTH CODE: 
+--- internal/middleware/cookie_auth.go ---
+// Package middleware provides HTTP middleware for cookie-based authentication.
+//
+// SECURITY CONSIDERATIONS FOR COOKIES:
+//
+// This package provides secure cookie helpers that enforce the following security attributes:
+//
+// 1. Secure Flag - Cookies are only sent over HTTPS connections, preventing
+//    interception on the network. Always use Secure=true in production.
+//
+// 2. HttpOnly Flag - Cookies cannot be accessed via JavaScript document.cookie,
+//    protecting against XSS attacks that attempt to steal session tokens.
+//
+// 3. SameSite Attribute - Controls cross-site cookie behavior:
+//    - SameSiteStrict: Strongest CSRF protection, but may break legitimate navigation
+//    - SameSiteLax: Balanced protection, allows top-level navigations (recommended)
+//    - SameSiteNone: Allows cross-site requests; requires Secure=true
+//
+// 4. Cookie Expiration - Session cookies have limited lifetime (15 minutes default
+//    for access tokens, 7 days for refresh tokens) to reduce the window of abuse.
+//
+// USAGE EXAMPLE:
+//
+//	// Recommended: Use AutoCookieSecurity for environment-aware settings
+//	security := middleware.AutoCookieSecurity()
+//	middleware.SetSessionCookie(w, middleware.SessionCookieName, tokenValue, 15*time.Minute, security)
+//
+//	// On logout:
+//	middleware.ClearSessionCookie(w, middleware.SessionCookieName, security)
+//
+// PRODUCTION DEPLOYMENT:
+//
+// For production, ensure ENV=production or GO_ENV=production is set.
+// AutoCookieSecurity will automatically apply secure settings (Secure+HttpOnly).
+//
+// Alternatively, explicitly use ProductionCookieSecurity():
+//
+//	security := middleware.ProductionCookieSecurity()
+package middleware
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/openprint/openprint/internal/auth/jwt"
+)
+
+const (
+	// SessionCookieName is the name of the session cookie
+	SessionCookieName = "openprint_session"
+	// RefreshCookieName is the name of the refresh token cookie
+	RefreshCookieName = "openprint_refresh"
+
+	UserIDKey  contextKey = "user_id"
+	EmailKey   contextKey = "email"
+	OrgIDKey   contextKey = "org_id"
+	RoleKey    contextKey = "role"
 --- internal/middleware/ratelimit.go ---
 // Package middleware provides rate limiting middleware integration for OpenPrint services.
 package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	sharedcontext "github.com/openprint/openprint/internal/shared/context"
@@ -134,10 +80,17 @@ import (
 
 // RateLimitConfig holds configuration for rate limit middleware.
 type RateLimitConfig struct {
-	Limiter         *ratelimit.Limiter
-	SkipPaths       []string
-	SkipIPs         []string
-	EnableByDefault bool
+	Limiter           *ratelimit.Limiter
+	SkipPaths         []string
+	SkipIPs           []string
+	EnableByDefault   bool
+	// FailClosed determines behavior when rate limiter fails. If true, requests
+	// are blocked when the rate limiter is unavailable (more secure). If false,
+	// requests are allowed with degraded rate limiting (fail-open with logging).
+	FailClosed        bool
+	// DegradedLimit is the request limit per minute to apply when rate limiter
+	// is unavailable and FailClosed is false. Set to 0 to disable degraded limiting.
+	DegradedLimit     int
 }
 
 // RateLimit returns a middleware function that enforces rate limits.
@@ -165,360 +118,751 @@ func RateLimit(cfg *RateLimitConfig) func(http.Handler) http.Handler {
 
 			// Check if IP should be skipped
 			clientIP := getClientIP(r)
+			userID := sharedcontext.GetUserID(r.Context())
 			for _, skipIP := range cfg.SkipIPs {
 				if clientIP == skipIP {
-					setRateLimitHeaders(w, &ratelimit.CheckResult{
-						Allowed:    true,
-						IsBypassed: true,
-					})
+--- internal/middleware/cookie_auth_test.go ---
+// Package middleware provides tests for cookie authentication middleware.
+package middleware
+
+import (
+	"net/http"
+	"os"
+	"testing"
+	"time"
+)
+
+func TestDefaultCookieSecurity(t *testing.T) {
+	security := DefaultCookieSecurity()
+
+	if !security.Secure {
+		t.Error("DefaultCookieSecurity() should set Secure=true")
+	}
+	if !security.HttpOnly {
+		t.Error("DefaultCookieSecurity() should set HttpOnly=true")
+	}
+	if security.SameSite != http.SameSiteLaxMode {
+		t.Errorf("DefaultCookieSecurity() SameSite = %v, want SameSiteLaxMode", security.SameSite)
+	}
+	if security.Path != "/" {
+		t.Errorf("DefaultCookieSecurity() Path = %v, want /", security.Path)
+	}
+}
+
+func TestProductionCookieSecurity(t *testing.T) {
+	security := ProductionCookieSecurity()
+
+	if !security.Secure {
+		t.Error("ProductionCookieSecurity() MUST set Secure=true")
+	}
+	if !security.HttpOnly {
+		t.Error("ProductionCookieSecurity() MUST set HttpOnly=true")
+	}
+	if security.SameSite != http.SameSiteStrictMode {
+		t.Errorf("ProductionCookieSecurity() SameSite = %v, want SameSiteStrictMode for stricter CSRF protection", security.SameSite)
+	}
+	if security.Path != "/" {
+		t.Errorf("ProductionCookieSecurity() Path = %v, want /", security.Path)
+	}
+}
+
+func TestDevelopmentCookieSecurity(t *testing.T) {
+	security := DevelopmentCookieSecurity()
+
+	if security.Secure {
+		t.Error("DevelopmentCookieSecurity() should allow HTTP (Secure=false)")
+	}
+	if !security.HttpOnly {
+		t.Error("DevelopmentCookieSecurity() should still set HttpOnly=true")
+	}
+	if security.SameSite != http.SameSiteLaxMode {
+		t.Errorf("DevelopmentCookieSecurity() SameSite = %v, want SameSiteLaxMode", security.SameSite)
+	}
+}
+
+func TestEnvIsProduction(t *testing.T) {
+	// Save original env values
+--- internal/agent/types.go ---
+// Package agent provides shared types for Windows Print Agent communication.
+package agent
+
+import (
+	"encoding/json"
+	"time"
+)
+
+// PrinterConnectionType represents how a printer is connected.
+type PrinterConnectionType string
+
+const (
+	// ConnectionLocal indicates a locally connected printer (USB, LPT, etc.)
+	ConnectionLocal PrinterConnectionType = "local"
+	// ConnectionNetwork indicates a network-connected printer
+	ConnectionNetwork PrinterConnectionType = "network"
+	// ConnectionShared indicates a shared printer from another machine
+	ConnectionShared PrinterConnectionType = "shared"
+	// ConnectionWSD indicates a Web Services for Devices printer
+	ConnectionWSD PrinterConnectionType = "wsd"
+	// ConnectionLPD indicates a Line Printer Daemon printer
+	ConnectionLPD PrinterConnectionType = "lpd"
+)
+
+// PrinterStatus represents the current status of a printer.
+type PrinterStatus string
+
+const (
+	// PrinterStatusIdle indicates the printer is ready and idle
+	PrinterStatusIdle PrinterStatus = "idle"
+	// PrinterStatusPrinting indicates the printer is currently printing
+	PrinterStatusPrinting PrinterStatus = "printing"
+	// PrinterStatusBusy indicates the printer is busy
+	PrinterStatusBusy PrinterStatus = "busy"
+	// PrinterStatusOffline indicates the printer is offline
+	PrinterStatusOffline PrinterStatus = "offline"
+	// PrinterStatusError indicates the printer has an error
+	PrinterStatusError PrinterStatus = "error"
+	// PrinterStatusOutOfPaper indicates the printer is out of paper
+	PrinterStatusOutOfPaper PrinterStatus = "out_of_paper"
+	// PrinterStatusLowToner indicates the printer has low toner
+	PrinterStatusLowToner PrinterStatus = "low_toner"
+	// PrinterStatusDoorOpen indicates the printer door is open
+	PrinterStatusDoorOpen PrinterStatus = "door_open"
+)
+
+// AgentStatus represents the current status of an agent.
+type AgentStatus string
+
+const (
+	// AgentStatusOnline indicates the agent is online and operational
+	AgentStatusOnline AgentStatus = "online"
+	// AgentStatusOffline indicates the agent is offline
+	AgentStatusOffline AgentStatus = "offline"
+	// AgentStatusError indicates the agent has encountered an error
+	AgentStatusError AgentStatus = "error"
+	// AgentStatusMaintenance indicates the agent is under maintenance
+	AgentStatusMaintenance AgentStatus = "maintenance"
+	// AgentStatusInitializing indicates the agent is initializing
+	AgentStatusInitializing AgentStatus = "initializing"
+--- internal/auth/password/password.go ---
+// Package password provides secure password hashing using Argon2id.
+package password
+
+import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"strings"
+
+	"golang.org/x/crypto/argon2"
+)
+
+var (
+	// ErrMismatchedHashAndPassword is returned when a password doesn't match its hash.
+	ErrMismatchedHashAndPassword = errors.New("password does not match")
+	// ErrInvalidHashFormat is returned when the hash format is invalid.
+	ErrInvalidHashFormat = errors.New("invalid hash format")
+	// ErrInvalidHashVersion is returned when the hash version is not supported.
+	ErrInvalidHashVersion = errors.New("invalid hash version")
+)
+
+// Hash represents a password hash with its parameters.
+type Hash struct {
+	Version  int
+	Memory   uint32
+	Time     uint32
+	Threads  uint8
+	KeyLen   uint32
+	SaltLen  uint32
+	Salt     []byte
+	Hash     []byte
+}
+
+// String returns the string representation of the hash.
+func (h *Hash) String() string {
+	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
+		h.Version,
+		h.Memory,
+		h.Time,
+		h.Threads,
+		base64.RawStdEncoding.EncodeToString(h.Salt),
+		base64.RawStdEncoding.EncodeToString(h.Hash),
+	)
+}
+
+// Default parameters for Argon2id (OWASP recommendations as of 2024).
+var (
+	// DefaultMemory is the default memory cost in KiB (64 MiB).
+	DefaultMemory = uint32(64 * 1024)
+	// DefaultIterations is the default number of iterations.
+	DefaultIterations = uint32(3)
+	// DefaultThreads is the default parallelism degree.
+	DefaultThreads = uint8(4)
+	// DefaultKeyLen is the default derived key length in bytes.
+	DefaultKeyLen = uint32(32)
+	// DefaultSaltLen is the default salt length in bytes.
+	DefaultSaltLen = uint32(16)
+)
+--- internal/auth/password/password_test.go ---
+// Package password provides tests for secure password hashing using Argon2id.
+package password
+
+import (
+	"strings"
+	"testing"
+
+	"golang.org/x/crypto/argon2"
+)
+
+func TestDefaultParameters(t *testing.T) {
+	if DefaultMemory != 64*1024 {
+		t.Errorf("DefaultMemory = %d, want %d", DefaultMemory, 64*1024)
+	}
+	if DefaultIterations != 3 {
+		t.Errorf("DefaultIterations = %d, want %d", DefaultIterations, 3)
+	}
+	if DefaultThreads != 4 {
+		t.Errorf("DefaultThreads = %d, want %d", DefaultThreads, 4)
+	}
+	if DefaultKeyLen != 32 {
+		t.Errorf("DefaultKeyLen = %d, want %d", DefaultKeyLen, 32)
+	}
+	if DefaultSaltLen != 16 {
+		t.Errorf("DefaultSaltLen = %d, want %d", DefaultSaltLen, 16)
+	}
+}
+
+func TestNewHasher(t *testing.T) {
+	memory := uint32(32 * 1024)
+	time := uint32(2)
+	threads := uint8(2)
+	keyLen := uint32(24)
+	saltLen := uint32(12)
+
+	hasher := NewHasher(memory, time, threads, keyLen, saltLen)
+
+	if hasher.memory != memory {
+		t.Errorf("NewHasher() memory = %d, want %d", hasher.memory, memory)
+	}
+	if hasher.time != time {
+		t.Errorf("NewHasher() time = %d, want %d", hasher.time, time)
+	}
+	if hasher.threads != threads {
+		t.Errorf("NewHasher() threads = %d, want %d", hasher.threads, threads)
+	}
+	if hasher.keyLen != keyLen {
+		t.Errorf("NewHasher() keyLen = %d, want %d", hasher.keyLen, keyLen)
+	}
+	if hasher.saltLen != saltLen {
+		t.Errorf("NewHasher() saltLen = %d, want %d", hasher.saltLen, saltLen)
+	}
+}
+
+func TestDefaultHasher(t *testing.T) {
+	hasher := DefaultHasher()
+
+	if hasher.memory != DefaultMemory {
+		t.Errorf("DefaultHasher() memory = %d, want %d", hasher.memory, DefaultMemory)
+	}
+--- internal/auth/saml/saml.go ---
+// Package saml provides SAML 2.0 SSO integration for OpenPrint authentication.
+// This enables enterprise single sign-on with identity providers like Okta, Azure AD, and ADFS.
+//
+// SECURITY: SHA-1 signature support has been removed due to cryptographic vulnerabilities.
+// Only SHA-256 and stronger signature algorithms are supported.
+// IdPs using SHA-1 must be upgraded to use SHA-256 or stronger algorithms.
+package saml
+
+import (
+	"bytes"
+	"context"
+	cryptoRand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/sha512"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/xml"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// secureXMLDecoder wraps xml.Decoder with security restrictions.
+// Go's encoding/xml package does not process external entities by default,
+// but this wrapper provides explicit security controls for defense-in-depth.
+type secureXMLDecoder struct {
+	*xml.Decoder
+	maxBytes int64
+	bytesRead int64
+}
+
+// newSecureXMLDecoder creates a new secure XML decoder with size limits.
+// The decoder is configured to prevent XXE attacks by:
+// 1. Using a limited reader to enforce maximum XML size
+// 2. Disallowing DTD processing (already disabled by default in Go)
+// 3. Returning an error when size limit is exceeded (not silent truncation)
+func newSecureXMLDecoder(r io.Reader) *secureXMLDecoder {
+	const maxXMLSize = 10 * 1024 * 1024 // 10MB limit
+	return &secureXMLDecoder{
+		Decoder: xml.NewDecoder(&countingReader{r: r, remaining: maxXMLSize}),
+		maxBytes: maxXMLSize,
+	}
+}
+
+// Decode wraps the underlying Decoder's Decode method with size checking.
+// Returns an error if the XML document exceeds the maximum allowed size.
+func (d *secureXMLDecoder) Decode(v interface{}) error {
+	err := d.Decoder.Decode(v)
+	if err == io.EOF {
+		// Check if we hit the size limit by looking at the input offset
+		// If offset is near maxBytes, the EOF was likely due to hitting the limit
+		offset := d.Decoder.InputOffset()
+		if offset >= d.maxBytes-100 {
+			// We hit the size limit with some margin for the final read
+			return fmt.Errorf("XML document exceeds maximum size of %d bytes", d.maxBytes)
+--- internal/auth/saml/saml_test.go ---
+// Package saml provides tests for SAML 2.0 SSO integration.
+package saml
+
+import (
+	"bytes"
+	"encoding/xml"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+)
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &Config{
+			EntityID: "https://sp.example.com",
+			SSOURL:   "https://idp.example.com/sso",
+			ACSURL:   "https://sp.example.com/acs",
+			SLOURL:   "https://idp.example.com/slo",
+		}
+
+		mgr, err := NewManager(cfg)
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+		}
+	})
+
+	t.Run("nil config", func(t *testing.T) {
+		_, err := NewManager(nil)
+		if err == nil {
+			t.Error("NewManager(nil) should return error")
+		}
+	})
+}
+
+func TestManager_Metadata(t *testing.T) {
+	cfg := &Config{
+		EntityID:     "https://sp.example.com",
+		SSOURL:       "https://idp.example.com/sso",
+		ACSURL:       "https://sp.example.com/acs",
+		SLOResponseURL: "https://sp.example.com/slo",
+	}
+
+	mgr, err := NewManager(cfg)
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+
+	metadata, err := mgr.Metadata()
+	if err != nil {
+		t.Fatalf("Metadata() error = %v", err)
+	}
+--- internal/auth/jwt/jwt_test.go ---
+// Package jwt provides tests for JWT token generation and validation.
+package jwt
+
+import (
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+func TestDefaultConfig(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		secret := "this-is-a-secure-secret-key-32-chars-long"
+		cfg, err := DefaultConfig(secret)
+
+		if err != nil {
+			t.Fatalf("DefaultConfig() error = %v", err)
+		}
+		if cfg.SecretKey != secret {
+			t.Errorf("DefaultConfig() SecretKey = %v, want %v", cfg.SecretKey, secret)
+		}
+		if cfg.AccessDuration != 15*time.Minute {
+			t.Errorf("DefaultConfig() AccessDuration = %v, want %v", cfg.AccessDuration, 15*time.Minute)
+		}
+		if cfg.RefreshDuration != MaxRefreshDuration {
+			t.Errorf("DefaultConfig() RefreshDuration = %v, want %v", cfg.RefreshDuration, MaxRefreshDuration)
+		}
+		if cfg.Issuer != "openprint.cloud" {
+			t.Errorf("DefaultConfig() Issuer = %v, want openprint.cloud", cfg.Issuer)
+		}
+	})
+
+	t.Run("secret key too short", func(t *testing.T) {
+		shortSecret := "short"
+		_, err := DefaultConfig(shortSecret)
+
+		if err == nil {
+			t.Error("DefaultConfig() with short secret should return error")
+		}
+		if !errors.Is(err, ErrSecretKeyTooShort) {
+			t.Errorf("Expected ErrSecretKeyTooShort, got: %v", err)
+		}
+	})
+}
+
+func TestNewManager(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		cfg, _ := DefaultConfig("this-is-a-secure-secret-key-32-chars-long")
+		mgr, err := NewManager(cfg)
+
+		if err != nil {
+			t.Fatalf("NewManager() error = %v", err)
+		}
+		if mgr == nil {
+			t.Fatal("NewManager() returned nil")
+		}
+		if mgr.config != cfg {
+			t.Error("NewManager() config not set correctly")
+--- internal/auth/jwt/jwt.go ---
+// Package jwt provides JWT token generation and validation for OpenPrint authentication.
+package jwt
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+const (
+	// MinSecretKeyLength is the minimum required length for JWT secret keys (32 bytes = 256 bits).
+	MinSecretKeyLength = 32
+	// MaxRefreshDuration is the maximum allowed refresh token duration (48 hours for security).
+	MaxRefreshDuration = 48 * time.Hour
+)
+
+var (
+	// ErrInvalidToken is returned when a token is invalid.
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrExpiredToken is returned when a token has expired.
+	ErrExpiredToken = errors.New("token expired")
+	// ErrInvalidSigningMethod is returned when the signing method is invalid.
+	ErrInvalidSigningMethod = errors.New("invalid signing method")
+	// ErrSecretKeyTooShort is returned when the secret key is too short.
+	ErrSecretKeyTooShort = errors.New("secret key must be at least 32 characters")
+)
+
+// Claims represents the JWT claims structure.
+type Claims struct {
+	UserID    string   `json:"user_id"`
+	Email     string   `json:"email"`
+	OrgID     string   `json:"org_id,omitempty"`
+	Role      string   `json:"role"`
+	TokenType string   `json:"token_type"` // "access" or "refresh"
+	Scopes    []string `json:"scopes,omitempty"`
+	jwt.RegisteredClaims
+}
+
+// TokenType represents the type of JWT token.
+type TokenType string
+
+const (
+	// AccessTokenType is for short-lived access tokens.
+	AccessTokenType TokenType = "access"
+	// RefreshTokenType is for long-lived refresh tokens.
+	RefreshTokenType TokenType = "refresh"
+)
+
+// Config holds JWT configuration.
+type Config struct {
+	SecretKey       string
+	AccessDuration  time.Duration
+	RefreshDuration time.Duration
+	Issuer          string
+	AllowedAudiences []string // Allowed audiences for JWT validation
+	// RequireAudienceValidation forces audience validation even if no allowed audiences are set.
+	// SECURITY: This defaults to true for security and cannot be disabled in production.
+HANDLERS: 
+--- internal/shared/ratelimit/middleware.go ---
+package ratelimit
+
+import (
+	"encoding/json"
+	"fmt"
+	"net"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
+
+// Middleware provides HTTP middleware for rate limiting.
+type Middleware struct {
+	limiter       *Limiter
+	skipPaths     []string
+	skipIPs       map[string]bool
+	extractUserID func(r *http.Request) string
+	extractOrgID  func(r *http.Request) string
+	extractRole   func(r *http.Request) string
+	extractAPIKey func(r *http.Request) string
+}
+
+// MiddlewareConfig holds configuration for rate limit middleware.
+type MiddlewareConfig struct {
+	Limiter       *Limiter
+	SkipPaths     []string
+	SkipIPs       []string
+	ExtractUserID func(r *http.Request) string
+	ExtractOrgID  func(r *http.Request) string
+	ExtractRole   func(r *http.Request) string
+	ExtractAPIKey func(r *http.Request) string
+}
+
+// NewMiddleware creates a new rate limit middleware.
+func NewMiddleware(cfg *MiddlewareConfig) *Middleware {
+	skipIPMap := make(map[string]bool)
+	for _, ip := range cfg.SkipIPs {
+		skipIPMap[ip] = true
+	}
+
+	return &Middleware{
+		limiter:       cfg.Limiter,
+		skipPaths:     cfg.SkipPaths,
+		skipIPs:       skipIPMap,
+		extractUserID: cfg.ExtractUserID,
+		extractOrgID:  cfg.ExtractOrgID,
+--- internal/shared/telemetry/middleware_test.go ---
+// Package telemetry provides tests for OpenTelemetry tracing and instrumentation.
+package telemetry
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"go.opentelemetry.io/otel/trace"
+)
+
+func TestInitTracer(t *testing.T) {
+	t.Run("no jaeger endpoint returns noop tracer", func(t *testing.T) {
+		shutdown, err := InitTracer("test-service", "1.0.0", "")
+
+		if err != nil {
+			t.Errorf("InitTracer() error = %v", err)
+		}
+		if shutdown == nil {
+			t.Error("InitTracer() shutdown should not be nil")
+		}
+
+		// Call shutdown to clean up
+		ctx := context.Background()
+		if err := shutdown(ctx); err != nil {
+			t.Errorf("shutdown() error = %v", err)
+		}
+	})
+
+	t.Run("with jaeger endpoint creates stdout tracer", func(t *testing.T) {
+		// Note: This test may fail if the environment doesn't support stdout tracer properly
+		// In a CI environment, this might need adjustment
+		shutdown, err := InitTracer("test-service", "1.0.0", "stdout")
+
+		if err != nil {
+			t.Logf("InitTracer() with stdout produced error (may be expected in some environments): %v", err)
+		}
+		if shutdown != nil {
+			ctx := context.Background()
+			shutdown(ctx)
+		}
+	})
+}
+
+func TestMiddleware(t *testing.T) {
+	t.Run("middleware creates span", func(t *testing.T) {
+--- internal/shared/telemetry/middleware.go ---
+// Package telemetry provides OpenTelemetry tracing and instrumentation for all services.
+package telemetry
+
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.31.0"
+	"go.opentelemetry.io/otel/trace"
+)
+
+const (
+	// ServiceNameKey is the attribute key for service name.
+	ServiceNameKey = attribute.Key("service.name")
+	// ServiceVersionKey is the attribute key for service version.
+	ServiceVersionKey = attribute.Key("service.version")
+	// ServiceInstanceIDKey is the attribute key for service instance ID.
+	ServiceInstanceIDKey = attribute.Key("service.instance.id")
+)
+
+// Tracer is a global tracer instance.
+var Tracer trace.Tracer
+
+// InitTracer initializes the OpenTelemetry tracer with OTLP/Jaeger exporter.
+// In production, configure OTEL_EXPORTER_OTLP_ENDPOINT or JAEGER_ENDPOINT.
+// For development without a collector, tracing is disabled (noop tracer).
+func InitTracer(serviceName, serviceVersion, jaegerEndpoint string) (func(context.Context) error, error) {
+	ctx := context.Background()
+
+	// Check for OTLP endpoint environment variable
+	otlpEndpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if otlpEndpoint == "" {
+		otlpEndpoint = os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+	}
+
+	var exporter tracesdk.SpanExporter
+	var err error
+--- internal/multi-tenant/middleware_test.go ---
+// Package multitenant provides tests for tenant middleware.
+package multitenant
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/middleware"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// TestTenantMiddleware tests the main tenant middleware.
+func TestTenantMiddleware(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         MiddlewareConfig
+		setupRequest   func() *http.Request
+		wantStatusCode int
+		wantContext    func(*testing.T, context.Context)
+		setupContext   func(context.Context) context.Context
+	}{
+		{
+			name: "skip path matches",
+			config: MiddlewareConfig{
+				SkipPaths: []string{"/health", "/metrics"},
+			},
+			setupRequest: func() *http.Request {
+				return httptest.NewRequest("GET", "/health", nil)
+			},
+			wantStatusCode: http.StatusOK,
+			wantContext: func(t *testing.T, ctx context.Context) {
+				// No tenant context should be set for skipped paths
+				_, err := GetTenantID(ctx)
+				assert.Error(t, err)
+			},
+		},
+		{
+			name: "skip path with prefix",
+			config: MiddlewareConfig{
+				SkipPaths: []string{"/public"},
+			},
+			setupRequest: func() *http.Request {
+				return httptest.NewRequest("GET", "/public/data", nil)
+--- internal/multi-tenant/middleware.go ---
+// Package multitenant provides multi-tenancy support for OpenPrint services.
+// This file contains middleware for tenant context propagation.
+package multitenant
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strings"
+
+	"github.com/openprint/openprint/internal/auth/roles"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+	"github.com/openprint/openprint/internal/shared/middleware"
+)
+
+// TenantExtractor is a function that extracts tenant information from a request.
+type TenantExtractor func(r *http.Request) (tenantID, tenantName string, role Role, isPlatformAdmin bool, err error)
+
+// MiddlewareConfig holds configuration for tenant middleware.
+type MiddlewareConfig struct {
+	// RequireTenant, when true, returns an error if tenant context cannot be established.
+	RequireTenant bool
+	// SkipPaths are URL paths that skip tenant validation.
+	SkipPaths []string
+	// PlatformAdminPaths are paths that require platform admin access.
+	PlatformAdminPaths []string
+	// TenantExtractor is a function to extract tenant information from the request.
+	TenantExtractor TenantExtractor
+}
+
+// TenantMiddleware creates middleware that extracts and validates tenant context from JWT claims.
+func TenantMiddleware(cfg MiddlewareConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if path should be skipped
+			for _, skipPath := range cfg.SkipPaths {
+				if strings.HasPrefix(r.URL.Path, skipPath) {
 					next.ServeHTTP(w, r)
 					return
 				}
 			}
 
-			// Check rate limit
-			result, err := cfg.Limiter.Check(r.Context(), req)
-			if err != nil {
-				// Log error but allow request on failure (fail open)
-				setRateLimitHeaders(w, &ratelimit.CheckResult{
-					Allowed:   true,
-					Limit:     0,
-					Remaining: -1,
-				})
-				next.ServeHTTP(w, r)
-				return
-			}
+			ctx := r.Context()
 
-			// Set rate limit headers
-			setRateLimitHeaders(w, result)
-
-			// Handle rate limit exceeded
-			if !result.Allowed {
-				if result.IsQueued {
-					respondQueued(w, result)
-					return
---- internal/middleware/validation.go ---
-// Package middleware provides HTTP middleware for input validation, rate limiting, and security.
-package middleware
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"regexp"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-
-	apperrors "github.com/openprint/openprint/internal/shared/errors"
-)
-
-// Context key type for storing values in request context.
-type contextKey string
-
-const (
-	// ValidationContextKey is the key used to store validated data in context.
-	ValidationContextKey contextKey = "validated_data"
-)
-
-// SanitizedString represents a string that has been sanitized.
-type SanitizedString string
-
-// ValidateEmail validates an email address format.
-func ValidateEmail(email string) error {
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
-	if !emailRegex.MatchString(email) {
-		return apperrors.New("invalid email format", http.StatusBadRequest)
-	}
-	return nil
-}
-
-// ValidateUUID validates a UUID string.
-func ValidateUUID(id string) error {
-	uuidRegex := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	if !uuidRegex.MatchString(id) {
-		return apperrors.New("invalid UUID format", http.StatusBadRequest)
-	}
-	return nil
-}
-
-// SanitizeString removes potentially dangerous characters from input.
-// It preserves alphanumeric characters, spaces, and common safe punctuation.
-func SanitizeString(input string) SanitizedString {
-	// Remove null bytes and control characters except tab, newline, carriage return
-	var result strings.Builder
-	for _, r := range input {
-		if r >= 32 && r != 127 || r == '\t' || r == '\n' || r == '\r' {
-			result.WriteRune(r)
-		}
-	}
-
-	// Remove potential SQL injection patterns
-	sanitized := result.String()
-	sanitized = strings.ReplaceAll(sanitized, "'", "''")
-	sanitized = strings.ReplaceAll(sanitized, ";", "")
-
-	// Remove potential XSS patterns
-	sanitized = stripScriptTags(sanitized)
-
-	return SanitizedString(sanitized)
-}
-
-// stripScriptTags removes script tags and related JavaScript patterns.
-func stripScriptTags(input string) string {
-	// Remove script tags
-	scriptRegex := regexp.MustCompile(`(?i)<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>`)
-	input = scriptRegex.ReplaceAllString(input, "")
-
-	// Remove on* event handlers (onclick, onload, etc.)
-	eventRegex := regexp.MustCompile(`(?i)\s+on\w+\s*=\s*["'][^"']*["']`)
-	input = eventRegex.ReplaceAllString(input, "")
-
-	// Remove javascript: protocol
-	jsProtocolRegex := regexp.MustCompile(`(?i)javascript:\s*\S*`)
---- internal/shared/ratelimit/alert.go ---
-package ratelimit
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"sync"
-	"time"
-)
-
-// AlertManager handles violation alerts and notifications.
-type AlertManager struct {
-	redis         *RedisClient
-	alertChannels []AlertChannel
-	mu            sync.RWMutex
-
-	// Alert aggregation settings
-	aggregateWindow time.Duration
-	aggregateMax    int
-}
-
-// AlertChannel defines an interface for sending alerts.
-type AlertChannel interface {
-	Send(ctx context.Context, alert *Alert) error
-}
-
-// Alert represents a rate limit violation alert.
-type Alert struct {
-	ID          string                 `json:"id"`
-	Type        string                 `json:"type"`        // "violation", "circuit_open", "quota_exceeded"
-	Severity    string                 `json:"severity"`    // "low", "medium", "high", "critical"
-	PolicyID    string                 `json:"policy_id"`
-	PolicyName  string                 `json:"policy_name"`
-	Identifier  string                 `json:"identifier"`
-	IdentifierType string              `json:"identifier_type"`
-	Path        string                 `json:"path"`
-	Method      string                 `json:"method"`
-	Current     int64                  `json:"current"`
-	Limit       int64                  `json:"limit"`
-	Message     string                 `json:"message"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt   time.Time              `json:"created_at"`
-}
-
-// NewAlertManager creates a new alert manager.
-func NewAlertManager(redis *RedisClient) *AlertManager {
-	am := &AlertManager{
-		redis:          redis,
-		alertChannels:  make([]AlertChannel, 0),
-		aggregateWindow: time.Minute,
-		aggregateMax:   100,
-	}
-
-	return am
-}
-
-// SendViolationAlert sends an alert for a rate limit violation.
-func (am *AlertManager) SendViolationAlert(ctx context.Context, req *Request, policy *Policy, current, limit int64) error {
-	if am == nil {
-		return nil
-	}
-
-	alert := &Alert{
-		ID:             generateID(),
-		Type:           "violation",
-		Severity:       policy.Severity,
-		PolicyID:       policy.ID,
-		PolicyName:     policy.Name,
-		Identifier:     req.Identifier,
-		IdentifierType: req.Type,
-		Path:           req.Path,
-		Method:         req.Method,
-		Current:        current,
-		Limit:          limit,
-		Message:        fmt.Sprintf("Rate limit exceeded: %d/%d requests", current, limit),
-		Metadata: map[string]interface{}{
-			"user_agent": req.Identifier,
-			"timestamp":  req.Timestamp.Format(time.RFC3339),
-		},
-		CreatedAt: time.Now(),
---- internal/shared/ratelimit/burst.go ---
-package ratelimit
-
-import (
-	"context"
-	"fmt"
-	"sync"
-	"time"
-)
-
-// BurstManager handles burst vs sustained rate limiting.
-// Burst allows temporary higher request rates before settling to sustained limits.
-type BurstManager struct {
-	redis *RedisClient
-	mu    sync.RWMutex
-
-	// In-memory burst token buckets for fast access
-	burstBuckets map[string]*burstBucket
-}
-
-// burstBucket tracks burst tokens for an identifier.
-type burstBucket struct {
-	tokens        int64
-	capacity      int64
-	lastRefill    time.Time
-	refillRate    int64         // tokens per second
-	sustainedRate int64         // sustained rate after burst
-	burstDuration time.Duration // how long burst lasts
-	windowStart   time.Time     // when burst window started
-	mu            sync.Mutex
-}
-
-// NewBurstManager creates a new burst manager.
-func NewBurstManager(redis *RedisClient) *BurstManager {
-	bm := &BurstManager{
-		redis:        redis,
-		burstBuckets: make(map[string]*burstBucket),
-	}
-
-	// Start cleanup goroutine
-	go bm.cleanup()
-
-	return bm
-}
-
-// CheckBurst checks if a burst request should be allowed.
-// Returns (allowed, remainingTokens, burstRemainingTime).
-func (bm *BurstManager) CheckBurst(ctx context.Context, key string, policy *Policy) (bool, int64, time.Duration, error) {
-	// Get or create burst bucket
-	bucket := bm.getBucket(key, policy)
-
-	bucket.mu.Lock()
-	defer bucket.mu.Unlock()
-
-	now := time.Now()
-
-	// Refill tokens based on time elapsed
-	bucket.refill(now)
-
-	// Check if in burst period
-	if bucket.inBurstPeriod(now) {
-		// Check burst tokens
-		if bucket.tokens > 0 {
-			bucket.tokens--
-			return true, bucket.tokens, time.Until(bucket.windowStart.Add(bucket.burstDuration)), nil
-		}
-		// Burst exhausted, check sustained rate
-		if bucket.sustainedRate > 0 && bucket.tokens >= 0 {
-			return false, bucket.tokens, time.Until(bucket.windowStart.Add(bucket.burstDuration)), nil
-		}
-		return false, bucket.tokens, time.Until(bucket.windowStart.Add(bucket.burstDuration)), nil
-	}
-
-	// Not in burst period, use sustained rate
-	if bucket.tokens > 0 {
-		bucket.tokens--
-		return true, bucket.tokens, 0, nil
-	}
-
-	return false, bucket.tokens, 0, nil
-}
---- internal/shared/ratelimit/bypass.go ---
-package ratelimit
-
-import (
-	"context"
-	"net"
-	"strings"
-	"sync"
-)
-
-// BypassManager handles trusted clients that bypass rate limiting.
-type BypassManager struct {
-	redis          *RedisClient
-	trustedAPIKeys map[string]*TrustedClient
-	trustedIPs     map[string]*TrustedClient
-	mu             sync.RWMutex
-}
-
-// NewBypassManager creates a new bypass manager.
-func NewBypassManager(apiKeys []string) *BypassManager {
-	bm := &BypassManager{
-		trustedAPIKeys: make(map[string]*TrustedClient),
-		trustedIPs:     make(map[string]*TrustedClient),
-	}
-
-	for _, key := range apiKeys {
-		bm.trustedAPIKeys[key] = &TrustedClient{
-			APIKey:  key,
-			IsActive: true,
-		}
-	}
-
-	return bm
-}
-
-// ShouldBypass checks if a request should bypass rate limiting.
-func (b *BypassManager) ShouldBypass(ctx context.Context, req *Request) bool {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	// Check API key
-	if req.APIKey != "" {
-		if client, ok := b.trustedAPIKeys[req.APIKey]; ok && client.IsActive {
-			return true
-		}
-	}
-
-	// Check IP address
-	if req.IP != "" {
-		if client, ok := b.trustedIPs[req.IP]; ok && client.IsActive {
-			return true
-		}
-
-		// Check IP ranges (CIDR notation)
-		for _, client := range b.trustedIPs {
-			if !client.IsActive {
-				continue
-			}
-			for _, ipRange := range client.IPWhitelist {
-				if b.ipInRange(req.IP, ipRange) {
-					return true
-				}
-			}
-		}
-	}
-
-	// Check for bypass token in request (from context)
-	// This allows internal services to bypass
-	if req.Priority >= 1000 {
-		return true
-	}
-
-	return false
-}
-
-// ipInRange checks if an IP is within a CIDR range.
-func (b *BypassManager) ipInRange(ip, cidr string) bool {
-	// Parse the IP address
-	checkIP := net.ParseIP(ip)
-	if checkIP == nil {
-		return false
-Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.
+			// Check if this is a platform admin only path
+			for _, adminPath := range cfg.PlatformAdminPaths {
+				if strings.HasPrefix(r.URL.Path, adminPath) {
+					userRole := middleware.GetRole(r)
+					// Use centralized role validation for security
+Check: SQL injection, XSS, CSRF, insecure JWT, weak crypto, missing auth, IDOR, data exposure. Be thorough.

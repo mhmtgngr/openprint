@@ -427,7 +427,7 @@ func DefaultRateLimitConfig(redisAddr string) *RateLimitConfig {
 			SkipPaths:       []string{"/health", "/metrics"},
 			SkipIPs:         []string{},
 			EnableByDefault: false,
-			FailClosed:      false,    // Default to fail-open for backward compatibility
+			FailClosed:      true,     // SECURITY: Fail-closed by default in production
 			DegradedLimit:   10,       // 10 requests per minute when degraded
 		}
 	}
@@ -437,7 +437,7 @@ func DefaultRateLimitConfig(redisAddr string) *RateLimitConfig {
 		SkipPaths:       []string{"/health", "/metrics", "/api/v1/docs"},
 		SkipIPs:         []string{"127.0.0.1", "::1"},
 		EnableByDefault: true,
-		FailClosed:      false,       // Default to fail-open for backward compatibility
+		FailClosed:      true,        // SECURITY: Fail-closed by default in production
 		DegradedLimit:   10,          // 10 requests per minute when degraded
 	}
 }

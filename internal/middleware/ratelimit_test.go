@@ -75,9 +75,9 @@ func TestRateLimitConfigDefaults(t *testing.T) {
 		t.Fatal("DefaultRateLimitConfig should never return nil")
 	}
 
-	// Verify security defaults
-	if cfg.FailClosed {
-		t.Error("FailClosed should default to false for backward compatibility")
+	// Verify security defaults - SECURE: FailClosed defaults to true for production security
+	if !cfg.FailClosed {
+		t.Error("FailClosed should default to true for production security")
 	}
 
 	if cfg.DegradedLimit <= 0 {
@@ -404,8 +404,10 @@ func TestDefaultRateLimitConfig(t *testing.T) {
 		t.Error("EnableByDefault should be false when Redis fails and limiter is nil")
 	}
 
-	if cfg.FailClosed {
-		t.Error("FailClosed should default to false for backward compatibility")
+	// SECURE: FailClosed defaults to true for production security
+	// Requests are blocked when rate limiter is unavailable
+	if !cfg.FailClosed {
+		t.Error("FailClosed should default to true for production security")
 	}
 
 	if cfg.DegradedLimit != 10 {
