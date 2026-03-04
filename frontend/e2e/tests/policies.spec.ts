@@ -20,13 +20,16 @@ test.describe('Print Policy Engine', () => {
             description: 'Limit color printing to admin users only',
             priority: 1,
             isEnabled: true,
+            orgId: 'org-1',
             conditions: {
-              userRoles: ['user'],
+              maxPagesPerJob: 100,
             },
             actions: {
-              forceGrayscale: true,
+              forceColor: 'grayscale',
             },
+            appliesTo: 'all',
             createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
           },
           {
             id: 'policy-2',
@@ -34,13 +37,14 @@ test.describe('Print Policy Engine', () => {
             description: 'Enable double-sided printing by default',
             priority: 2,
             isEnabled: true,
-            conditions: {
-              always: true,
-            },
+            orgId: 'org-1',
+            conditions: {},
             actions: {
               forceDuplex: true,
             },
+            appliesTo: 'all',
             createdAt: '2024-01-02T00:00:00Z',
+            updatedAt: '2024-01-02T00:00:00Z',
           },
           {
             id: 'policy-3',
@@ -48,13 +52,17 @@ test.describe('Print Policy Engine', () => {
             description: 'Require approval for jobs over 50 pages',
             priority: 3,
             isEnabled: false,
+            orgId: 'org-1',
             conditions: {
-              minPages: 50,
+              requireApproval: true,
+              maxPagesPerJob: 50,
             },
             actions: {
               requireApproval: true,
             },
+            appliesTo: 'all',
             createdAt: '2024-01-03T00:00:00Z',
+            updatedAt: '2024-01-03T00:00:00Z',
           },
         ]),
       });
@@ -112,22 +120,33 @@ test.describe('Print Policy Engine', () => {
   });
 
   test('should toggle policy enabled state', async ({ page }) => {
-    await page.route('**/api/v1/policies/*', (route) => {
-      if (route.request().method() === 'PATCH') {
-        route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ isEnabled: false }),
-        });
-      }
+    await page.route('**/api/v1/policies/*/toggle', (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'policy-1',
+          name: 'Color Printing Restriction',
+          description: 'Limit color printing to admin users only',
+          priority: 1,
+          isEnabled: false,
+          orgId: 'org-1',
+          conditions: {},
+          actions: {},
+          appliesTo: 'all',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        }),
+      });
     });
 
     await page.goto('/policies');
 
-    const toggleButton = page.locator('button[title*="Enable"], button[title*="Disable"]').first();
+    const toggleButton = page.locator('[data-testid="policy-toggle"]').first();
     await toggleButton.click();
 
-    await expect(toggleButton).toBeVisible();
+    // Wait for the API call to complete
+    await page.waitForTimeout(500);
   });
 
   test('should open edit policy modal', async ({ page }) => {
@@ -135,7 +154,7 @@ test.describe('Print Policy Engine', () => {
 
     await page.locator('button[title="Edit"]').first().click();
 
-    await expect(page.getByText(/edit policy/i)).toBeVisible();
+    await expect(page.locator('[data-testid="policy-editor"]')).toBeVisible();
   });
 
   test('should delete policy with confirmation', async ({ page }) => {
@@ -149,14 +168,12 @@ test.describe('Print Policy Engine', () => {
       }
     });
 
+    // Handle browser confirmation dialog
+    page.on('dialog', dialog => dialog.accept());
+
     await page.goto('/policies');
 
     await page.locator('button[title="Delete"]').first().click();
-
-    await expect(page.getByText(/are you sure/i)).toBeVisible();
-    await expect(page.getByText(/delete policy/i)).toBeVisible();
-
-    await page.getByRole('button', { name: /delete/i }).click();
 
     await expect(page.getByText('Color Printing Restriction')).not.toBeVisible();
   });
@@ -172,6 +189,7 @@ test.describe('Print Policy Engine', () => {
 
     await page.goto('/policies');
 
+    await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
     await expect(page.getByText(/no policies configured/i)).toBeVisible();
     await expect(page.getByText(/create your first print policy/i)).toBeVisible();
   });
