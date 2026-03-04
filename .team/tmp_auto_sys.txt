@@ -5,7 +5,8 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: 6a9ee27a [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+- Recent issues: 39d130d6 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+6a9ee27a [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 3338d78f [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 0544eaa1 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 341f64a2 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
@@ -24,7 +25,6 @@ bc0b5758 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 bd222d96 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 44b57b83 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 925cf8ed [AI Auto] fix_bug: Tests are failing - this is the highest priority i
-12a729a0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
