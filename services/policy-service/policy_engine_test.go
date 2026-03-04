@@ -241,9 +241,10 @@ func TestEngineGetFieldValue_UnknownField(t *testing.T) {
 
 func TestEngineAppliesToScope(t *testing.T) {
 	evalCtx := &EvaluationContext{
-		UserID:    "user123",
-		UserGroups: []string{"staff"},
-		PrinterID:  "printer1",
+		UserID:       "user123",
+		UserGroups:   []string{"staff"},
+		PrinterID:    "printer1",
+		DocumentType: "pdf",
 	}
 
 	tests := []struct {

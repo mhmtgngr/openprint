@@ -4,7 +4,10 @@
 -- This migration allows NULL organization_id values in the print_policies table,
 -- enabling global/system-wide policies that apply to all organizations.
 
--- First, update any NULL organization_id values in the scope JSONB to empty strings
+-- Step 1: Make the organization_id column nullable
+ALTER TABLE print_policies ALTER COLUMN organization_id DROP NOT NULL;
+
+-- Step 2: Update any NULL organization_id values in the scope JSONB to empty strings
 -- to maintain data consistency before making the column nullable
 UPDATE print_policies
 SET scope = jsonb_set(
@@ -14,23 +17,20 @@ SET scope = jsonb_set(
 )
 WHERE scope IS NOT NULL;
 
--- Drop the existing scope index for rebuild
+-- Step 3: Drop the existing scope index for rebuild
 DROP INDEX IF EXISTS idx_print_policies_scope;
 
--- Make organization_id in scope implicitly nullable by ensuring proper defaults
--- The scope is a JSONB column, so we're ensuring consistency at the JSON level
--- No direct ALTER TABLE needed for JSONB, but we document the change
-
--- Recreate the GIN index on scope with updated structure
+-- Step 4: Recreate the GIN index on scope with updated structure
 CREATE INDEX idx_print_policies_scope ON print_policies USING GIN(scope);
 
--- Add index for organization_id lookups within the JSONB scope
+-- Step 5: Add index for organization_id lookups within the JSONB scope
 CREATE INDEX idx_print_policies_scope_org_id ON print_policies((scope->>'organization_id')) WHERE scope->>'organization_id' IS NOT NULL AND scope->>'organization_id' != '';
 
--- Add comment documenting that NULL or empty organization_id means global policy
+-- Step 6: Add comment documenting that NULL or empty organization_id means global policy
+COMMENT ON COLUMN print_policies.organization_id IS 'Organization ID (nullable). NULL indicates a global/system-wide policy applicable to all organizations.';
 COMMENT ON COLUMN print_policies.scope IS 'JSON object defining policy scope (users, groups, printers, etc.). Empty or null organization_id indicates a global/system-wide policy applicable to all organizations.';
 
--- Add function to check if a policy is global
+-- Step 7: Add function to check if a policy is global
 CREATE OR REPLACE FUNCTION is_global_policy(policy_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -45,7 +45,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Add trigger to ensure only admins can create global policies
+-- Step 8: Add trigger to ensure only admins can create global policies
 -- This is a placeholder - actual implementation depends on the auth system
 CREATE OR REPLACE FUNCTION validate_global_policy()
 RETURNS TRIGGER AS $$
@@ -60,7 +60,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger for policy validation
+-- Step 9: Create trigger for policy validation
 DROP TRIGGER IF EXISTS validate_print_policy_trigger ON print_policies;
 CREATE TRIGGER validate_print_policy_trigger
     BEFORE INSERT OR UPDATE ON print_policies

@@ -200,6 +200,11 @@ func (r *Repository) Create(ctx context.Context, policy *Policy) error {
 	policy.UpdatedAt = time.Now()
 	policy.Version = 1
 
+	// Set default created_by if not provided (system user)
+	if policy.CreatedBy == "" {
+		policy.CreatedBy = "00000000-0000-0000-0000-000000000000"
+	}
+
 	rulesJSON, _ := json.Marshal(policy.Rules)
 	actionsJSON, _ := json.Marshal(policy.Actions)
 	scopeJSON, _ := json.Marshal(policy.Scope)
