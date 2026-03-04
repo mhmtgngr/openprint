@@ -1,5 +1,22 @@
-Dashboard Docker build now succeeds. Two fixes were made:
+The Docker build errors are now fixed. Here's a summary of the changes:
 
-1. **`.dockerignore`** - Added exception `!web/dashboard` after the `web/` exclusion line (line 60-61), allowing the dashboard source files to be copied during Docker build.
+## Fixed Issues
 
-2. **`Dockerfile.dashboard`** - Changed user/group IDs from 1000 to 1001 (line 26-27) to avoid conflict with existing GID 1000 in `node:20-alpine` base image.
+1. **`src/api/ratelimitApi.ts`** - Removed unused `PaginatedResponse` import
+
+2. **`src/pages/admin/RateLimitPolicies.tsx`**:
+   - Removed unused imports: `RateLimitWindow`, `RateLimitAction`, `RateLimitAlgorithm`
+   - Removed unused `deletingPolicy` state variable and its `setDeletingPolicy(undefined)` call
+
+3. **Created missing component files** in `src/components/ratelimit/`:
+   - `PolicyFormModal.tsx` - Modal for creating/editing rate limit policies
+   - `TestPolicyModal.tsx` - Modal for testing rate limit policies
+   - `PolicyViolationsPanel.tsx` - Panel for viewing policy violations
+
+The dashboard now builds successfully:
+```
+✓ 1096 modules transformed.
+✓ built in 8.40s
+```
+
+The Docker build should now pass.

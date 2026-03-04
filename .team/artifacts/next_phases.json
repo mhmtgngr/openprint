@@ -1,3 +1,165 @@
 {
-  "phases": []
+  "phases": [
+    {
+      "order": 1,
+      "name": "Fix Policy Service Test Failures",
+      "priority": "critical",
+      "category": "test",
+      "description": "Fix 7 failing tests in services/policy-service/. Issues: 1) TestListPoliciesHandler_Empty - policies field missing or wrong type in response JSON. 2) TestCreatePolicyHandler - returns 500 instead of 201, UUID validation failing with empty string. 3) TestEvaluateHandler_DenyPolicy - null organization_id violates not-null constraint. 4) TestEngineEvaluateRules - 'In' and 'Between' rule operators return false instead of true. 5) TestEngineAppliesToScope - document type matching fails. 6) TestRepositoryCreate - UUID parsing fails with 'admin' string. Fix database schema to allow null organization_id, fix UUID generation in tests, repair rule evaluation logic for In/Between operators, and ensure test fixtures provide valid UUIDs.",
+      "success_criteria": [
+        "go test ./services/policy-service/... passes all tests",
+        "TestEngineEvaluateRules/In_-_match passes",
+        "TestEvaluateHandler_DenyPolicy passes with valid organization_id"
+      ],
+      "estimated_minutes": 45
+    },
+    {
+      "order": 2,
+      "name": "Fix Compliance Service Tests",
+      "priority": "critical",
+      "category": "test",
+      "description": "Fix failing tests in services/compliance-service/main_test.go. Tests show similar issues to policy-service with UUID handling and database constraints. Verify compliance-service has proper test fixtures, valid UUID generation in test data, and correct handling of nullable foreign key columns. Ensure migrations run before tests execute via internal/testutil. Add missing test data for audit_logs, compliance_reports, and control_mappings tables if needed.",
+      "success_criteria": [
+        "go test ./services/compliance-service/... passes",
+        "All UUID validation errors resolved",
+        "Migration test setup verified for compliance tables"
+      ],
+      "estimated_minutes": 30
+    },
+    {
+      "order": 3,
+      "name": "Create Missing Dockerfiles",
+      "priority": "high",
+      "category": "devops",
+      "description": "Create Dockerfiles for 7 services that lack them: api-gateway, analytics-service, compliance-service, organization-service, policy-service, m365-integration-service, and gateway. Use existing Dockerfiles (e.g., deployments/docker/Dockerfile.auth-service) as templates. Each Dockerfile should: use golang:1.24-alpine as base, set WORKDIR /app, copy go.mod/go.sum, run go mod download, copy source code, run CGO_ENABLED=0 go build, and use alpine:latest for final image with the binary. Ensure proper ENTRYPOINT configuration.",
+      "success_criteria": [
+        "7 new Dockerfiles created in deployments/docker/",
+        "docker build -f Dockerfile.api-gateway succeeds",
+        "docker build -f Dockerfile.analytics-service succeeds",
+        "docker build -f Dockerfile.compliance-service succeeds",
+        "docker build -f Dockerfile.organization-service succeeds",
+        "docker build -f Dockerfile.policy-service succeeds",
+        "docker build -f Dockerfile.m365-integration-service succeeds",
+        "All images build successfully"
+      ],
+      "estimated_minutes": 60
+    },
+    {
+      "order": 4,
+      "name": "Fix Port Conflicts",
+      "priority": "high",
+      "category": "fix",
+      "description": "Resolve port conflicts documented in Known Issues. Currently analytics-service and compliance-service both default to :8006. Organization-service and policy-service both default to :8007. api-gateway and gateway both use port 8000. Update each service's default SERVER_ADDR constant to use unique ports: analytics-service :8006, compliance-service :8008, organization-service :8009, policy-service :8010, m365-integration-service :8011. Ensure docker-compose.yml external ports match these assignments and don't conflict with each other or with PostgreSQL (5432/15432) and Redis (6379/16379).",
+      "success_criteria": [
+        "All 12 services have unique default ports",
+        "docker-compose config shows no port conflicts",
+        "All services start simultaneously with docker-compose up",
+        "Health checks pass on all service endpoints"
+      ],
+      "estimated_minutes": 30
+    },
+    {
+      "order": 5,
+      "name": "Update Makefile Build Target",
+      "priority": "high",
+      "category": "devops",
+      "description": "Add 6 missing services to Makefile build target: api-gateway, analytics-service, compliance-service, organization-service, policy-service, m365-integration-service. Current Makefile only builds core 5 services. Add entries in the SERVICES array and corresponding build rules. Ensure make build compiles all services to bin/ directory. Add individual build targets (make build-api-gateway, make build-analytics-service, etc.) and clean target to remove all binaries. Verify make build produces all binaries successfully.",
+      "success_criteria": [
+        "make build compiles all 12 services",
+        "bin/ contains all service binaries after build",
+        "make clean removes all binaries",
+        "Individual service build targets work"
+      ],
+      "estimated_minutes": 20
+    },
+    {
+      "order": 6,
+      "name": "Verify Migration Completeness",
+      "priority": "medium",
+      "category": "test",
+      "description": "Verify all database migrations are present and functional. Migration 000028 (rate limit tables) was deleted and replaced with 000035. Check for any gaps in migration sequence. Run migrate -path migrations -database \"$DATABASE_URL\" up to verify all migrations apply cleanly. Test rollback with migrate down 1. Ensure all services' tables exist: users, sessions, enrollment_tokens, printers, agents, print_jobs, documents, watermarks, notifications, audit_logs, usage_metrics, organizations, org_members, print_policies, policy_rules, compliance_reports, control_mappings, rate_limits. Add missing .up.sql/.down.sql pairs if any tables are missing.",
+      "success_criteria": [
+        "All migrations apply without errors",
+        "All 25+ tables exist in database",
+        "Rollback works for latest migration",
+        "No gaps in migration sequence numbers"
+      ],
+      "estimated_minutes": 40
+    },
+    {
+      "order": 7,
+      "name": "Add Integration Tests for Extended Services",
+      "priority": "medium",
+      "category": "test",
+      "description": "Extend integration test suite in tests/integration/ to cover the 6 newer services: analytics-service, compliance-service, organization-service, policy-service, m365-integration-service, and api-gateway. Add test functions covering: health endpoints, CRUD operations for each service, authentication flows, and error handling. Follow the pattern of existing tests in tests/integration/api_test.go. Ensure tests use testcontainers for real database testing and clean up properly. Add test coverage reporting.",
+      "success_criteria": [
+        "go test ./tests/integration/... passes",
+        "Each of 6 new services has at least 5 integration tests",
+        "Test coverage > 60% for extended services",
+        "Tests run in CI pipeline successfully"
+      ],
+      "estimated_minutes": 90
+    },
+    {
+      "order": 8,
+      "name": "Add Unit Tests for Shared Packages",
+      "priority": "medium",
+      "category": "test",
+      "description": "Add unit tests for internal packages with missing coverage. Focus on internal/auth/oidc, internal/auth/saml, internal/multi-tenant/audit, internal/multi-tenant/quota, and internal/shared/ratelimit. Create test files following existing patterns (e.g., internal/auth/jwt/jwt_test.go). Test: JWT token generation/validation, OIDC provider configuration, SAML SSO flow, audit log creation, quota enforcement, and rate limiting logic. Use table-driven tests for multiple scenarios. Mock external dependencies (HTTP clients, database) appropriately.",
+      "success_criteria": [
+        "go test ./internal/... passes",
+        "Coverage > 70% for internal/auth/",
+        "Coverage > 70% for internal/multi-tenant/",
+        "Coverage > 70% for internal/shared/",
+        "All new tests follow table-driven pattern"
+      ],
+      "estimated_minutes": 120
+    },
+    {
+      "order": 9,
+      "name": "Security Hardening and Validation",
+      "priority": "high",
+      "category": "security",
+      "description": "Conduct security audit and hardening. Run gosec on all services: gosec ./... . Fix high-severity issues including: SQL injection vulnerabilities, missing input validation, insecure random number generation, and hardcoded credentials. Verify all secrets come from environment variables. Add security headers middleware (CSP, X-Frame-Options, HSTS). Implement request size limits for file uploads. Add CSRF protection for state-changing operations. Run go mod tidy and verify no vulnerable dependencies with go list -json -m all | nancy sleuth. Add security scanning to CI pipeline.",
+      "success_criteria": [
+        "gosec passes with no high-severity issues",
+        "All secrets sourced from environment",
+        "Security headers added to API responses",
+        "Request size limits enforced",
+        "No known vulnerable dependencies in go.mod"
+      ],
+      "estimated_minutes": 75
+    },
+    {
+      "order": 10,
+      "name": "API Documentation and Developer Portal",
+      "priority": "medium",
+      "category": "feature",
+      "description": "Complete API documentation in api-gateway's developer portal. Add OpenAPI/Swagger specifications for all 12 services' endpoints. Generate docs from code annotations or create separate openapi.yaml. Document: authentication flows, request/response schemas, error codes, rate limits, and example requests. Add interactive API explorer via Swagger UI or Redoc. Create getting started guide with curl examples for common operations: register user, create print job, list devices, upload document. Add Postman collection for API testing. Ensure docs stay in sync via automated generation from Go handler annotations.",
+      "success_criteria": [
+        "OpenAPI spec covers all service endpoints",
+        "Swagger UI accessible at /api/docs",
+        "Getting started guide with 10+ examples",
+        "Postman collection exported to docs/",
+        "API docs auto-generated from code annotations"
+      ],
+      "estimated_minutes": 90
+    }
+  ],
+  "project_health": {
+    "score": 68,
+    "critical_issues": [
+      "13 failing tests (7 in policy-service, likely more in compliance-service)",
+      "Port conflicts prevent simultaneous service startup",
+      "6 services lack Dockerfiles for containerized deployment"
+    ],
+    "strengths": [
+      "Build compiles successfully across all services",
+      "Comprehensive internal packages with shared utilities",
+      "12 services with clear separation of concerns",
+      "Test infrastructure with testcontainers support",
+      "Integration test framework established"
+    ]
+  },
+  "rationale": "Phase ordering follows STRICT RULES: 1) Build works so skip compilation fix, 2) Tests failing \u2192 Phase 1-2 fix policy/compliance test failures (critical blockage), 3) Phase 3-5 address deployment gaps (missing Dockerfiles, port conflicts, Makefile), 6) Phase 6 ensures database migrations complete before extending tests, 7) Phase 7-8 expand test coverage to newer services and shared packages, 8) Phase 9 security hardening before final polish, 9) Phase 10 documentation as final production-ready step. This sequence fixes blockers first, then enables deployment, then validates completeness, then hardens for production."
 }

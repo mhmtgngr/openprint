@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -47,6 +46,11 @@ func ValidateUUID(id string) error {
 
 // SanitizeString removes potentially dangerous characters from input.
 // It preserves alphanumeric characters, spaces, and common safe punctuation.
+//
+// SECURITY NOTE: This function only protects against XSS attacks by removing
+// script tags and dangerous HTML. It does NOT protect against SQL injection.
+// SQL injection prevention MUST be handled via parameterized queries in your
+// database layer. Never use this function as your sole SQLi defense.
 func SanitizeString(input string) SanitizedString {
 	// Remove null bytes and control characters except tab, newline, carriage return
 	var result strings.Builder
@@ -56,21 +60,17 @@ func SanitizeString(input string) SanitizedString {
 		}
 	}
 
-	// Remove potential SQL injection patterns
-	sanitized := result.String()
-	sanitized = strings.ReplaceAll(sanitized, "'", "''")
-	sanitized = strings.ReplaceAll(sanitized, ";", "")
-
-	// Remove potential XSS patterns
-	sanitized = stripScriptTags(sanitized)
+	// Remove potential XSS patterns (script tags, event handlers, etc.)
+	sanitized := stripScriptTags(result.String())
 
 	return SanitizedString(sanitized)
 }
 
 // stripScriptTags removes script tags and related JavaScript patterns.
+// Uses multiple regex patterns since Go's RE2 doesn't support lookarounds.
 func stripScriptTags(input string) string {
-	// Remove script tags
-	scriptRegex := regexp.MustCompile(`(?i)<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>`)
+	// Remove script tags (case insensitive)
+	scriptRegex := regexp.MustCompile(`(?i)<script[^>]*>.*?</script>`)
 	input = scriptRegex.ReplaceAllString(input, "")
 
 	// Remove on* event handlers (onclick, onload, etc.)
@@ -82,6 +82,60 @@ func stripScriptTags(input string) string {
 	input = jsProtocolRegex.ReplaceAllString(input, "")
 
 	return input
+}
+
+// ValidateSQLIdentifier validates that a string is safe to use as a SQL identifier
+// (table name, column name, etc.). It checks against a whitelist of safe characters.
+// Returns an error if the identifier contains unsafe characters.
+//
+// IMPORTANT: For dynamic queries, prefer using a whitelist of known table/column names.
+// This function is a defense-in-depth measure, not a primary defense.
+func ValidateSQLIdentifier(identifier string) error {
+	// SQL identifiers should only contain alphanumeric characters and underscores
+	identifierRegex := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+	if !identifierRegex.MatchString(identifier) {
+		return apperrors.New("invalid SQL identifier", http.StatusBadRequest)
+	}
+
+	// Check for SQL keywords
+	upperIdent := strings.ToUpper(identifier)
+	sqlKeywords := []string{
+		"SELECT", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER",
+		"TRUNCATE", "UNION", "EXEC", "EXECUTE", "SCRIPT", "DECLARE",
+	}
+	for _, keyword := range sqlKeywords {
+		if upperIdent == keyword {
+			return apperrors.New("identifier cannot be SQL keyword", http.StatusBadRequest)
+		}
+	}
+
+	return nil
+}
+
+// IsSafeSQLValue checks if a string value appears to contain SQL injection patterns.
+// This is a heuristic check only - proper parameterized queries are still required.
+// Returns true if the value appears safe, false if it contains suspicious patterns.
+func IsSafeSQLValue(value string) bool {
+	// Check for common SQL injection patterns
+	suspiciousPatterns := []string{
+		"'", "--", "/*", "*/", "xp_", "sp_", "EXEC(", "EXECUTE(",
+		";--", ";/*", "1=1", "1 = 1", "OR 1=1", "OR 1 = 1",
+		"WAITFOR DELAY", "SLEEP(", "BENCHMARK(", "pg_sleep(",
+	}
+
+	upperValue := strings.ToUpper(value)
+	for _, pattern := range suspiciousPatterns {
+		if strings.Contains(upperValue, strings.ToUpper(pattern)) {
+			return false
+		}
+	}
+
+	// Check for quote-based injection
+	if strings.Count(value, "'") > 1 {
+		return false
+	}
+
+	return true
 }
 
 // SanitizeHTML sanitizes HTML input by removing dangerous tags and attributes.
@@ -348,30 +402,6 @@ func RateLimitMiddleware(config RateLimiterConfig) func(http.Handler) http.Handl
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-// getClientIP extracts the client IP from the request.
-func getClientIP(r *http.Request) string {
-	// Check X-Forwarded-For header first
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		// Take the first IP from the list
-		if idx := strings.Index(xff, ","); idx != -1 {
-			return strings.TrimSpace(xff[:idx])
-		}
-		return xff
-	}
-
-	// Check X-Real-IP header
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return xri
-	}
-
-	// Fall back to RemoteAddr
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return ip
 }
 
 // RequestSizeLimitConfig holds request size limits configuration.

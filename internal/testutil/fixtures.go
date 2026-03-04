@@ -296,3 +296,30 @@ func SetupTestFixture(ctx context.Context, db *pgxpool.Pool) (*TestFixture, erro
 		AssignmentID:   assignmentID,
 	}, nil
 }
+
+// ValidUUID returns a valid UUID string for use in tests.
+// This is useful when you need a valid UUID format but don't need a real database record.
+func ValidUUID() string {
+	return uuid.New().String()
+}
+
+// ValidPolicyID returns a valid UUID string formatted as a policy ID.
+// This is an alias for ValidUUID for semantic clarity in tests.
+func ValidPolicyID() string {
+	return ValidUUID()
+}
+
+// ValidUserID returns a valid UUID string formatted as a user ID.
+func ValidUserID() string {
+	return ValidUUID()
+}
+
+// ValidOrganizationID returns a valid UUID string formatted as an organization ID.
+func ValidOrganizationID() string {
+	return ValidUUID()
+}
+
+// ValidPrinterID returns a valid UUID string formatted as a printer ID.
+func ValidPrinterID() string {
+	return ValidUUID();
+}

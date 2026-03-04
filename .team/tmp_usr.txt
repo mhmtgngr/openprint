@@ -60,6 +60,67 @@ const (
 	EmailKey   contextKey = "email"
 	OrgIDKey   contextKey = "org_id"
 	RoleKey    contextKey = "role"
+--- internal/middleware/ratelimit.go ---
+// Package middleware provides rate limiting middleware integration for OpenPrint services.
+package middleware
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
+	"github.com/openprint/openprint/internal/shared/ratelimit"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
+
+// RateLimitConfig holds configuration for rate limit middleware.
+type RateLimitConfig struct {
+	Limiter           *ratelimit.Limiter
+	SkipPaths         []string
+	SkipIPs           []string
+	EnableByDefault   bool
+	// FailClosed determines behavior when rate limiter fails. If true, requests
+	// are blocked when the rate limiter is unavailable (more secure). If false,
+	// requests are allowed with degraded rate limiting (fail-open with logging).
+	FailClosed        bool
+	// DegradedLimit is the request limit per minute to apply when rate limiter
+	// is unavailable and FailClosed is false. Set to 0 to disable degraded limiting.
+	DegradedLimit     int
+}
+
+// RateLimit returns a middleware function that enforces rate limits.
+// It integrates with the existing OpenPrint middleware chain and uses
+// the shared ratelimit package for Redis-based sliding window rate limiting.
+func RateLimit(cfg *RateLimitConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip if limiter not configured
+			if cfg.Limiter == nil || !cfg.EnableByDefault {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Check skip paths
+			for _, path := range cfg.SkipPaths {
+				if strings.HasPrefix(r.URL.Path, path) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			// Build rate limit request from HTTP request
+			req := buildRateLimitRequest(r)
+
+			// Check if IP should be skipped
+			clientIP := getClientIP(r)
+			userID := sharedcontext.GetUserID(r.Context())
+			for _, skipIP := range cfg.SkipIPs {
+				if clientIP == skipIP {
 --- internal/middleware/cookie_auth_test.go ---
 // Package middleware provides tests for cookie authentication middleware.
 package middleware
@@ -548,68 +609,58 @@ type Config struct {
 	AllowedAudiences []string // Allowed audiences for JWT validation
 	// RequireAudienceValidation forces audience validation even if no allowed audiences are set.
 	// SECURITY: This defaults to true for security and cannot be disabled in production.
---- internal/auth/jwt/tenant_claims.go ---
-// Package jwt provides JWT token generation and validation for OpenPrint authentication.
-// This file contains tenant-specific JWT claims and utilities.
-package jwt
+HANDLERS: 
+--- internal/shared/ratelimit/middleware.go ---
+package ratelimit
 
 import (
-	"context"
-	"errors"
+	"encoding/json"
+	"fmt"
+	"net"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	sharedcontext "github.com/openprint/openprint/internal/shared/context"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
-var (
-	// ErrMissingTenantClaim is returned when the tenant claim is missing.
-	ErrMissingTenantClaim = errors.New("missing tenant claim in token")
-	// ErrInvalidTenantID is returned when the tenant ID is invalid.
-	ErrInvalidTenantID = errors.New("invalid tenant ID")
-)
-
-// TenantClaims extends the base Claims with tenant-specific information.
-type TenantClaims struct {
-	Claims
-	// TenantRole represents the user's role within the tenant.
-	TenantRole string `json:"tenant_role"`
-	// IsPlatformAdmin indicates if the user is a platform admin.
-	IsPlatformAdmin bool `json:"is_platform_admin"`
-	// TenantName is the human-readable name of the tenant.
-	TenantName string `json:"tenant_name,omitempty"`
-	// TenantStatus indicates the current status of the tenant.
-	TenantStatus string `json:"tenant_status,omitempty"`
+// Middleware provides HTTP middleware for rate limiting.
+type Middleware struct {
+	limiter       *Limiter
+	skipPaths     []string
+	skipIPs       map[string]bool
+	extractUserID func(r *http.Request) string
+	extractOrgID  func(r *http.Request) string
+	extractRole   func(r *http.Request) string
+	extractAPIKey func(r *http.Request) string
 }
 
-// ContextKey type alias for compatibility with existing code.
-// All new code should use sharedcontext package directly.
-type contextKey = sharedcontext.ContextKey
-
-// Context key constants - delegated to shared context package.
-const (
-	TenantIDKey       = sharedcontext.TenantIDKey
-	TenantRoleKey     = sharedcontext.TenantRoleKey
-	IsPlatformAdminKey = sharedcontext.IsPlatformAdminKey
-)
-
-// GenerateTenantTokenPair generates access and refresh tokens with tenant claims.
-func (m *Manager) GenerateTenantTokenPair(userID, email, role string, orgID string, tenantRole string, isPlatformAdmin bool, scopes []string) (accessToken, refreshToken string, err error) {
-	accessToken, err = m.GenerateTenantToken(userID, email, role, orgID, tenantRole, isPlatformAdmin, scopes, AccessTokenType)
-	if err != nil {
-		return "", "", err
-	}
-
-	refreshToken, err = m.GenerateTenantToken(userID, email, role, orgID, tenantRole, isPlatformAdmin, nil, RefreshTokenType)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessToken, refreshToken, nil
+// MiddlewareConfig holds configuration for rate limit middleware.
+type MiddlewareConfig struct {
+	Limiter       *Limiter
+	SkipPaths     []string
+	SkipIPs       []string
+	ExtractUserID func(r *http.Request) string
+	ExtractOrgID  func(r *http.Request) string
+	ExtractRole   func(r *http.Request) string
+	ExtractAPIKey func(r *http.Request) string
 }
 
-// GenerateTenantToken generates a JWT token with tenant-specific claims.
-func (m *Manager) GenerateTenantToken(userID, email, role string, orgID string, tenantRole string, isPlatformAdmin bool, scopes []string, tokenType TokenType) (string, error) {
-	// Use the base GenerateToken method which already supports org_id
-HANDLERS: 
+// NewMiddleware creates a new rate limit middleware.
+func NewMiddleware(cfg *MiddlewareConfig) *Middleware {
+	skipIPMap := make(map[string]bool)
+	for _, ip := range cfg.SkipIPs {
+		skipIPMap[ip] = true
+	}
+
+	return &Middleware{
+		limiter:       cfg.Limiter,
+		skipPaths:     cfg.SkipPaths,
+		skipIPs:       skipIPMap,
+		extractUserID: cfg.ExtractUserID,
+		extractOrgID:  cfg.ExtractOrgID,
 --- internal/shared/telemetry/middleware_test.go ---
 // Package telemetry provides tests for OpenTelemetry tracing and instrumentation.
 package telemetry

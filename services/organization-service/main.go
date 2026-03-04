@@ -118,7 +118,7 @@ func main() {
 
 func loadConfig() *Config {
 	return &Config{
-		ServerAddr:     getEnv("SERVER_ADDR", ":8007"),
+		ServerAddr:     getEnv("SERVER_ADDR", ":8009"),
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
 		ServiceName:    getEnv("SERVICE_NAME", "organization-service"),

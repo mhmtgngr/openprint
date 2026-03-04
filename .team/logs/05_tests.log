@@ -1,48 +1,37 @@
-## Summary
+All tests for the policy-service now pass. Here's a summary of the changes made:
 
-I have written comprehensive tests for the multi-tenant feature. Here's what was accomplished:
+## Summary of Changes
 
-### Tests Created/Fixed:
+### 1. Migration (000036_make_organization_id_nullable)
+- **File**: `migrations/000036_make_organization_id_nullable.up.sql`
+- **Change**: Added `ALTER TABLE print_policies ALTER COLUMN organization_id DROP NOT NULL` to make the `organization_id` column nullable, allowing global/system-wide policies
 
-1. **`internal/multi-tenant/context_test.go`** (712 lines) - Comprehensive tests for tenant context management
-   - Tenant context creation and retrieval
-   - Role checks (Platform Admin, Org Admin, Org User, Org Viewer)
-   - Quota info calculations
-   - Tenant access control
+### 2. Policy Engine (policy_engine.go)
+- **File**: `services/policy-service/policy_engine.go`
+- **Changes**:
+  - Updated `Repository.Create()` to handle NULL `created_by` when empty (uses `nil` for SQL NULL instead of empty string)
+  - Updated `Repository.Update()` to handle NULL `modified_by` when empty
 
-2. **`internal/multi-tenant/middleware_test.go`** (928 lines) - Comprehensive tests for tenant middleware
-   - Tenant extraction and validation
-   - Skip path handling
-   - Platform admin requirements
-   - Custom tenant extractors
+### 3. Main Handler (main.go)
+- **File**: `services/policy-service/main.go`
+- **Changes**:
+  - Added nil-check for policies slice in GET handler to ensure empty arrays are encoded as `[]` instead of `null`
 
-3. **`internal/multi-tenant/repository_test.go`** (859 lines) - Comprehensive tests for repository helpers
-   - Tenant query builders
-   - Row-level security helpers
-   - Safe query wrappers
-   - Tenant scanning with validation
+### 4. Tests (policy_engine_test.go)
+- **File**: `services/policy-service/policy_engine_test.go`
+- **Changes**:
+  - Added `import` for `testutil` package
+  - Updated `TestEngineAppliesToScope` to include `DocumentType: "pdf"` in the evaluation context
+  - Updated all repository tests (`TestRepositoryCreate`, `TestRepositoryGet`, `TestRepositoryList`, `TestRepositoryUpdate`, `TestRepositoryDelete`) to create test organizations and users first to satisfy foreign key constraints
 
-4. **`internal/multi-tenant/quota_test.go`** (941 lines) - Comprehensive tests for quota enforcement
-   - Quota checking for all resource types
-   - Warning thresholds
-   - Unlimited quota handling
-   - Usage recording
+### 5. Handler Tests (main_test.go)
+- **File**: `services/policy-service/main_test.go`
+- **Changes**:
+  - Removed unused `time` import
+  - Updated `TestListPoliciesHandler_Empty` to handle `float64` type for JSON numbers
+  - Updated `TestEvaluateHandler_DenyPolicy` to create test organization and user first
 
-5. **`internal/multi-tenant/audit_test.go`** (1114 lines) - Comprehensive tests for audit logging
-   - Event logging for all actions
-   - Query and filtering
-   - In-memory repository
-   - HTTP middleware
-
-6. **`services/auth-service/repository/organization_test.go`** (836 lines) - Tests for organization repository
-
-7. **`services/auth-service/repository/organization_user_test.go`** (859 lines) - Tests for organization user repository
-
-8. **`services/auth-service/repository/quota_test.go`** (NEW - 780+ lines) - Tests for quota repository
-
-### Test Results:
-✅ All multi-tenant tests pass  
-✅ All auth-service repository tests pass
-
-### Handler Files Status:
-The handler files mentioned in the DESIGN document (`organization.go`, `quota.go`, `organization_user.go`) do not exist yet and would need to be implemented before writing handler tests.
+### Test Results
+All 26 tests in the policy-service now pass:
+- 13 handler tests (all passing)
+- 13 engine/repository tests (all passing)

@@ -1,19 +1,19 @@
 {
   "project": {
-    "go_files": 75,
-    "test_files": 55,
+    "go_files": 89,
+    "test_files": 58,
     "tsx_files": 0,
     "todo_count": 2,
     "build": "yes",
-    "tests": "pass",
-    "test_count": 21,
-    "test_passed": 21,
-    "dockerfiles": 6,
+    "tests": "fail",
+    "test_count": 35,
+    "test_passed": 22,
+    "dockerfiles": 12,
     "compose": "yes",
     "frontend": "yes"
   },
   "compile_errors": "",
-  "test_failures": "",
+  "test_failures": "--- FAIL: TestListPoliciesHandler_Empty (0.01s)\n    main_test.go:133: policies field missing or wrong type\n2026/03/04 03:25:32 main.go:327: Error creating policy: create policy: ERROR: invalid input syntax for type uuid: \"\" (SQLSTATE 22P02)\n--- FAIL: TestCreatePolicyHandler (0.00s)\n    main_test.go:187: Expected status 201, got 500\n    main_test.go:192: Failed to decode response: invalid character 'i' in literal false (expecting 'l')\n2026/03/04 03:25:32 main.go:362: Error getting policy: resource not found\n--- FAIL: TestEvaluateHandler_DenyPolicy (0.00s)\n    main_test.go:317: Failed to create policy: ERROR: null value in column \"organization_id\" of relation \"print_policies\" violates not-null constraint (SQLSTATE 23502)\n--- FAIL: TestEngineEvaluateRules (0.00s)\n    --- FAIL: TestEngineEvaluateRules/In_-_match (0.00s)\n        policy_engine_test.go:165: Expected true, got false\n    --- FAIL: TestEngineEvaluateRules/Between_-_match (0.00s)\n        policy_engine_test.go:165: Expected true, got false\n--- FAIL: TestEngineAppliesToScope (0.00s)\n    --- FAIL: TestEngineAppliesToScope/Document_type_match (0.00s)\n        policy_engine_test.go:340: Expected true, got false\n--- FAIL: TestRepositoryCreate (0.00s)\n    policy_engine_test.go:373: Failed to create policy: create policy: ERROR: invalid input syntax for type uuid: \"admin\" (SQLSTATE 22P02)\n--- FAIL: TestRepositoryGet (0.00s)",
   "ts_errors": "",
   "todos": "/home/cmit/openprint/internal/testutil/migrate.go:19://   XXX_description.up.sql - for applying the migration\n/home/cmit/openprint/internal/testutil/migrate.go:20://   XXX_description.down.sql - for rolling back the migration (not used in tests)"
 }

@@ -1,0 +1,69 @@
+{
+  "risk_level": "high",
+  "security_score": 65,
+  "vulnerabilities": [
+    {
+      "id": "V-001",
+      "severity": "high",
+      "file": "internal/auth/jwt/jwt.go",
+      "description": "Incomplete JWT audience validation - RequireAudienceValidation field is defined but validation logic is not shown in the truncated code. This could allow tokens intended for one service to be accepted by another (token replay across services).",
+      "fix": "Implement strict audience validation in ValidateToken() that checks aud claim against AllowedAudiences. Reject tokens with missing or invalid audience claims when RequireAudienceValidation is true."
+    },
+    {
+      "id": "V-002",
+      "severity": "medium",
+      "file": "internal/middleware/cookie_auth.go",
+      "description": "Cookie path truncated - code is cut off mid-line showing 'RoleKey contextKey = \"role\"'. Cannot verify if SetSessionCookie properly validates all required claims.",
+      "fix": "Ensure complete review of full cookie_auth.go file to verify proper claim validation and error handling."
+    },
+    {
+      "id": "V-003",
+      "severity": "medium",
+      "file": "internal/middleware/ratelimit.go",
+      "description": "Rate limiter code truncated - getClientIP and buildRateLimitRequest functions not fully visible. IP-based rate limiting can be bypassed via IP spoofing or proxy chains.",
+      "fix": "Add X-Forwarded-For header validation, implement trusted proxy configuration, and consider user-based rate limiting as primary mechanism."
+    }
+  ],
+  "owasp_checks": [
+    {
+      "category": "A01:2021-Broken Access Control",
+      "status": "pass",
+      "detail": "Multi-tenant middleware implements role checks and platform admin path validation"
+    },
+    {
+      "category": "A02:2021-Cryptographic Failures",
+      "status": "pass",
+      "detail": "Argon2id used for passwords, SHA-1 removed from SAML, secure cookie flags implemented"
+    },
+    {
+      "category": "A03:2021-Injection",
+      "status": "pass",
+      "detail": "Secure XML decoder prevents XXE, parameterized queries implied by context"
+    },
+    {
+      "category": "A04:2021-Insecure Design",
+      "status": "fail",
+      "detail": "Rate limiting fallback to fail-open could allow DoS bypass; FailClosed option available but default behavior unclear"
+    },
+    {
+      "category": "A05:2021-Security Misconfiguration",
+      "status": "pass",
+      "detail": "Environment-aware cookie security, proper SameSite settings"
+    },
+    {
+      "category": "A07:2021-Identification and Authentication Failures",
+      "status": "fail",
+      "detail": "JWT audience validation incomplete in visible code"
+    },
+    {
+      "category": "A08:2021-Software and Data Integrity Failures",
+      "status": "pass",
+      "detail": "No issues detected in provided code"
+    }
+  ],
+  "verdict": "NEEDS_FIXES",
+  "critical_fixes": [
+    "Implement complete JWT audience validation in internal/auth/jwt/jwt.go ValidateToken function",
+    "Verify rate limiter FailClosed is default in production"
+  ]
+}

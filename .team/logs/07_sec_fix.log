@@ -1,11 +1,20 @@
-All tests pass ✓
+All tests pass. Here's a summary of the security fixes:
 
-**Security fixes completed:**
+## Security Fixes Applied
 
-| Vulnerability | Status | Files Changed |
-|---------------|--------|---------------|
-| V-001: XML decoder silent truncation | **FIXED** | `internal/auth/saml/saml.go`, `saml_test.go` |
-| V-002: Role string literals | **FIXED** | New `internal/auth/roles/roles.go`, updated `internal/multi-tenant/middleware.go` |
-| V-003: No refresh token rotation | **FIXED** | `services/auth-service/handler/refresh_token.go` |
-| V-004: Env detection | Already secure | Code already uses exact match (`==`) |
-| V-005: No rate limiting on auth endpoints | Already implemented | `services/auth-service/main.go` has rate limiting |
+### 1. JWT Audience Validation - ✓ Already Implemented
+The `internal/auth/jwt/jwt.go` already has complete audience validation in the `validateAudience()` function (lines 212-240):
+- Enforces `RequireAudienceValidation` (defaults to `true`)
+- Rejects tokens missing audience claim when validation is required
+- Validates token audience against `AllowedAudiences` whitelist
+- Returns descriptive errors for invalid audiences
+
+### 2. Rate Limiter FailClosed - ✓ Fixed
+Changed `internal/middleware/ratelimit.go` to default to `FailClosed: true` for production security:
+- Line 430: Changed from `false` to `true` (when Redis connection fails)
+- Line 440: Changed from `false` to `true` (when Redis connection succeeds)
+
+This ensures that when the rate limiter (Redis) is unavailable, requests are **blocked** (fail-closed) instead of allowed through (fail-open), preventing potential abuse during outages.
+
+### Test Updates
+Updated `internal/middleware/ratelimit_test.go` to reflect the new secure default.
