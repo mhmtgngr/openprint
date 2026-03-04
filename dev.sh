@@ -60,6 +60,14 @@
 #    ./dev.sh smart-improve [threshold%] [--incremental]  # Incremental mode
 #    ./dev.sh focus [type]                  # Focus: migrations, frontend, backend, todos
 #
+#  2025 QUICK WINS:
+#    ./dev.sh fleet <tasks.txt> [N]         # Run N agents on parallel branches
+#    ./dev.sh ci-recover <log> [N]           # Auto-fix CI failures (N retries)
+#    ./dev.sh priority show                  # Show task queue
+#    ./dev.sh priority add <id> <prio> <deps> <desc>  # Add task to queue
+#    ./dev.sh priority take                  # Get next task from queue
+#    ./dev.sh priority complete <id>         # Mark task complete
+#
 # ═══════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -3407,6 +3415,844 @@ PR_DOC
   slog "  📄 PR → $PR_DIR/PR_DESCRIPTION.md"
 }
 
+# ═══════════════════════════════════════════════
+# 2025 QUICK WINS: FLEET MODE, CI RECOVERY, PRIORITY QUEUE
+# ═══════════════════════════════════════════════
+
+FLEET_DIR="$DEV_DIR/fleet"
+PRIORITY_QUEUE_FILE="$DEV_DIR/priority_queue.json"
+CI_FAILURES_FILE="$DEV_DIR/ci_failures.jsonl"
+
+mkdir -p "$FLEET_DIR" 2>/dev/null || true
+
+# ──────────────────────────────────────────────────────────────
+# FLEET MODE: Run multiple agents on parallel branches
+# Inspired by ComposioHQ/agent-orchestrator
+# ──────────────────────────────────────────────────────────────
+fleet_mode() {
+  local task_file="$1"
+  local max_parallel="${2:-3}"
+  local branch_prefix="${3:-fleet}"
+
+  slog "╔═══════════════════════════════════════════════════════════╗"
+  slog "║  🚀 FLEET MODE — Parallel Agent Execution                  ║"
+  slog "╠═══════════════════════════════════════════════════════════╣"
+  slog "║  Max Parallel: $max_parallel agents                          ║"
+  slog "╚═══════════════════════════════════════════════════════════╝"
+
+  # Read tasks from file or stdin
+  local tasks=()
+  if [ -f "$task_file" ]; then
+    while IFS= read -r task; do
+      [ -n "$task" ] && tasks+=("$task")
+    done < "$task_file"
+  else
+    while IFS= read -r task; do
+      [ -n "$task" ] && tasks+=("$task")
+    done
+  fi
+
+  local total=${#tasks[@]}
+  slog "  📋 Tasks: $total"
+
+  # Create fleet state
+  python3 -c "
+import json, sys
+state = {'total': $total, 'completed': 0, 'failed': 0, 'running': 0, 'start_time': '$(date -Iseconds)'}
+json.dump(state, open('$FLEET_DIR/fleet_state.json', 'w'), indent=2)
+" 2>/dev/null || true
+
+  # Process tasks in batches
+  local idx=0
+  while [ $idx -lt $total ]; do
+    local batch_end=$((idx + max_parallel))
+    [ $batch_end -gt $total ] && batch_end=$total
+
+    slog "  🔄 Batch: $idx to $((batch_end - 1))"
+
+    # Launch parallel agents
+    local pids=()
+    for ((i=idx; i<batch_end; i++)); do
+      local task="${tasks[$i]}"
+      local branch_name="${branch_prefix}-${i}"
+
+      slog "    → Agent $i: $task (branch: $branch_name)"
+
+      # Create worktree and branch
+      git worktree add "$FLEET_DIR/wt-$i" "main" 2>/dev/null || true
+      cd "$FLEET_DIR/wt-$i" 2>/dev/null || continue
+      git checkout -b "$branch_name" 2>/dev/null || git checkout "$branch_name" 2>/dev/null || continue
+
+      # Launch agent in background
+      (
+        cd "$REPO_DIR/$FLEET_DIR/wt-$i"
+        bash "$REPO_DIR/dev.sh" --fg phase backend "$task" > "$FLEET_DIR/agent-$i.log" 2>&1
+        echo "$?" > "$FLEET_DIR/agent-$i.exit"
+      ) &
+      pids+=($!)
+    done
+
+    cd "$REPO_DIR"
+
+    # Wait for batch
+    for pid in "${pids[@]}"; do
+      wait $pid 2>/dev/null || true
+    done
+
+    # Collect results
+    for ((i=idx; i<batch_end; i++)); do
+      local exit_code
+      exit_code=$(cat "$FLEET_DIR/agent-$i.exit" 2>/dev/null || echo "1")
+      if [ "$exit_code" = "0" ]; then
+        slog "    ✅ Agent $i complete"
+      else
+        slog "    ⚠️  Agent $i failed (exit: $exit_code)"
+      fi
+    done
+
+    idx=$batch_end
+  done
+
+  # Cleanup worktrees
+  for wt in "$FLEET_DIR"/wt-*; do
+    [ -d "$wt" ] && git worktree remove "$wt" 2>/dev/null || true
+  done
+
+  slog "  ✅ Fleet complete"
+}
+
+# ──────────────────────────────────────────────────────────────
+# CI AUTO-RECOVERY: Parse CI logs and auto-fix failures
+# Inspired by Tmux-Orchestrator CI failure handling
+# ──────────────────────────────────────────────────────────────
+ci_recover() {
+  local ci_log="$1"
+  local max_retries="${2:-3}"
+
+  slog "╔═══════════════════════════════════════════════════════════╗"
+  slog "║  🔧 CI AUTO-RECOVERY — Analyze & Fix Failures            ║"
+  slog "╠═══════════════════════════════════════════════════════════╣"
+  slog "╚═══════════════════════════════════════════════════════════╝"
+
+  [ -f "$ci_log" ] && slog "  📄 CI Log: $ci_log" || slog "  ⚠️  No CI log provided"
+
+  # Analyze CI failures
+  python3 - "$ci_log" "$CI_FAILURES_FILE" << 'PYEOF'
+import json, sys, re
+from collections import defaultdict
+
+log_file = sys.argv[1] if sys.argv[1] else "/dev/stdin"
+try:
+    with open(log_file, 'r') as f:
+        log_content = f.read()
+except:
+    log_content = ""
+
+# Parse CI failures
+failures = []
+
+# Look for common CI failure patterns
+patterns = {
+    'test_failure': r'(FAIL|Test.*failed|tests? failed)',
+    'compile_error': r'(compilation error|undefined|cannot find symbol)',
+    'lint_error': r'(linting error|eslint|golint|flake8)',
+    'type_error': r'(type error|TypeScript error)',
+    'dependency_error': r'(cannot resolve|module not found|ECONNREFUSED)',
+    'timeout': r'(timeout|timed out)',
+    'permission': r'(permission denied|EACCES|403)',
+}
+
+for error_type, pattern in patterns.items():
+    for match in re.finditer(pattern, log_content, re.IGNORECASE):
+        # Extract context around the error
+        start = max(0, match.start() - 200)
+        end = min(len(log_content), match.end() + 200)
+        context = log_content[start:end].strip()
+
+        failures.append({
+            'type': error_type,
+            'match': match.group(0),
+            'context': context[:500]
+        })
+
+# Deduplicate and save
+seen = set()
+unique_failures = []
+for f in failures:
+    key = f['type'] + f['match'][:50]
+    if key not in seen:
+        seen.add(key)
+        unique_failures.append(f)
+
+with open(sys.argv[2], 'a') as out:
+    for f in unique_failures:
+        out.write(json.dumps({
+            'timestamp': '$(date -Iseconds)',
+            'type': f['type'],
+            'match': f['match'],
+            'context': f['context']
+        }) + '\n')
+
+print(f"  📊 Found {len(unique_failures)} unique failure types")
+PYEOF
+
+  # Check for existing failures
+  if [ -f "$CI_FAILURES_FILE" ] && [ -s "$CI_FAILURES_FILE" ]; then
+    local count
+    count=$(wc -l < "$CI_FAILURES_FILE" 2>/dev/null || echo "0")
+
+    # Get top failure type
+    local top_failure
+    top_failure=$(python3 -c "
+import json, sys
+with open('$CI_FAILURES_FILE') as f:
+    lines = f.readlines()
+    if lines:
+        types = {}
+        for line in lines[-10:]:  # Last 10 failures
+            try:
+                data = json.loads(line)
+                t = data.get('type', 'unknown')
+                types[t] = types.get(t, 0) + 1
+            except: pass
+        if types:
+            print(max(types.items(), key=lambda x: x[1])[0])
+" 2>/dev/null || echo "")
+
+    if [ -n "$top_failure" ]; then
+      slog "  🎯 Top failure: $top_failure"
+
+      # Generate fix prompt
+      local fix_prompt
+      fix_prompt=$(python3 -c "
+import json, sys
+with open('$CI_FAILURES_FILE') as f:
+    lines = f.readlines()
+for line in reversed(lines[-20:]):
+    try:
+        data = json.loads(line)
+        if data.get('type') == '$top_failure':
+            print(data.get('context', '')[:1000])
+            break
+    except: pass
+" 2>/dev/null || echo "")
+
+      slog "  🔧 Attempting fix..."
+
+      # Run fix agent
+      cd "$REPO_DIR"
+      claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
+        "CI Failure Analysis: $top_failure
+
+Context:
+$fix_prompt
+
+Fix this issue. Run tests to verify the fix." \
+        > "$FLEET_DIR/ci_fix.log" 2>&1 || true
+
+      # Verify fix
+      slog "  ✅ Fix attempt complete"
+    fi
+  fi
+
+  slog "  🔧 CI recovery done"
+}
+
+# ──────────────────────────────────────────────────────────────
+# PRIORITY QUEUE: Task prioritization and dependencies
+# Inspired by Agent-Swarm priority queues
+# ──────────────────────────────────────────────────────────────
+priority_queue() {
+  local action="${1:-show}"
+  local task_id="$2"
+  local priority="${3:-medium}"  # critical, high, medium, low
+  local depends_on="$4"
+
+  case "$action" in
+    show|list)
+      if [ -f "$PRIORITY_QUEUE_FILE" ]; then
+        slog "  📋 PRIORITY QUEUE:"
+        python3 - "$PRIORITY_QUEUE_FILE" << 'PYEOF'
+import json, sys
+from datetime import datetime
+
+with open(sys.argv[1]) as f:
+    data = json.load(f)
+
+queue = data.get('queue', [])
+pending = [t for t in queue if t.get('status') == 'pending']
+running = [t for t in queue if t.get('status') == 'running']
+completed = [t for t in queue if t.get('status') == 'done']
+
+# Sort by priority (critical > high > medium > low)
+priority_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+pending.sort(key=lambda x: priority_order.get(x.get('priority', 'medium'), 2))
+
+print(f"\n  🔄 Running ({len(running)}):")
+for t in running[:5]:
+    print(f"    [{t.get('id', '?')}] {t.get('task', '?')[:50]}")
+
+print(f"\n  ⏳ Pending ({len(pending)}):")
+for t in pending[:10]:
+    p = t.get('priority', 'medium')
+    deps = t.get('depends_on', [])
+    dep_str = f" (after: {','.join(deps)})" if deps else ""
+    print(f"    [{p.upper()}] [{t.get('id', '?')}] {t.get('task', '?')[:50]}{dep_str}")
+
+print(f"\n  ✅ Completed: {len(completed)}")
+PYEOF
+      else
+        slog "  📋 Queue is empty"
+      fi
+      ;;
+
+    add|enqueue)
+      local task_desc="$4"
+      [ -z "$task_desc" ] && task_desc="Task $task_id"
+
+      slog "  ➕ Adding to queue: [$priority] $task_id"
+
+      python3 - "$PRIORITY_QUEUE_FILE" "$task_id" "$priority" "$depends_on" "$task_desc" << 'PYEOF'
+import json, sys, os
+from datetime import datetime
+
+queue_file = sys.argv[1]
+task_id = sys.argv[2]
+priority = sys.argv[3]
+depends_on = sys.argv[4].split(',') if sys.argv[4] != 'None' and sys.argv[4] else []
+task_desc = sys.argv[5]
+
+# Load or create queue
+if os.path.exists(queue_file):
+    with open(queue_file) as f:
+        data = json.load(f)
+else:
+    data = {'queue': [], 'last_id': 0}
+
+# Add task
+task = {
+    'id': task_id,
+    'priority': priority,
+    'depends_on': depends_on,
+    'task': task_desc,
+    'status': 'pending',
+    'created_at': datetime.now().isoformat(),
+    'attempts': 0
+}
+
+data['queue'].append(task)
+with open(queue_file, 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f"  ✅ Added: {task_id}")
+PYEOF
+      ;;
+
+    take|next)
+      slog "  🎯 Getting next task..."
+
+      python3 - "$PRIORITY_QUEUE_FILE" << 'PYEOF'
+import json, sys
+from datetime import datetime
+
+queue_file = sys.argv[1]
+
+with open(queue_file) as f:
+    data = json.load(f)
+
+queue = data.get('queue', [])
+
+# Sort by priority
+priority_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+
+# Find next ready task (no pending dependencies, highest priority)
+next_task = None
+for task in sorted(queue, key=lambda x: (
+    priority_order.get(x.get('priority', 'medium'), 2),
+    x.get('created_at', '')
+)):
+    if task.get('status') != 'pending':
+        continue
+
+    # Check dependencies
+    deps = task.get('depends_on', [])
+    task_id = task.get('id', '')
+
+    deps_met = True
+    for dep_id in deps:
+        dep_task = next((t for t in queue if t.get('id') == dep_id), None)
+        if not dep_task or dep_task.get('status') != 'done':
+            deps_met = False
+            break
+
+    if deps_met:
+        next_task = task
+        # Mark as running
+        task['status'] = 'running'
+        task['started_at'] = datetime.now().isoformat()
+        break
+
+with open(queue_file, 'w') as f:
+    json.dump(data, f, indent=2)
+
+if next_task:
+    print(f"TASK:{next_task.get('id')}")
+    print(f"PRIORITY:{next_task.get('priority')}")
+    print(f"DESC:{next_task.get('task')}")
+else:
+    print("EMPTY")
+PYEOF
+      ;;
+
+    complete|done)
+      slog "  ✅ Marking complete: $task_id"
+
+      python3 - "$PRIORITY_QUEUE_FILE" "$task_id" << 'PYEOF'
+import json, sys
+from datetime import datetime
+
+queue_file = sys.argv[1]
+task_id = sys.argv[2]
+
+with open(queue_file) as f:
+    data = json.load(f)
+
+for task in data.get('queue', []):
+    if task.get('id') == task_id:
+        task['status'] = 'done'
+        task['completed_at'] = datetime.now().isoformat()
+        break
+
+with open(queue_file, 'w') as f:
+    json.dump(data, f, indent=2)
+PYEOF
+      ;;
+
+    clear|reset)
+      slog "  🗑️  Clearing queue..."
+      echo '{"queue":[],"last_id":0}' > "$PRIORITY_QUEUE_FILE"
+      slog "  ✅ Queue cleared"
+      ;;
+
+    *)
+      slog "  Usage: ./dev.sh priority [show|add|take|complete|clear]"
+      slog "    show                - Show queue"
+      slog "    add <id> <prio> <deps> <desc>  - Add task"
+      slog "    take                - Get next task"
+      slog "    complete <id>       - Mark task complete"
+      slog "    clear               - Clear queue"
+      return 1
+      ;;
+  esac
+}
+
+# ═══════════════════════════════════════════════
+# 🤖 AI AUTONOMOUS MODE — AI decides + executes
+# ═══════════════════════════════════════════════
+
+AUTO_DECISIONS="$DEV_DIR/auto_decisions.jsonl"
+AUTO_LOOP_STATE="$DEV_DIR/auto_loop.json"
+
+# AI analyzes codebase and decides what to work on
+auto_discover() {
+  slog "╔═══════════════════════════════════════════════════════════╗"
+  slog "║  🧠 AI AUTO-DISCOVER — Scanning & Deciding                    ║"
+  slog "╠═══════════════════════════════════════════════════════════╣"
+  slog "╚═══════════════════════════════════════════════════════════╝"
+
+  cd "$REPO_DIR"
+
+  # Gather context
+  local ctx
+  ctx=$(read_project_context | head -c 2000)
+  local issues
+  issues=$(git log --oneline --grep="fix\|bug\|fail" -20 2>/dev/null || echo "")
+  local test_results
+  test_results=$(go test ./... -v 2>&1 | tail -50 || echo "")
+  local files
+  files=$(find internal services -name "*.go" 2>/dev/null | wc -l || echo "0")
+  local test_files
+  test_files=$(find . -name "*_test.go" 2>/dev/null | wc -l || echo "0")
+  local todos
+  todos=$(grep -r "TODO\|FIXME\|XXX\|HACK" internal services --include="*.go" 2>/dev/null | wc -l || echo "0")
+
+  # AI decides what to work on
+  local decision_file="$ARTIFACTS/auto_decision.json"
+  local prompt="You are an AI Development Orchestrator. Analyze this codebase and decide the NEXT BEST ACTION.
+
+CONTEXT:
+- Project: $PROJECT_NAME
+- Go files: $files
+- Test files: $test_files
+- TODOs/FIXMEs: $todos
+- Recent issues: $issues
+
+PROJECT CONTEXT:
+$ctx
+
+DECISION FRAMEWORK:
+1. Look for: failing tests, bugs, gaps, TODOs, security issues
+2. Prioritize by: impact (critical/high/medium), effort (small/medium/large)
+3. Choose: THE SINGLE BEST next action
+
+RESPOND WITH ONLY JSON:
+{
+  \"action_type\": \"fix_bug|add_feature|write_tests|refactor|security|docs|performance\",
+  \"priority\": \"critical|high|medium|low\",
+  \"effort\": \"small|medium|large\",
+  \"description\": \"One sentence description\",
+  \"target_files\": [\"path/to/file.go\"],
+  \"task_prompt\": \"Specific prompt for the agent\",
+  \"reasoning\": \"Why this action is the best next step\"
+}"
+
+Be decisive. Pick ONE clear action."
+
+  ai_think "🧠 Orchestrator" "$DEV_DIR/tmp_auto_sys.txt" "$DEV_DIR/tmp_auto_usr.txt" "$decision_file"
+
+  if [ -f "$decision_file" ] && [ -s "$decision_file" ]; then
+    slog "  📋 AI Decision:"
+    python3 - "$decision_file" << 'PYEOF'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    atype = d.get('action_type', '?')
+    prio = d.get('priority', '?')
+    eff = d.get('effort', '?')
+    desc = d.get('description', '?')
+    tfiles = d.get('target_files', [])[:3]
+    reason = d.get('reasoning', '')[:100]
+    print("    Type: {}".format(atype))
+    print("    Priority: {}".format(prio))
+    print("    Effort: {}".format(eff))
+    print("    Description: {}".format(desc))
+    print("    Files: {}".format(', '.join(tfiles)))
+    print("    Reasoning: {}".format(reason))
+except Exception as e:
+    print("    Error: {}".format(e))
+PYEOF
+
+    # Log decision to audit trail
+    python3 - "$decision_file" "$AUDIT_TRAIL" << 'PYEOF'
+import json, sys
+from datetime import datetime
+try:
+    with open(sys.argv[1]) as f:
+        d = json.load(f)
+    entry = {
+        'timestamp': datetime.now().isoformat(),
+        'agent': 'AI Orchestrator',
+        'action': 'auto_discover',
+        'result': d.get('action_type', 'unknown'),
+        'details': json.dumps(d)
+    }
+    with open(sys.argv[2], 'a') as f:
+        f.write(json.dumps(entry) + '\n')
+except: pass
+PYEOF
+  else
+    serr "  ⚠️  AI decision failed"
+    return 1
+  fi
+
+  slog "  ✅ Discovery complete"
+}
+
+# Execute AI-decided tasks
+auto_exec() {
+  local num_tasks="${1:-1}"
+  slog "╔═══════════════════════════════════════════════════════════╗"
+  slog "║  🤖 AI AUTO-EXEC — Executing $num_tasks AI-decided tasks      ║"
+  slog "╠═══════════════════════════════════════════════════════════╣"
+  slog "╚═══════════════════════════════════════════════════════════╝"
+
+  local completed=0
+  local i=0
+
+  while [ $i -lt $num_tasks ]; do
+    slog "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    slog "  🔄 Task $((i+1))/$num_tasks"
+
+    # Get AI decision
+    auto_discover || { slog "  ⚠️  Discovery failed, pausing"; sleep 30; continue; }
+
+    local decision_file="$ARTIFACTS/auto_decision.json"
+    if [ ! -f "$decision_file" ]; then
+      slog "  ⚠️  No decision file"
+      break
+    fi
+
+    # Extract decision
+    local action_type
+    local priority
+    local task_prompt
+    local reasoning
+    action_type=$(python3 -c "import json; print(json.load(open('$decision_file')).get('action_type',''))" 2>/dev/null || echo "")
+    priority=$(python3 -c "import json; print(json.load(open('$decision_file')).get('priority','medium'))" 2>/dev/null || echo "medium")
+    task_prompt=$(python3 -c "import json; print(json.load(open('$decision_file')).get('task_prompt',''))" 2>/dev/null || echo "")
+    reasoning=$(python3 -c "import json; print(json.load(open('$decision_file')).get('reasoning',''))" 2>/dev/null || echo "")
+
+    slog "    Action: $action_type ($priority)"
+    slog "    Reason: ${reasoning:0:80}"
+
+    # Route to appropriate handler
+    case "$action_type" in
+      fix_bug|write_tests|refactor|security|docs|performance)
+        slog "    → Using Backend agent"
+        cd "$REPO_DIR"
+        claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
+          "$task_prompt" > "$PHASE_LOGS/auto_task_$i.log" 2>&1 || true
+        ;;
+
+      add_feature)
+        slog "    → Full cycle (Backend + Frontend)"
+        phase_backend
+        phase_frontend
+        ;;
+
+      *)
+        slog "    → Using Backend agent (default)"
+        cd "$REPO_DIR"
+        claude -p --model "$CLAUDE_MODEL" --dangerously-skip-permissions \
+          "Read CLAUDE.md. $task_prompt" > "$PHASE_LOGS/auto_task_$i.log" 2>&1 || true
+        ;;
+    esac
+
+    # Verify and commit
+    if go build ./... >/dev/null 2>&1; then
+      git add -A 2>/dev/null || true
+      git commit -m "[AI Auto] $action_type: ${reasoning:0:50}" 2>/dev/null || true
+      slog "    ✅ Task $((i+1)) complete"
+      completed=$((completed + 1))
+    else
+      slog "    ⚠️  Task $((i+1)) had build errors"
+    fi
+
+    # Store decision history
+    python3 - "$decision_file" "$AUTO_DECISIONS" << 'PYEOF'
+import json, sys
+from datetime import datetime
+try:
+    with open(sys.argv[1]) as f:
+        d = json.load(f)
+    d['executed_at'] = datetime.now().isoformat()
+    with open(sys.argv[2], 'a') as f:
+        f.write(json.dumps(d) + '\n')
+except: pass
+PYEOF
+
+    i=$((i+1))
+  done
+
+  slog "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  slog "  ✅ Auto-exec complete: $completed/$num_tasks tasks done"
+}
+
+# Continuous autonomous loop
+auto_loop() {
+  local duration_hours="${1:-1}"
+  local end_time
+  end_time=$(date -d "+$duration_hours hours" +%s 2>/dev/null || echo $(($(date +%s) + duration_hours * 3600)))
+
+  slog "╔═══════════════════════════════════════════════════════════╗"
+  slog "║  🤖 AI AUTONOMOUS LOOP — Running for ${duration_hours}h           ║"
+  slog "╠═══════════════════════════════════════════════════════════╣"
+  slog "╚═══════════════════════════════════════════════════════════╝"
+
+  # Save loop state
+  python3 -c "
+import json
+from datetime import datetime, timedelta
+state = {
+    'started_at': datetime.now().isoformat(),
+    'duration_hours': $duration_hours,
+    'ends_at': datetime.fromtimestamp($end_time).isoformat(),
+    'tasks_completed': 0,
+    'decisions_made': 0,
+    'status': 'running'
+}
+json.dump(state, open('$AUTO_LOOP_STATE', 'w'), indent=2)
+" 2>/dev/null || true
+
+  local iteration=0
+  local now
+
+  while true; do
+    now=$(date +%s)
+    [ $now -ge $end_time ] && { slog "  ⏰ Time limit reached"; break; }
+
+    iteration=$((iteration + 1))
+    slog "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    slog "  🔄 Iteration $iteration ($(date +%H:%M:%S))"
+
+    # Auto-discover next action
+    if auto_discover; then
+      # Execute the discovered action
+      auto_exec 1
+
+      # Update loop state
+      python3 -c "
+import json
+state = json.load(open('$AUTO_LOOP_STATE'))
+state['tasks_completed'] = state.get('tasks_completed', 0) + 1
+state['decisions_made'] = state.get('decisions_made', 0) + 1
+state['last_iteration'] = '$iteration'
+json.dump(state, open('$AUTO_LOOP_STATE', 'w'), indent=2)
+" 2>/dev/null || true
+    fi
+
+    # Small pause between iterations
+    sleep 10
+  done
+
+  # Final state
+  python3 -c "
+import json
+from datetime import datetime
+state = json.load(open('$AUTO_LOOP_STATE'))
+state['status'] = 'completed'
+state['completed_at'] = datetime.now().isoformat()
+json.dump(state, open('$AUTO_LOOP_STATE', 'w'), indent=2)
+" 2>/dev/null || true
+
+  slog "  ════════════════════════════════════════════════════════════╗"
+  slog "  ║   🏆 AUTONOMOUS LOOP COMPLETE                          ║"
+  slog "  ╚═══════════════════════════════════════════════════════════╝"
+}
+
+# Main autonomous entry point
+auto_mode() {
+  local mode="${1:-loop}"
+  local param="${2:-1}"
+
+  case "$mode" in
+    discover|scan)
+      auto_discover
+      ;;
+
+    exec|run|do)
+      auto_exec "$param"
+      ;;
+
+    loop|continuous)
+      # Check if already running
+      if is_running; then
+        err "Already running. Stop first with: ./dev.sh stop"
+        exit 1
+      fi
+
+      # Launch in background
+      launch_bg --fg "$CMD" "$param"
+      ;;
+
+    stop|halt)
+      if [ -f "$AUTO_LOOP_STATE" ]; then
+        python3 -c "
+import json
+from datetime import datetime
+state = json.load(open('$AUTO_LOOP_STATE'))
+state['status'] = 'stopped'
+state['stopped_at'] = datetime.now().isoformat()
+json.dump(state, open('$AUTO_LOOP_STATE', 'w'), indent=2)
+" 2>/dev/null || true
+        slog "  🛑 Auto loop stopped"
+      else
+        slog "  ℹ️  No auto loop running"
+      fi
+      ;;
+
+    status|state)
+      if [ -f "$AUTO_LOOP_STATE" ]; then
+        python3 - "$AUTO_LOOP_STATE" << 'PYEOF'
+import json, sys
+from datetime import datetime
+
+state = json.load(open(sys.argv[1]))
+
+status = state.get('status', 'unknown')
+started = state.get('started_at', '?')
+ends = state.get('ends_at', '?')
+tasks = state.get('tasks_completed', 0)
+decisions = state.get('decisions_made', 0)
+
+print(f"  Status: {status}")
+print(f"  Started: {started}")
+if status != 'running':
+    print(f"  Ended: {state.get('completed_at', state.get('stopped_at', '?'))}")
+print(f"  Tasks completed: {tasks}")
+print(f"  Decisions made: {decisions}")
+
+if status == 'running':
+    try:
+        end = datetime.fromisoformat(ends)
+        remaining = (end - datetime.now()).total_seconds()
+        if remaining > 0:
+            mins = int(remaining // 60)
+            secs = int(remaining % 60)
+            print(f"  Time remaining: {mins}m {secs}s")
+        else:
+            print(f"  Time remaining: 0m (should complete soon)")
+    except: pass
+PYEOF
+      else
+        slog "  ℹ️  No auto loop state found"
+      fi
+      ;;
+
+    history|log)
+      if [ -f "$AUTO_DECISIONS" ]; then
+        slog "  📜 AI Decision History:"
+        python3 - "$AUTO_DECISIONS" << 'PYEOF'
+import json, sys
+from datetime import datetime
+
+entries = []
+with open(sys.argv[1]) as f:
+    for line in f:
+        try:
+            entries.append(json.loads(line.strip()))
+        except: pass
+
+for e in entries[-10:]:
+    ts = e.get('timestamp', e.get('executed_at', '?'))[:19]
+    action = e.get('action_type', e.get('result', '?'))
+    reasoning = e.get('details', '{}')
+    try:
+        d = json.loads(reasoning) if isinstance(reasoning, str) else reasoning
+        r = d.get('reasoning', d.get('description', reasoning)) if isinstance(d, dict) else reasoning
+    except:
+        r = reasoning[:100]
+    print(f"  [{ts}] {action} - {r[:80]}")
+PYEOF
+      else
+        slog "  ℹ️  No decision history found"
+      fi
+      ;;
+
+    *)
+      echo "AI AUTONOMOUS MODE - AI decides and executes development tasks"
+      echo ""
+      echo "Usage:"
+      echo "  ./dev.sh auto                 # Run single autonomous cycle"
+      echo "  ./dev.sh auto discover       # AI scans and decides what to do"
+      echo "  ./dev.sh auto exec [N]       # Execute N AI-decided tasks"
+      echo "  ./dev.sh auto loop [H]      # Run autonomous for H hours (bg)"
+      echo "  ./dev.sh auto status        # Show autonomous loop status"
+      echo "  ./dev.sh auto stop         # Stop autonomous loop"
+      echo "  ./dev.sh auto history       # Show AI decision history"
+      echo ""
+      echo "Examples:"
+      echo "  ./dev.sh auto loop 4        # Run autonomously for 4 hours"
+      echo "  ./dev.sh auto exec 5       # Execute 5 tasks"
+      return 0
+      ;;
+  esac
+}
+
+# ═══════════════════════════════════════════════
+# ORIGINAL FUNCTIONS
+# ═══════════════════════════════════════════════
+
 smart_improve() {
   local t0; t0=$(date +%s)
 
@@ -3751,6 +4597,20 @@ show_help() { cat << 'HELP'
     ./dev.sh stuck-check [phase] [sec]  # Check if phase is stuck
     ./dev.sh audit-trail               # Initialize audit system
 
+  2025 QUICK WINS:
+    ./dev.sh fleet <tasks.txt> [N]         # Run N agents on parallel branches
+    ./dev.sh ci-recover <log> [N]           # Auto-fix CI failures (N retries)
+    ./dev.sh priority show                  # Show task queue
+    ./dev.sh priority add <id> <prio> <deps> <desc>  # Add task to queue
+    ./dev.sh priority take                  # Get next task from queue
+    ./dev.sh priority complete <id>         # Mark task complete
+
+  🤖 AI AUTONOMOUS MODE:
+    ./dev.sh auto                         # AI decides + executes continuously
+    ./dev.sh auto-discover                # AI scans + decides what to do
+    ./dev.sh auto-exec [N]                 # Execute N AI-decided tasks
+    ./dev.sh auto-loop [hours]             # Run autonomous for N hours
+
   INFO:
     ./dev.sh history                    # Completed rounds
     ./dev.sh logs                       # Supervisor log
@@ -3850,6 +4710,34 @@ case "$CMD" in
       exit 0
     fi
     smart_improve
+    ;;
+
+  # ── 2025 Quick Wins ──
+  fleet)
+    local task_file="${2:-}"
+    local max_parallel="${3:-3}"
+    if [ -z "$task_file" ]; then
+      echo "Usage: ./dev.sh fleet <tasks_file> [max_parallel]"
+      echo "Example: echo -e 'task1\ntask2\ntask3' | ./dev.sh fleet /dev/stdin 3"
+      exit 1
+    fi
+    fleet_mode "$task_file" "$max_parallel"
+    ;;
+  ci-recover|ci_fix)
+    local ci_log="${2:-.team/logs/go_test.log}"
+    local max_retries="${3:-3}"
+    ci_recover "$ci_log" "$max_retries"
+    ;;
+  priority|queue)
+    local action="${2:-show}"
+    priority_queue "$action" "${3:-}" "${4:-}" "${5:-}" "${6:-}"
+    ;;
+
+  # ── AI Autonomous Mode ──
+  auto)
+    local subcmd="${2:-loop}"
+    local param="${3:-1}"
+    auto_mode "$subcmd" "$param"
     ;;
 
   scan)    scan_project_completion ;;

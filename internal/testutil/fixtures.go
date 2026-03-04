@@ -406,11 +406,22 @@ func CreateTestAuditEvent(ctx context.Context, db *pgxpool.Pool, userID string) 
 	id := uuid.New().String()
 
 	query := `
-		INSERT INTO audit_log (id, timestamp, event_type, category, user_id, user_name, resource_id, resource_type, action, outcome, ip_address)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO audit_log (id, user_id, organization_id, action, resource_type, resource_id, ip_address, user_agent, metadata)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	_, err := db.Exec(ctx, query, id, time.Now(), "user_login", "authentication", userID, "Test User", id, "user", "login", "success", "127.0.0.1")
+	// Get organization_id from user if provided, otherwise use a dummy org UUID
+	var orgID string
+	if userID != "" {
+		_ = db.QueryRow(ctx, "SELECT organization_id FROM users WHERE id = $1", userID).Scan(&orgID)
+	}
+	if orgID == "" {
+		orgID = uuid.New().String()
+	}
+
+	metadata, _ := json.Marshal(map[string]interface{}{"event_type": "user_login", "category": "authentication", "outcome": "success"})
+
+	_, err := db.Exec(ctx, query, id, userID, orgID, "login", "user", id, "127.0.0.1", "test-agent", metadata)
 	if err != nil {
 		return "", fmt.Errorf("create test audit event: %w", err)
 	}

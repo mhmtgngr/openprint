@@ -311,6 +311,8 @@ func (r *Repository) UpdateControlStatus(ctx context.Context, controlID string, 
 }
 
 // CreateAuditEvent creates a new audit event.
+// Note: This maps to the audit_log table which has a different schema than AuditEvent struct.
+// Fields like event_type, category, outcome are stored in the metadata JSONB field.
 func (r *Repository) CreateAuditEvent(ctx context.Context, event *AuditEvent) error {
 	event.ID = uuid.New().String()
 	event.Timestamp = time.Now()
@@ -319,20 +321,36 @@ func (r *Repository) CreateAuditEvent(ctx context.Context, event *AuditEvent) er
 	retentionDate := time.Now().AddDate(7, 0, 0)
 	event.RetentionDate = &retentionDate
 
-	metadataJSON, _ := json.Marshal(event.Metadata)
+	// Build metadata JSONB with extra fields that aren't direct columns
+	metadata := map[string]interface{}{}
+	for k, v := range event.Metadata {
+		metadata[k] = v
+	}
+	// Add event-specific fields to metadata
+	if event.EventType != "" {
+		metadata["event_type"] = event.EventType
+	}
+	if event.Category != "" {
+		metadata["category"] = event.Category
+	}
+	if event.Outcome != "" {
+		metadata["outcome"] = event.Outcome
+	}
+	if event.UserName != "" {
+		metadata["user_name"] = event.UserName
+	}
+
+	metadataJSON, _ := json.Marshal(metadata)
 
 	query := `
 		INSERT INTO audit_log
-		(id, timestamp, event_type, category, user_id, user_name, resource_id,
-		 resource_type, action, outcome, ip_address, user_agent, metadata,
-		 retention_date)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		(id, user_id, resource_id, resource_type, action, ip_address, user_agent, metadata, retention_date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
 	_, err := r.db.Exec(ctx, query,
-		event.ID, event.Timestamp, event.EventType, event.Category,
-		event.UserID, event.UserName, event.ResourceID, event.ResourceType,
-		event.Action, event.Outcome, event.IPAddress, event.UserAgent,
+		event.ID, event.UserID, event.ResourceID, event.ResourceType,
+		event.Action, event.IPAddress, event.UserAgent,
 		metadataJSON, event.RetentionDate,
 	)
 
@@ -344,19 +362,21 @@ func (r *Repository) CreateAuditEvent(ctx context.Context, event *AuditEvent) er
 }
 
 // QueryAuditEvents retrieves audit events with filtering.
+// Note: This maps to the audit_log table which has a different schema than AuditEvent struct.
+// Fields like event_type, category, outcome are retrieved from the metadata JSONB field.
 func (r *Repository) QueryAuditEvents(ctx context.Context, filter AuditFilter) ([]*AuditEvent, int, error) {
 	whereClause := "WHERE 1=1"
 	args := []interface{}{}
 	argIdx := 1
 
 	if !filter.StartTime.IsZero() {
-		whereClause += fmt.Sprintf(" AND timestamp >= $%d", argIdx)
+		whereClause += fmt.Sprintf(" AND created_at >= $%d", argIdx)
 		args = append(args, filter.StartTime)
 		argIdx++
 	}
 
 	if !filter.EndTime.IsZero() {
-		whereClause += fmt.Sprintf(" AND timestamp <= $%d", argIdx)
+		whereClause += fmt.Sprintf(" AND created_at <= $%d", argIdx)
 		args = append(args, filter.EndTime)
 		argIdx++
 	}
@@ -368,13 +388,13 @@ func (r *Repository) QueryAuditEvents(ctx context.Context, filter AuditFilter) (
 	}
 
 	if filter.EventType != "" {
-		whereClause += fmt.Sprintf(" AND event_type = $%d", argIdx)
+		whereClause += fmt.Sprintf(" AND metadata->>'event_type' = $%d", argIdx)
 		args = append(args, filter.EventType)
 		argIdx++
 	}
 
 	if filter.Category != "" {
-		whereClause += fmt.Sprintf(" AND category = $%d", argIdx)
+		whereClause += fmt.Sprintf(" AND metadata->>'category' = $%d", argIdx)
 		args = append(args, filter.Category)
 		argIdx++
 	}
@@ -386,14 +406,13 @@ func (r *Repository) QueryAuditEvents(ctx context.Context, filter AuditFilter) (
 		return nil, 0, fmt.Errorf("count audit events: %w", err)
 	}
 
-	// Get events
+	// Get events - cast ip_address to text since it's an inet type
 	query := `
-		SELECT id, timestamp, event_type, category, user_id, user_name,
-		       resource_id, resource_type, action, outcome, ip_address,
-		       user_agent, metadata, retention_date
+		SELECT id, created_at, user_id, resource_id, resource_type, action,
+		       ip_address::text, user_agent, metadata, retention_date
 		FROM audit_log
 	` + whereClause + `
-		ORDER BY timestamp DESC
+		ORDER BY created_at DESC
 		LIMIT $` + fmt.Sprintf("%d", argIdx) + ` OFFSET $` + fmt.Sprintf("%d", argIdx+1)
 
 	args = append(args, filter.Limit, filter.Offset)
@@ -410,16 +429,37 @@ func (r *Repository) QueryAuditEvents(ctx context.Context, filter AuditFilter) (
 		var metadataJSON []byte
 
 		if err := rows.Scan(
-			&event.ID, &event.Timestamp, &event.EventType, &event.Category,
-			&event.UserID, &event.UserName, &event.ResourceID, &event.ResourceType,
-			&event.Action, &event.Outcome, &event.IPAddress, &event.UserAgent,
+			&event.ID, &event.Timestamp, &event.UserID, &event.ResourceID,
+			&event.ResourceType, &event.Action, &event.IPAddress, &event.UserAgent,
 			&metadataJSON, &event.RetentionDate,
 		); err != nil {
 			return nil, 0, err
 		}
 
+		event.Metadata = make(map[string]string)
 		if len(metadataJSON) > 0 {
-			json.Unmarshal(metadataJSON, &event.Metadata)
+			// Parse metadata
+			var metadataMap map[string]interface{}
+			if err := json.Unmarshal(metadataJSON, &metadataMap); err == nil {
+				for k, v := range metadataMap {
+					if strVal, ok := v.(string); ok {
+						event.Metadata[k] = strVal
+					}
+				}
+				// Extract specific fields from metadata
+				if v, ok := metadataMap["event_type"].(string); ok {
+					event.EventType = v
+				}
+				if v, ok := metadataMap["category"].(string); ok {
+					event.Category = v
+				}
+				if v, ok := metadataMap["outcome"].(string); ok {
+					event.Outcome = v
+				}
+				if v, ok := metadataMap["user_name"].(string); ok {
+					event.UserName = v
+				}
+			}
 		}
 
 		events = append(events, &event)

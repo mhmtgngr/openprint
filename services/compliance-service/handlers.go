@@ -446,6 +446,13 @@ func generateReportHandler(svc *Service) http.HandlerFunc {
 
 		// Save report to database
 		findingsJSON, _ := json.Marshal(report.Findings)
+
+		// Only save generated_by if it's a valid UUID (not "system")
+		var generatedByID *string
+		if generatedBy != "system" {
+			generatedByID = &generatedBy
+		}
+
 		const reportQuery = `
 			INSERT INTO compliance_reports
 			(id, framework, period_start, period_end, overall_status, compliant_count,
@@ -455,7 +462,7 @@ func generateReportHandler(svc *Service) http.HandlerFunc {
 		_, err = svc.db.Exec(ctx, reportQuery,
 			report.ID, report.Framework, report.PeriodStart, report.PeriodEnd, report.OverallStatus,
 			report.CompliantCount, report.NonCompliant, report.PendingCount,
-			report.TotalControls, report.HighRiskCount, findingsJSON, report.GeneratedBy, report.GeneratedAt,
+			report.TotalControls, report.HighRiskCount, findingsJSON, generatedByID, report.GeneratedAt,
 		)
 		if err != nil {
 			log.Printf("Warning: failed to save report: %v", err)

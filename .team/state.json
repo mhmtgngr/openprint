@@ -17,11 +17,18 @@
       "_updated": "2026-03-04T05:18:11.113975"
     },
     "frontend": {
+      "status": "done",
+      "_updated": "2026-03-04T05:22:53.065530"
+    },
+    "testing": {
       "status": "running",
-      "_updated": "2026-03-04T05:18:11.169445"
+      "_updated": "2026-03-04T07:00:07.162333",
+      "write_tests": "done",
+      "unit_tests": "failed",
+      "e2e": "skipped"
     }
   },
   "project": "Fix failing tests in services/compliance-service/main_test.go. Tests show similar issues to policy-service with UUID handling and database constraints. Verify compliance-service has proper test fixtures, valid UUID generation in test data, and correct handling of nullable foreign key columns. Ensure migrations run before tests execute via internal/testutil. Add missing test data for audit_logs, compliance_reports, and control_mappings tables if needed.",
   "branch": "team/fix-failing-tests-in-servicescompliance--1772600773",
-  "current_phase": "frontend"
+  "current_phase": "testing"
 }
