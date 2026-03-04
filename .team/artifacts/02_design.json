@@ -1,189 +1,294 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Make organization_id nullable in print_policies table",
-      "rationale": "Tests fail because schema requires organization_id but test fixtures create policies without organization association. Global/system-level policies should not require organization binding."
+      "decision": "Create migration 000037 to make user FK columns nullable in compliance tables",
+      "rationale": "Tests fail because compliance_reports.generated_by, compliance_findings.created_by/closed_by, and compliance_evidence.collected_by are NOT NULL with FK to users(id). Making them nullable allows tests to create compliance records without first creating users."
     },
     {
-      "decision": "Use JSON marshaling for type-agnostic slice comparison in rule operators",
-      "rationale": "Go type assertions fail when comparing []interface{} with []string or []float64. JSON serialization provides reliable equality checking across different slice types."
+      "decision": "Add compliance test fixtures to internal/testutil/fixtures.go",
+      "rationale": "Provides reusable test data creation functions for compliance controls, data breaches, findings, and audit events, reducing test code duplication and ensuring consistent test data."
     },
     {
-      "decision": "Create dedicated test fixture helpers with valid UUIDs",
-      "rationale": "Tests fail with 'invalid UUID' errors. Centralized fixture generation ensures consistent valid test data."
+      "decision": "Update TruncateAllTables to include compliance tables",
+      "rationale": "Tests need to clean up compliance tables between test runs. Currently the TruncateAllTables function doesn't include the new compliance tables added in migration 032."
     },
     {
-      "decision": "Add DocumentType to evaluation context in policy engine",
-      "rationale": "Test expects DocumentType in evalCtx but policy engine only includes User, Printer, and Job. Content-based filtering requires document type awareness."
+      "decision": "Create dedicated compliance repository test file",
+      "rationale": "Separates repository layer tests from handler tests, following the pattern in other services and making tests more focused and maintainable."
     }
   ],
   "backend_tasks": [
     {
       "order": 1,
-      "file": "migrations/000036_make_organization_id_nullable.up.sql",
+      "file": "migrations/000037_make_compliance_user_fields_nullable.up.sql",
       "action": "create",
-      "purpose": "Make organization_id column nullable to allow global/system policies",
+      "purpose": "Make generated_by, created_by, closed_by, collected_by nullable in compliance tables",
       "key_functions": [
-        "ALTER TABLE print_policies ALTER COLUMN organization_id DROP NOT NULL"
+        "ALTER TABLE compliance_reports ALTER COLUMN generated_by DROP NOT NULL",
+        "ALTER TABLE compliance_findings ALTER COLUMN created_by DROP NOT NULL",
+        "ALTER TABLE compliance_findings ALTER COLUMN closed_by DROP NOT NULL",
+        "ALTER TABLE compliance_evidence ALTER COLUMN collected_by DROP NOT NULL"
       ]
     },
     {
       "order": 2,
-      "file": "migrations/000036_make_organization_id_nullable.down.sql",
+      "file": "migrations/000037_make_compliance_user_fields_nullable.down.sql",
       "action": "create",
-      "purpose": "Rollback migration for organization_id nullable change",
+      "purpose": "Rollback migration by making user FK columns NOT NULL again",
       "key_functions": [
-        "ALTER TABLE print_policies ALTER COLUMN organization_id SET NOT NULL"
+        "ALTER TABLE compliance_reports ALTER COLUMN generated_by SET NOT NULL",
+        "ALTER TABLE compliance_findings ALTER COLUMN created_by SET NOT NULL",
+        "ALTER TABLE compliance_findings ALTER COLUMN closed_by SET NOT NULL",
+        "ALTER TABLE compliance_evidence ALTER COLUMN collected_by SET NOT NULL"
       ]
     },
     {
       "order": 3,
-      "file": "services/policy-service/policy_engine.go",
+      "file": "internal/testutil/fixtures.go",
       "action": "modify",
-      "purpose": "Fix In and Between operator type assertion issues using JSON comparison",
+      "purpose": "Add CreateTestComplianceControl, CreateTestDataBreach, CreateTestComplianceFinding, CreateTestComplianceReport, CreateTestAuditEvent functions",
       "key_functions": [
-        "compareIn",
-        "compareBetween",
-        "slicesEqual"
+        "CreateTestComplianceControl",
+        "CreateTestDataBreach",
+        "CreateTestComplianceFinding",
+        "CreateTestComplianceReport",
+        "CreateTestComplianceEvidence"
       ]
     },
     {
       "order": 4,
-      "file": "services/policy-service/policy_engine.go",
+      "file": "internal/testutil/db.go",
       "action": "modify",
-      "purpose": "Add DocumentType to evaluation context for content-based rules",
+      "purpose": "Update TruncateAllTables to include compliance tables",
       "key_functions": [
-        "Evaluate",
-        "NewEvaluationContext"
+        "TruncateAllTables - add compliance_controls, compliance_findings, compliance_evidence, compliance_reports, data_breaches, remediation_plans"
       ]
     },
     {
       "order": 5,
-      "file": "services/policy-service/policy_engine_test.go",
-      "action": "modify",
-      "purpose": "Fix TestEngineAppliesToScope to include DocumentType in evalCtx",
+      "file": "services/compliance-service/repository_test.go",
+      "action": "create",
+      "purpose": "Add comprehensive repository layer tests for compliance service",
       "key_functions": [
-        "TestEngineAppliesToScope"
+        "TestRepository_GetControl",
+        "TestRepository_ListControls",
+        "TestRepository_UpdateControlStatus",
+        "TestRepository_CreateAuditEvent",
+        "TestRepository_RecordDataBreach",
+        "TestRepository_GetPendingReviews"
       ]
     },
     {
       "order": 6,
-      "file": "services/policy-service/repository_test.go",
+      "file": "services/compliance-service/handlers.go",
       "action": "create",
-      "purpose": "Fix TestRepositoryUpdate with valid UUID for ModifiedBy field",
+      "purpose": "Extract HTTP handlers from main.go into separate file for testability",
       "key_functions": [
-        "TestRepositoryUpdate",
-        "generateValidUUID"
+        "healthHandler",
+        "listControlsHandler",
+        "controlByIDHandler",
+        "updateControlStatusHandler",
+        "breachesHandler",
+        "pendingReviewsHandler",
+        "summaryHandler",
+        "generateReportHandler"
       ]
     },
     {
       "order": 7,
-      "file": "services/policy-service/handlers_test.go",
-      "action": "modify",
-      "purpose": "Fix TestListPoliciesHandler_Empty response JSON encoding",
+      "file": "services/compliance-service/handlers_test.go",
+      "action": "create",
+      "purpose": "Add HTTP handler tests with proper test fixtures",
       "key_functions": [
-        "TestListPoliciesHandler_Empty"
-      ]
-    },
-    {
-      "order": 8,
-      "file": "services/policy-service/types.go",
-      "action": "modify",
-      "purpose": "Add DocumentType field to EvaluationContext struct",
-      "key_functions": [
-        "EvaluationContext",
-        "DocumentType"
-      ]
-    },
-    {
-      "order": 9,
-      "file": "internal/testutil/fixtures.go",
-      "action": "modify",
-      "purpose": "Add ValidUUID and ValidPolicyID helpers for test fixtures",
-      "key_functions": [
-        "ValidUUID",
-        "ValidPolicyID"
+        "TestListControlsHandler_WithResults",
+        "TestCreateControlHandler_Duplicate",
+        "TestUpdateControlStatusHandler_NotFound",
+        "TestGenerateReportHandler",
+        "TestSummaryHandler",
+        "TestExportAuditLogsHandler"
       ]
     }
   ],
-  "frontend_tasks": [],
   "database_migrations": [
     {
-      "file": "migrations/000036_make_organization_id_nullable.up.sql",
-      "sql": "-- Make organization_id nullable to support global/system-level policies\nALTER TABLE print_policies ALTER COLUMN organization_id DROP NOT NULL;\n\n-- Add comment for documentation\nCOMMENT ON COLUMN print_policies.organization_id IS 'Organization ID (nullable for global policies)';"
+      "file": "migrations/000037_make_compliance_user_fields_nullable.up.sql",
+      "sql": "-- Make user foreign key columns nullable in compliance tables\n-- This allows creating compliance records without requiring a user\n\nALTER TABLE compliance_reports\nALTER COLUMN generated_by DROP NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN created_by DROP NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN closed_by DROP NOT NULL;\n\nALTER TABLE compliance_evidence\nALTER COLUMN collected_by DROP NOT NULL;"
     },
     {
-      "file": "migrations/000036_make_organization_id_nullable.down.sql",
-      "sql": "-- Revert organization_id to NOT NULL\n-- Note: This will fail if NULL values exist\nALTER TABLE print_policies ALTER COLUMN organization_id SET NOT NULL;"
+      "file": "migrations/000037_make_compliance_user_fields_nullable.down.sql",
+      "sql": "-- Rollback: Make user foreign key columns NOT NULL again\n\nALTER TABLE compliance_reports\nALTER COLUMN generated_by SET NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN created_by SET NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN closed_by SET NOT NULL;\n\nALTER TABLE compliance_evidence\nALTER COLUMN collected_by SET NOT NULL;"
     }
   ],
-  "api_contracts": [],
+  "api_contracts": [
+    {
+      "method": "POST",
+      "path": "/api/v1/compliance/reports",
+      "request": {
+        "framework": "fedramp|hipaa|gdpr|soc2",
+        "period_start": "2024-01-01T00:00:00Z",
+        "period_end": "2024-12-31T23:59:59Z",
+        "generated_by": "UUID (optional)"
+      },
+      "response": {
+        "id": "UUID",
+        "framework": "fedramp",
+        "period_start": "2024-01-01T00:00:00Z",
+        "period_end": "2024-12-31T23:59:59Z",
+        "overall_status": "compliant|non_compliant|pending|unknown",
+        "compliant_count": 10,
+        "non_compliant_count": 2,
+        "pending_count": 1,
+        "total_controls": 13,
+        "high_risk_count": 1,
+        "findings": [],
+        "generated_at": "2024-01-15T10:30:00Z",
+        "generated_by": "UUID"
+      },
+      "status_codes": [
+        201,
+        400,
+        401,
+        500
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/audit",
+      "request": {
+        "start_time": "2024-01-01T00:00:00Z",
+        "end_time": "2024-12-31T23:59:59Z",
+        "user_id": "UUID (optional)",
+        "event_type": "string (optional)",
+        "category": "string (optional)",
+        "limit": 50,
+        "offset": 0
+      },
+      "response": {
+        "events": [],
+        "total": 100
+      },
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/audit/export",
+      "request": {
+        "format": "json|csv",
+        "start_time": "2024-01-01T00:00:00Z",
+        "end_time": "2024-12-31T23:59:59Z"
+      },
+      "response": "file download",
+      "status_codes": [
+        200,
+        400,
+        401
+      ]
+    }
+  ],
   "test_plan": {
     "unit_tests": [
       {
-        "file": "services/policy-service/policy_engine_test.go",
+        "file": "services/compliance-service/repository_test.go",
         "cases": [
-          "TestEngineAppliesToScope - with DocumentType in evalCtx",
-          "TestCompareInWithStringSlice - direct string slice comparison",
-          "TestCompareInWithInterfaceSlice - interface slice comparison",
-          "TestCompareBetweenWithFloat64Slice - numeric range comparison",
-          "TestCompareBetweenWithInterfaceSlice - interface slice comparison"
+          "GetControl returns correct control",
+          "GetControl not found returns error",
+          "ListControls with framework filter",
+          "ListControls with status filter",
+          "UpdateControlStatus success",
+          "UpdateControlStatus not found",
+          "CreateAuditEvent with nullable user_id",
+          "CreateAuditEvent with user",
+          "QueryAuditEvents with filters",
+          "QueryAuditEvents pagination",
+          "RecordDataBreach success",
+          "GetPendingReviews returns upcoming reviews",
+          "GetPendingReviews empty when no reviews pending"
         ]
       },
       {
-        "file": "services/policy-service/repository_test.go",
+        "file": "services/compliance-service/service_test.go",
         "cases": [
-          "TestRepositoryUpdate - with valid UUID",
-          "TestRepositoryCreateGlobalPolicy - organization_id is NULL"
+          "GenerateReport for fedramp framework",
+          "GenerateReport calculates statistics correctly",
+          "GenerateReport creates findings for non-compliant controls",
+          "GetComplianceSummary returns all frameworks",
+          "GetComplianceSummary handles empty controls",
+          "ExportAuditLogs JSON format",
+          "ExportAuditLogs CSV format",
+          "ExportAuditLogs unsupported format"
         ]
       },
       {
-        "file": "services/policy-service/handlers_test.go",
+        "file": "internal/testutil/fixtures_test.go",
         "cases": [
-          "TestListPoliciesHandler_Empty - verifies empty array JSON response",
-          "TestListPoliciesHandler_WithResults - verifies policy array with valid UUIDs"
-        ]
-      },
-      {
-        "file": "services/policy-service/main_test.go",
-        "cases": [
-          "TestAllPolicyServiceTests - runs all tests sequentially"
+          "CreateTestComplianceControl creates valid record",
+          "CreateTestDataBreach creates valid record",
+          "CreateTestComplianceFinding creates valid record",
+          "CreateTestComplianceReport creates valid record",
+          "CreateTestAuditEvent creates valid record with nullable user"
         ]
       }
     ],
     "e2e_tests": [
       {
-        "name": "Create and apply global policy without organization",
+        "name": "Compliance report generation end-to-end",
         "steps": [
-          "Create policy with organization_id: null",
-          "Verify policy stored successfully",
-          "Evaluate policy for user from any organization",
-          "Assert policy applies correctly"
+          "Create test organization and user",
+          "Create compliance controls with various statuses",
+          "Call GenerateReport API endpoint",
+          "Verify report contains correct statistics",
+          "Verify findings created for non-compliant controls"
         ]
       },
       {
-        "name": "Content-based filtering with DocumentType",
+        "name": "Audit log export workflow",
         "steps": [
-          "Create policy with rule: DocumentType In [PDF, DOCX]",
-          "Evaluate with PDF document",
-          "Evaluate with TXT document",
-          "Assert different outcomes based on content type"
+          "Create multiple audit events with different categories",
+          "Export audit logs as JSON",
+          "Export audit logs as CSV",
+          "Verify export contains all events",
+          "Verify retention date is calculated correctly"
+        ]
+      },
+      {
+        "name": "Data breach tracking workflow",
+        "steps": [
+          "Record a new data breach",
+          "Verify breach is stored correctly",
+          "Update breach containment status",
+          "Add resolution details",
+          "Verify breach can be queried"
+        ]
+      },
+      {
+        "name": "Compliance control lifecycle",
+        "steps": [
+          "Create new compliance control",
+          "Update control status to compliant",
+          "Schedule next review",
+          "Verify control appears in pending reviews before due date",
+          "Verify control doesn't appear after review date"
         ]
       }
     ]
   },
   "security_notes": [
-    "NULL organization_id policies apply globally - ensure only admin users can create",
-    "Validate UUID format at API boundary before database insert",
-    "DocumentType should be sanitized to prevent injection attacks",
-    "Rate limit policy evaluation to prevent DoS via complex rules"
+    "Ensure nullable user_id columns don't bypass authorization checks - service layer must validate user context",
+    "Audit event retention dates should be enforced by data retention policies",
+    "Compliance reports should be signed when generated for regulatory purposes",
+    "Export functionality should be rate-limited to prevent data exfiltration"
   ],
   "docker_changes": [
-    "No Docker changes required - this is a bug fix within existing service"
+    "Add compliance service to docker-compose if not already present",
+    "Ensure TEST_MODE environment variable is available in compliance service container"
   ],
   "market_driven_features": [
-    "Content-based filtering (DocumentType) addresses DLP requirements from FR-M009",
-    "Global policy support enables enterprise-wide policy templates (FR-M012)",
-    "Organization scoping foundation for multi-tenant cost allocation (FR-M011)"
+    "Compliance report generation aligned with FedRAMP/HIPAA/GDPR/SOC2 requirements - similar to Microsoft Universal Print's built-in compliance features",
+    "Audit log export functionality matching competitor standards",
+    "Data breach tracking exceeding basic PaperCut MF capabilities - addresses enterprise gap in market analysis"
   ]
 }

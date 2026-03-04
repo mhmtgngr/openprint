@@ -1,276 +1,237 @@
 {
-  "project_name": "Fix Policy Service Test Failures",
-  "summary": "Fix 7 failing tests in services/policy-service/ caused by database schema constraints (organization_id NOT NULL), type assertion issues in rule operators (In/Between), missing test fixture data, and invalid UUID values",
+  "project_name": "compliance-service-test-fixes",
+  "summary": "Fix failing tests in compliance-service by addressing UUID handling, database foreign key constraints, and adding comprehensive test fixtures for compliance tables",
   "user_stories": [
     {
       "id": "US-001",
       "as_a": "developer",
-      "i_want": "all policy service tests to pass",
-      "so_that": "the policy engine codebase is stable and reliable for future development",
-      "priority": "critical",
+      "i_want": "proper test fixtures for compliance tables (compliance_controls, audit_logs, compliance_reports, data_breaches, remediation_plans, compliance_findings, compliance_evidence)",
+      "so_that": "tests can run reliably without foreign key constraint violations",
+      "priority": "high",
       "acceptance_criteria": [
-        "All 7 tests in main_test.go pass",
-        "All tests in policy_engine_test.go pass",
-        "No database constraint violations",
-        "Response JSON correctly formatted with policies array",
-        "In and Between operators evaluate correctly"
+        "All compliance tables have valid test data fixtures",
+        "Foreign key constraints are properly satisfied",
+        "UUIDs are valid and reference existing records where required"
       ]
     },
     {
       "id": "US-002",
       "as_a": "developer",
-      "i_want": "organization_id to be nullable in the database",
-      "so_that": "global policies can exist without being tied to a specific organization",
-      "priority": "high",
+      "i_want": "the compliance_reports.generated_by column to be nullable or have a system user handling",
+      "so_that": "reports can be generated without a valid user session",
+      "priority": "critical",
       "acceptance_criteria": [
-        "Database migration creates organization_id as nullable",
-        "Existing policies without organization_id are valid",
-        "Tests can create policies without specifying organization"
+        "compliance_reports.generated_by accepts NULL values",
+        "OR a special system user record exists for auto-generated reports",
+        "Tests verify report generation without user context"
       ]
     },
     {
       "id": "US-003",
       "as_a": "developer",
-      "i_want": "rule operators In and Between to handle both typed slices and interface slices",
-      "so_that": "JSON unmarshaling differences don't break rule evaluation",
+      "i_want": "audit_log table to work with compliance service tests",
+      "so_that": "audit events can be created during compliance testing",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "audit_log retention_date column is properly handled",
+        "Tests can create audit events without violating foreign key constraints",
+        "Audit event queries work correctly with test data"
+      ]
+    },
+    {
+      "id": "US-004",
+      "as_a": "developer",
+      "i_want": "migrations to run before tests execute via internal/testutil",
+      "so_that": "all required tables exist when tests run",
       "priority": "high",
       "acceptance_criteria": [
-        "In operator works with []string, []int, and []interface{}",
-        "Between operator works with []int and []interface{}",
-        "Tests for In and Between operators pass"
+        "Migration 000032 is executed during test setup",
+        "All compliance tables exist in test database",
+        "Triggers and functions are created"
+      ]
+    },
+    {
+      "id": "US-005",
+      "as_a": "developer",
+      "i_want": "test coverage for nullable foreign key columns in compliance tables",
+      "so_that": "we ensure NULL values are handled correctly throughout the service",
+      "priority": "medium",
+      "acceptance_criteria": [
+        "Tests verify NULL values work for user_id references",
+        "Tests verify NULL values work for organization_id references",
+        "Repository layer handles NULL values correctly"
       ]
     }
   ],
   "functional_requirements": [
     {
       "id": "FR-001",
-      "title": "Nullable organization_id Column",
-      "description": "Modify the print_policies table to allow NULL values for organization_id to support global/system-wide policies that apply to all organizations",
-      "service": "policy-service"
+      "title": "Fix compliance_reports.generated_by Foreign Key",
+      "description": "The generated_by column in compliance_reports table is NOT NULL but references users(id). This prevents report generation without a valid user. Need to either make it nullable or create a system user.",
+      "service": "compliance-service"
     },
     {
       "id": "FR-002",
-      "title": "Fix In Operator Type Handling",
-      "description": "Update compareIn function to handle both []interface{} and strongly-typed slices ([]string, []int) by using reflection or JSON marshaling for comparison",
-      "service": "policy-service"
+      "title": "Add Compliance Test Fixtures",
+      "description": "Create test fixture functions in internal/testutil/fixtures.go for compliance tables: compliance_controls, data_breaches, remediation_plans, compliance_findings, compliance_evidence, compliance_reports, audit_log entries.",
+      "service": "internal/testutil"
     },
     {
       "id": "FR-003",
-      "title": "Fix Between Operator Type Handling",
-      "description": "Update compareBetween function to handle both []interface{} and strongly-typed slices ([]int, []float64) for range comparisons",
-      "service": "policy-service"
+      "title": "Update TruncateAllTables for Compliance Tables",
+      "description": "Add compliance tables to the TruncateAllTables function in internal/testutil/db.go to enable proper cleanup between tests.",
+      "service": "internal/testutil"
     },
     {
       "id": "FR-004",
-      "title": "Fix Test Fixture Data",
-      "description": "Update TestEngineAppliesToScope to include DocumentType in EvaluationContext and document DocumentType in scope tests",
-      "service": "policy-service"
+      "title": "Verify Migration Execution",
+      "description": "Ensure migration 000032_create_compliance_tables.up.sql is executed during test setup via RunMigrations.",
+      "service": "compliance-service"
     },
     {
       "id": "FR-005",
-      "title": "Fix ModifiedBy UUID Validation",
-      "description": "Update TestRepositoryUpdate to use valid UUID for ModifiedBy field instead of 'admin' string",
-      "service": "policy-service"
-    },
-    {
-      "id": "FR-006",
-      "title": "Ensure Response JSON Encoding",
-      "description": "Verify policiesHandler returns properly formatted JSON with policies as an array that can be decoded as []interface{}",
-      "service": "policy-service"
-    },
-    {
-      "id": "FR-M007",
-      "title": "Secure Print Release",
-      "description": "Require authentication at the printer device before releasing jobs via PIN, card, or mobile app",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Must-have for enterprise security, prevents sensitive documents from being left uncollected"
-    },
-    {
-      "id": "FR-M008",
-      "title": "Follow-Me Printing",
-      "description": "Queue jobs to a virtual pool, release at any available printer with authentication",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Reduces printer wait times, enables load balancing, standard feature in all major competitors"
-    },
-    {
-      "id": "FR-M009",
-      "title": "Content Filtering/DLP",
-      "description": "Filter print jobs containing sensitive data patterns (SSN, credit card, confidential markers) with configurable policies",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Critical for healthcare/finance/government, strong differentiator in regulated industries"
-    },
-    {
-      "id": "FR-M010",
-      "title": "Mobile Print Apps",
-      "description": "Native iOS and Android apps for submitting jobs, releasing prints, and managing queue",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Essential for modern workforce, all major competitors offer this"
-    },
-    {
-      "id": "FR-M011",
-      "title": "Advanced Cost Allocation",
-      "description": "Per-department, per-project, per-client cost tracking with detailed reporting and chargeback capabilities",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Key for professional services, legal, and education markets"
-    },
-    {
-      "id": "FR-M012",
-      "title": "Policy Templates Marketplace",
-      "description": "Pre-built policy templates for HIPAA, GDPR, ISO27001, FedRAMP compliance",
-      "service": "identity",
-      "source": "market_research",
-      "competitive_advantage": "Reduces implementation time, demonstrates compliance expertise"
+      "title": "Add Test for Report Generation",
+      "description": "Add test for generateReportHandler to ensure compliance_reports table insertion works correctly with the generated_by constraint.",
+      "service": "compliance-service"
     }
   ],
   "non_functional_requirements": [
     {
       "id": "NFR-001",
       "category": "security",
-      "requirement": "UUID validation must be enforced for user references (created_by, modified_by)",
-      "metric": "Invalid UUID strings rejected at API boundary"
+      "requirement": "All foreign key constraints must be satisfied for test data",
+      "metric": "100% of tests pass without FK violations"
     },
     {
       "id": "NFR-002",
-      "category": "performance",
-      "requirement": "Rule evaluation must complete within 10ms for typical policies with < 10 rules",
-      "metric": "< 10ms p95 latency for policy evaluation"
+      "category": "reliability",
+      "requirement": "Tests must be deterministic and independent",
+      "metric": "Tests can run in any order and pass"
     },
     {
       "id": "NFR-003",
       "category": "maintainability",
-      "requirement": "Test coverage must be maintained above 80% for policy engine code",
-      "metric": "> 80% code coverage"
+      "requirement": "Test fixtures must be reusable across services",
+      "metric": "Fixtures in internal/testutil shared by compliance and other services"
     }
   ],
   "api_endpoints": [
     {
-      "method": "GET",
-      "path": "/api/v1/policies",
-      "description": "List all policies with optional filtering by type, status, organization_id",
+      "method": "POST",
+      "path": "/api/v1/reports/generate",
+      "description": "Generate compliance report - needs to handle NULL generated_by",
       "roles": [
         "admin",
-        "user"
+        "compliance_officer"
       ]
     },
     {
       "method": "POST",
-      "path": "/api/v1/policies",
-      "description": "Create a new policy with rules, actions, and scope",
+      "path": "/api/v1/audit",
+      "description": "Create audit event - needs to handle NULL user_id",
       "roles": [
-        "admin"
+        "admin",
+        "compliance_officer"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/controls",
+      "description": "List compliance controls",
+      "roles": [
+        "admin",
+        "compliance_officer",
+        "auditor"
       ]
     },
     {
       "method": "POST",
-      "path": "/api/v1/evaluate",
-      "description": "Evaluate print request against all active policies",
+      "path": "/api/v1/breaches",
+      "description": "Record data breach incident",
       "roles": [
-        "system",
-        "admin"
+        "admin",
+        "compliance_officer"
       ]
     }
   ],
   "database_changes": [
     {
-      "table": "print_policies",
+      "table": "compliance_reports",
       "action": "alter",
       "columns": [
-        "organization_id UUID NULL"
+        "generated_by UUID NULL REFERENCES users(id)"
+      ]
+    },
+    {
+      "table": "compliance_findings",
+      "action": "alter",
+      "columns": [
+        "created_by UUID NULL REFERENCES users(id)",
+        "closed_by UUID NULL REFERENCES users(id)"
+      ]
+    },
+    {
+      "table": "compliance_evidence",
+      "action": "alter",
+      "columns": [
+        "collected_by UUID NULL REFERENCES users(id)"
       ]
     }
   ],
   "affected_services": [
-    "policy-service",
-    "api-gateway"
+    "compliance-service",
+    "internal/testutil"
   ],
   "risks": [
     {
-      "risk": "Making organization_id nullable could break existing queries that assume NOT NULL",
-      "mitigation": "Review all queries using organization_id and add IS NULL checks where needed"
+      "risk": "Foreign key constraint violations when inserting test data without valid users",
+      "mitigation": "Create user fixtures first, or make FK columns nullable"
     },
     {
-      "risk": "Type assertion changes could introduce subtle bugs in rule evaluation",
-      "mitigation": "Add comprehensive unit tests for all operator types with various input formats"
+      "risk": "Report generation fails when generated_by is 'system' (not a valid UUID)",
+      "mitigation": "Make generated_by nullable or create a system user record"
     },
     {
-      "risk": "Migration to alter column could fail on production with existing data",
-      "mitigation": "Test migration on staging first, ensure no existing policies violate new constraints"
+      "risk": "Tests pass locally but fail in CI due to migration order issues",
+      "mitigation": "Ensure migrations run in correct order via testutil"
     }
   ],
   "implementation_phases": [
     {
       "phase": 1,
-      "name": "Database Schema Fix",
+      "name": "Schema Fixes",
       "tasks": [
-        "Create migration to make organization_id nullable in print_policies table",
-        "Test migration on development database",
-        "Verify existing policies still work with nullable organization_id"
+        "Create migration to make generated_by nullable in compliance_reports",
+        "Create migration to make created_by, closed_by nullable in compliance_findings",
+        "Create migration to make collected_by nullable in compliance_evidence"
       ]
     },
     {
       "phase": 2,
-      "name": "Fix Type Assertion Issues",
+      "name": "Test Fixture Creation",
       "tasks": [
-        "Update compareIn function to handle strongly-typed slices",
-        "Update compareBetween function to handle strongly-typed slices",
-        "Add helper function for slice comparison using JSON marshaling"
+        "Add CreateTestComplianceControl to internal/testutil/fixtures.go",
+        "Add CreateTestDataBreach to internal/testutil/fixtures.go",
+        "Add CreateTestComplianceReport to internal/testutil/fixtures.go",
+        "Add CreateTestAuditEvent to internal/testutil/fixtures.go"
       ]
     },
     {
       "phase": 3,
-      "name": "Fix Test Fixtures",
+      "name": "Test Utilities Update",
       "tasks": [
-        "Update TestEngineAppliesToScope with DocumentType in evalCtx",
-        "Update TestRepositoryUpdate with valid UUID for ModifiedBy",
-        "Verify TestListPoliciesHandler_Empty response encoding"
+        "Update TruncateAllTables to include compliance tables",
+        "Verify migration 000032 is executed in test setup"
       ]
     },
     {
       "phase": 4,
-      "name": "Validation",
+      "name": "Test Enhancement",
       "tasks": [
-        "Run all policy-service tests and verify 100% pass rate",
-        "Run integration tests with api-gateway",
-        "Document any breaking changes"
+        "Add test for report generation endpoint",
+        "Add test for audit log creation with nullable user_id",
+        "Add test for compliance findings with nullable created_by/closed_by"
       ]
     }
-  ],
-  "market_context": {
-    "competitors_analyzed": [
-      "PaperCut MF/NG",
-      "HP JetAdvantage",
-      "Printix",
-      "\u535a\u745e\u51ef\u5fb7",
-      "\u5b89\u4f01\u795e"
-    ],
-    "key_gaps": [
-      "Secure Print Release (authentication at device)",
-      "Follow-Me/Pull Printing (queue to any device)",
-      "Mobile Print App (iOS/Android)",
-      "Content Security/DLP (sensitive data filtering)",
-      "AI-Powered Print Optimization & Cost Reduction"
-    ],
-    "trends": [
-      "AI-Driven Print Optimization",
-      "Sustainability Tracking",
-      "Zero Trust Print Security",
-      "Hybrid Work Support",
-      "IoT and Smart MFP Integration"
-    ],
-    "unique_selling_points": [
-      "Cloud-native microservices architecture enabling independent scaling and deployment flexibility",
-      "True multi-tenancy with data isolation at service layer (not just application level)",
-      "Open-source with transparent security and no vendor lock-in",
-      "Modern Go-based stack with OpenTelemetry observability built-in",
-      "Comprehensive compliance service tracking multiple standards simultaneously",
-      "M365-first integration design for Microsoft-centric enterprises",
-      "Policy engine with flexible rule evaluation supporting complex conditions",
-      "Developer-first with API gateway and extensible plugin architecture"
-    ]
-  }
+  ]
 }

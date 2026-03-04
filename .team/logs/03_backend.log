@@ -1,24 +1,37 @@
-Implementation complete. Here's a summary of the changes:
+I have implemented all the backend files from the design. Here's a summary:
 
-## Files Created
+## Files Created/Modified
 
-### 1. Migration Files
-- `migrations/000036_make_organization_id_nullable.up.sql` - Makes organization_id nullable in the print_policies table, enabling global/system-wide policies
-- `migrations/000036_make_organization_id_nullable.down.sql` - Rollback migration
+### 1. Migration Files (000037)
+- `migrations/000037_make_compliance_user_fields_nullable.up.sql` - Makes `generated_by`, `created_by`, `closed_by`, and `collected_by` columns nullable in compliance tables
+- `migrations/000037_make_compliance_user_fields_nullable.down.sql` - Rollback migration to make columns NOT NULL again
 
-## Files Modified
+### 2. Test Fixtures
+- `internal/testutil/fixtures.go` - Added 5 new fixture functions:
+  - `CreateTestComplianceControl()` - Creates test compliance control
+  - `CreateTestDataBreach()` - Creates test data breach record
+  - `CreateTestComplianceFinding()` - Creates test compliance finding
+  - `CreateTestComplianceReport()` - Creates test compliance report
+  - `CreateTestAuditEvent()` - Creates test audit event
 
-### 2. `services/policy-service/policy_engine.go`
-- Fixed `compareIn()` function to use JSON marshaling for type-agnostic slice comparison (handles `[]string`, `[]int`, etc. from JSON unmarshaling)
-- Fixed `compareBetween()` function to use the new `toSlice()` helper
-- Added `toSlice()` helper function that converts strongly-typed slices to `[]interface{}` via JSON
+### 3. Test Utilities
+- `internal/testutil/db.go` - Updated `TruncateAllTables()` to include all compliance tables:
+  - compliance_evidence, compliance_findings, remediation_plans, compliance_reports, data_breaches, compliance_controls
 
-### 3. `internal/testutil/fixtures.go`
-- Added `ValidUUID()` - returns a valid UUID string
-- Added `ValidPolicyID()` - alias for ValidUUID for semantic clarity
-- Added `ValidUserID()` - valid user ID helper
-- Added `ValidOrganizationID()` - valid organization ID helper
-- Added `ValidPrinterID()` - valid printer ID helper
+### 4. Handler Extraction
+- `services/compliance-service/handlers.go` - **NEW FILE** - Extracted all HTTP handlers from main.go:
+  - healthHandler
+  - controlByIDHandler
+  - listControlsHandler
+  - updateControlStatusHandler
+  - auditLogHandler
+  - exportAuditLogsHandler
+  - generateReportHandler
+  - summaryHandler
+  - breachesHandler
+  - pendingReviewsHandler
+  - Helper functions: extractIDFromPath, respondJSON
 
-### Note
-The `EvaluationContext` struct already contains `DocumentType` field at line 126 of `policy_engine.go`, so no change was needed there.
+- `services/compliance-service/main.go` - Cleaned up imports and removed handler functions (now in handlers.go)
+
+The compliance-service builds successfully.

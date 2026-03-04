@@ -209,6 +209,13 @@ func TruncateAllTables(ctx context.Context, db *pgxpool.Pool) error {
 		"agent_events",
 		"agent_certificates",
 		"enrollment_tokens",
+		// Compliance tables
+		"compliance_evidence",
+		"compliance_findings",
+		"remediation_plans",
+		"compliance_reports",
+		"data_breaches",
+		"compliance_controls",
 	}
 
 	tx, err := db.Begin(ctx)
