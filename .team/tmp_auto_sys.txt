@@ -5,7 +5,8 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: 2312351b [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+- Recent issues: 1c3896d0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+2312351b [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 a990f8ec [auto-fix] 2 failing packages
 5a9de9b9 Merge team/fix-7-failing-tests-in-servicespolicy-se-1772594821
 fe5f46a9 [🐳 DevOps] Fix startup failures:
@@ -24,7 +25,6 @@ ed52f2c8 [🧪 Tester] Read CLAUDE.md. Fix ONLY the failing Go tests:
 e9dfa934 [🐳 DevOps] Fix startup failures:
 14aa6187 [🐳 DevOps] Fix startup failures:
 a636c554 [🧪 Frontend] Fix dashboard test assertions to match component implementation
-b3e3abc4 [🐳 DevOps] Fix startup failures:
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
