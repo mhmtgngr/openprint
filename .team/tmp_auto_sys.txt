@@ -5,7 +5,9 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: 925cf8ed [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+- Recent issues: bd222d96 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+44b57b83 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+925cf8ed [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 12a729a0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 de76d9da [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 3c893617 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
@@ -23,8 +25,6 @@ f147a37a [DevOps] Fix dynamic port detection for E2E tests and service health ch
 455b9808 [DevOps] Add AI-powered E2E, port conflict detection, dynamic port allocation
 190dbdd6 [DevOps] Improve dev.sh: fix health checks, add log rotation, runtime detection
 090a535e [🐳 DevOps] Fix startup failures:
-4e30cee0 [🧪 Tester] Read CLAUDE.md. Fix ONLY the failing Go tests:
-b8822125 [🐳 DevOps] Fix startup failures:
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
