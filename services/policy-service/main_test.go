@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/openprint/openprint/internal/testutil"
@@ -137,8 +136,10 @@ func TestListPoliciesHandler_Empty(t *testing.T) {
 		t.Errorf("Expected 0 policies, got %d", len(policies))
 	}
 
-	if result["total"].(int) != 0 {
-		t.Errorf("Expected total 0, got %v", result["total"])
+	// JSON numbers are decoded as float64
+	total, ok := result["total"].(float64)
+	if !ok || total != 0 {
+		t.Errorf("Expected total 0, got %v (type %T)", result["total"], result["total"])
 	}
 }
 
@@ -280,40 +281,36 @@ func TestEvaluateHandler_DenyPolicy(t *testing.T) {
 	ts := SetupTestServer(t)
 	defer ts.Cleanup()
 
-	// Create a deny policy
-	const policyQuery = `
-		INSERT INTO print_policies (id, name, description, type, status, priority, rules, actions, scope, created_at, updated_at, version)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-	`
-
-	policyID := uuid.New().String()
-	rules := []map[string]interface{}{
-		{
-			"id":       "rule1",
-			"field":    "document.page_count",
-			"operator": "greater_than",
-			"value":    10,
-		},
-	}
-	actions := []map[string]interface{}{
-		{
-			"type": "deny",
-			"parameters": map[string]interface{}{
-				"message": "Too many pages",
-			},
-		},
-	}
-	scope := map[string]interface{}{}
-
-	rulesJSON, _ := json.Marshal(rules)
-	actionsJSON, _ := json.Marshal(actions)
-	scopeJSON, _ := json.Marshal(scope)
-
-	_, err := ts.DB.Pool.Exec(ctx, policyQuery,
-		policyID, "Deny Large Documents", "Denies documents over 10 pages", "content", "active", 100,
-		rulesJSON, actionsJSON, scopeJSON, time.Now(), time.Now(), 1,
-	)
+	// Create a test organization and user first for foreign key constraint
+	orgID, err := testutil.CreateTestOrganization(ctx, ts.DB.Pool)
 	if err != nil {
+		t.Fatalf("Failed to create test organization: %v", err)
+	}
+
+	userID, err := testutil.CreateTestUser(ctx, ts.DB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
+	// Create a deny policy using Repository.Create
+	policy := &Policy{
+		Name:        "Deny Large Documents",
+		Description: "Denies documents over 10 pages",
+		Type:        PolicyTypeContent,
+		Status:      PolicyStatusActive,
+		Priority:    100,
+		Rules: []Rule{
+			{ID: "rule1", Field: "document.page_count", Operator: OpGreaterThan, Value: 10},
+		},
+		Actions: []PolicyActionConfig{
+			{Type: ActionDeny, Parameters: map[string]interface{}{"message": "Too many pages"}, Order: 1},
+		},
+		Scope:     PolicyScope{},
+		CreatedBy: userID,
+	}
+
+	repo := NewRepository(ts.DB.Pool)
+	if err := repo.Create(ctx, policy); err != nil {
 		t.Fatalf("Failed to create policy: %v", err)
 	}
 
@@ -328,7 +325,7 @@ func TestEvaluateHandler_DenyPolicy(t *testing.T) {
 		"document_type":  "pdf",
 		"page_count":     50,
 		"color_mode":     "color",
-		"duplex_mode":     "duplex",
+		"duplex_mode":    "duplex",
 		"cost":           5.50,
 	}
 

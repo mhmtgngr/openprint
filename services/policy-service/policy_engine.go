@@ -200,14 +200,15 @@ func (r *Repository) Create(ctx context.Context, policy *Policy) error {
 	policy.UpdatedAt = time.Now()
 	policy.Version = 1
 
-	// Set default created_by if not provided (system user)
-	if policy.CreatedBy == "" {
-		policy.CreatedBy = "00000000-0000-0000-0000-000000000000"
-	}
-
 	rulesJSON, _ := json.Marshal(policy.Rules)
 	actionsJSON, _ := json.Marshal(policy.Actions)
 	scopeJSON, _ := json.Marshal(policy.Scope)
+
+	// Handle NULL created_by for system/unauthenticated policies
+	var createdBy interface{} = policy.CreatedBy
+	if policy.CreatedBy == "" {
+		createdBy = nil
+	}
 
 	query := `
 		INSERT INTO print_policies
@@ -219,7 +220,7 @@ func (r *Repository) Create(ctx context.Context, policy *Policy) error {
 	_, err := r.db.Exec(ctx, query,
 		policy.ID, policy.Name, policy.Description, policy.Type, policy.Status,
 		policy.Priority, rulesJSON, actionsJSON, scopeJSON,
-		policy.CreatedAt, policy.UpdatedAt, policy.CreatedBy, policy.Version,
+		policy.CreatedAt, policy.UpdatedAt, createdBy, policy.Version,
 	)
 
 	if err != nil {
@@ -364,6 +365,12 @@ func (r *Repository) Update(ctx context.Context, policy *Policy) error {
 	actionsJSON, _ := json.Marshal(policy.Actions)
 	scopeJSON, _ := json.Marshal(policy.Scope)
 
+	// Handle NULL modified_by
+	var modifiedBy interface{} = policy.ModifiedBy
+	if policy.ModifiedBy == "" {
+		modifiedBy = nil
+	}
+
 	query := `
 		UPDATE print_policies
 		SET name = $2, description = $3, type = $4, status = $5, priority = $6,
@@ -375,7 +382,7 @@ func (r *Repository) Update(ctx context.Context, policy *Policy) error {
 	cmdTag, err := r.db.Exec(ctx, query,
 		policy.ID, policy.Name, policy.Description, policy.Type, policy.Status,
 		policy.Priority, rulesJSON, actionsJSON, scopeJSON, policy.UpdatedAt,
-		policy.ModifiedBy, policy.Version,
+		modifiedBy, policy.Version,
 	)
 
 	if err != nil {

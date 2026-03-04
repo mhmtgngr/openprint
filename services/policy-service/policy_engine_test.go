@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/openprint/openprint/internal/testutil"
 )
 
 func TestEngineEvaluateRules(t *testing.T) {
@@ -349,6 +350,17 @@ func TestRepositoryCreate(t *testing.T) {
 		t.Skip("Test database not available")
 	}
 
+	// Create a test organization and user first for foreign key constraint
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	if err != nil {
+		t.Fatalf("Failed to create test organization: %v", err)
+	}
+
+	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
 	repo := NewRepository(testDB.Pool)
 
 	policy := &Policy{
@@ -366,10 +378,10 @@ func TestRepositoryCreate(t *testing.T) {
 		Scope: PolicyScope{
 			UserIDs: []string{"user1"},
 		},
-		CreatedBy: uuid.New().String(),
+		CreatedBy: userID,
 	}
 
-	err := repo.Create(ctx, policy)
+	err = repo.Create(ctx, policy)
 	if err != nil {
 		t.Fatalf("Failed to create policy: %v", err)
 	}
@@ -392,6 +404,17 @@ func TestRepositoryGet(t *testing.T) {
 		t.Skip("Test database not available")
 	}
 
+	// Create a test organization and user first for foreign key constraint
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	if err != nil {
+		t.Fatalf("Failed to create test organization: %v", err)
+	}
+
+	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
 	repo := NewRepository(testDB.Pool)
 
 	// Create a policy first
@@ -402,7 +425,7 @@ func TestRepositoryGet(t *testing.T) {
 		Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
 		Actions:   []PolicyActionConfig{{Type: ActionDeny}},
 		Scope:     PolicyScope{},
-		CreatedBy: uuid.New().String(),
+		CreatedBy: userID,
 	}
 
 	if err := repo.Create(ctx, policy); err != nil {
@@ -433,18 +456,29 @@ func TestRepositoryList(t *testing.T) {
 		t.Skip("Test database not available")
 	}
 
+	// Create a test organization and user first for foreign key constraint
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	if err != nil {
+		t.Fatalf("Failed to create test organization: %v", err)
+	}
+
+	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
 	repo := NewRepository(testDB.Pool)
 
 	// Create multiple policies
 	for i := 0; i < 3; i++ {
 		policy := &Policy{
-		CreatedBy: uuid.New().String(),
-			Name:    fmt.Sprintf("Policy %d", i),
-			Type:    PolicyTypeQuota,
-			Status:  PolicyStatusActive,
-			Rules:   []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-			Actions: []PolicyActionConfig{{Type: ActionDeny}},
-			Scope:   PolicyScope{},
+			CreatedBy: userID,
+			Name:      fmt.Sprintf("Policy %d", i),
+			Type:      PolicyTypeQuota,
+			Status:    PolicyStatusActive,
+			Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
+			Actions:   []PolicyActionConfig{{Type: ActionDeny}},
+			Scope:     PolicyScope{},
 		}
 		if err := repo.Create(ctx, policy); err != nil {
 			t.Fatalf("Failed to create policy: %v", err)
@@ -476,17 +510,34 @@ func TestRepositoryUpdate(t *testing.T) {
 		t.Skip("Test database not available")
 	}
 
+	// Create a test organization and user first for foreign key constraint
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	if err != nil {
+		t.Fatalf("Failed to create test organization: %v", err)
+	}
+
+	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
+	// Create another user for modified_by
+	modifiedByID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user for modified_by: %v", err)
+	}
+
 	repo := NewRepository(testDB.Pool)
 
 	// Create a policy
 	policy := &Policy{
-		CreatedBy: uuid.New().String(),
-		Name:    "Original Name",
-		Type:    PolicyTypeQuota,
-		Status:  PolicyStatusDraft,
-		Rules:   []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-		Actions: []PolicyActionConfig{{Type: ActionDeny}},
-		Scope:   PolicyScope{},
+		CreatedBy: userID,
+		Name:      "Original Name",
+		Type:      PolicyTypeQuota,
+		Status:    PolicyStatusDraft,
+		Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
+		Actions:   []PolicyActionConfig{{Type: ActionDeny}},
+		Scope:     PolicyScope{},
 	}
 
 	if err := repo.Create(ctx, policy); err != nil {
@@ -498,7 +549,7 @@ func TestRepositoryUpdate(t *testing.T) {
 	// Update the policy
 	policy.Name = "Updated Name"
 	policy.Status = PolicyStatusActive
-	policy.ModifiedBy = "admin"
+	policy.ModifiedBy = modifiedByID
 
 	if err := repo.Update(ctx, policy); err != nil {
 		t.Fatalf("Failed to update policy: %v", err)
@@ -524,17 +575,28 @@ func TestRepositoryDelete(t *testing.T) {
 		t.Skip("Test database not available")
 	}
 
+	// Create a test organization and user first for foreign key constraint
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	if err != nil {
+		t.Fatalf("Failed to create test organization: %v", err)
+	}
+
+	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
 	repo := NewRepository(testDB.Pool)
 
 	// Create a policy
 	policy := &Policy{
-		CreatedBy: uuid.New().String(),
-		Name:    "To Delete",
-		Type:    PolicyTypeQuota,
-		Status:  PolicyStatusDraft,
-		Rules:   []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-		Actions: []PolicyActionConfig{{Type: ActionDeny}},
-		Scope:   PolicyScope{},
+		CreatedBy: userID,
+		Name:      "To Delete",
+		Type:      PolicyTypeQuota,
+		Status:    PolicyStatusDraft,
+		Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
+		Actions:   []PolicyActionConfig{{Type: ActionDeny}},
+		Scope:     PolicyScope{},
 	}
 
 	if err := repo.Create(ctx, policy); err != nil {
@@ -547,11 +609,13 @@ func TestRepositoryDelete(t *testing.T) {
 	}
 
 	// Try to get it - should fail
-	_, err := repo.Get(ctx, policy.ID)
+	_, err = repo.Get(ctx, policy.ID)
 	if err == nil {
 		t.Error("Expected error when getting deleted policy")
 	}
 }
+
+
 
 func TestRepositoryGetNotFound(t *testing.T) {
 	if testDB == nil || testDB.Pool == nil {

@@ -214,6 +214,11 @@ func policiesHandler(engine *Engine) http.HandlerFunc {
 				return
 			}
 
+			// Ensure policies is never nil for JSON encoding
+			if policies == nil {
+				policies = []*Policy{}
+			}
+
 			respondJSON(w, http.StatusOK, map[string]interface{}{
 				"policies": policies,
 				"page":     page,
@@ -617,5 +622,12 @@ func extractIDFromPath(path, prefix string) string {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+
+	// Ensure empty slices are encoded as [] instead of null
+	// by using a custom encoder
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(data); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+	}
 }

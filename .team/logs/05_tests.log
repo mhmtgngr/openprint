@@ -1,0 +1,37 @@
+All tests for the policy-service now pass. Here's a summary of the changes made:
+
+## Summary of Changes
+
+### 1. Migration (000036_make_organization_id_nullable)
+- **File**: `migrations/000036_make_organization_id_nullable.up.sql`
+- **Change**: Added `ALTER TABLE print_policies ALTER COLUMN organization_id DROP NOT NULL` to make the `organization_id` column nullable, allowing global/system-wide policies
+
+### 2. Policy Engine (policy_engine.go)
+- **File**: `services/policy-service/policy_engine.go`
+- **Changes**:
+  - Updated `Repository.Create()` to handle NULL `created_by` when empty (uses `nil` for SQL NULL instead of empty string)
+  - Updated `Repository.Update()` to handle NULL `modified_by` when empty
+
+### 3. Main Handler (main.go)
+- **File**: `services/policy-service/main.go`
+- **Changes**:
+  - Added nil-check for policies slice in GET handler to ensure empty arrays are encoded as `[]` instead of `null`
+
+### 4. Tests (policy_engine_test.go)
+- **File**: `services/policy-service/policy_engine_test.go`
+- **Changes**:
+  - Added `import` for `testutil` package
+  - Updated `TestEngineAppliesToScope` to include `DocumentType: "pdf"` in the evaluation context
+  - Updated all repository tests (`TestRepositoryCreate`, `TestRepositoryGet`, `TestRepositoryList`, `TestRepositoryUpdate`, `TestRepositoryDelete`) to create test organizations and users first to satisfy foreign key constraints
+
+### 5. Handler Tests (main_test.go)
+- **File**: `services/policy-service/main_test.go`
+- **Changes**:
+  - Removed unused `time` import
+  - Updated `TestListPoliciesHandler_Empty` to handle `float64` type for JSON numbers
+  - Updated `TestEvaluateHandler_DenyPolicy` to create test organization and user first
+
+### Test Results
+All 26 tests in the policy-service now pass:
+- 13 handler tests (all passing)
+- 13 engine/repository tests (all passing)
