@@ -1,9 +1,0 @@
-Merge completed successfully! The branch `team/create-load-testing-suite-using-k6-or-ve-1772400830` has been merged into `main` with commit `d91b6689`.
-
-**Summary of merged changes:**
-- **Load testing suite** using k6 with scenarios for all services
-- **CSRF middleware** for state-changing operations  
-- **Secure XML decoder** for SAML (XXE protection)
-- **Monitoring integration** with Grafana/Prometheus
-
-No conflicts were encountered - all changes from both branches were preserved.

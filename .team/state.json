@@ -38,11 +38,27 @@
       "verdict": "APPROVE"
     },
     "deploy": {
+      "status": "done",
+      "_updated": "2026-03-04T18:00:46.698600"
+    },
+    "ci": {
+      "status": "done",
+      "_updated": "2026-03-04T18:00:59.716540"
+    },
+    "perf": {
+      "status": "done",
+      "_updated": "2026-03-04T18:01:16.736723"
+    },
+    "docs": {
+      "status": "done",
+      "_updated": "2026-03-04T18:01:29.646636"
+    },
+    "e2e_gen": {
       "status": "running",
-      "_updated": "2026-03-04T17:51:18.452809"
+      "_updated": "2026-03-04T18:01:29.696729"
     }
   },
   "project": "Fix failing tests in services/compliance-service/main_test.go. Tests show similar issues to policy-service with UUID handling and database constraints. Verify compliance-service has proper test fixtures, valid UUID generation in test data, and correct handling of nullable foreign key columns. Ensure migrations run before tests execute via internal/testutil. Add missing test data for audit_logs, compliance_reports, and control_mappings tables if needed.",
   "branch": "team/fix-failing-tests-in-servicescompliance--1772600773",
-  "current_phase": "deploy"
+  "current_phase": "e2e_gen"
 }

@@ -1,9 +1,0 @@
-**ALREADY_DONE**
-
-The `phase_deploy` function (lines 1240-1289) contains only one grep/head pipe, and it **already has `|| true`** applied:
-
-```bash
-for cname in $(podman ps -a --format '{{.Names}}' 2>/dev/null | grep "$PROJECT_NAME" | head -10 || true);
-```
-
-No changes needed - the pipe is already protected with error handling.
