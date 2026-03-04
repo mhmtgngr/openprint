@@ -5,7 +5,9 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: cbfa321d [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+- Recent issues: 9c860991 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+a1b09566 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+cbfa321d [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 7bbe34d0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 bc0b5758 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 9ba4db3f [AI Auto] fix_bug: Tests are failing - this is the highest priority i
@@ -23,8 +25,6 @@ a990f8ec [auto-fix] 2 failing packages
 fe5f46a9 [🐳 DevOps] Fix startup failures:
 c4d8497d [🐳 DevOps] Read CLAUDE.md. Docker build failed for dashboard. Error:
 e3ec3951 fix: resolve policy-service schema mismatch and test failures
-d7e7bfba fix: resolve port conflicts in services
-64d6f6e1 fix: rename 'limit' column to 'request_limit' in migration 000028
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
