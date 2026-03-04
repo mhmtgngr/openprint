@@ -188,7 +188,12 @@ func GetTestDBConnection(db *TestDB) string {
 
 // TruncateAllTables truncates all tables in the test database.
 // This is useful for cleaning up between tests without re-creating the container.
+// Uses a 30-second timeout to prevent hanging.
 func TruncateAllTables(ctx context.Context, db *pgxpool.Pool) error {
+	// Add timeout to prevent hanging
+	timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	// Get all table names
 	tables := []string{
 		"job_assignments",
@@ -218,33 +223,14 @@ func TruncateAllTables(ctx context.Context, db *pgxpool.Pool) error {
 		"compliance_controls",
 	}
 
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	// Disable triggers for faster truncation
-	if _, err := tx.Exec(ctx, "SET session_replication_role = 'replica'"); err != nil {
-		return fmt.Errorf("disable triggers: %w", err)
-	}
-
-	// Truncate each table with CASCADE
+	// Use a direct connection approach to avoid pool exhaustion
+	// First, try to truncate with CASCADE (handles foreign keys automatically)
 	for _, table := range tables {
 		query := fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table)
-		if _, err := tx.Exec(ctx, query); err != nil {
+		if _, err := db.Exec(timeoutCtx, query); err != nil {
 			// Table might not exist, continue
 			continue
 		}
-	}
-
-	// Re-enable triggers
-	if _, err := tx.Exec(ctx, "SET session_replication_role = 'origin'"); err != nil {
-		return fmt.Errorf("enable triggers: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil
