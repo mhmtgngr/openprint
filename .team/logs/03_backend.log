@@ -1,3 +1,24 @@
-Error: Claude Code cannot be launched inside another Claude Code session.
-Nested sessions share runtime resources and will crash all active sessions.
-To bypass this check, unset the CLAUDECODE environment variable.
+Implementation complete. Here's a summary of the changes:
+
+## Files Created
+
+### 1. Migration Files
+- `migrations/000036_make_organization_id_nullable.up.sql` - Makes organization_id nullable in the print_policies table, enabling global/system-wide policies
+- `migrations/000036_make_organization_id_nullable.down.sql` - Rollback migration
+
+## Files Modified
+
+### 2. `services/policy-service/policy_engine.go`
+- Fixed `compareIn()` function to use JSON marshaling for type-agnostic slice comparison (handles `[]string`, `[]int`, etc. from JSON unmarshaling)
+- Fixed `compareBetween()` function to use the new `toSlice()` helper
+- Added `toSlice()` helper function that converts strongly-typed slices to `[]interface{}` via JSON
+
+### 3. `internal/testutil/fixtures.go`
+- Added `ValidUUID()` - returns a valid UUID string
+- Added `ValidPolicyID()` - alias for ValidUUID for semantic clarity
+- Added `ValidUserID()` - valid user ID helper
+- Added `ValidOrganizationID()` - valid organization ID helper
+- Added `ValidPrinterID()` - valid printer ID helper
+
+### Note
+The `EvaluationContext` struct already contains `DocumentType` field at line 126 of `policy_engine.go`, so no change was needed there.

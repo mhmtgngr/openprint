@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-02T21:06:17.581015",
+  "timestamp": "2026-03-04T03:27:01.252538",
   "completion_pct": 95,
   "pr_ready": true,
   "dimension_scores": {
@@ -15,7 +15,7 @@
   "counts": {
     "backend_files": "56/0",
     "frontend_files": "0/0",
-    "tests": "100/0",
+    "tests": "103/0",
     "endpoints": "6/0",
     "migrations": "72/0",
     "todos": 20,
@@ -26,8 +26,8 @@
     {
       "type": "tests",
       "priority": "critical",
-      "item": "2 failing packages",
-      "description": "Fix 2 failing test packages"
+      "item": "3 failing packages",
+      "description": "Fix 3 failing test packages"
     },
     {
       "type": "todos",

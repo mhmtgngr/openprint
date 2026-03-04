@@ -2,52 +2,22 @@
   "phases": {
     "requirements": {
       "status": "done",
-      "_updated": "2026-03-02T20:53:28.980156"
+      "_updated": "2026-03-04T03:28:21.101365"
     },
     "market_research": {
       "status": "done",
-      "_updated": "2026-03-02T20:53:37.431058"
+      "_updated": "2026-03-04T03:32:59.676324"
     },
     "design": {
       "status": "done",
-      "_updated": "2026-03-02T20:53:39.862795"
+      "_updated": "2026-03-04T03:33:41.065842"
     },
     "backend": {
-      "status": "done",
-      "_updated": "2026-03-02T20:53:57.075834"
-    },
-    "frontend": {
-      "status": "done",
-      "_updated": "2026-03-02T20:54:13.798631"
-    },
-    "testing": {
-      "status": "done",
-      "_updated": "2026-03-02T20:54:16.109300",
-      "write_tests": "done",
-      "unit_tests": "passed",
-      "e2e": "skipped"
-    },
-    "qa": {
-      "status": "done",
-      "_updated": "2026-03-02T20:54:18.576271",
-      "verdict": "APPROVE"
-    },
-    "security": {
-      "status": "done",
-      "_updated": "2026-03-02T20:54:20.596754",
-      "verdict": "APPROVE"
-    },
-    "deploy": {
       "status": "running",
-      "_updated": "2026-03-02T20:54:20.680334"
-    },
-    "e2e_production": {
-      "status": "done",
-      "_updated": "2026-03-02T05:13:28.392554",
-      "result": "passed"
+      "_updated": "2026-03-04T03:33:41.115926"
     }
   },
-  "project": "Fix test failures and complete remaining gaps. Current completion: 69%. Prioritize: 1) Fix failing tests, 2) Complete missing migrations, 3) Implement missing frontend components, 4) Add missing backend handlers.",
-  "branch": "team/fix-test-failures-and-complete-remaining-1772484805",
-  "current_phase": "deploy"
+  "project": "Fix 7 failing tests in services/policy-service/. Issues: 1) TestListPoliciesHandler_Empty - policies field missing or wrong type in response JSON. 2) TestCreatePolicyHandler - returns 500 instead of 201, UUID validation failing with empty string. 3) TestEvaluateHandler_DenyPolicy - null organization_id violates not-null constraint. 4) TestEngineEvaluateRules - 'In' and 'Between' rule operators return false instead of true. 5) TestEngineAppliesToScope - document type matching fails. 6) TestRepositoryCreate - UUID parsing fails with 'admin' string. Fix database schema to allow null organization_id, fix UUID generation in tests, repair rule evaluation logic for In/Between operators, and ensure test fixtures provide valid UUIDs.",
+  "branch": "team/fix-7-failing-tests-in-servicespolicy-se-1772594821",
+  "current_phase": "backend"
 }

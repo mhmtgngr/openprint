@@ -656,26 +656,43 @@ func (e *Engine) compareContains(a, b interface{}) bool {
 	return hasPrefixOrSuffix(aStr, bStr)
 }
 
+// compareIn checks if value a is in slice b using type-agnostic JSON comparison.
+// This handles strongly-typed slices ([]string, []int, etc.) from JSON unmarshaling.
 func (e *Engine) compareIn(a, b interface{}) bool {
-	// Expect b to be a slice
-	bSlice, ok := b.([]interface{})
-	if !ok {
+	// Convert b to a JSON slice representation
+	bSlice, err := toSlice(b)
+	if err != nil {
 		return false
 	}
 
-	aStr := fmt.Sprintf("%v", a)
+	// Convert a to JSON for consistent comparison
+	aJSON, err := json.Marshal(a)
+	if err != nil {
+		return false
+	}
+	aStr := string(aJSON)
+
 	for _, item := range bSlice {
-		if fmt.Sprintf("%v", item) == aStr {
+		itemJSON, err := json.Marshal(item)
+		if err != nil {
+			// Fallback to string comparison
+			if fmt.Sprintf("%v", item) == fmt.Sprintf("%v", a) {
+				return true
+			}
+			continue
+		}
+		if string(itemJSON) == aStr {
 			return true
 		}
 	}
 	return false
 }
 
+// compareBetween checks if value a is between min and max (inclusive) using type-agnostic JSON comparison.
 func (e *Engine) compareBetween(a, b interface{}) bool {
-	// Expect b to be [min, max]
-	bSlice, ok := b.([]interface{})
-	if !ok || len(bSlice) != 2 {
+	// Convert b to a slice
+	bSlice, err := toSlice(b)
+	if err != nil || len(bSlice) != 2 {
 		return false
 	}
 
@@ -687,6 +704,28 @@ func (e *Engine) compareBetween(a, b interface{}) bool {
 		return af >= min && af <= max
 	}
 	return false
+}
+
+// toSlice converts an interface{} to []interface{} for comparison.
+// It handles strongly-typed slices from JSON unmarshaling by converting via JSON.
+func toSlice(v interface{}) ([]interface{}, error) {
+	// If it's already []interface{}, return it
+	if slice, ok := v.([]interface{}); ok {
+		return slice, nil
+	}
+
+	// Try to convert via JSON marshaling for type-agnostic handling
+	jsonData, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []interface{}
+	if err := json.Unmarshal(jsonData, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func toFloat64(v interface{}) (float64, bool) {

@@ -2,7 +2,7 @@
   "results": [
     {
       "title": "Claude search",
-      "content": "",
+      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"Vercel Security & Compliance Measures\",\n      \"content\": \"Covers SOC2 Type 2 compliance, ISO 27001:2022 certification, GDPR support, HIPAA compliance, and PCI DSS. Provides comprehensive security measures including DDoS mitigation, data encryption, and detailed compliance frameworks for cloud services.\",\n      \"url\": \"https://vercel.com/docs/security/compliance\"\n    },\n    {\n      \"title\": \"Splashtop Compliance - ISO/IEC 27001, SOC2, GDPR and CCPA\",\n      \"content\": \"Splashtop has achieved ISO/IEC 27001:2022 certification and SOC 2 Type 2 compliance. Supports HIPAA, PCI DSS, FERPA requirements. The 2022 update strengthens cloud security, threat intelligence, privacy by design, operational resilience, and supply chain risk management.\",\n      \"url\": \"https://www.splashtop.com/cn/compliance\"\n    },\n    {\n      \"title\": \"IBM Cloud Compliance - ISO 27001, SOC 2, GDPR\",\n      \"content\": \"IBM provides comprehensive compliance coverage including ",
       "url": ""
     }
   ]

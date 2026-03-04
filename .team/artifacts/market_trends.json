@@ -2,7 +2,7 @@
   "results": [
     {
       "title": "Claude search",
-      "content": "",
+      "content": "```json\n{\n  \"results\": [\n    {\n      \"title\": \"Cloud Print Management Market Size, Share & Forecast [2034]\",\n      \"content\": \"The global cloud print management market is projected to grow at a CAGR of 11.3% from 2025 to 2032. Key deployment types include public cloud, private cloud, and hybrid cloud. Solution categories encompass print management software, workflow and document management, and device management and monitoring. Major end-user segments include BFSI, government, IT/telecom, healthcare, retail/e-commerce, with North America and Asia-Pacific leading regional growth.\",\n      \"url\": \"https://www.fortunebusinessinsights.com/zh/cloud-print-management-market-112117\"\n    },\n    {\n      \"title\": \"2025 Microservices Development Roadmap: Architecture to Implementation\",\n      \"content\": \"In 2025, microservices architecture has become the standard for large-scale internet projects, with 92% of enterprises adopting it for new projects. Key trends include: 1) Deep integration of cloud",
       "url": ""
     }
   ]
