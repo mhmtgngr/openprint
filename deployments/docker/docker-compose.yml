@@ -56,7 +56,7 @@ services:
     container_name: openprint-auth-service
     environment:
       SERVER_ADDR: ":8001"
-      METRICS_PORT: "9091"
+      METRICS_PORT: "9101"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -67,7 +67,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18001:8001"
-      - "9091:9091"
+      - "9101:9101"
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,7 +91,7 @@ services:
     container_name: openprint-registry-service
     environment:
       SERVER_ADDR: ":8002"
-      METRICS_PORT: "9092"
+      METRICS_PORT: "9102"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
@@ -101,7 +101,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8002:8002"
-      - "9092:9092"
+      - "9102:9102"
     depends_on:
       postgres:
         condition: service_healthy
@@ -125,7 +125,7 @@ services:
     container_name: openprint-job-service
     environment:
       SERVER_ADDR: ":8003"
-      METRICS_PORT: "9093"
+      METRICS_PORT: "9103"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -137,7 +137,7 @@ services:
       PROCESSOR_WORKERS: 10
     ports:
       - "8003:8003"
-      - "9093:9093"
+      - "9103:9103"
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,7 +165,7 @@ services:
     container_name: openprint-storage-service
     environment:
       SERVER_ADDR: ":8004"
-      METRICS_PORT: "9094"
+      METRICS_PORT: "9104"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_BUCKET: ${S3_BUCKET:-openprint-documents}
@@ -182,7 +182,7 @@ services:
       MAX_UPLOAD_MB: 100
     ports:
       - "8004:8004"
-      - "9094:9094"
+      - "9104:9104"
     volumes:
       - storage_data:/data/storage
     depends_on:
@@ -208,7 +208,7 @@ services:
     container_name: openprint-notification-service
     environment:
       SERVER_ADDR: ":8005"
-      METRICS_PORT: "9095"
+      METRICS_PORT: "9105"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
@@ -218,7 +218,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18005:8005"
-      - "9095:9095"
+      - "9105:9105"
     depends_on:
       postgres:
         condition: service_healthy
@@ -248,7 +248,7 @@ services:
     container_name: openprint-api-gateway
     environment:
       SERVER_ADDR: ":8000"
-      METRICS_PORT: "9090"
+      METRICS_PORT: "9106"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -270,7 +270,7 @@ services:
       M365_INTEGRATION_SERVICE_URL: http://m365-integration-service:8011
     ports:
       - "8000:8000"
-      - "9090:9090"
+      - "9106:9106"
     depends_on:
       postgres:
         condition: service_healthy
@@ -304,7 +304,7 @@ services:
     container_name: openprint-analytics-service
     environment:
       SERVER_ADDR: ":8006"
-      METRICS_PORT: "9096"
+      METRICS_PORT: "9107"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -315,7 +315,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8006:8006"
-      - "9096:9096"
+      - "9107:9107"
     depends_on:
       postgres:
         condition: service_healthy
@@ -341,7 +341,7 @@ services:
     container_name: openprint-organization-service
     environment:
       SERVER_ADDR: ":8007"
-      METRICS_PORT: "9097"
+      METRICS_PORT: "9108"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -352,7 +352,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8007:8007"
-      - "9097:9097"
+      - "9108:9108"
     depends_on:
       postgres:
         condition: service_healthy
@@ -378,7 +378,7 @@ services:
     container_name: openprint-compliance-service
     environment:
       SERVER_ADDR: ":8008"
-      METRICS_PORT: "9098"
+      METRICS_PORT: "9109"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
@@ -388,7 +388,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8008:8008"
-      - "9098:9098"
+      - "9109:9109"
     depends_on:
       postgres:
         condition: service_healthy
@@ -412,7 +412,7 @@ services:
     container_name: openprint-policy-service
     environment:
       SERVER_ADDR: ":8010"
-      METRICS_PORT: "9099"
+      METRICS_PORT: "9110"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -423,7 +423,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8010:8010"
-      - "9099:9099"
+      - "9110:9110"
     depends_on:
       postgres:
         condition: service_healthy
@@ -449,7 +449,7 @@ services:
     container_name: openprint-m365-integration-service
     environment:
       SERVER_ADDR: ":8011"
-      METRICS_PORT: "9100"
+      METRICS_PORT: "9111"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -461,7 +461,7 @@ services:
       M365_STORAGE_PATH: /var/lib/openprint/m365
     ports:
       - "8011:8011"
-      - "9100:9100"
+      - "9111:9111"
     volumes:
       - m365_data:/var/lib/openprint/m365
     depends_on:

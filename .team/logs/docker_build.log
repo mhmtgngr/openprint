@@ -7753,3 +7753,336 @@ src/pages/admin/RateLimitPolicies.tsx(33,33): error TS2307: Cannot find module '
 src/pages/admin/RateLimitPolicies.tsx(34,39): error TS2307: Cannot find module '@/components/ratelimit/PolicyViolationsPanel' or its corresponding type declarations.
 src/pages/admin/RateLimitPolicies.tsx(244,10): error TS6133: 'deletingPolicy' is declared but its value is never read.
 Error: building at STEP "RUN npm run build": while running runtime: exit status 1
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o job-service ./services/job-service
+--> 97a40bcc262f
+[2/2] STEP 1/10: FROM alpine:3.20
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/10: WORKDIR /app
+--> Using cache 7c1d084a6cc5a55bdd5f7e8ce4aa664137a28913a025497eb83c13e64af1a1aa
+--> 7c1d084a6cc5
+[2/2] STEP 5/10: COPY --from=builder /build/job-service .
+--> Using cache 68bff994d62ecde55fa0cab0099f425dc9534c5fe29fe186ac30203377a52689
+--> 68bff994d62e
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> Using cache 278730c86d531b55853180f3734073eeda4eb5bc1c60d408fda766529700a0da
+--> 278730c86d53
+[2/2] STEP 7/10: USER appuser
+--> Using cache 190dfdac6fb50cf3bd40f55ff4618421406cc7d55882c5a7c1361a597958bc82
+--> 190dfdac6fb5
+[2/2] STEP 8/10: EXPOSE 8003
+--> Using cache 971256de7fb4be9733aa679458fcd398557d70419b31c7e45eb0df29d2276903
+--> 971256de7fb4
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8003/health || exit 1
+--> Using cache 0855c342aff082b001d54399a484198d94591d61890fe01cabb7a2979323ce79
+--> 0855c342aff0
+[2/2] STEP 10/10: CMD ["./job-service"]
+--> Using cache ac41e98d4a00924ff1206b342a5fcc816e9bdf2c73d3135db4db5a6b031351b2
+[2/2] COMMIT openprint/job-service:dev
+--> ac41e98d4a00
+Successfully tagged localhost/openprint/job-service:dev
+ac41e98d4a00924ff1206b342a5fcc816e9bdf2c73d3135db4db5a6b031351b2
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> Using cache 6d983abe832b9da32c65e9bb494d3268afee194dd259d00241aa832876c57899
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o m365-integration-service ./services/m365-integration-service
+--> 312b774e2eb3
+[2/2] STEP 1/10: FROM alpine:3.20
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/10: WORKDIR /app
+--> Using cache 7c1d084a6cc5a55bdd5f7e8ce4aa664137a28913a025497eb83c13e64af1a1aa
+--> 7c1d084a6cc5
+[2/2] STEP 5/10: COPY --from=builder /build/m365-integration-service .
+--> 366108fc17df
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> b7670a183a80
+[2/2] STEP 7/10: USER appuser
+--> 4896765726f8
+[2/2] STEP 8/10: EXPOSE 8011
+--> 1f7d7d346984
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8011/health || exit 1
+time="2026-03-04T04:39:29Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> 5e5c45cb768e
+[2/2] STEP 10/10: CMD ["./m365-integration-service"]
+[2/2] COMMIT openprint/m365-integration-service:dev
+time="2026-03-04T04:39:30Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> 3e194407ffd3
+Successfully tagged localhost/openprint/m365-integration-service:dev
+3e194407ffd3c57d0b1374e98d86781e7d18c011aae413a69326f3d95ca1b3a7
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> Using cache 6d983abe832b9da32c65e9bb494d3268afee194dd259d00241aa832876c57899
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-service ./services/notification-service
+--> 4789a6a76de2
+[2/2] STEP 1/10: FROM alpine:3.20
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/10: WORKDIR /app
+--> Using cache 7c1d084a6cc5a55bdd5f7e8ce4aa664137a28913a025497eb83c13e64af1a1aa
+--> 7c1d084a6cc5
+[2/2] STEP 5/10: COPY --from=builder /build/notification-service .
+--> Using cache 73a0a317c7a4d7fa89179d8e14bb7dc7c9a862e3ebc6962483c77e71ce3f5919
+--> 73a0a317c7a4
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> Using cache 8b0f0e73c2ddf8971c49108401a596054185a9d5de2cae08b5c781d381b96b64
+--> 8b0f0e73c2dd
+[2/2] STEP 7/10: USER appuser
+--> Using cache f5a57a712f911ae01fea9f0aaa39ca9314fbdbcb6070aa05fdd0ad9ff8600882
+--> f5a57a712f91
+[2/2] STEP 8/10: EXPOSE 8005
+--> Using cache 98079cb524b49f2a290b0a78ab7ed3ba7251c8b9fc7b5324626278d27ec9da48
+--> 98079cb524b4
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8005/health || exit 1
+--> Using cache 6b05903d38f6d74eda56a50ddb5064e5936712059db4e0d7ad90786f58c2f7e5
+--> 6b05903d38f6
+[2/2] STEP 10/10: CMD ["./notification-service"]
+--> Using cache a0b4a045013672450d7612564a5858b9c8b3501a824303c03b1fc01e30b8698e
+[2/2] COMMIT openprint/notification-service:dev
+--> a0b4a0450136
+Successfully tagged localhost/openprint/notification-service:dev
+a0b4a045013672450d7612564a5858b9c8b3501a824303c03b1fc01e30b8698e
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> Using cache 6d983abe832b9da32c65e9bb494d3268afee194dd259d00241aa832876c57899
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o organization-service ./services/organization-service
+--> 36ff4e600bd5
+[2/2] STEP 1/10: FROM alpine:3.20
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/10: WORKDIR /app
+--> Using cache 7c1d084a6cc5a55bdd5f7e8ce4aa664137a28913a025497eb83c13e64af1a1aa
+--> 7c1d084a6cc5
+[2/2] STEP 5/10: COPY --from=builder /build/organization-service .
+--> ef0941a72971
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> 0c1d4976913e
+[2/2] STEP 7/10: USER appuser
+--> 133dfb1a1d2f
+[2/2] STEP 8/10: EXPOSE 8007
+--> e92acecb372a
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8007/health || exit 1
+time="2026-03-04T04:41:01Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> e128c9e20148
+[2/2] STEP 10/10: CMD ["./organization-service"]
+[2/2] COMMIT openprint/organization-service:dev
+time="2026-03-04T04:41:02Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> 4ba5147eac97
+Successfully tagged localhost/openprint/organization-service:dev
+4ba5147eac97a201aa9e66fd9906293c641b61e260496dafb1c373fc4680d512
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> Using cache 6d983abe832b9da32c65e9bb494d3268afee194dd259d00241aa832876c57899
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o policy-service ./services/policy-service
+--> c04b1a9852aa
+[2/2] STEP 1/10: FROM alpine:3.20
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/10: WORKDIR /app
+--> Using cache 7c1d084a6cc5a55bdd5f7e8ce4aa664137a28913a025497eb83c13e64af1a1aa
+--> 7c1d084a6cc5
+[2/2] STEP 5/10: COPY --from=builder /build/policy-service .
+--> 23b7e532a587
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> b51845d1eb4f
+[2/2] STEP 7/10: USER appuser
+--> 6321620c1488
+[2/2] STEP 8/10: EXPOSE 8010
+--> 0d7357f12952
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8010/health || exit 1
+time="2026-03-04T04:41:51Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> 1797afcc2272
+[2/2] STEP 10/10: CMD ["./policy-service"]
+[2/2] COMMIT openprint/policy-service:dev
+time="2026-03-04T04:41:51Z" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> e881138c566e
+Successfully tagged localhost/openprint/policy-service:dev
+e881138c566e0d12be5697f181232362681b5954916610b806ba6009424052be
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> Using cache 6d983abe832b9da32c65e9bb494d3268afee194dd259d00241aa832876c57899
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o registry-service ./services/registry-service
+--> fca83489ee1d
+[2/2] STEP 1/10: FROM alpine:3.20
+[2/2] STEP 2/10: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/10: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/10: WORKDIR /app
+--> Using cache 7c1d084a6cc5a55bdd5f7e8ce4aa664137a28913a025497eb83c13e64af1a1aa
+--> 7c1d084a6cc5
+[2/2] STEP 5/10: COPY --from=builder /build/registry-service .
+--> Using cache 56cde4446890c7c38d171c188d083d5a5ab21eda4643261f351b7f3f91de3378
+--> 56cde4446890
+[2/2] STEP 6/10: RUN chown -R appuser:appuser /app
+--> Using cache 97f0b1cb7234af59191e900af21b7700fcf01e5345bf2df8369f15c3342aca98
+--> 97f0b1cb7234
+[2/2] STEP 7/10: USER appuser
+--> Using cache d886cb87b75c00ec44bba031d88f81f9e7f253029caf9c040765e4c89fb91b58
+--> d886cb87b75c
+[2/2] STEP 8/10: EXPOSE 8002
+--> Using cache c0a9d43b0fb0d66eed295c60ecf61a2a2b22681ff247c5bc076da530a6b9c436
+--> c0a9d43b0fb0
+[2/2] STEP 9/10: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8002/health || exit 1
+--> Using cache d4d8ccca1995c4571acdf14edb6264f425522171a9251417b083749b48387b3f
+--> d4d8ccca1995
+[2/2] STEP 10/10: CMD ["./registry-service"]
+--> Using cache 87af5dbbcd8af25676e13800c0333ddd7192e41f47812430fb51b625627aca6d
+[2/2] COMMIT openprint/registry-service:dev
+--> 87af5dbbcd8a
+Successfully tagged localhost/openprint/registry-service:dev
+87af5dbbcd8af25676e13800c0333ddd7192e41f47812430fb51b625627aca6d
+[1/2] STEP 1/7: FROM golang:1.24-alpine AS builder
+[1/2] STEP 2/7: RUN apk add --no-cache git
+--> Using cache 881f13e2389299b6f32363e6b190bf83bd71e9f3d0d465b66328f8c519e85264
+--> 881f13e23892
+[1/2] STEP 3/7: WORKDIR /build
+--> Using cache 60fda999a55763a58a36c3c86859cee46c6c5afeff77924fb9a005aaa522e457
+--> 60fda999a557
+[1/2] STEP 4/7: COPY go.mod go.sum ./
+--> Using cache 641c4fc05f10bd365c21dda85cea954c1701592b3158eb72527ac5ba42625b58
+--> 641c4fc05f10
+[1/2] STEP 5/7: RUN go mod download
+--> Using cache d85999544ea8198b4537e2ea4337ffe3b6b1610984f9c9e91e8292f73364922c
+--> d85999544ea8
+[1/2] STEP 6/7: COPY . .
+--> Using cache 6d983abe832b9da32c65e9bb494d3268afee194dd259d00241aa832876c57899
+--> 6d983abe832b
+[1/2] STEP 7/7: RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o storage-service ./services/storage-service
+--> 792042e63044
+[2/2] STEP 1/11: FROM alpine:3.20
+[2/2] STEP 2/11: RUN apk --no-cache add ca-certificates tzdata curl
+--> Using cache 1b5580412ec9b30f54346fc936bd8e8a89f246785be2c438aa021b81a8a3ce38
+--> 1b5580412ec9
+[2/2] STEP 3/11: RUN addgroup -g 1000 appuser &&     adduser -D -u 1000 -G appuser appuser
+--> Using cache 187c3caa0402d187d48722664722ba5fff0f9ac1e8a242b26f2d53579e1506a6
+--> 187c3caa0402
+[2/2] STEP 4/11: RUN mkdir -p /data/storage &&     chown -R appuser:appuser /data
+--> Using cache 2ff9b5e32ebc955aad2744808766a586dec6fc54fb66807b48c161ae9671b57e
+--> 2ff9b5e32ebc
+[2/2] STEP 5/11: WORKDIR /app
+--> Using cache 95b725b7007d19ffcd1bcaea7902a50f06e93d26815352164304149b04889405
+--> 95b725b7007d
+[2/2] STEP 6/11: COPY --from=builder /build/storage-service .
+--> Using cache dc5b00979bd86d25eacd9ac74992b4f4c5cb2049834dfa4b5a74e85ae92ab412
+--> dc5b00979bd8
+[2/2] STEP 7/11: RUN chown -R appuser:appuser /app
+--> Using cache a5d307f0bd7aef8c405d217083d8580f6d53034a6c08e270ad9e7402f4885218
+--> a5d307f0bd7a
+[2/2] STEP 8/11: USER appuser
+--> Using cache a80fba6943077022782b5f0fb9389447bbe762de2e814009e457a1d4bdbcc402
+--> a80fba694307
+[2/2] STEP 9/11: EXPOSE 8004
+--> Using cache 88aac4d330ac3c6c895aeed1126eea9cb855bf420f5b899a523dc368764fee1d
+--> 88aac4d330ac
+[2/2] STEP 10/11: HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD curl -f http://localhost:8004/health || exit 1
+--> Using cache 79ad9daea7efabb694d7fe7c9aec5b18c634682ef5a7e24cdae2697b283eca81
+--> 79ad9daea7ef
+[2/2] STEP 11/11: CMD ["./storage-service"]
+--> Using cache 60ad516555e037b0e31deefb9de035ec291bd9f1bb5d17f6d31b9570a0453818
+[2/2] COMMIT openprint/storage-service:dev
+--> 60ad516555e0
+Successfully tagged localhost/openprint/storage-service:dev
+60ad516555e037b0e31deefb9de035ec291bd9f1bb5d17f6d31b9570a0453818

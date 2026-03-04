@@ -1,3 +1,45 @@
-Error: Claude Code cannot be launched inside another Claude Code session.
-Nested sessions share runtime resources and will crash all active sessions.
-To bypass this check, unset the CLAUDECODE environment variable.
+All services are now running successfully! Here's a summary of the fixes:
+
+## Issues Found and Fixed
+
+### 1. Port Conflicts in `docker-compose.yml`
+The metrics ports (9090-9099) conflicted with:
+- **Port 9090**: Prometheus service
+- **Port 9093**: Alertmanager service
+
+### 2. Solution: Remapped Metrics Ports
+Changed all service metrics ports from 9090-9099 range to 9101-9111:
+
+| Service | Old Port | New Port |
+|---------|----------|----------|
+| auth-service | 9091 | 9101 |
+| registry-service | 9092 | 9102 |
+| job-service | 9093 | 9103 |
+| storage-service | 9094 | 9104 |
+| notification-service | 9095 | 9105 |
+| api-gateway | 9090 | 9106 |
+| analytics-service | 9096 | 9107 |
+| organization-service | 9097 | 9108 |
+| compliance-service | 9098 | 9109 |
+| policy-service | 9099 | 9110 |
+| m365-integration-service | 9100 | 9111 |
+
+### Current Status - All Services Healthy:
+- openprint-postgres (healthy)
+- openprint-redis (healthy)
+- openprint-auth-service (healthy)
+- openprint-registry-service (healthy)
+- openprint-job-service (healthy)
+- openprint-storage-service (healthy)
+- openprint-notification-service (healthy)
+- openprint-analytics-service (healthy)
+- openprint-api-gateway (healthy)
+- openprint-organization-service (healthy)
+- openprint-compliance-service (healthy)
+- openprint-policy-service (healthy)
+- openprint-m365-integration-service (healthy)
+- openprint-dashboard (running)
+- openprint-prometheus (running)
+- openprint-grafana (running)
+- openprint-alertmanager (running)
+- openprint-jaeger (running)
