@@ -3,9 +3,11 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	sharedcontext "github.com/openprint/openprint/internal/shared/context"
@@ -15,10 +17,17 @@ import (
 
 // RateLimitConfig holds configuration for rate limit middleware.
 type RateLimitConfig struct {
-	Limiter         *ratelimit.Limiter
-	SkipPaths       []string
-	SkipIPs         []string
-	EnableByDefault bool
+	Limiter           *ratelimit.Limiter
+	SkipPaths         []string
+	SkipIPs           []string
+	EnableByDefault   bool
+	// FailClosed determines behavior when rate limiter fails. If true, requests
+	// are blocked when the rate limiter is unavailable (more secure). If false,
+	// requests are allowed with degraded rate limiting (fail-open with logging).
+	FailClosed        bool
+	// DegradedLimit is the request limit per minute to apply when rate limiter
+	// is unavailable and FailClosed is false. Set to 0 to disable degraded limiting.
+	DegradedLimit     int
 }
 
 // RateLimit returns a middleware function that enforces rate limits.
@@ -46,6 +55,7 @@ func RateLimit(cfg *RateLimitConfig) func(http.Handler) http.Handler {
 
 			// Check if IP should be skipped
 			clientIP := getClientIP(r)
+			userID := sharedcontext.GetUserID(r.Context())
 			for _, skipIP := range cfg.SkipIPs {
 				if clientIP == skipIP {
 					setRateLimitHeaders(w, &ratelimit.CheckResult{
@@ -60,12 +70,34 @@ func RateLimit(cfg *RateLimitConfig) func(http.Handler) http.Handler {
 			// Check rate limit
 			result, err := cfg.Limiter.Check(r.Context(), req)
 			if err != nil {
-				// Log error but allow request on failure (fail open)
-				setRateLimitHeaders(w, &ratelimit.CheckResult{
-					Allowed:   true,
-					Limit:     0,
-					Remaining: -1,
-				})
+				// SECURE FIX: Log rate limiter error for security monitoring
+				slog.Error("Rate limiter error",
+					"error", err,
+					"client_ip", clientIP,
+					"path", r.URL.Path,
+					"method", r.Method,
+					"user_id", userID,
+					"identifier", req.Identifier,
+				)
+
+				// Fail-closed mode: block requests when rate limiter is unavailable
+				if cfg.FailClosed {
+					w.Header().Set("Content-Type", "application/json")
+					w.Header().Set("Retry-After", "60")
+					w.WriteHeader(http.StatusServiceUnavailable)
+					w.Write([]byte(`{"code":"RATE_LIMITER_UNAVAILABLE","message":"Service temporarily unavailable. Please retry later."}`))
+					return
+				}
+
+				// Fail-open with degraded mode: apply basic rate limiting
+				if cfg.DegradedLimit > 0 {
+					if !applyDegradedRateLimit(r, w, clientIP, cfg.DegradedLimit) {
+						return
+					}
+				}
+
+				// Apply degraded mode headers to indicate rate limiter is down
+				w.Header().Set("X-RateLimit-Degraded", "true")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -395,6 +427,8 @@ func DefaultRateLimitConfig(redisAddr string) *RateLimitConfig {
 			SkipPaths:       []string{"/health", "/metrics"},
 			SkipIPs:         []string{},
 			EnableByDefault: false,
+			FailClosed:      false,    // Default to fail-open for backward compatibility
+			DegradedLimit:   10,       // 10 requests per minute when degraded
 		}
 	}
 
@@ -403,6 +437,8 @@ func DefaultRateLimitConfig(redisAddr string) *RateLimitConfig {
 		SkipPaths:       []string{"/health", "/metrics", "/api/v1/docs"},
 		SkipIPs:         []string{"127.0.0.1", "::1"},
 		EnableByDefault: true,
+		FailClosed:      false,       // Default to fail-open for backward compatibility
+		DegradedLimit:   10,          // 10 requests per minute when degraded
 	}
 }
 
@@ -468,4 +504,52 @@ func OpenCircuitBreaker(cfg *RateLimitConfig, path string, duration time.Duratio
 
 	cb.ForceOpen(path, duration)
 	return nil
+}
+
+// degradedLimiter tracks degraded mode rate limiting per IP.
+// This is a simple in-memory limiter used only when Redis is unavailable.
+var degradedLimiter = &simpleRateLimiter{
+	clients: make(map[string]*rateLimitClient),
+	mu:      &sync.Mutex{},
+}
+
+// simpleRateLimiter provides basic in-memory rate limiting.
+type simpleRateLimiter struct {
+	clients map[string]*rateLimitClient
+	mu      *sync.Mutex
+}
+
+// rateLimitClient tracks request counts for a single client.
+type rateLimitClient struct {
+	count     int
+	windowEnd time.Time
+}
+
+// applyDegradedRateLimit applies basic rate limiting during Redis outages.
+func applyDegradedRateLimit(r *http.Request, w http.ResponseWriter, clientIP string, limitPerMinute int) bool {
+	now := time.Now()
+
+	degradedLimiter.mu.Lock()
+	defer degradedLimiter.mu.Unlock()
+
+	client, exists := degradedLimiter.clients[clientIP]
+	if !exists || now.After(client.windowEnd) {
+		client = &rateLimitClient{
+			count:     0,
+			windowEnd: now.Add(time.Minute),
+		}
+		degradedLimiter.clients[clientIP] = client
+	}
+
+	client.count++
+
+	if client.count > limitPerMinute {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Retry-After", "60")
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Write([]byte(`{"code":"RATE_LIMIT_EXCEEDED","message":"Service degraded. Too many requests."}`))
+		return false
+	}
+
+	return true
 }

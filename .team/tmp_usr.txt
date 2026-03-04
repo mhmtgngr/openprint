@@ -1,5 +1,4 @@
-REQUIREMENTS (enriched with market research):
-{
+REQUIREMENTS: {
  "project_name": "Fix Policy Service Test Failures",
  "summary": "Fix 7 failing tests in services/policy-service/ caused by database schema constraints (organization_id NOT NULL), type assertion issues in rule operators (In/Between), missing test fixture data, and invalid UUID values",
  "functional_requirements": [
@@ -81,185 +80,23 @@ REQUIREMENTS (enriched with market research):
    "tasks": [
     "Update TestEngineAppliesToScope with DocumentType in evalCtx",
     "Update TestRepositoryUpdate with valid UUID for ModifiedBy",
-    "Verify TestListPoliciesHandler_Empty response encoding"
-   ]
-  },
-  {
-   "phase": 4,
-   "name": "Validation",
-   "tasks": [
-    "Run all policy-service tests and verify 100% pass rate",
-    "Run integration tests with api-gateway",
-    "Document any breaking changes"
-   ]
-  }
- ]
-}
-
-MARKET ANALYSIS:
-{
- "competitor_summary": [
-  {
-   "name": "PaperCut MF/NG",
-   "strengths": [
-    "Global market leader with 1B+ users",
-    "195+ countries, 70,000 organizations",
-    "Cross-platform support (Windows/Linux/Mac/Chrome OS)",
-    "Refined cost allocation",
-    "Secure release printing"
-   ],
-   "weaknesses": [
-    "Higher cost for enterprise",
-    "Complex setup for small organizations"
-   ],
-   "pricing_model": "Per-user/per-device licensing, enterprise tiered pricing"
-  },
-  {
-   "name": "HP JetAdvantage",
-   "strengths": [
-    "Deep HP hardware integration",
-    "Native MFP support",
-    "Enterprise security features"
-   ],
-   "weaknesses": [
-    "HP hardware lock-in",
-    "Limited cross-vendor support"
-   ],
-   "pricing_model": "Hardware-bundled, subscription tiers"
-  },
-  {
-   "name": "Printix",
-   "strengths": [
-    "Cloud-native architecture",
-    "Strong remote work support",
-    "Quick deployment",
-    "Microsoft 365 integration"
-   ],
-   "weaknesses": [
-    "Limited on-premise options",
-    "Fewer advanced features"
-   ],
-   "pricing_model": "Subscription-based, per-user pricing"
-  },
-  {
-   "name": "\u535a\u745e\u51ef\u5fb7",
-   "strengths": [
-    "Chinese market leader 10%+ share",
-    "Cross-platform, cross-printer-brand",
-    "Content security monitoring",
-    "State-certified for government use",
-    "Deep integration with Huawei Cloud"
-   ],
-   "weaknesses": [
-    "Primarily China-focused",
-    "Limited global presence"
-   ],
-   "pricing_model": "Enterprise licensing with government/education pricing"
-  },
-  {
-   "name": "\u5b89\u4f01\u795e",
-   "strengths": [
-    "Fine-grained permission control",
-    "Dynamic watermarking",
-    "Sensitive word interception",
-    "Content audit capabilities"
-   ],
-   "weaknesses": [
-    "Smaller market share",
-    "Less brand recognition globally"
-   ],
-   "pricing_model": "Per-seat licensing with compliance tiers"
-  }
- ],
- "feature_comparison": [
-  {
-   "feature": "Cost Allocation & Tracking",
-   "competitors_with_f
-
-PROJECT CONTEXT (from CLAUDE.md):
-# OpenPrint Cloud
-
-OpenPrint is a cloud-based print management platform consisting of microservices for authentication, print job management, device registry, document storage, and real-time notifications.
-
-## Project Overview
-
-- **Module**: `github.com/openprint/openprint`
-- **Go Version**: 1.24.0
-- **Architecture**: Microservices with shared internal packages
-- **Frontend**: React + TypeScript + Vite dashboard
-
-## Architecture
-
-### Services
-
-| Service | Port | Description |
-|---------|------|-------------|
-| api-gateway | 8000 | Unified API entry point, reverse proxy, rate limiting, developer portal |
-| gateway | 8000 | Legacy API gateway (routes to ports 8001-8005) |
-| auth-service | 8001 | User authentication, sessions, OIDC/SAML identity providers |
-| registry-service | 8002 | Printer and agent registration, heartbeat monitoring |
-| job-service | 8003 | Print job queuing, routing, and processing |
-| storage-service | 8004 | Document storage (S3 or local), encryption support |
-| notification-service | 8005 | WebSocket notifications for real-time updates |
-| analytics-service | 8006 | Usage analytics, reporting, and data aggregation |
-| compliance-service | 8008 | FedRAMP, HIPAA, GDPR, SOC2 compliance tracking |
-| organization-service | 8009 | Organization management, permissions, members |
-| policy-service | 8010 | Print policy engine, rule evaluation and enforcement |
-| m365-integration-service | 8011 | Microsoft 365 integration for print management |
-
-> **Note:** Port conflicts exist in codebase (see Known Issues). Recommended assignments shown above.
-
-### Internal Packages
-
-```
-internal/
-├── agent/              # Agent utilities and types
-├── auth/               # Authentication utilities
-│   ├── jwt/           # JWT token generation/validation
-│   ├── oidc/          # OpenID Connect provider support
-│   ├── password/      # Password hashing (bcrypt)
-│   ├── roles/         # Role-based access control
-│   └── saml/          # SAML SSO support
-├── middleware/         # HTTP middleware components
-│   ├── cookie_auth.go # Cookie-based authentication
-│   ├── ratelimit.go   # Rate limiting middleware
-│   └── validation.go  # Request validation
-├── multi-tenant/       # Multi-tenancy support
-│   ├── audit.go       # Audit logging
-│   ├── context.go     # Tenant context management
-│   ├── middleware.go  # Tenant isolation middleware
-│   ├── quota.go       # Quota management
-│   └── repository.go  # Tenant-aware data access
-├── shared/             # Shared service components
-│   ├── context/       # Request context utilities
-│   ├── errors/        # Common error types
-│   ├── middleware/    # HTTP middleware (auth, CORS, logging, recovery)
-│   ├── ratelimit/     # Rate limiting utilities
-│   └── telemetry/     # OpenTelemetry tracing
-└── testutil/           # Testing util
-
-EXISTING FILES:
-internal/agent/types.go
-internal/auth/jwt/jwt.go
-internal/auth/jwt/tenant_claims.go
-internal/auth/oidc/oidc.go
-internal/auth/password/password.go
-internal/auth/roles/roles.go
-internal/auth/saml/saml.go
-internal/middleware/cookie_auth.go
-internal/middleware/ratelimit.go
+CHANGES:  web/dashboard/src/features/policies/PolicyForm.tsx |  327 ++++++
+ .../src/features/policies/PolicyHistory.tsx        |  110 ++
+ web/dashboard/src/features/policies/PolicyList.tsx |  212 ++++
+ .../src/features/policies/PolicyTemplates.tsx      |  149 +++
+ web/dashboard/src/features/policies/api.ts         |  313 ++++++
+ web/dashboard/src/features/policies/index.ts       |   14 +
+ web/dashboard/src/features/policies/types.ts       |  120 +++
+ web/dashboard/src/features/policies/usePolicies.ts |  144 +++
+ .../src/features/policies/usePolicyEvaluation.ts   |   55 +
+ .../src/features/policies/usePolicyTemplates.ts    |   44 +
+ web/dashboard/src/pages/Policies.tsx               |  488 +++------
+ web/dashboard/src/pages/PoliciesEngine.tsx         |  623 ++++-------
+ .../src/pages/admin/RateLimitPolicies.tsx          |  638 +++++++++++
+ web/dashboard/src/types/ratelimit.ts               |  677 ++++++++++++
+ 99 files changed, 21190 insertions(+), 2427 deletions(-)
+FILES: internal/middleware/ratelimit.go
 internal/middleware/validation.go
-internal/multi-tenant/audit.go
-internal/multi-tenant/context.go
-internal/multi-tenant/middleware.go
-internal/multi-tenant/quota.go
-internal/multi-tenant/repository.go
-internal/shared/context/keys.go
-internal/shared/errors/errors.go
-internal/shared/middleware/agent_auth.go
-internal/shared/middleware/auth.go
-internal/shared/middleware/metrics.go
-internal/shared/middleware/validation.go
 internal/shared/ratelimit/alert.go
 internal/shared/ratelimit/burst.go
 internal/shared/ratelimit/bypass.go
@@ -273,21 +110,415 @@ internal/shared/ratelimit/queue.go
 internal/shared/ratelimit/redis.go
 internal/shared/ratelimit/repository.go
 internal/shared/ratelimit/resolver.go
-internal/shared/telemetry/jaeger/config.go
-internal/shared/telemetry/middleware.go
-internal/shared/telemetry/prometheus/business.go
-internal/shared/telemetry/prometheus/db.go
-internal/shared/telemetry/prometheus/labels.go
-internal/shared/telemetry/prometheus/metrics.go
-internal/shared/telemetry/prometheus/redis.go
-internal/shared/telemetry/prometheus/registry.go
-internal/shared/telemetry/prometheus/server.go
-internal/shared/telemetry/prometheus/service.go
-internal/testutil/assertions.go
-internal/testutil/config.go
-internal/testutil/context.go
-internal/testutil/db.go
 internal/testutil/fixtures.go
-internal/testutil/http.go
+services/auth-service/handlers/circuit_breaker.go
+services/auth-service/handlers/ratelimit.go
+services/auth-service/handlers/trusted_clients.go
+services/auth-service/handlers/violations.go
+CODE: 
+--- internal/middleware/ratelimit.go ---
+// Package middleware provides rate limiting middleware integration for OpenPrint services.
+package middleware
 
-Design the complete solution. Include market-driven features where priority is critical/high. Be specific about file paths, function names, schemas, implementation order.
+import (
+	"context"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	sharedcontext "github.com/openprint/openprint/internal/shared/context"
+	"github.com/openprint/openprint/internal/shared/ratelimit"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
+
+// RateLimitConfig holds configuration for rate limit middleware.
+type RateLimitConfig struct {
+	Limiter         *ratelimit.Limiter
+	SkipPaths       []string
+	SkipIPs         []string
+	EnableByDefault bool
+}
+
+// RateLimit returns a middleware function that enforces rate limits.
+// It integrates with the existing OpenPrint middleware chain and uses
+// the shared ratelimit package for Redis-based sliding window rate limiting.
+func RateLimit(cfg *RateLimitConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip if limiter not configured
+			if cfg.Limiter == nil || !cfg.EnableByDefault {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Check skip paths
+			for _, path := range cfg.SkipPaths {
+				if strings.HasPrefix(r.URL.Path, path) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			// Build rate limit request from HTTP request
+			req := buildRateLimitRequest(r)
+
+			// Check if IP should be skipped
+			clientIP := getClientIP(r)
+			for _, skipIP := range cfg.SkipIPs {
+				if clientIP == skipIP {
+					setRateLimitHeaders(w, &ratelimit.CheckResult{
+						Allowed:    true,
+						IsBypassed: true,
+					})
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			// Check rate limit
+			result, err := cfg.Limiter.Check(r.Context(), req)
+			if err != nil {
+				// Log error but allow request on failure (fail open)
+				setRateLimitHeaders(w, &ratelimit.CheckResult{
+					Allowed:   true,
+					Limit:     0,
+					Remaining: -1,
+				})
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Set rate limit headers
+			setRateLimitHeaders(w, result)
+
+			// Handle rate limit exceeded
+			if !result.Allowed {
+				if result.IsQueued {
+					respondQueued(w, result)
+					return
+--- internal/middleware/validation.go ---
+// Package middleware provides HTTP middleware for input validation, rate limiting, and security.
+package middleware
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
+)
+
+// Context key type for storing values in request context.
+type contextKey string
+
+const (
+	// ValidationContextKey is the key used to store validated data in context.
+	ValidationContextKey contextKey = "validated_data"
+)
+
+// SanitizedString represents a string that has been sanitized.
+type SanitizedString string
+
+// ValidateEmail validates an email address format.
+func ValidateEmail(email string) error {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(email) {
+		return apperrors.New("invalid email format", http.StatusBadRequest)
+	}
+	return nil
+}
+
+// ValidateUUID validates a UUID string.
+func ValidateUUID(id string) error {
+	uuidRegex := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	if !uuidRegex.MatchString(id) {
+		return apperrors.New("invalid UUID format", http.StatusBadRequest)
+	}
+	return nil
+}
+
+// SanitizeString removes potentially dangerous characters from input.
+// It preserves alphanumeric characters, spaces, and common safe punctuation.
+func SanitizeString(input string) SanitizedString {
+	// Remove null bytes and control characters except tab, newline, carriage return
+	var result strings.Builder
+	for _, r := range input {
+		if r >= 32 && r != 127 || r == '\t' || r == '\n' || r == '\r' {
+			result.WriteRune(r)
+		}
+	}
+
+	// Remove potential SQL injection patterns
+	sanitized := result.String()
+	sanitized = strings.ReplaceAll(sanitized, "'", "''")
+	sanitized = strings.ReplaceAll(sanitized, ";", "")
+
+	// Remove potential XSS patterns
+	sanitized = stripScriptTags(sanitized)
+
+	return SanitizedString(sanitized)
+}
+
+// stripScriptTags removes script tags and related JavaScript patterns.
+func stripScriptTags(input string) string {
+	// Remove script tags
+	scriptRegex := regexp.MustCompile(`(?i)<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>`)
+	input = scriptRegex.ReplaceAllString(input, "")
+
+	// Remove on* event handlers (onclick, onload, etc.)
+	eventRegex := regexp.MustCompile(`(?i)\s+on\w+\s*=\s*["'][^"']*["']`)
+	input = eventRegex.ReplaceAllString(input, "")
+
+	// Remove javascript: protocol
+	jsProtocolRegex := regexp.MustCompile(`(?i)javascript:\s*\S*`)
+--- internal/shared/ratelimit/alert.go ---
+package ratelimit
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
+	"time"
+)
+
+// AlertManager handles violation alerts and notifications.
+type AlertManager struct {
+	redis         *RedisClient
+	alertChannels []AlertChannel
+	mu            sync.RWMutex
+
+	// Alert aggregation settings
+	aggregateWindow time.Duration
+	aggregateMax    int
+}
+
+// AlertChannel defines an interface for sending alerts.
+type AlertChannel interface {
+	Send(ctx context.Context, alert *Alert) error
+}
+
+// Alert represents a rate limit violation alert.
+type Alert struct {
+	ID          string                 `json:"id"`
+	Type        string                 `json:"type"`        // "violation", "circuit_open", "quota_exceeded"
+	Severity    string                 `json:"severity"`    // "low", "medium", "high", "critical"
+	PolicyID    string                 `json:"policy_id"`
+	PolicyName  string                 `json:"policy_name"`
+	Identifier  string                 `json:"identifier"`
+	IdentifierType string              `json:"identifier_type"`
+	Path        string                 `json:"path"`
+	Method      string                 `json:"method"`
+	Current     int64                  `json:"current"`
+	Limit       int64                  `json:"limit"`
+	Message     string                 `json:"message"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+}
+
+// NewAlertManager creates a new alert manager.
+func NewAlertManager(redis *RedisClient) *AlertManager {
+	am := &AlertManager{
+		redis:          redis,
+		alertChannels:  make([]AlertChannel, 0),
+		aggregateWindow: time.Minute,
+		aggregateMax:   100,
+	}
+
+	return am
+}
+
+// SendViolationAlert sends an alert for a rate limit violation.
+func (am *AlertManager) SendViolationAlert(ctx context.Context, req *Request, policy *Policy, current, limit int64) error {
+	if am == nil {
+		return nil
+	}
+
+	alert := &Alert{
+		ID:             generateID(),
+		Type:           "violation",
+		Severity:       policy.Severity,
+		PolicyID:       policy.ID,
+		PolicyName:     policy.Name,
+		Identifier:     req.Identifier,
+		IdentifierType: req.Type,
+		Path:           req.Path,
+		Method:         req.Method,
+		Current:        current,
+		Limit:          limit,
+		Message:        fmt.Sprintf("Rate limit exceeded: %d/%d requests", current, limit),
+		Metadata: map[string]interface{}{
+			"user_agent": req.Identifier,
+			"timestamp":  req.Timestamp.Format(time.RFC3339),
+		},
+		CreatedAt: time.Now(),
+--- internal/shared/ratelimit/burst.go ---
+package ratelimit
+
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+)
+
+// BurstManager handles burst vs sustained rate limiting.
+// Burst allows temporary higher request rates before settling to sustained limits.
+type BurstManager struct {
+	redis *RedisClient
+	mu    sync.RWMutex
+
+	// In-memory burst token buckets for fast access
+	burstBuckets map[string]*burstBucket
+}
+
+// burstBucket tracks burst tokens for an identifier.
+type burstBucket struct {
+	tokens        int64
+	capacity      int64
+	lastRefill    time.Time
+	refillRate    int64         // tokens per second
+	sustainedRate int64         // sustained rate after burst
+	burstDuration time.Duration // how long burst lasts
+	windowStart   time.Time     // when burst window started
+	mu            sync.Mutex
+}
+
+// NewBurstManager creates a new burst manager.
+func NewBurstManager(redis *RedisClient) *BurstManager {
+	bm := &BurstManager{
+		redis:        redis,
+		burstBuckets: make(map[string]*burstBucket),
+	}
+
+	// Start cleanup goroutine
+	go bm.cleanup()
+
+	return bm
+}
+
+// CheckBurst checks if a burst request should be allowed.
+// Returns (allowed, remainingTokens, burstRemainingTime).
+func (bm *BurstManager) CheckBurst(ctx context.Context, key string, policy *Policy) (bool, int64, time.Duration, error) {
+	// Get or create burst bucket
+	bucket := bm.getBucket(key, policy)
+
+	bucket.mu.Lock()
+	defer bucket.mu.Unlock()
+
+	now := time.Now()
+
+	// Refill tokens based on time elapsed
+	bucket.refill(now)
+
+	// Check if in burst period
+	if bucket.inBurstPeriod(now) {
+		// Check burst tokens
+		if bucket.tokens > 0 {
+			bucket.tokens--
+			return true, bucket.tokens, time.Until(bucket.windowStart.Add(bucket.burstDuration)), nil
+		}
+		// Burst exhausted, check sustained rate
+		if bucket.sustainedRate > 0 && bucket.tokens >= 0 {
+			return false, bucket.tokens, time.Until(bucket.windowStart.Add(bucket.burstDuration)), nil
+		}
+		return false, bucket.tokens, time.Until(bucket.windowStart.Add(bucket.burstDuration)), nil
+	}
+
+	// Not in burst period, use sustained rate
+	if bucket.tokens > 0 {
+		bucket.tokens--
+		return true, bucket.tokens, 0, nil
+	}
+
+	return false, bucket.tokens, 0, nil
+}
+--- internal/shared/ratelimit/bypass.go ---
+package ratelimit
+
+import (
+	"context"
+	"net"
+	"strings"
+	"sync"
+)
+
+// BypassManager handles trusted clients that bypass rate limiting.
+type BypassManager struct {
+	redis          *RedisClient
+	trustedAPIKeys map[string]*TrustedClient
+	trustedIPs     map[string]*TrustedClient
+	mu             sync.RWMutex
+}
+
+// NewBypassManager creates a new bypass manager.
+func NewBypassManager(apiKeys []string) *BypassManager {
+	bm := &BypassManager{
+		trustedAPIKeys: make(map[string]*TrustedClient),
+		trustedIPs:     make(map[string]*TrustedClient),
+	}
+
+	for _, key := range apiKeys {
+		bm.trustedAPIKeys[key] = &TrustedClient{
+			APIKey:  key,
+			IsActive: true,
+		}
+	}
+
+	return bm
+}
+
+// ShouldBypass checks if a request should bypass rate limiting.
+func (b *BypassManager) ShouldBypass(ctx context.Context, req *Request) bool {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	// Check API key
+	if req.APIKey != "" {
+		if client, ok := b.trustedAPIKeys[req.APIKey]; ok && client.IsActive {
+			return true
+		}
+	}
+
+	// Check IP address
+	if req.IP != "" {
+		if client, ok := b.trustedIPs[req.IP]; ok && client.IsActive {
+			return true
+		}
+
+		// Check IP ranges (CIDR notation)
+		for _, client := range b.trustedIPs {
+			if !client.IsActive {
+				continue
+			}
+			for _, ipRange := range client.IPWhitelist {
+				if b.ipInRange(req.IP, ipRange) {
+					return true
+				}
+			}
+		}
+	}
+
+	// Check for bypass token in request (from context)
+	// This allows internal services to bypass
+	if req.Priority >= 1000 {
+		return true
+	}
+
+	return false
+}
+
+// ipInRange checks if an IP is within a CIDR range.
+func (b *BypassManager) ipInRange(ip, cidr string) bool {
+	// Parse the IP address
+	checkIP := net.ParseIP(ip)
+	if checkIP == nil {
+		return false
+Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.

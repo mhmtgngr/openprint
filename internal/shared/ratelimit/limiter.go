@@ -75,7 +75,21 @@ func NewLimiter(cfg *Config) (*Limiter, error) {
 	}
 
 	// Initialize bypass manager
-	limiter.bypass = NewBypassManager(cfg.TrustedClients)
+	limiter.bypass = NewBypassManager(redisClient)
+
+	// Load any pre-configured trusted clients
+	if len(cfg.TrustedClients) > 0 {
+		ctx := context.Background()
+		for _, apiKey := range cfg.TrustedClients {
+			client := &TrustedClient{
+				ID:       apiKey,
+				APIKey:   apiKey,
+				Name:     "Pre-configured trusted client",
+				IsActive: true,
+			}
+			_ = limiter.bypass.AddTrustedClient(ctx, client)
+		}
+	}
 
 	// Initialize request queue if enabled
 	if cfg.EnableQueue {

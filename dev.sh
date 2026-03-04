@@ -1,10 +1,17 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
 #
-#  dev.sh — AI Development Team + Self-Healing Controller
+#  dev.sh — AI Development Team + Self-Healing Orchestrator
 #  ────────────────────────────────────────────────────────
-#  Single-script orchestrator: runs phases in-process,
-#  monitors itself, auto-heals, self-improves.
+#  Three-layer autonomous orchestrator inspired by:
+#    - Tmux Orchestrator (github.com/Jedward23/Tmux-Orchestrator)
+#    - MetaGPT (SOP-driven multi-agent workflows)
+#    - AutoCodeRover (AST-based search, SBFL fault localization)
+#
+#  ARCHITECTURE:
+#    Layer 1 (ORCHESTRATOR): Human interaction, monitors all projects
+#    Layer 2 (PROJECT MANAGERS): Task assignment, timeline coordination
+#    Layer 3 (ENGINEERS): Code writing, testing, implementation
 #
 #  TEAM:
 #    🧑‍💼 PM              (Z.ai / Claude)  — Requirements, user stories
@@ -17,11 +24,12 @@
 #    🔒 Security Auditor  (Z.ai / Claude)  — Vulnerability scan
 #    🐳 DevOps           (Claude Code)    — Docker, deploy, smoke test
 #
-#  WATERFALL + FEEDBACK LOOPS:
-#    Requirements → Market Research → Design → Backend → Frontend
-#    → Testing → QA → Security → Deploy
-#         ↑               |        |       |
-#         └───────────────┘────────┘───────┘ (auto-fix on failure)
+#  FEATURES:
+#    • Three-layer orchestrator for autonomous 24/7 operation
+#    • SBFL (Statistical Fault Localization) from test failures
+#    • Checkpoint/recovery system for state persistence
+#    • SOP templates for consistent agent behavior
+#    • Enhanced status dashboard with real-time monitoring
 #
 #  USAGE:
 #    ./dev.sh start "project description"    # Full waterfall (background)
@@ -123,6 +131,624 @@ declare -A PHASE_TIMEOUT=(
 
 BRANCH=""
 PROJECT_NAME=$(basename "$REPO_DIR")
+
+# ═══════════════════════════════════════════════
+# THREE-LAYER ORCHESTRATOR (Tmux Orchestrator pattern)
+# ═══════════════════════════════════════════════
+# Layer 1: ORCHESTRATOR - Human interaction point, monitors all projects
+# Layer 2: PROJECT MANAGERS - Task assignment, timeline coordination
+# Layer 3: ENGINEERS - Code writing, testing, implementation
+
+ORCHESTRATOR_STATE="$DEV_DIR/orchestrator.json"
+ACTIVE_PROJECTS="$DEV_DIR/active_projects.json"
+CHECKPOINT_DIR="$DEV_DIR/checkpoints"
+
+mkdir -p "$CHECKPOINT_DIR" 2>/dev/null || true
+
+# Initialize orchestrator state
+init_orchestrator() {
+  if [ ! -f "$ORCHESTRATOR_STATE" ]; then
+    echo '{"active_projects":[],"last_checkin":"","global_state":"idle"}' > "$ORCHESTRATOR_STATE"
+  fi
+  if [ ! -f "$ACTIVE_PROJECTS" ]; then
+    echo '{"projects":{}}' > "$ACTIVE_PROJECTS"
+  fi
+
+  # Initialize 2025 best practices components
+  init_audit
+  init_agent_mailbox
+}
+
+# Save orchestrator checkpoint
+save_checkpoint() {
+  local project="$1" phase="$2" data="$3"
+  local checkpoint_file="$CHECKPOINT_DIR/${project}_$(date +%s).json"
+  python3 - "$checkpoint_file" << 'PYEOF'
+import json, sys, os
+from datetime import datetime
+entry = {
+  "project": sys.argv[1],
+  "phase": sys.argv[2],
+  "timestamp": datetime.now().isoformat(),
+  "data": json.loads(sys.argv[3]) if sys.argv[3] else {}
+}
+json.dump(entry, open(sys.argv[4], "w"), indent=2)
+PYEOF
+  slog "📌 Checkpoint saved: $project:$phase"
+}
+
+# Load latest checkpoint for a project
+load_checkpoint() {
+  local project="$1"
+  local latest
+  latest=$(ls -t "$CHECKPOINT_DIR/${project}_"*.json 2>/dev/null | head -1 || echo "")
+  if [ -n "$latest" ]; then
+    python3 -c "import json; print(json.load(open('$latest')).get('phase', 'pending')" 2>/dev/null || echo "pending"
+  else
+    echo "pending"
+  fi
+}
+
+# ═══════════════════════════════════════════════
+# SBFL: STATISTICAL FAULT LOCALIZATION (AutoCodeRover pattern)
+# ═══════════════════════════════════════════════
+# Uses test execution results to identify problematic code sections
+
+# Analyze test failures and rank suspicious files by failure frequency
+sbfl_analyze() {
+  local test_output="$1"
+  local rankings_file="$ARTIFACTS/sbfl_rankings.json"
+
+  python3 - "$test_output" "$rankings_file" << 'PYEOF'
+import json, re, sys
+from collections import defaultdict
+
+test_out = open(sys.argv[1]).read()
+suspicious = defaultdict(int)
+
+# Extract file:line patterns from test failures
+for line in test_out.split('\n'):
+    # Match "file.go:123" patterns
+    for match in re.finditer(r'(\S+\.go):(\d+)', line):
+        file, line_num = match.groups()
+        key = f"{file}:{line_num}"
+        suspicious[key] += 1
+
+    # Count error mentions
+    lower = line.lower()
+    if 'error' in lower or 'fail' in lower:
+        for match in re.finditer(r'(\S+\.go)', line):
+            suspicious[match.group(1)] += 2
+
+# Rank by suspicion score
+ranked = sorted(suspicious.items(), key=lambda x: x[1], reverse=True)
+result = {
+    "timestamp": __import__('datetime').datetime.now().isoformat(),
+    "total_failures": len([l for l in test_out.split('\n') if 'FAIL' in l]),
+    "rankings": [{"file": f, "line": l, "score": s} for f, l, s in ranked[:20]]
+}
+json.dump(result, open(sys.argv[2], "w"), indent=2)
+PYEOF
+
+  slog "🔍 SBFL analysis complete → $rankings_file"
+}
+
+# Get top suspicious files from SBFL analysis
+get_top_suspicious_files() {
+  local count="${1:-5}"
+  if [ -f "$ARTIFACTS/sbfl_rankings.json" ]; then
+    python3 -c "
+import json
+r = json.load(open('$ARTIFACTS/sbfl_rankings.json'))
+for item in r.get('rankings', [])[:$count]:
+    print(f\"{item['file']}:{item['line']} (score:{item['score']})\")
+" 2>/dev/null || true
+  fi
+}
+
+# ═══════════════════════════════════════════════
+# 2025 BEST PRACTICES: AGENT AUDIT TRAIL
+# ═══════════════════════════════════════════════
+# Inspired by GitHub Mission Control: Track which AI broke production
+# Each agent action is logged with attribution for accountability
+
+AUDIT_TRAIL="$DEV_DIR/audit_trail.jsonl"
+AUDIT_SUMMARY="$DEV_DIR/audit_summary.json"
+
+# Initialize audit trail
+init_audit() {
+  [ -f "$AUDIT_TRAIL" ] || echo '[]' > "$AUDIT_SUMMARY"
+  mkdir -p "$DEV_DIR/audit" 2>/dev/null || true
+}
+
+# Log an agent action with full attribution
+# Usage: audit_log "agent_name" "action_type" "target" "result" "details"
+audit_log() {
+  local agent="$1" action="$2" target="$3" result="${4:-unknown}" details="${5:-}"
+  local timestamp
+  timestamp=$(date -Iseconds 2>/dev/null || date +%Y-%m-%dT%H:%M:%S)
+
+  python3 -c "
+import json, sys
+entry = {
+    'timestamp': '$timestamp',
+    'agent': '$agent',
+    'action': '$action',
+    'target': '$target',
+    'result': '$result',
+    'details': '''$details''',
+    'session': '$(state_get _meta current_phase 2>/dev/null || echo "unknown")',
+    'branch': '$(git branch --show-current 2>/dev/null || echo "unknown")'
+}
+with open('$AUDIT_TRAIL', 'a') as f:
+    f.write(json.dumps(entry) + '\n')
+" 2>/dev/null || true
+
+  slog "📝 AUDIT: [$agent] $action → $target ($result)"
+}
+
+# Get audit summary by agent
+audit_summary() {
+  python3 - "$AUDIT_TRAIL" "$AUDIT_SUMMARY" << 'PYEOF'
+import json, sys
+from collections import Counter, defaultdict
+
+trail = sys.argv[1]
+summary_file = sys.argv[2]
+
+entries = []
+try:
+    with open(trail, 'r') as f:
+        for line in f:
+            try:
+                entries.append(json.loads(line.strip()))
+            except: pass
+except: pass
+
+by_agent = Counter(e.get('agent', 'unknown') for e in entries)
+by_result = Counter(e.get('result', 'unknown') for e in entries)
+by_action = Counter(e.get('action', 'unknown') for e in entries)
+
+agent_actions = defaultdict(Counter)
+for e in entries:
+    agent_actions[e.get('agent', 'unknown')][e.get('action', 'unknown')] += 1
+
+summary = {
+    'total_actions': len(entries),
+    'by_agent': dict(by_agent),
+    'by_result': dict(by_result),
+    'by_action': dict(by_action),
+    'agent_actions': {k: dict(v) for k, v in agent_actions.items()},
+    'last_updated': entries[-1].get('timestamp', '') if entries else ''
+}
+
+json.dump(summary, open(summary_file, 'w'), indent=2)
+print(json.dumps(summary, indent=2))
+PYEOF
+}
+
+# Find what an agent changed (for debugging)
+audit_find_by_agent() {
+  local agent="$1"
+  python3 - "$AUDIT_TRAIL" "$agent" << 'PYEOF'
+import json, sys
+trail, agent = sys.argv[1], sys.argv[2]
+entries = []
+with open(trail, 'r') as f:
+    for line in f:
+        try:
+            e = json.loads(line.strip())
+            if e.get('agent') == agent:
+                entries.append(e)
+        except: pass
+
+for e in entries[-10:]:  # Last 10 actions
+    print(f"{e.get('timestamp', '')}: {e.get('action', '')} → {e.get('target', '')} ({e.get('result', '')})")
+PYEOF
+}
+
+# ═══════════════════════════════════════════════
+# 2025 BEST PRACTICES: SELF-APPROVAL PREVENTION
+# ═══════════════════════════════════════════════
+# Prevent agents from approving their own work (GitHub pattern)
+
+# Check if an agent is reviewing its own work
+# Returns 0 (safe) if different agent, 1 (conflict) if same agent
+check_approval_conflict() {
+  local reviewer="$1"  # Agent doing the review
+  local phase="$2"     # Phase being reviewed
+
+  # Find who did the work in this phase
+  local worker
+  worker=$(python3 - "$AUDIT_TRAIL" "$phase" << 'PYEOF'
+import json, sys
+trail, phase = sys.argv[1], sys.argv[2]
+worker = "unknown"
+with open(trail, 'r') as f:
+    for line in f:
+        try:
+            e = json.loads(line.strip())
+            if e.get('action') in ('implement', 'create', 'modify', 'write') and phase in e.get('target', ''):
+                worker = e.get('agent', 'unknown')
+        except: pass
+print(worker)
+PYEOF
+)
+
+  if [ "$worker" = "$reviewer" ]; then
+    serr "⚠️ APPROVAL CONFLICT: $reviewer cannot approve their own work from $phase"
+    return 1
+  fi
+  slog "✓ Approval check: $reviewer reviewing $worker's work"
+  return 0
+}
+
+# Force rotation: require different agent for review
+require_different_agent() {
+  local current_agent="$1"
+  local fallback_agent="$2"
+
+  # Map of agent → their alternate reviewer
+  case "$current_agent" in
+    "⚙️  Backend"|"Backend") echo "🧪 Tester" ;;
+    "🧪 Tester"|"Tester") echo "📋 QA" ;;
+    "📋 QA"|"QA") echo "🔒 Security" ;;
+    "🔒 Security"|"Security") echo "⚙️  Backend" ;;
+    "🎨 Frontend"|"Frontend") echo "🧪 Tester" ;;
+    *) echo "${fallback_agent:-📋 QA}" ;;
+  esac
+}
+
+# ═══════════════════════════════════════════════
+# 2025 BEST PRACTICES: MCP-STYLE AGENT COMMUNICATION
+# ═══════════════════════════════════════════════
+# Model Context Protocol pattern for agent-to-agent messaging
+
+AGENT_MAILBOX="$DEV_DIR/agent_mailbox.json"
+KNOWLEDGE_GRAPH="$DEV_DIR/knowledge_graph.jsonl"
+
+# Initialize agent mailbox
+init_agent_mailbox() {
+  [ -f "$AGENT_MAILBOX" ] || echo '{"messages":[]}' > "$AGENT_MAILBOX"
+  [ -f "$KNOWLEDGE_GRAPH" ] || echo '[]' > "$KNOWLEDGE_GRAPH"
+}
+
+# Send message from one agent to another
+# Usage: agent_send "from_agent" "to_agent" "message_type" "content"
+agent_send() {
+  local from="$1" to="$2" msg_type="$3" content="$4"
+  local timestamp
+  timestamp=$(date -Iseconds 2>/dev/null || date +%Y-%m-%dT%H:%M:%S)
+
+  python3 -c "
+import json, sys
+msg = {
+    'id': f\"msg_{int(datetime.now().timestamp() * 1000)}\",
+    'timestamp': '$timestamp',
+    'from': '$from',
+    'to': '$to',
+    'type': '$msg_type',
+    'content': '''$content''',
+    'status': 'pending'
+}
+mailbox = json.load(open('$AGENT_MAILBOX'))
+mailbox['messages'].append(msg)
+json.dump(mailbox, open('$AGENT_MAILBOX', 'w'), indent=2)
+" 2>/dev/null || true
+
+  slog "📨 [$from → $to] $msg_type"
+}
+
+# Check for messages addressed to an agent
+# Usage: agent_check "agent_name" → outputs pending messages
+agent_check() {
+  local agent="$1"
+  python3 - "$AGENT_MAILBOX" "$agent" << 'PYEOF'
+import json, sys
+mailbox, agent = sys.argv[1], sys.argv[2]
+data = json.load(open(mailbox))
+pending = [m for m in data.get('messages', []) if m.get('to') == agent and m.get('status') == 'pending']
+
+for msg in pending:
+    print(f"From: {msg.get('from')} | Type: {msg.get('type')}")
+    print(f"Content: {msg.get('content', '')[:200]}")
+    print("---")
+PYEOF
+}
+
+# Mark message as processed
+agent_ack() {
+  local agent="$1"
+  python3 - "$AGENT_MAILBOX" "$agent" << 'PYEOF'
+import json, sys
+mailbox, agent = sys.argv[1], sys.argv[2]
+data = json.load(open(mailbox))
+for m in data.get('messages', []):
+    if m.get('to') == agent and m.get('status') == 'pending':
+        m['status'] = 'processed'
+json.dump(data, open(mailbox, 'w'), indent=2)
+PYEOF
+}
+
+# Store learning in knowledge graph
+knowledge_store() {
+  local agent="$1" pattern="$2" outcome="${3:-success}" context="${4:-}"
+  local timestamp
+  timestamp=$(date -Iseconds 2>/dev/null || date +%Y-%m-%dT%H:%M:%S)
+
+  python3 -c "
+import json, sys
+entry = {
+    'timestamp': '$timestamp',
+    'agent': '$agent',
+    'pattern': '$pattern',
+    'outcome': '$outcome',
+    'context': '''$context''',
+    'usage_count': 0
+}
+with open('$KNOWLEDGE_GRAPH', 'a') as f:
+    f.write(json.dumps(entry) + '\n')
+" 2>/dev/null || true
+}
+
+# Query knowledge graph for patterns
+knowledge_query() {
+  local pattern="$1"
+  python3 - "$KNOWLEDGE_GRAPH" "$pattern" << 'PYEOF'
+import json, sys, os
+
+entries = []
+if os.path.exists(sys.argv[1]):
+    with open(sys.argv[1], 'r') as f:
+        for line in f:
+            try:
+                e = json.loads(line.strip())
+                if sys.argv[2].lower() in e.get('pattern', '').lower():
+                    entries.append(e)
+            except: pass
+
+print(f"Found {len(entries)} matching patterns:")
+for e in entries[-5:]:
+    print(f"  [{e.get('outcome')}] {e.get('pattern')[:80]}")
+PYEOF
+}
+
+# ═══════════════════════════════════════════════
+# 2025 BEST PRACTICES: ENHANCED STUCK DETECTION
+# ═══════════════════════════════════════════════
+# Detect when agents are stuck and apply recovery strategies
+
+STUCK_FILE="$DEV_DIR/stuck_detection.json"
+
+# Check if phase is stuck (no progress for too long)
+check_stuck() {
+  local phase="$1" timeout="${2:-600}"  # Default 10 minutes
+  local now
+  now=$(date +%s)
+
+  local last_update
+  last_update=$(state_get "$phase" _updated 2>/dev/null || echo "0")
+
+  if [ -z "$last_update" ] || [ "$last_update" = "pending" ]; then
+    return 1  # Not stuck, hasn't started
+  fi
+
+  # Convert ISO timestamp to seconds
+  local last_ts
+  last_ts=$(date -d "$last_update" +%s 2>/dev/null || echo 0)
+
+  local elapsed=$((now - last_ts))
+
+  if [ "$elapsed" -gt "$timeout" ]; then
+    serr "⚠️ STUCK DETECTED: $phase idle for ${elapsed}s (timeout: ${timeout}s)"
+    echo "$phase" >> "$STUCK_HEAL_FILE"
+    return 0
+  fi
+
+  return 1
+}
+
+# Detect repeated failures (same phase failing multiple times)
+detect_repeated_failure() {
+  local phase="$1" max_attempts="${2:-3}"
+
+  local fail_count
+  fail_count=$(grep -c "\"phase\":\"$phase\"" "$ERROR_LOG" 2>/dev/null || echo "0")
+
+  if [ "$fail_count" -ge "$max_attempts" ]; then
+    serr "⚠️ REPEATED FAILURE: $phase failed $fail_count times"
+    return 0
+  fi
+  return 1
+}
+
+# Apply recovery strategy for stuck phase
+recover_stuck_phase() {
+  local phase="$1"
+
+  slog "🔧 Applying recovery for stuck phase: $phase"
+
+  # Strategy 1: Check if Claude is responsive
+  if ! pgrep -f "claude" >/dev/null 2>&1; then
+    serr "  Claude not running - will restart on next phase"
+    return 1
+  fi
+
+  # Strategy 2: Check for rate limiting
+  if grep -q "rate limit\|too many requests" "$LIVE_LOG" 2>/dev/null; then
+    serr "  Rate limit detected - pausing 60s"
+    sleep 60
+    return 0
+  fi
+
+  # Strategy 3: Query knowledge graph for similar issues
+  knowledge_query "$phase" 2>/dev/null || true
+
+  # Strategy 4: Reduce scope - try smaller task
+  slog "  🔄 Reducing scope: breaking phase into smaller steps"
+
+  return 0
+}
+
+# ═══════════════════════════════════════════════
+# SOP TEMPLATES (MetaGPT-inspired standard operating procedures)
+# ═══════════════════════════════════════════════
+
+SOP_DIR="$DEV_DIR/sops"
+mkdir -p "$SOP_DIR" 2>/dev/null || true
+
+# Get SOP template for a role
+get_sop() {
+  local role="$1" task="$2"
+  local sop_file="$SOP_DIR/${role}_${task}.md"
+
+  if [ -f "$sop_file" ]; then
+    cat "$sop_file"
+    return 0
+  fi
+
+  # Generate default SOP based on role
+  case "$role" in
+    pm)
+      cat << 'SOP'
+# Product Manager SOP: $task
+
+## Objective
+Define clear, actionable requirements with acceptance criteria.
+
+## Steps
+1. **Analyze Request**: Break down high-level requirement into specific user stories
+2. **User Stories**: Format as "As a [role], I want [feature], so that [benefit]"
+3. **Acceptance Criteria**: Each story must have testable success conditions
+4. **Priority Matrix**: Rank as critical/high/medium/low with business justification
+5. **Dependencies**: Identify what must be done first
+
+## Output Format
+{
+  "user_stories": [...],
+  "acceptance_criteria": [...],
+  "priority_order": [...]
+}
+
+## Quality Gates
+- Each story is independent (can be implemented separately)
+- Success criteria are measurable
+- No open-ended requirements (must be testable)
+SOP
+      ;;
+    architect)
+      cat << 'SOP'
+# Architect SOP: $task
+
+## Objective
+Design system architecture with clear interfaces and data flows.
+
+## Steps
+1. **Analyze Requirements**: Review all user stories and technical constraints
+2. **Service Decomposition**: Identify services needed (bounded contexts)
+3. **API Contracts**: Define request/response formats for all endpoints
+4. **Data Models**: Design database schemas with relationships
+5. **Technology Choices**: Select frameworks based on team skills and project needs
+6. **Architecture Diagram**: Create visual representation of system components
+
+## Design Principles
+- High cohesion within services, loose coupling between services
+- API versioning strategy
+- Authentication/authorization patterns
+- Error handling and retry logic
+- Data consistency and transaction boundaries
+
+## Output Format
+{
+  "services": [...],
+  "api_contracts": [...],
+  "data_models": [...],
+  "architecture_decisions": [...]
+}
+SOP
+      ;;
+    backend)
+      cat << 'SOP'
+# Backend Developer SOP: $task
+
+## Objective
+Implement production-quality backend code with proper error handling.
+
+## Standards
+- **Code Quality**: Follow project CLAUDE.md conventions
+- **Error Handling**: Never ignore errors; log with context
+- **Database**: Use transactions for multi-step operations
+- **APIs**: Return appropriate HTTP status codes (200, 201, 400, 401, 403, 404, 500)
+- **Security**: Validate ALL inputs; sanitize outputs
+- **Testing**: Write tests before or with implementation
+
+## Implementation Flow
+1. Read and understand existing codebase structure
+2. Create/modify files following project patterns
+3. Run `go build ./...` to verify compilation
+4. Run `go test ./...` to verify tests pass
+5. Commit with descriptive message
+
+## Common Pitfalls to Avoid
+- Hardcoded credentials (use environment variables)
+- SQL injection (use parameterized queries)
+- Missing error checks
+- Race conditions (proper locking/context usage)
+SOP
+      ;;
+    tester)
+      cat << 'SOP'
+# Tester SOP: $task
+
+## Objective
+Ensure code quality through comprehensive testing.
+
+## Test Strategy
+1. **Unit Tests**: Test individual functions/methods in isolation
+2. **Integration Tests**: Test service interactions
+3. **E2E Tests**: Test complete user workflows
+4. **Edge Cases**: Test boundary conditions and error paths
+
+## Coverage Goals
+- Target: >70% code coverage
+- Critical paths: 100% coverage
+- Error paths: >80% coverage
+
+## When Tests Fail
+1. Run with verbose output to see full error
+2. Check if it's a flaky test (timing issue) or real failure
+3. Use SBFL to identify most suspicious code
+4. Fix root cause, not symptoms
+5. Add regression test to prevent recurrence
+SOP
+      ;;
+    qa)
+      cat << 'SOP'
+# QA Controller SOP: $task
+
+## Review Focus Areas
+1. **Security**: Input validation, auth checks, SQL injection, XSS
+2. **Error Handling**: Proper status codes, meaningful error messages
+3. **API Consistency**: Response formats, naming conventions
+4. **Test Coverage**: Are critical paths tested?
+5. **Code Quality**: DRY principle, single responsibility, readability
+
+## Review Checklist
+- [ ] No hardcoded secrets or credentials
+- [ ] All inputs validated before use
+- [ ] Database queries use parameterized queries
+- [ ] HTTP status codes are appropriate
+- [ ] Error messages are helpful (not exposing internals)
+- [ ] Tests cover happy path and error paths
+
+## Verdict Levels
+- **APPROVE**: Ready to merge
+- **NEEDS_FIXES**: Blocking issues found (will re-review after fixes)
+- **REJECT**: Critical issues requiring complete rework
+SOP
+      ;;
+  esac
+}
 
 # ═══════════════════════════════════════════════
 # INITIALIZATION
@@ -1183,6 +1809,11 @@ phase_qa() {
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   state_set qa status running
 
+  # 2025: Check for messages from other agents
+  local agent_msgs
+  agent_msgs=$(agent_check "📋 QA" 2>/dev/null || true)
+  [ -n "$agent_msgs" ] && log "  📨 Inbox: $agent_msgs"
+
   cd "$REPO_DIR"
   local diff; diff=$(git diff main --stat 2>/dev/null | tail -15 || true)
   local files; files=$(git diff main --name-only 2>/dev/null | grep "\.go$" | head -20 || true)
@@ -1204,11 +1835,15 @@ CODE: $code
 Review: error handling, validation, auth checks, HTTP codes, test coverage, API consistency.
 PROMPT
 
+  # 2025: Log audit start
+  audit_log "📋 QA" "review" "backend code" "started" "Reviewing $(echo "$files" | wc -l) files"
+
   ai_think "📋 QA" "$DEV_DIR/tmp_sys.txt" "$DEV_DIR/tmp_usr.txt" "$ARTIFACTS/06_qa_review.json"
 
   local verdict; verdict=$(python3 -c "import json; print(json.load(open('$ARTIFACTS/06_qa_review.json')).get('verdict','APPROVE'))" 2>/dev/null || echo "APPROVE")
   team "📋 QA" "Verdict: $verdict"
 
+  # 2025: Self-approval prevention - QA cannot approve its own fixes
   if [ "$verdict" = "NEEDS_FIXES" ]; then
     local fixes; fixes=$(python3 -c "
 import json; d=json.load(open('$ARTIFACTS/06_qa_review.json'))
@@ -1217,10 +1852,39 @@ for i in d.get('blocking_issues',[]): print(f'BLOCKING: {i}')
 for c in d.get('code_issues',[]):
     if c.get('severity') in ('critical','major'): print(f\"{c['severity'].upper()}: {c.get('file','')}: {c.get('issue','')} → {c.get('fix','')}\")
 " 2>/dev/null || echo "Fix issues")
-    claude_do "⚙️  Backend" "Read CLAUDE.md. QA found issues:
+
+    # 2025: Require different agent for fixes
+    local fix_agent
+    fix_agent=$(require_different_agent "📋 QA" "⚙️ Backend")
+    log "  🔒 Self-approval prevention: Using $fix_agent for fixes"
+
+    claude_do "$fix_agent" "Read CLAUDE.md. QA found issues:
 $fixes
 Fix ALL blocking/critical. Run 'go test ./...'." "$PHASE_LOGS/06_qa_fix.log"
+
+    # 2025: Log fix attempt
+    audit_log "$fix_agent" "fix" "qa_issues" "attempted" "$fixes"
+
+    # 2025: Re-verify after fixes (QA shouldn't approve its own fix suggestion)
+    log "  🔄 Re-verifying after fixes..."
+    ai_think "📋 QA" "$DEV_DIR/tmp_sys.txt" "$DEV_DIR/tmp_usr.txt" "$ARTIFACTS/06_qa_recheck.json"
+    local re_verdict
+    re_verdict=$(python3 -c "import json; print(json.load(open('$ARTIFACTS/06_qa_recheck.json')).get('verdict','APPROVE'))" 2>/dev/null || echo "$verdict")
+    verdict="$re_verdict"
   fi
+
+  # 2025: Store learning in knowledge graph
+  if [ "$verdict" = "APPROVE" ]; then
+    knowledge_store "📋 QA" "code_review_success" "success" "Phase: qa"
+  else
+    knowledge_store "📋 QA" "code_review_issues_found" "warning" "Phase: qa, verdict: $verdict"
+  fi
+
+  # 2025: Log final verdict to audit
+  audit_log "📋 QA" "review" "backend code" "$verdict" "Final verdict: $verdict"
+
+  # 2025: Mark messages as processed
+  agent_ack "📋 QA" 2>/dev/null || true
 
   state_set qa verdict "$verdict"; state_set qa status done; log "✅ QA: $verdict"
 }
@@ -1233,6 +1897,11 @@ phase_security() {
   log "PHASE 7: SECURITY — 🔒 Security Auditor"
   log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   state_set security status running
+
+  # 2025: Check for messages from other agents
+  local agent_msgs
+  agent_msgs=$(agent_check "🔒 Security" 2>/dev/null || true)
+  [ -n "$agent_msgs" ] && log "  📨 Inbox: $agent_msgs"
 
   cd "$REPO_DIR"
   local auth=""; for f in $(find internal -name "*.go" 2>/dev/null | xargs grep -l "auth\|token\|password\|jwt\|session" 2>/dev/null | head -10 || true); do
@@ -1255,6 +1924,9 @@ HANDLERS: $handlers
 Check: SQL injection, XSS, CSRF, insecure JWT, weak crypto, missing auth, IDOR, data exposure. Be thorough.
 PROMPT
 
+  # 2025: Log audit start
+  audit_log "🔒 Security" "scan" "security vulnerabilities" "started" "Scanning auth handlers and security code"
+
   ai_think "🔒 Security" "$DEV_DIR/tmp_sys.txt" "$DEV_DIR/tmp_usr.txt" "$ARTIFACTS/07_security.json"
 
   local verdict; verdict=$(python3 -c "import json; print(json.load(open('$ARTIFACTS/07_security.json')).get('verdict','APPROVE'))" 2>/dev/null || echo "APPROVE")
@@ -1267,11 +1939,33 @@ for v in d.get('vulnerabilities',[]):
     if v.get('severity') in ('critical','high'): print(f\"{v['severity'].upper()}: {v.get('file','')}: {v.get('description','')} → {v.get('fix','')}\")
 for f in d.get('critical_fixes',[]): print(f'FIX: {f}')
 " 2>/dev/null || echo "Fix security issues")
-    claude_do "⚙️  Backend" "Read CLAUDE.md. SECURITY FIX:
+
+    # 2025: Self-approval prevention - Security cannot approve its own fix
+    local fix_agent
+    fix_agent=$(require_different_agent "🔒 Security" "⚙️ Backend")
+    log "  🔒 Self-approval prevention: Using $fix_agent for security fixes"
+
+    # 2025: Notify backend agent about security issues via mailbox
+    agent_send "🔒 Security" "$fix_agent" "security_fix_required" "Critical vulnerabilities found: $fixes"
+
+    claude_do "$fix_agent" "Read CLAUDE.md. SECURITY FIX:
 $fixes
 Fix ALL critical/high vulnerabilities. Run 'go test ./...'." "$PHASE_LOGS/07_sec_fix.log"
     run_go_tests || { fix_go_tests; run_go_tests || true; }
+
+    # 2025: Log fix attempt
+    audit_log "$fix_agent" "fix" "security_vulnerabilities" "attempted" "Fixed critical/high issues"
   fi
+
+  # 2025: Store security learning in knowledge graph
+  if [ "$verdict" = "APPROVE" ]; then
+    knowledge_store "🔒 Security" "security_audit_passed" "success" "No critical vulnerabilities found"
+  else
+    knowledge_store "🔒 Security" "security_issues_found" "warning" "Verdict: $verdict"
+  fi
+
+  # 2025: Log final verdict to audit
+  audit_log "🔒 Security" "scan" "security vulnerabilities" "$verdict" "Risk assessment complete"
 
   state_set security verdict "$verdict"; state_set security status done; log "✅ Security: $verdict"
 }
@@ -2790,62 +3484,180 @@ launch_bg() {
 
 show_status() {
   echo ""
-  echo -e "  ${W}═══ AI DEVELOPMENT TEAM ═══${NC}"
+  echo -e "  ${W}╔════════════════════════════════════════╗${NC}"
+  echo -e "  ${W}║  🤖 AI DEVELOPMENT TEAM - ORCHESTRATOR      ║${NC}"
+  echo -e "  ${W}╚════════════════════════════════════════╝${NC}"
   echo ""
 
+  # System status
   if is_running; then
-    echo -e "  🤖 Status: ${G}RUNNING${NC} (PID: $(cat "$PID_FILE" 2>/dev/null))"
+    local pid; pid=$(cat "$PID_FILE" 2>/dev/null)
+    local uptime
+    uptime=$(ps -o etime= -p "$pid" 2>/dev/null | awk '{print $1}' || echo "?")
+    echo -e "  🤖 Status: ${G}RUNNING${NC} (PID: $pid | Uptime: ${uptime}s)"
   else
     echo -e "  🤖 Status: ${R}STOPPED${NC}"
   fi
   echo ""
 
+  # Project info
   if [ -f "$STATE_FILE" ]; then
     python3 - "$STATE_FILE" << 'PYEOF'
 import json, sys
+from datetime import datetime, timedelta
 d = json.load(open(sys.argv[1]))
-print(f"  Project: {d.get('project','')[:60]}")
-print(f"  Branch:  {d.get('branch','')}")
-print()
 
-phases = ["requirements","market_research","design","backend","frontend","testing","qa","security","deploy"]
-icons = {"done":"✅","running":"🔄","pending":"⬜","failed":"❌","skipped":"⏭️"}
-roles = {"requirements":"PM","market_research":"Research","design":"Architect","backend":"Backend","frontend":"Frontend","testing":"Tester","qa":"QA","security":"Security","deploy":"DevOps"}
+project = d.get('project','')[:60]
+branch = d.get('branch','')
+current = d.get('current_phase','')
 
-done = 0
-for p in phases:
-    data = d.get("phases",{}).get(p,{})
-    st = data.get("status","pending")
-    if st == "done": done += 1
-    verdict = data.get("verdict","")
-    verdict_str = f" → {verdict}" if verdict else ""
-    updated = data.get("_updated","")
-    time_str = f" [{updated[11:19]}]" if updated else ""
-    print(f"  {icons.get(st,'⬜')} {roles.get(p,p):10s}{verdict_str}{time_str}")
-    for k,v in sorted(data.items()):
-        if k.startswith("_") or k in ("status","verdict"): continue
-        print(f"     └─ {k}: {v}")
+# Calculate project age
+started = d.get('_meta',{}).get('_updated','')
+if started:
+    try:
+        start = datetime.fromisoformat(started)
+        age = datetime.now() - start
+        if age < timedelta(minutes=1):
+            age_str = f"{age.seconds}s"
+        elif age < timedelta(hours=1):
+            age_str = f"{age.seconds//60}m"
+        else:
+            age_str = f"{age.seconds//3600}h"
+    except:
+        age_str = "?"
+else:
+    age_str = "?"
 
-print(f"\n  Progress: {done}/{len(phases)} phases ({done*100//len(phases)}%)")
+print(f"  📋 Project: {project}")
+print(f"  🌿 Branch:  {branch}")
+print(f"  ⏱️  Age:     {age_str}")
+print(f"  🔄 Phase:   {current}")
 PYEOF
   fi
 
-  if [ -f "$PHASE_HISTORY" ]; then
-    local round_count
-    round_count=$(python3 -c "import json; print(len(json.load(open('$PHASE_HISTORY')).get('completed',[])))" 2>/dev/null || echo "0")
-    if [ "$round_count" -gt 0 ]; then
-      echo ""
-      echo -e "  ${G}Completed rounds: $round_count${NC}"
-      python3 -c "
+  echo ""
+
+  # Three-layer status (Orchestrator → PMs → Engineers)
+  echo -e "  ${B}┌─ THREE-LAYER ORCHESTRATOR ─────────────────┐${NC}"
+
+  # Layer 1: Orchestrator
+  local orchestrator_state="idle"
+  if [ -f "$ORCHESTRATOR_STATE" ]; then
+    orchestrator_state=$(python3 -c "import json; print(json.load(open('$ORCHESTRATOR_STATE')).get('global_state','idle')" 2>/dev/null || echo "idle")
+  fi
+
+  # Count active Claude processes
+  local claude_count
+  claude_count=$(pgrep -f "claude.*dangerously-skip-permissions" 2>/dev/null | wc -l || echo "0")
+
+  local layer1_icon="💤"
+  [ "$orchestrator_state" = "active" ] && layer1_icon="🟢"
+
+  echo -e "  ${layer1_icon}  Layer 1: ORCHESTRATOR ($orchestrator_state)"
+  echo -e "       └─ Monitoring $claude_count Claude agents"
+  echo ""
+
+  # Layer 2: Project Managers
+  echo -e "  📋  Layer 2: PROJECT MANAGERS"
+
+  # Show phases with PMs
+  if [ -f "$STATE_FILE" ]; then
+    python3 - "$STATE_FILE" << 'PYEOF'
+import json, sys
+from datetime import datetime
+
+d = json.load(open(sys.argv[1]))
+phases = ["requirements","market_research","design","backend","frontend","testing","qa","security","deploy"]
+icons = {"done":"✅","running":"🔄","pending":"⬜","failed":"❌","skipped":"⏭️","blocked":"🚫"}
+roles = {"requirements":"🧑‍💼 PM","market_research":"🔍 Research","design":"🏗️  Architect","backend":"⚙️","frontend":"🎨","testing":"🧪","qa":"📋","security":"🔒","deploy":"🐳"}
+
+for p in phases:
+    data = d.get("phases",{}).get(p,{})
+    st = data.get("status","pending")
+    icon = icons.get(st,'⬜')
+    role = roles.get(p,'')
+
+    # Show timestamp if running/recently done
+    updated = data.get("_updated","")
+    time_str = ""
+    if updated and st in ("running","done"):
+        try:
+            ts = datetime.fromisoformat(updated)
+            ago = (datetime.now() - ts).total_seconds()
+            if ago < 60: time_str = f"{int(ago)}s ago"
+            elif ago < 3600: time_str = f"{int(ago/60)}m ago"
+            else: time_str = f"{int(ago/3600)}h ago"
+        except: pass
+
+    # Calculate progress percentage
+    total = len(phases)
+    done = len([p for p in phases if d.get("phases",{}).get(p,{}).get("status") == "done"])
+    pct = (done * 100 // total) if total > 0 else 0
+
+    bar_len=20
+    filled = int(bar_len * pct / 100)
+    bar="█" * filled + "░" * (bar_len - filled)
+
+    print(f"    {icon} {role:13s} {st:8s} {time_str:15s} [{bar}] {pct}%")
+PYEOF
+  fi
+  echo ""
+
+  # Layer 3: Engineers (Claude processes)
+  echo -e "  🔧  Layer 3: ENGINEERS (Claude Agents)"
+  echo -e "       ├─ Active: $claude_count processes"
+
+  # Show recent checkpoints
+  local recent_checkpoints
+  recent_checkpoints=$(ls -t "$CHECKPOINT_DIR"/*.json 2>/dev/null | head -3 || true)
+  if [ -n "$recent_checkpoints" ]; then
+    echo "       └─ Recent checkpoints:"
+    for cp in $recent_checkpoints; do
+      local cp_name=$(basename "$cp")
+      echo "          • $cp_name"
+    done
+  fi
+  echo ""
+
+  # SBFL rankings if available
+  if [ -f "$ARTIFACTS/sbfl_rankings.json" ]; then
+    echo -e "  ${Y}┌─ FAULT LOCALIZATION (SBFL) ───────────────────┐${NC}"
+    python3 - "$ARTIFACTS/sbfl_rankings.json" << 'PYEOF'
 import json
-d = json.load(open('$PHASE_HISTORY'))
-for r in d.get('completed',[])[-5:]:
-    cat_icon = {'team':'🔧','project':'📦'}.get(r.get('category',''),'📌')
-    res_icon = {'done':'✅','failed':'❌','crashed':'💥','skipped':'⏭️'}.get(r.get('result',''),'❓')
-    print(f\"    {cat_icon}{res_icon} {r.get('description','')[:65]}\")" 2>/dev/null || true
+r = json.load(open(sys.argv[1]))
+rankings = r.get('rankings', [])[:3]
+if rankings:
+    print("  Top suspicious files:")
+    for item in rankings:
+        print(f"    • {item['file']}:{item['line']} (score:{item['score']})")
+PYEOF
+    echo ""
+  fi
+
+  # Error memory
+  if [ -f "$ERROR_LOG" ] && [ -s "$ERROR_LOG" ]; then
+    local recent_errors
+    recent_errors=$(tail -3 "$ERROR_LOG" 2>/dev/null | python3 -c "
+import json, sys
+lines = []
+for line in sys.stdin:
+    try:
+        e = json.loads(line.strip())
+        lines.append(f\"  - {e.get('phase','?')}: {e.get('type','?')}\")
+    except: pass
+print('\n'.join(lines[:3])" 2>/dev/null || true)
+    if [ -n "$recent_errors" ]; then
+      echo -e "  ${R}Recent errors:${NC}"
+      echo "$recent_errors"
+      echo ""
     fi
   fi
 
+  # Quick actions
+  echo -e "  ${W}╰──────────────────────────────────────────────╯${NC}"
+  echo -e "     ${W}./dev.sh logs${NC}        - Supervisor log"
+  echo -e "     ${W}./dev.sh gaps${NC}        - Show gaps"
+  echo -e "     ${W}./dev.sh stop${NC}        - Stop all"
   echo ""
 }
 
@@ -2899,6 +3711,12 @@ show_help() { cat << 'HELP'
     ./dev.sh migrate-test [dir]         # Test database migrations
     ./dev.sh migrate-rollback           # Test migration rollback
 
+  ORCHESTRATOR (new):
+    ./dev.sh orchestrator                # Show three-layer status
+    ./dev.sh sbfl                     # Fault localization from test results
+    ./dev.sh sop <role> <task>       # Show SOP for role
+    ./dev.sh checkpoint <phase>        # Save current state checkpoint
+
   SMART IMPROVE (recommended):
     ./dev.sh smart-improve [threshold%]  # Scan→Plan→Run→Rescan→PR
     ./dev.sh scan                        # Show % complete + gaps
@@ -2923,6 +3741,15 @@ show_help() { cat << 'HELP'
     ./dev.sh plan-project [N]           # B2: Plan N phases
     ./dev.sh execute                    # B3: Execute phases
     ./dev.sh verify                     # B4: Check results
+
+  2025 BEST PRACTICES — AUDIT & GOVERNANCE:
+    ./dev.sh audit-log                 # Show audit trail summary
+    ./dev.sh audit-find [agent]         # Find what an agent changed
+    ./dev.sh agent-msg [agent]          # Check agent's mailbox
+    ./dev.sh agent-send from to type msg # Send message between agents
+    ./dev.sh knowledge [pattern]        # Query knowledge graph
+    ./dev.sh stuck-check [phase] [sec]  # Check if phase is stuck
+    ./dev.sh audit-trail               # Initialize audit system
 
   INFO:
     ./dev.sh history                    # Completed rounds
@@ -3066,6 +3893,15 @@ case "$CMD" in
   verify-dev)     verify_dev ;;
   sync-dev)       sync_dev_all ;;
 
+  # ── 2025: Audit & Governance ──
+  audit-log)       audit_summary ;;
+  audit-find)      audit_find_by_agent "${2:-}" ;;
+  agent-msg)       agent_check "${2:-}" ;;
+  agent-send)      agent_send "${2:-}" "${3:-}" "${4:-}" "${5:-}" ;;
+  knowledge)       knowledge_query "${2:-}" ;;
+  stuck-check)     check_stuck "${2:-testing}" "${3:-600}" ;;
+  audit-trail)     init_audit; audit_summary ;;
+
   # ── Track B ──
   improve-project|project)
     if [ "$FOREGROUND" = false ] && [ "${_DEV_FG:-}" != "1" ]; then
@@ -3127,6 +3963,10 @@ case "$CMD" in
   history)        show_history ;;
   logs)           tail -50 "$SUP_LOG" ;;
   skip)           skip_phase "${2:-}" ;;
+  sbfl)            sbfl_analyze "$(go test ./... 2>&1)" ;;
+  orchestrator)    init_orchestrator; show_status ;;
+  sop)             get_sop "${2:-backend}" "${3:-task}" ;;
+  checkpoint)      save_checkpoint "${2:-manual}" "${3:-manual}" "$([ "$#" -gt 2 ] && echo "${@:3}" || echo "{}" )" ;;
   -h|--help|help) show_help ;;
   "")             show_help ;;
   *)              err "Unknown: $CMD"; show_help; exit 1 ;;

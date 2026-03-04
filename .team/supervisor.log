@@ -897,3 +897,4 @@ Total: 28 errors
 [0;32m[SUP 03:27:34][0m   Synced to 3 projects
 [0;32m[SUP 03:27:34][0m   Dev.sh pipeline done in 1m 30s
 [0;32m[SUP 03:57:46][0m 🔬 SCANNING project completion...
+[0;31m[SUP 04:25:08][0m ⚠️ STUCK DETECTED: testing idle for 1112s (timeout: 600s)
