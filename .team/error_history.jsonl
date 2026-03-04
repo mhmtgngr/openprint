@@ -33,3 +33,6 @@
 {"timestamp": "2026-03-04T06:56:46.498425", "phase": "\ud83e\uddea Tester", "type": "claude_terminated", "detail": "Failed after 0 attempts, last exit: 0"}
 {"timestamp": "2026-03-04T07:50:44.691495", "phase": "testing", "type": "go_test_fail", "detail": "=== RUN   TestManager_RefreshAccessToken/access_token_cannot_be_used_to_refresh\n--- PASS: TestManager_RefreshAccessToken (0.00s)\n    --- PASS: TestManager_RefreshAccessToken/valid_refresh_token_genera"}
 {"timestamp": "2026-03-04T08:20:59.971417", "phase": "\ud83e\uddea Tester", "type": "claude_terminated", "detail": "Failed after 0 attempts, last exit: 0"}
+{"timestamp": "2026-03-04T17:42:11.200756", "phase": "testing", "type": "stuck_phase", "detail": "Phase was stuck for >300s, auto-recovered"}
+{"timestamp": "2026-03-04T17:47:42.653588", "phase": "testing", "type": "go_test_fail", "detail": "=== RUN   TestManager_RefreshAccessToken/access_token_cannot_be_used_to_refresh\n--- PASS: TestManager_RefreshAccessToken (0.00s)\n    --- PASS: TestManager_RefreshAccessToken/valid_refresh_token_genera"}
+{"timestamp": "2026-03-04T17:47:53.205902", "phase": "\ud83e\uddea Tester", "type": "claude_terminated", "detail": "Failed after 0 attempts, last exit: 0"}
