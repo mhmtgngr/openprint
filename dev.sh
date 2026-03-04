@@ -3907,8 +3907,9 @@ RESPOND WITH ONLY JSON:
 }"
 
 Be decisive. Pick ONE clear action."
+"
 
-  ai_think "🧠 Orchestrator" "$DEV_DIR/tmp_auto_sys.txt" "$DEV_DIR/tmp_auto_usr.txt" "$decision_file"
+  ai_think "AI Orchestrator" "$DEV_DIR/tmp_auto_sys.txt" "$DEV_DIR/tmp_auto_usr.txt" "$decision_file"
 
   if [ -f "$decision_file" ] && [ -s "$decision_file" ]; then
     slog "  📋 AI Decision:"
@@ -4735,8 +4736,8 @@ case "$CMD" in
 
   # ── AI Autonomous Mode ──
   auto)
-    local subcmd="${2:-loop}"
-    local param="${3:-1}"
+    subcmd="${2:-loop}"
+    param="${3:-1}"
     auto_mode "$subcmd" "$param"
     ;;
 
