@@ -5,7 +5,9 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: bd222d96 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+- Recent issues: bc0b5758 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+9ba4db3f [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+bd222d96 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 44b57b83 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 925cf8ed [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 12a729a0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
@@ -23,8 +25,6 @@ d7e7bfba fix: resolve port conflicts in services
 64d6f6e1 fix: rename 'limit' column to 'request_limit' in migration 000028
 f147a37a [DevOps] Fix dynamic port detection for E2E tests and service health checks
 455b9808 [DevOps] Add AI-powered E2E, port conflict detection, dynamic port allocation
-190dbdd6 [DevOps] Improve dev.sh: fix health checks, add log rotation, runtime detection
-090a535e [🐳 DevOps] Fix startup failures:
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
