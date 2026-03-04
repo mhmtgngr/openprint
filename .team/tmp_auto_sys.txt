@@ -5,7 +5,8 @@ CONTEXT:
 - Go files: 196
 - Test files: 64
 - TODOs/FIXMEs: 2
-- Recent issues: 1c2f67f0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+- Recent issues: 586f82c0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
+1c2f67f0 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 20c32631 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 9c860991 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 a1b09566 [AI Auto] fix_bug: Tests are failing - this is the highest priority i
@@ -24,7 +25,6 @@ de76d9da [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 2312351b [AI Auto] fix_bug: Tests are failing - this is the highest priority i
 a990f8ec [auto-fix] 2 failing packages
 5a9de9b9 Merge team/fix-7-failing-tests-in-servicespolicy-se-1772594821
-fe5f46a9 [🐳 DevOps] Fix startup failures:
 
 PROJECT CONTEXT:
 # OpenPrint Cloud
