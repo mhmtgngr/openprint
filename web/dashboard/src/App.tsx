@@ -31,6 +31,13 @@ const MetricsDashboard = lazy(() => import('./pages/MetricsDashboard').then(m =>
 const Monitoring = lazy(() => import('./pages/Monitoring').then(m => ({ default: m.Monitoring })));
 const ObservabilityHub = lazy(() => import('./pages/ObservabilityHub').then(m => ({ default: m.ObservabilityHub })));
 
+// New feature pages
+const GuestPrinting = lazy(() => import('./pages/GuestPrinting').then(m => ({ default: m.GuestPrinting })));
+const FollowMe = lazy(() => import('./pages/FollowMe').then(m => ({ default: m.FollowMe })));
+const SupplyManagement = lazy(() => import('./pages/SupplyManagement').then(m => ({ default: m.SupplyManagement })));
+const DriverManagement = lazy(() => import('./pages/DriverManagement').then(m => ({ default: m.DriverManagement })));
+const UserGroups = lazy(() => import('./pages/UserGroups').then(m => ({ default: m.UserGroups })));
+
 // Platform Admin routes (multi-tenancy)
 const OrganizationsList = lazy(() => import('./pages/admin/OrganizationsList').then(m => ({ default: m.OrganizationsList })));
 const OrganizationDetail = lazy(() => import('./pages/admin/OrganizationDetail').then(m => ({ default: m.OrganizationDetail })));
@@ -345,6 +352,58 @@ function App() {
             <AdminRoute>
               <SuspenseWrapper>
                 <ObservabilityHub />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+
+        {/* New feature routes */}
+        <Route
+          path="/guest-printing"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <GuestPrinting />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/follow-me"
+          element={
+            <ProtectedRoute>
+              <SuspenseWrapper>
+                <FollowMe />
+              </SuspenseWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/supplies"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <SupplyManagement />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/drivers"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <DriverManagement />
+              </SuspenseWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/groups"
+          element={
+            <AdminRoute>
+              <SuspenseWrapper>
+                <UserGroups />
               </SuspenseWrapper>
             </AdminRoute>
           }

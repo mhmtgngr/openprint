@@ -498,6 +498,181 @@ export interface UpdateEmailConfigRequest {
   allowedFileTypes?: string[];
 }
 
+// Guest Printing
+export interface GuestToken {
+  id: string;
+  token: string;
+  email?: string;
+  name?: string;
+  organizationId: string;
+  createdBy: string;
+  printerIds: string[];
+  maxPages: number;
+  maxJobs: number;
+  pagesUsed: number;
+  jobsUsed: number;
+  colorAllowed: boolean;
+  duplexRequired: boolean;
+  expiresAt: string;
+  isActive: boolean;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+export interface GuestPrintJob {
+  id: string;
+  tokenId: string;
+  documentName: string;
+  pageCount: number;
+  printerId?: string;
+  status: string;
+  submittedAt: string;
+  completedAt?: string;
+  errorMessage?: string;
+}
+
+export interface CreateGuestTokenRequest {
+  email?: string;
+  name?: string;
+  printerIds?: string[];
+  maxPages?: number;
+  maxJobs?: number;
+  colorAllowed?: boolean;
+  duplexRequired?: boolean;
+  expiresInHours?: number;
+}
+
+// Follow-Me Printing
+export interface FollowMePool {
+  id: string;
+  name: string;
+  description?: string;
+  organizationId: string;
+  location?: string;
+  isActive: boolean;
+  printerCount?: number;
+  pendingJobs?: number;
+  printers?: Printer[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FollowMeJob {
+  id: string;
+  jobId: string;
+  poolId: string;
+  userId: string;
+  userEmail: string;
+  documentName: string;
+  pageCount: number;
+  copies: number;
+  color: boolean;
+  duplex: boolean;
+  status: 'waiting' | 'released' | 'expired' | 'cancelled';
+  releasedAtPrinter?: string;
+  releasedAt?: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface CreateFollowMePoolRequest {
+  name: string;
+  description?: string;
+  location?: string;
+  printerIds?: string[];
+}
+
+// Printer Supplies & Maintenance
+export interface PrinterSupply {
+  id: string;
+  printerId: string;
+  supplyType: string;
+  name: string;
+  levelPercent: number;
+  status: 'ok' | 'low' | 'empty' | 'unknown';
+  partNumber?: string;
+  estimatedPagesRemaining?: number;
+  lastReplacedAt?: string;
+  alertThreshold: number;
+  updatedAt: string;
+}
+
+export interface MaintenanceTask {
+  id: string;
+  printerId: string;
+  printerName?: string;
+  maintenanceType: string;
+  description?: string;
+  scheduledAt: string;
+  completedAt?: string;
+  assignedTo?: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'overdue' | 'cancelled';
+  notes?: string;
+  recurrence?: string;
+  createdAt: string;
+}
+
+export interface CreateMaintenanceRequest {
+  printerId: string;
+  maintenanceType: string;
+  description?: string;
+  scheduledAt: string;
+  assignedTo?: string;
+  recurrence?: string;
+}
+
+// Print Drivers
+export interface PrintDriver {
+  id: string;
+  name: string;
+  manufacturer: string;
+  modelPattern?: string;
+  os: string;
+  architecture: string;
+  version: string;
+  filePath?: string;
+  fileSizeBytes?: number;
+  checksumSha256?: string;
+  isUniversal: boolean;
+  isLatest: boolean;
+  releaseNotes?: string;
+  uploadedAt: string;
+}
+
+// User Groups
+export interface UserGroup {
+  id: string;
+  name: string;
+  description?: string;
+  organizationId: string;
+  color: string;
+  isActive: boolean;
+  memberCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GroupMember {
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  addedAt: string;
+}
+
+export interface GroupPrinterAccess {
+  printerId: string;
+  printerName?: string;
+  canColor: boolean;
+  canDuplex: boolean;
+  maxPagesPerJob?: number;
+}
+
+export interface CreateGroupRequest {
+  name: string;
+  description?: string;
+  color?: string;
+}
+
 // Re-export observability types
 export * from './observability';
 

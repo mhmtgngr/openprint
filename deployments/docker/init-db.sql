@@ -3515,3 +3515,207 @@ CREATE INDEX idx_api_key_permissions_key ON api_key_permissions(api_key_id);
 CREATE INDEX idx_api_key_permissions_resource ON api_key_permissions(resource);
 
 
+-- Guest print tokens for visitor access
+CREATE TABLE IF NOT EXISTS guest_print_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token VARCHAR(64) NOT NULL UNIQUE,
+    email VARCHAR(255),
+    name VARCHAR(255),
+    organization_id UUID NOT NULL,
+    created_by UUID NOT NULL,
+    printer_ids UUID[] DEFAULT '{}',
+    max_pages INTEGER DEFAULT 10,
+    max_jobs INTEGER DEFAULT 5,
+    pages_used INTEGER DEFAULT 0,
+    jobs_used INTEGER DEFAULT 0,
+    color_allowed BOOLEAN DEFAULT false,
+    duplex_required BOOLEAN DEFAULT false,
+    expires_at TIMESTAMPTZ NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_used_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_guest_tokens_token ON guest_print_tokens(token);
+CREATE INDEX idx_guest_tokens_org ON guest_print_tokens(organization_id);
+CREATE INDEX idx_guest_tokens_active ON guest_print_tokens(is_active, expires_at);
+
+-- Guest print jobs tracking
+CREATE TABLE IF NOT EXISTS guest_print_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token_id UUID NOT NULL REFERENCES guest_print_tokens(id) ON DELETE CASCADE,
+    document_name VARCHAR(500) NOT NULL,
+    page_count INTEGER DEFAULT 0,
+    printer_id UUID,
+    status VARCHAR(50) DEFAULT 'pending',
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    error_message TEXT
+);
+
+CREATE INDEX idx_guest_jobs_token ON guest_print_jobs(token_id);
+-- Follow-me print pools - groups of printers where jobs can be released
+CREATE TABLE IF NOT EXISTS follow_me_pools (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    organization_id UUID NOT NULL,
+    location VARCHAR(255),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_follow_me_pools_org ON follow_me_pools(organization_id);
+
+-- Pool membership (which printers belong to which pool)
+CREATE TABLE IF NOT EXISTS follow_me_pool_printers (
+    pool_id UUID NOT NULL REFERENCES follow_me_pools(id) ON DELETE CASCADE,
+    printer_id UUID NOT NULL,
+    priority INTEGER DEFAULT 0,
+    PRIMARY KEY (pool_id, printer_id)
+);
+
+-- Follow-me jobs (jobs submitted to a pool, not a specific printer)
+CREATE TABLE IF NOT EXISTS follow_me_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID NOT NULL,
+    pool_id UUID NOT NULL REFERENCES follow_me_pools(id),
+    user_id UUID NOT NULL,
+    user_email VARCHAR(255) NOT NULL,
+    document_name VARCHAR(500) NOT NULL,
+    page_count INTEGER DEFAULT 0,
+    copies INTEGER DEFAULT 1,
+    color BOOLEAN DEFAULT false,
+    duplex BOOLEAN DEFAULT false,
+    status VARCHAR(50) DEFAULT 'waiting',
+    released_at_printer UUID,
+    released_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '24 hours'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_follow_me_jobs_user ON follow_me_jobs(user_id, status);
+CREATE INDEX idx_follow_me_jobs_pool ON follow_me_jobs(pool_id, status);
+CREATE INDEX idx_follow_me_jobs_expires ON follow_me_jobs(expires_at) WHERE status = 'waiting';
+-- Printer supply levels (toner, paper, ink, drums, etc.)
+CREATE TABLE IF NOT EXISTS printer_supplies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    printer_id UUID NOT NULL,
+    supply_type VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    level_percent INTEGER DEFAULT 100 CHECK (level_percent >= 0 AND level_percent <= 100),
+    status VARCHAR(50) DEFAULT 'ok',
+    part_number VARCHAR(100),
+    estimated_pages_remaining INTEGER,
+    last_replaced_at TIMESTAMPTZ,
+    alert_threshold INTEGER DEFAULT 15,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_supplies_printer ON printer_supplies(printer_id);
+CREATE INDEX idx_supplies_low ON printer_supplies(level_percent) WHERE level_percent <= 15;
+
+-- Printer maintenance schedules
+CREATE TABLE IF NOT EXISTS printer_maintenance (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    printer_id UUID NOT NULL,
+    maintenance_type VARCHAR(100) NOT NULL,
+    description TEXT,
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ,
+    assigned_to VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'scheduled',
+    notes TEXT,
+    recurrence VARCHAR(50),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_maintenance_printer ON printer_maintenance(printer_id);
+CREATE INDEX idx_maintenance_scheduled ON printer_maintenance(scheduled_at) WHERE status = 'scheduled';
+
+-- Print driver packages
+CREATE TABLE IF NOT EXISTS print_drivers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    manufacturer VARCHAR(255) NOT NULL,
+    model_pattern VARCHAR(255),
+    os VARCHAR(50) NOT NULL,
+    architecture VARCHAR(20) DEFAULT 'x64',
+    version VARCHAR(50) NOT NULL,
+    file_path VARCHAR(500),
+    file_size_bytes BIGINT,
+    checksum_sha256 VARCHAR(64),
+    is_universal BOOLEAN DEFAULT false,
+    is_latest BOOLEAN DEFAULT true,
+    release_notes TEXT,
+    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    uploaded_by UUID
+);
+
+CREATE INDEX idx_drivers_model ON print_drivers(manufacturer, model_pattern);
+CREATE INDEX idx_drivers_os ON print_drivers(os, architecture);
+CREATE INDEX idx_drivers_latest ON print_drivers(is_latest) WHERE is_latest = true;
+
+-- Driver-printer assignments
+CREATE TABLE IF NOT EXISTS printer_driver_assignments (
+    printer_id UUID NOT NULL,
+    driver_id UUID NOT NULL REFERENCES print_drivers(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (printer_id, driver_id)
+);
+
+-- Supply order history
+CREATE TABLE IF NOT EXISTS supply_orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    printer_id UUID NOT NULL,
+    supply_type VARCHAR(50) NOT NULL,
+    part_number VARCHAR(100),
+    quantity INTEGER DEFAULT 1,
+    order_status VARCHAR(50) DEFAULT 'pending',
+    ordered_by UUID,
+    ordered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    delivered_at TIMESTAMPTZ,
+    notes TEXT
+);
+
+CREATE INDEX idx_supply_orders_printer ON supply_orders(printer_id);
+CREATE INDEX idx_supply_orders_status ON supply_orders(order_status);
+-- User groups for policy and quota assignment
+CREATE TABLE IF NOT EXISTS user_groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    organization_id UUID NOT NULL,
+    color VARCHAR(7) DEFAULT '#6366F1',
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(organization_id, name)
+);
+
+CREATE INDEX idx_user_groups_org ON user_groups(organization_id) WHERE is_active = true;
+
+-- Group membership
+CREATE TABLE IF NOT EXISTS user_group_members (
+    group_id UUID NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    added_by UUID,
+    PRIMARY KEY (group_id, user_id)
+);
+
+CREATE INDEX idx_group_members_user ON user_group_members(user_id);
+
+-- Group-based printer access
+CREATE TABLE IF NOT EXISTS group_printer_access (
+    group_id UUID NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+    printer_id UUID NOT NULL,
+    can_color BOOLEAN DEFAULT true,
+    can_duplex BOOLEAN DEFAULT true,
+    max_pages_per_job INTEGER,
+    granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (group_id, printer_id)
+);
