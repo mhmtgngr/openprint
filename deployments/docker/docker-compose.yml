@@ -461,6 +461,7 @@ services:
       POLICY_SERVICE_URL: http://policy-service:8008
       COMPLIANCE_SERVICE_URL: http://compliance-service:8009
       M365_SERVICE_URL: http://m365-integration-service:8010
+      REDIS_URL: redis://:openprint@redis:6379
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8080:8080"
