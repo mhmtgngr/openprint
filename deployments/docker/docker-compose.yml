@@ -137,7 +137,7 @@ services:
       PROCESSOR_WORKERS: 10
     ports:
       - "8003:8003"
-      - "9093:9093"
+      - "19093:9093"
     depends_on:
       postgres:
         condition: service_healthy
@@ -244,7 +244,6 @@ services:
     container_name: openprint-dashboard
     environment:
       NODE_ENV: production
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:18001}
     ports:
       - "3000:3000"
     depends_on:
@@ -547,6 +546,8 @@ services:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
       - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC (used by services)
+      - "4318:4318"    # OTLP HTTP
       - "14268:14268"  # Jaeger collector HTTP
       - "14250:14250"  # Jaeger collector gRPC
       - "6831:6831/udp" # Jaeger agent compact
