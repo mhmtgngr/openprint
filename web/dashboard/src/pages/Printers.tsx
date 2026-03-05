@@ -215,15 +215,27 @@ export const Printers = () => {
                 will automatically discover and register your printers.
               </p>
               <div className="mt-4 flex gap-3">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <a
+                  href="/downloads/openprint-agent-windows.msi"
+                  download
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium inline-block text-center"
+                >
                   Download for Windows
-                </button>
-                <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
+                </a>
+                <a
+                  href="/downloads/openprint-agent-macos.pkg"
+                  download
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium inline-block text-center"
+                >
                   Download for macOS
-                </button>
-                <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
+                </a>
+                <a
+                  href="/downloads/openprint-agent-linux.deb"
+                  download
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium inline-block text-center"
+                >
                   Download for Linux
-                </button>
+                </a>
               </div>
             </div>
           </div>

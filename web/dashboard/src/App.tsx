@@ -93,7 +93,7 @@ const PlatformAdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Check if user is a platform admin
-  const isPlatformAdmin = user?.role === 'platform_admin' || (user as any)?.isPlatformAdmin;
+  const isPlatformAdmin = user?.role === 'platform_admin' || user?.isPlatformAdmin;
 
   if (!isAuthenticated || !isPlatformAdmin) {
     return <Navigate to="/dashboard" replace />;

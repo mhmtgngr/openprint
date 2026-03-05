@@ -23,7 +23,7 @@ DOCKER_COMPOSE := docker compose
 
 # Project configuration
 MODULE := github.com/openprint/openprint
-SERVICES := auth-service registry-service job-service storage-service notification-service
+SERVICES := auth-service registry-service job-service storage-service notification-service analytics-service organization-service policy-service compliance-service m365-integration-service api-gateway gateway
 
 # Test configuration
 TEST_TIMEOUT := 10m
@@ -138,6 +138,48 @@ build-notification-service: ## Build notification service
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/notification-service ./services/notification-service
 
+.PHONY: build-analytics-service
+build-analytics-service: ## Build analytics service
+	@echo "$(BLUE)Building analytics-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/analytics-service ./services/analytics-service
+
+.PHONY: build-organization-service
+build-organization-service: ## Build organization service
+	@echo "$(BLUE)Building organization-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/organization-service ./services/organization-service
+
+.PHONY: build-policy-service
+build-policy-service: ## Build policy service
+	@echo "$(BLUE)Building policy-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/policy-service ./services/policy-service
+
+.PHONY: build-compliance-service
+build-compliance-service: ## Build compliance service
+	@echo "$(BLUE)Building compliance-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/compliance-service ./services/compliance-service
+
+.PHONY: build-m365-integration-service
+build-m365-integration-service: ## Build M365 integration service
+	@echo "$(BLUE)Building m365-integration-service...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/m365-integration-service ./services/m365-integration-service
+
+.PHONY: build-api-gateway
+build-api-gateway: ## Build API gateway
+	@echo "$(BLUE)Building api-gateway...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/api-gateway ./services/api-gateway
+
+.PHONY: build-gateway
+build-gateway: ## Build gateway
+	@echo "$(BLUE)Building gateway...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/gateway ./services/gateway
+
 # ============================================================================
 # Test Targets
 # ============================================================================
@@ -232,6 +274,41 @@ test-storage-service: ## Run storage service tests
 test-notification-service: ## Run notification service tests
 	@echo "$(BLUE)Running notification-service tests...$(NC)"
 	$(GO) test -timeout $(TEST_TIMEOUT) ./services/notification-service/...
+
+.PHONY: test-analytics-service
+test-analytics-service: ## Run analytics service tests
+	@echo "$(BLUE)Running analytics-service tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/analytics-service/...
+
+.PHONY: test-organization-service
+test-organization-service: ## Run organization service tests
+	@echo "$(BLUE)Running organization-service tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/organization-service/...
+
+.PHONY: test-policy-service
+test-policy-service: ## Run policy service tests
+	@echo "$(BLUE)Running policy-service tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/policy-service/...
+
+.PHONY: test-compliance-service
+test-compliance-service: ## Run compliance service tests
+	@echo "$(BLUE)Running compliance-service tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/compliance-service/...
+
+.PHONY: test-m365-integration-service
+test-m365-integration-service: ## Run M365 integration service tests
+	@echo "$(BLUE)Running m365-integration-service tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/m365-integration-service/...
+
+.PHONY: test-api-gateway
+test-api-gateway: ## Run API gateway tests
+	@echo "$(BLUE)Running api-gateway tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/api-gateway/...
+
+.PHONY: test-gateway
+test-gateway: ## Run gateway tests
+	@echo "$(BLUE)Running gateway tests...$(NC)"
+	$(GO) test -timeout $(TEST_TIMEOUT) ./services/gateway/...
 
 .PHONY: test-bench
 test-bench: ## Run benchmarks
