@@ -1,5 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { QuickPrintDialog } from '@/components/QuickPrintDialog';
 import {
   HomeIcon,
   PrinterIcon,
@@ -42,6 +45,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [showQuickPrint, setShowQuickPrint] = useState(false);
 
   const filteredNavItems = navItems.filter(
     (item) => user && item.roles.includes(user.role)
@@ -127,6 +131,20 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
               {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
             </h1>
+            <div className="flex items-center gap-2">
+              {/* Quick Print button */}
+              <button
+                onClick={() => setShowQuickPrint(true)}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Quick Print
+              </button>
+              {/* Notification Center */}
+              <NotificationCenter />
+            </div>
           </div>
         </header>
 
@@ -135,6 +153,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {children}
         </main>
       </div>
+
+      {/* Quick Print Dialog */}
+      {showQuickPrint && (
+        <QuickPrintDialog onClose={() => setShowQuickPrint(false)} />
+      )}
     </div>
   );
 };

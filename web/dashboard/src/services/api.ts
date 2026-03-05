@@ -35,6 +35,7 @@ import type {
   EmailToPrintConfig,
   EmailPrintJob,
   UpdateEmailConfigRequest,
+  PrinterSupply,
 } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -260,6 +261,13 @@ export const printersApi = {
       { method: 'DELETE' }
     );
     return handleResponse<void>(response);
+  },
+
+  async getSupplies(printerId: string): Promise<PrinterSupply[]> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/printers/${printerId}/supplies`
+    );
+    return handleResponse<PrinterSupply[]>(response);
   },
 };
 

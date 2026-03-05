@@ -1,14 +1,15 @@
-import type { Printer } from '@/types';
+import type { Printer, PrinterSupply } from '@/types';
 
 interface PrinterCardProps {
   printer: Printer;
+  supplies?: PrinterSupply[];
   onClick?: () => void;
   onToggle?: () => void;
   onDelete?: () => void;
   isSelected?: boolean;
 }
 
-export const PrinterCard = ({ printer, onClick, onToggle, onDelete, isSelected }: PrinterCardProps) => {
+export const PrinterCard = ({ printer, supplies, onClick, onToggle, onDelete, isSelected }: PrinterCardProps) => {
   const { name, type, isOnline, isActive, capabilities } = printer;
 
   return (
@@ -77,6 +78,43 @@ export const PrinterCard = ({ printer, onClick, onToggle, onDelete, isSelected }
             </span>
           )}
         </div>
+
+        {/* Supply levels */}
+        {supplies && supplies.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {supplies.slice(0, 4).map((supply) => {
+              const levelColor =
+                supply.status === 'empty' ? 'bg-red-500'
+                : supply.status === 'low' ? 'bg-amber-500'
+                : supply.supplyType.toLowerCase().includes('cyan') ? 'bg-cyan-500'
+                : supply.supplyType.toLowerCase().includes('magenta') ? 'bg-pink-500'
+                : supply.supplyType.toLowerCase().includes('yellow') ? 'bg-yellow-400'
+                : supply.supplyType.toLowerCase().includes('black') ? 'bg-gray-800 dark:bg-gray-300'
+                : 'bg-blue-500';
+
+              return (
+                <div key={supply.id} className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-8 truncate" title={supply.name}>
+                    {supply.name.replace(/\s*(toner|ink|cartridge)\s*/gi, '').slice(0, 4)}
+                  </span>
+                  <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${levelColor}`}
+                      style={{ width: `${Math.max(supply.levelPercent, 2)}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs w-8 text-right ${
+                    supply.status === 'empty' ? 'text-red-600 dark:text-red-400 font-medium'
+                    : supply.status === 'low' ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    {supply.levelPercent}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {onToggle && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex gap-2">

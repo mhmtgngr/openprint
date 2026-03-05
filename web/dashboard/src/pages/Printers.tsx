@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printersApi } from '@/services/api';
 import { PrinterCard, PrinterIcon } from '@/components/PrinterCard';
 import { PlusIcon, SearchIcon, FilterIcon } from '@/components/icons';
+import type { PrinterSupply } from '@/types';
 
 export const Printers = () => {
   const queryClient = useQueryClient();
@@ -16,6 +17,27 @@ export const Printers = () => {
     queryKey: ['printers'],
     queryFn: () => printersApi.list(),
   });
+
+  // Fetch supplies for all printers
+  const supplyQueries = useQueries({
+    queries: (printers || []).map((printer) => ({
+      queryKey: ['printer-supplies', printer.id],
+      queryFn: () => printersApi.getSupplies(printer.id).catch(() => [] as PrinterSupply[]),
+      staleTime: 60000, // Cache for 1 minute
+      enabled: printer.isOnline,
+    })),
+  });
+
+  const suppliesByPrinter = (printers || []).reduce<Record<string, PrinterSupply[]>>(
+    (acc, printer, index) => {
+      const data = supplyQueries[index]?.data;
+      if (data && data.length > 0) {
+        acc[printer.id] = data;
+      }
+      return acc;
+    },
+    {}
+  );
 
   const createMutation = useMutation({
     mutationFn: (data: { name: string; agentId: string }) =>
@@ -176,6 +198,7 @@ export const Printers = () => {
             <PrinterCard
               key={printer.id}
               printer={printer}
+              supplies={suppliesByPrinter[printer.id]}
               onToggle={() => toggleMutation.mutate({ id: printer.id, isActive: printer.isActive })}
               onDelete={() => handleDeletePrinter(printer.id, printer.name)}
             />
