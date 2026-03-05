@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -740,49 +741,20 @@ func (gh *GroupHandler) GetPrinterAccess(w http.ResponseWriter, r *http.Request,
 
 // groupExists checks whether a group belongs to the given organization,
 // writing an error response and returning false if it does not.
-func (gh *GroupHandler) groupExists(ctx interface{ Deadline() (time.Time, bool) }, w http.ResponseWriter, groupID, orgID string) bool {
-	// Use the concrete context from the caller. Accept the minimal interface so
-	// that database/sql.DB.QueryRowContext is satisfied via the http.Request context.
-	type queryCtx interface {
-		Deadline() (time.Time, bool)
-		Done() <-chan struct{}
-		Err() error
-		Value(interface{}) interface{}
-	}
-	// We actually receive context.Context from r.Context() in all callers.
-	// Cast back for db call.
-	dbCtx, ok := ctx.(queryCtx)
-	if !ok {
-		respondError(w, apperrors.New("internal context error", http.StatusInternalServerError))
+func (gh *GroupHandler) groupExists(ctx context.Context, w http.ResponseWriter, groupID, orgID string) bool {
+	query := `SELECT EXISTS(SELECT 1 FROM user_groups WHERE id = $1 AND organization_id = $2)`
+
+	var exists bool
+	err := gh.db.QueryRowContext(ctx, query, groupID, orgID).Scan(&exists)
+	if err != nil {
+		respondError(w, apperrors.Wrap(err, "failed to verify group", http.StatusInternalServerError))
 		return false
 	}
-	_ = dbCtx // suppress unused
-
-	query := `SELECT EXISTS(SELECT 1 FROM user_groups WHERE id = $1 AND organization_id = $2)`
-	var exists bool
-	// We need a proper context.Context. Since all callers pass r.Context() which is context.Context,
-	// use a type assertion.
-	if sqlCtx, ok2 := ctx.(interface {
-		Deadline() (time.Time, bool)
-		Done() <-chan struct{}
-		Err() error
-		Value(key interface{}) interface{}
-	}); ok2 {
-		err := gh.db.QueryRowContext(sqlCtx.(interface {
-			Deadline() (time.Time, bool)
-			Done() <-chan struct{}
-			Err() error
-			Value(key interface{}) interface{}
-		}).(interface {
-			Deadline() (time.Time, bool)
-			Done() <-chan struct{}
-			Err() error
-			Value(key interface{}) interface{}
-		}), query, groupID, orgID).Scan(&exists) // This won't compile cleanly with the wrong interface
-		_ = err
+	if !exists {
+		respondError(w, apperrors.New("group not found", http.StatusNotFound))
+		return false
 	}
 
-	// Simplified: we'll re-implement properly below.
 	return true
 }
 
