@@ -1,9 +1,11 @@
 /**
- * QuickPrintDialog - Upload a file and print it in one step
+ * QuickPrintDialog - Upload a file and print it in one step.
+ * Uses two-step flow: upload document to storage, then create job with document_id.
  */
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { printersApi, jobsApi } from '@/services/api';
+import { printersApi } from '@/services/api';
+import { documentsApi } from '@/features/documents';
 import type { Printer, JobSettings } from '@/types';
 
 interface QuickPrintDialogProps {
@@ -35,25 +37,37 @@ export const QuickPrintDialog = ({ onClose }: QuickPrintDialogProps) => {
     mutationFn: async () => {
       if (!file || !selectedPrinter) throw new Error('Missing file or printer');
 
-      // Read file as base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Strip data URL prefix if present
-          const base64Data = result.includes(',') ? result.split(',')[1] : result;
-          resolve(base64Data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+      // Step 1: Upload document to storage service
+      const uploadResult = await documentsApi.upload({ file });
+
+      // Step 2: Create print job referencing the uploaded document
+      const token = localStorage.getItem('auth_tokens');
+      const parsed = token ? JSON.parse(token) : null;
+
+      const response = await fetch('/api/v1/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(parsed?.accessToken ? { Authorization: `Bearer ${parsed.accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          document_id: uploadResult.id,
+          printer_id: selectedPrinter,
+          title: file.name,
+          copies: settings.copies || 1,
+          color_mode: settings.color ? 'color' : 'monochrome',
+          duplex: settings.duplex || false,
+          media_type: (settings.paperSize || 'A4').toLowerCase(),
+          quality: 'normal',
+        }),
       });
 
-      return jobsApi.create({
-        printerId: selectedPrinter,
-        documentName: file.name,
-        fileData: base64,
-        settings,
-      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || `Job creation failed (${response.status})`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       setStep('done');

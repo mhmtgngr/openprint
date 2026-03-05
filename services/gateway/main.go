@@ -241,26 +241,109 @@ func registerServiceRoutes(mux *http.ServeMux, cfg *Config, jwtManager *jwt.Mana
 	mux.HandleFunc("/api/v1/auth/refresh", forwardTo(cfg.AuthServiceURL))
 	mux.HandleFunc("/api/v1/auth/me", forwardTo(cfg.AuthServiceURL))
 
+	// SSO endpoints (public)
+	mux.HandleFunc("/api/v1/auth/sso/", forwardTo(cfg.AuthServiceURL))
+
 	// Agent endpoints (public for registration, auth for others)
 	mux.HandleFunc("/api/v1/agents/register", forwardTo(cfg.AuthServiceURL))
 
-	// Auth-protected agent endpoints
-	protectedAgentHandler := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
+	// Common JWT auth config for protected routes
+	jwtAuthCfg := middleware.JWTAuthConfig{
 		SecretKey:  cfg.JWTSecret,
 		JWTManager: jwtManager,
-	})(forwardTo(cfg.RegistryServiceURL))
+	}
+
+	// Auth-protected agent endpoints - all authenticated users
+	protectedAgentHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.RegistryServiceURL))
 	mux.Handle("/api/v1/agents/", protectedAgentHandler)
 
-	// Admin endpoints - require admin role
-	adminAuth := middleware.Chain(
-		middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
-			SecretKey:  cfg.JWTSecret,
-			JWTManager: jwtManager,
-		}),
-		middleware.RequireRole("admin", "org_admin"),
-	)
-	adminHandler := adminAuth(forwardTo(cfg.RegistryServiceURL))
-	mux.Handle("/api/v1/admin/", http.StripPrefix("/api/v1/admin", adminHandler))
+	// Printer endpoints - all authenticated users (backend scopes per-user)
+	protectedPrinterHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.RegistryServiceURL))
+	mux.Handle("/api/v1/printers/", protectedPrinterHandler)
+	mux.Handle("/api/v1/printers", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.RegistryServiceURL)))
+
+	// Job endpoints - all authenticated users (backend scopes per-user)
+	protectedJobHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL))
+	mux.Handle("/api/v1/jobs/", protectedJobHandler)
+	mux.Handle("/api/v1/jobs", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
+
+	// Document/storage endpoints - all authenticated users (backend scopes per-user)
+	protectedStorageHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.StorageServiceURL))
+	mux.Handle("/api/v1/documents/", protectedStorageHandler)
+	mux.Handle("/api/v1/documents", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.StorageServiceURL)))
+
+	// Follow-Me endpoints - all authenticated users
+	mux.Handle("/api/v1/follow-me/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
+
+	// Secure Print / Print Release endpoints - all authenticated users
+	mux.Handle("/api/v1/releases/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
+
+	// Notification WebSocket + REST - all authenticated users
+	mux.Handle("/api/v1/notifications/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.NotificationServiceURL)))
+
+	// User self-service endpoints (profile, password)
+	mux.Handle("/api/v1/users/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.AuthServiceURL)))
+
+	// User's own quota - any authenticated user
+	mux.Handle("/api/v1/quotas/me", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
+
+	// --- Admin-only endpoints (require admin, owner, org_admin, or platform_admin) ---
+	adminRoles := []string{"admin", "owner", "org_admin", "platform_admin"}
+	adminAuthMw := func(target string) http.Handler {
+		return middleware.Chain(
+			middleware.JWTAuthMiddleware(jwtAuthCfg),
+			middleware.RequireRole(adminRoles...),
+		)(forwardTo(target))
+	}
+
+	// Analytics - admin only
+	mux.Handle("/api/v1/analytics/", adminAuthMw(cfg.JobServiceURL))
+
+	// Organization management - admin only
+	mux.Handle("/api/v1/organizations/", adminAuthMw(cfg.AuthServiceURL))
+	mux.Handle("/api/v1/organizations", adminAuthMw(cfg.AuthServiceURL))
+
+	// Quota management (org-wide, per-user) - admin only
+	mux.Handle("/api/v1/quotas/organization", adminAuthMw(cfg.JobServiceURL))
+	mux.Handle("/api/v1/quotas/users/", adminAuthMw(cfg.JobServiceURL))
+	mux.Handle("/api/v1/quotas/periods", adminAuthMw(cfg.JobServiceURL))
+	mux.Handle("/api/v1/quotas/", adminAuthMw(cfg.JobServiceURL))
+	mux.Handle("/api/v1/quotas", adminAuthMw(cfg.JobServiceURL))
+
+	// Print policies - admin only
+	mux.Handle("/api/v1/policies/", adminAuthMw(cfg.JobServiceURL))
+	mux.Handle("/api/v1/policies", adminAuthMw(cfg.JobServiceURL))
+
+	// Audit logs - admin only
+	mux.Handle("/api/v1/audit-logs", adminAuthMw(cfg.AuthServiceURL))
+
+	// Email-to-print config - admin only
+	mux.Handle("/api/v1/email-to-print/", adminAuthMw(cfg.JobServiceURL))
+
+	// Guest printing tokens - admin only
+	mux.Handle("/api/v1/guest/", adminAuthMw(cfg.AuthServiceURL))
+
+	// Webhooks - admin only
+	mux.Handle("/api/v1/webhooks/", adminAuthMw(cfg.NotificationServiceURL))
+	mux.Handle("/api/v1/webhooks", adminAuthMw(cfg.NotificationServiceURL))
+
+	// Supply management alerts - admin only
+	mux.Handle("/api/v1/supplies/", adminAuthMw(cfg.RegistryServiceURL))
+
+	// Driver management - admin only
+	mux.Handle("/api/v1/drivers/", adminAuthMw(cfg.RegistryServiceURL))
+	mux.Handle("/api/v1/drivers", adminAuthMw(cfg.RegistryServiceURL))
+
+	// User groups - admin only
+	mux.Handle("/api/v1/groups/", adminAuthMw(cfg.AuthServiceURL))
+	mux.Handle("/api/v1/groups", adminAuthMw(cfg.AuthServiceURL))
+
+	// --- Platform Admin endpoints (platform_admin only) ---
+	platformAdminHandler := middleware.Chain(
+		middleware.JWTAuthMiddleware(jwtAuthCfg),
+		middleware.RequireRole("platform_admin"),
+	)(forwardTo(cfg.RegistryServiceURL))
+	mux.Handle("/api/v1/admin/", http.StripPrefix("/api/v1/admin", platformAdminHandler))
 }
 
 // forwardTo creates a reverse proxy handler for the given target URL.

@@ -13,29 +13,53 @@ import {
   MetricsIcon,
   BellIcon,
   PulseIcon,
+  ChartIcon,
+  UsersIcon,
 } from '@/components/icons';
+
+const allRoles = ['user', 'admin', 'owner', 'platform_admin'];
+const adminRoles = ['admin', 'owner', 'platform_admin'];
+const platformAdminRoles = ['platform_admin'];
 
 interface NavItem {
   path: string;
   icon: React.FC<{ className?: string }>;
   label: string;
   roles: string[];
+  section?: string;
 }
 
 const navItems: NavItem[] = [
-  { path: '/dashboard', icon: HomeIcon, label: 'Dashboard', roles: ['user', 'admin', 'owner'] },
-  { path: '/printers', icon: PrinterIcon, label: 'Devices', roles: ['user', 'admin', 'owner'] },
-  { path: '/jobs', icon: DocumentIcon, label: 'Jobs', roles: ['user', 'admin', 'owner'] },
-  { path: '/follow-me', icon: PrinterIcon, label: 'Follow-Me', roles: ['user', 'admin', 'owner'] },
-  { path: '/documents', icon: FolderIcon, label: 'Documents', roles: ['user', 'admin', 'owner'] },
-  { path: '/supplies', icon: PulseIcon, label: 'Supplies', roles: ['admin', 'owner'] },
-  { path: '/drivers', icon: FolderIcon, label: 'Drivers', roles: ['admin', 'owner'] },
-  { path: '/groups', icon: MetricsIcon, label: 'Groups', roles: ['admin', 'owner'] },
-  { path: '/guest-printing', icon: DocumentIcon, label: 'Guest Print', roles: ['admin', 'owner'] },
-  { path: '/metrics', icon: MetricsIcon, label: 'Metrics', roles: ['admin', 'owner'] },
-  { path: '/monitoring', icon: BellIcon, label: 'Monitoring', roles: ['admin', 'owner'] },
-  { path: '/observability', icon: PulseIcon, label: 'Tracing', roles: ['admin', 'owner'] },
-  { path: '/settings', icon: CogIcon, label: 'Settings', roles: ['user', 'admin', 'owner'] },
+  // --- User section ---
+  { path: '/dashboard', icon: HomeIcon, label: 'Dashboard', roles: allRoles },
+  { path: '/printers', icon: PrinterIcon, label: 'Devices', roles: allRoles },
+  { path: '/jobs', icon: DocumentIcon, label: 'Jobs', roles: allRoles },
+  { path: '/follow-me', icon: PrinterIcon, label: 'Follow-Me', roles: allRoles },
+  { path: '/documents', icon: FolderIcon, label: 'Documents', roles: allRoles },
+  { path: '/secure-print', icon: DocumentIcon, label: 'Secure Print', roles: allRoles },
+
+  // --- Admin section ---
+  { path: '/analytics', icon: ChartIcon, label: 'Analytics', roles: adminRoles, section: 'Admin' },
+  { path: '/organization', icon: UsersIcon, label: 'Organization', roles: adminRoles },
+  { path: '/policies', icon: DocumentIcon, label: 'Policies', roles: adminRoles },
+  { path: '/quotas', icon: MetricsIcon, label: 'Quotas', roles: adminRoles },
+  { path: '/supplies', icon: PulseIcon, label: 'Supplies', roles: adminRoles },
+  { path: '/drivers', icon: FolderIcon, label: 'Drivers', roles: adminRoles },
+  { path: '/groups', icon: UsersIcon, label: 'Groups', roles: adminRoles },
+  { path: '/guest-printing', icon: DocumentIcon, label: 'Guest Print', roles: adminRoles },
+  { path: '/email-to-print', icon: DocumentIcon, label: 'Email-to-Print', roles: adminRoles },
+  { path: '/audit-logs', icon: FolderIcon, label: 'Audit Logs', roles: adminRoles },
+
+  // --- System section ---
+  { path: '/metrics', icon: MetricsIcon, label: 'Metrics', roles: adminRoles, section: 'System' },
+  { path: '/monitoring', icon: BellIcon, label: 'Monitoring', roles: adminRoles },
+  { path: '/observability', icon: PulseIcon, label: 'Tracing', roles: adminRoles },
+
+  // --- Platform Admin ---
+  { path: '/admin/organizations', icon: UsersIcon, label: 'Organizations', roles: platformAdminRoles, section: 'Platform' },
+
+  // --- Always last ---
+  { path: '/settings', icon: CogIcon, label: 'Settings', roles: allRoles },
 ];
 
 interface DashboardLayoutProps {
@@ -75,26 +99,39 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {filteredNavItems.map((item) => {
+            {filteredNavItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path ||
                 location.pathname.startsWith(`${item.path}/`);
 
+              // Show section header if this item starts a new section
+              const showSection = item.section && (
+                index === 0 || filteredNavItems[index - 1]?.section !== item.section
+              );
+
               return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-                    ${isActive
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }
-                  `}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
+                <div key={item.path}>
+                  {showSection && (
+                    <div className="pt-4 pb-1 px-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                        {item.section}
+                      </p>
+                    </div>
+                  )}
+                  <Link
+                    to={item.path}
+                    className={`
+                      flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors
+                      ${isActive
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }
+                    `}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium text-sm">{item.label}</span>
+                  </Link>
+                </div>
               );
             })}
           </nav>
