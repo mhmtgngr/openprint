@@ -107,6 +107,7 @@ func main() {
 	// Initialize repositories
 	jobRepo := repository.NewJobRepository(db)
 	historyRepo := repository.NewJobHistoryRepository(db)
+	assignmentRepo := repository.NewJobAssignmentRepository(db)
 
 	// Initialize processor with metrics
 	jobProcessor := processor.New(processor.Config{
@@ -141,6 +142,14 @@ func main() {
 		log.Fatalf("Failed to create JWT manager: %v", err)
 	}
 
+	// Create agent poll handler
+	storageURL := getEnv("STORAGE_SERVICE_URL", "http://localhost:8004")
+	agentPollHandler := handler.NewAgentPollHandler(handler.AgentPollConfig{
+		AssignmentRepo:    assignmentRepo,
+		DocumentBaseURL:   storageURL + "/documents",
+		AssignmentTimeout: 10 * time.Minute,
+	})
+
 	// Setup HTTP server with middleware
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
@@ -149,6 +158,8 @@ func main() {
 	mux.HandleFunc("/jobs/status/", h.JobStatusHandler)
 	mux.HandleFunc("/history", h.HistoryHandler)
 	mux.HandleFunc("/queue/stats", h.QueueStatsHandler)
+	mux.HandleFunc("/agents/jobs/poll", agentPollHandler.PollJobs)
+	mux.HandleFunc("/agents/", agentPollHandler.AgentJobHandler)
 
 	// Build middleware chain: logging -> recovery -> auth -> metrics -> telemetry -> security headers -> handler
 	middlewareChain := middleware.Chain(
@@ -157,7 +168,7 @@ func main() {
 		middleware.AuthMiddleware(middleware.JWTConfig{
 			SecretKey:  cfg.JWTSecret,
 			JWTManager: jwtManager,
-			SkipPaths:  []string{"/health"},
+			SkipPaths:  []string{"/health", "/agents/"},
 		}),
 		middleware.MetricsMiddleware(middleware.MetricsMiddlewareConfig{
 			Registry:           registry,

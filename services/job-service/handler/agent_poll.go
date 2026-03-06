@@ -550,6 +550,38 @@ func (h *AgentPollHandler) GetJobDetails(w http.ResponseWriter, r *http.Request)
 	respondPollJSON(w, http.StatusOK, response)
 }
 
+// AgentJobHandler routes /agents/ sub-paths to the appropriate handler.
+func (h *AgentPollHandler) AgentJobHandler(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	// /agents/{agent_id}/jobs/{job_id}/status
+	// /agents/{agent_id}/jobs/{job_id}/heartbeat
+	// /agents/{agent_id}/jobs/{job_id}/complete
+	// /agents/{agent_id}/jobs/{job_id}/fail
+	// /agents/{agent_id}/jobs/{job_id}
+	if len(parts) >= 5 {
+		action := parts[4]
+		switch action {
+		case "status":
+			h.UpdateJobStatus(w, r)
+			return
+		case "heartbeat":
+			h.JobHeartbeat(w, r)
+			return
+		case "complete":
+			h.CompleteJob(w, r)
+			return
+		case "fail":
+			h.FailJob(w, r)
+			return
+		}
+	}
+	if len(parts) >= 4 && parts[2] == "jobs" {
+		h.GetJobDetails(w, r)
+		return
+	}
+	http.NotFound(w, r)
+}
+
 // Helper functions
 
 func respondPollJSON(w http.ResponseWriter, status int, data interface{}) {
