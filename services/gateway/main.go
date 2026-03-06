@@ -4,17 +4,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"os/signal"
-	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -27,32 +21,12 @@ const (
 	ServicePort = 8000
 
 	// Backend service ports.
-	AuthServicePort    = 8001
-	RegistryServicePort = 8002
-	JobServicePort      = 8003
-	StorageServicePort  = 8004
+	AuthServicePort         = 8001
+	RegistryServicePort     = 8002
+	JobServicePort          = 8003
+	StorageServicePort      = 8004
 	NotificationServicePort = 8005
 )
-
-// Config holds gateway configuration.
-type Config struct {
-	ServerAddr              string
-	JWTSecret               string
-	RequestsPerMinute       int
-	ServiceHost             string
-	AuthServiceURL          string
-	RegistryServiceURL      string
-	JobServiceURL           string
-	StorageServiceURL       string
-	NotificationServiceURL  string
-}
-
-// ServiceRoute defines a route to a backend service.
-type ServiceRoute struct {
-	Pattern    string
-	TargetURL  string
-	RequireAuth bool
-}
 
 func main() {
 	cfg := loadConfig()
@@ -60,7 +34,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Initialize JWT manager for auth middleware
 	jwtCfg, err := jwt.DefaultConfig(cfg.JWTSecret)
 	if err != nil {
 		log.Fatalf("Failed to create JWT config: %v", err)
@@ -70,43 +43,10 @@ func main() {
 		log.Fatalf("Failed to create JWT manager: %v", err)
 	}
 
-	// Create audit logger
 	auditLogger := middleware.NewAuditLogger(log.New(os.Stdout, "[GATEWAY] ", log.LstdFlags))
 
-	// Create HTTP handler with all services routed
-	mux := http.NewServeMux()
+	handler := newGatewayHandler(cfg, jwtManager, auditLogger)
 
-	// Register service routes
-	registerServiceRoutes(mux, cfg, jwtManager, auditLogger)
-
-	// Health check endpoint (no auth required)
-	mux.HandleFunc("/health", aggregatedHealthHandler(cfg))
-
-	// Apply middleware chain
-	// 1. Rate limiting (IP-based, 100 req/min default)
-	rateLimiter := middleware.RateLimitMiddleware(&middleware.RateLimiterConfig{
-		RequestsPerMinute: cfg.RequestsPerMinute,
-		CleanupInterval:   5 * time.Minute,
-	})
-
-	// 2. Audit logging (all requests)
-	audit := middleware.AuditMiddleware(auditLogger)
-
-	// 3. Security headers
-	security := securityHeadersMiddleware()
-
-	// 4. CORS
-	cors := corsMiddleware()
-
-	// Chain middleware
-	handler := middleware.Chain(
-		rateLimiter,
-		audit,
-		security,
-		cors,
-	)(mux)
-
-	// Create server
 	server := &http.Server{
 		Addr:         cfg.ServerAddr,
 		Handler:      handler,
@@ -118,7 +58,6 @@ func main() {
 		},
 	}
 
-	// Start server in goroutine
 	go func() {
 		log.Printf("API Gateway listening on %s", cfg.ServerAddr)
 		log.Printf("Routing to services:")
@@ -132,12 +71,10 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
-	// Graceful shutdown
 	log.Println("Shutting down gateway...")
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
@@ -145,411 +82,29 @@ func main() {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Server shutdown error: %v", err)
 	}
-
 	log.Println("Gateway stopped")
 }
 
-func loadConfig() *Config {
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET environment variable is required")
-	}
-	if len(jwtSecret) < 32 {
-		log.Fatal("JWT_SECRET must be at least 32 characters long")
-	}
+// newGatewayHandler builds the full HTTP handler with routes and middleware.
+func newGatewayHandler(cfg *Config, jwtManager *jwt.Manager, auditLogger *middleware.AuditLogger) http.Handler {
+	mux := http.NewServeMux()
 
-	serviceHost := getEnv("SERVICE_HOST", "localhost")
-	requestsPerMinute := getEnvInt("REQUESTS_PER_MINUTE", 100)
+	registerServiceRoutes(mux, cfg, jwtManager, auditLogger)
+	mux.HandleFunc("/health", aggregatedHealthHandler(cfg))
 
-	return &Config{
-		ServerAddr:             fmt.Sprintf(":%d", ServicePort),
-		JWTSecret:              jwtSecret,
-		RequestsPerMinute:      requestsPerMinute,
-		ServiceHost:            serviceHost,
-		AuthServiceURL:         getEnv("AUTH_SERVICE_URL", fmt.Sprintf("http://%s:%d", serviceHost, AuthServicePort)),
-		RegistryServiceURL:     getEnv("REGISTRY_SERVICE_URL", fmt.Sprintf("http://%s:%d", serviceHost, RegistryServicePort)),
-		JobServiceURL:          getEnv("JOB_SERVICE_URL", fmt.Sprintf("http://%s:%d", serviceHost, JobServicePort)),
-		StorageServiceURL:      getEnv("STORAGE_SERVICE_URL", fmt.Sprintf("http://%s:%d", serviceHost, StorageServicePort)),
-		NotificationServiceURL: getEnv("NOTIFICATION_SERVICE_URL", fmt.Sprintf("http://%s:%d", serviceHost, NotificationServicePort)),
-	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		var intVal int
-		if _, err := fmt.Sscanf(value, "%d", &intVal); err == nil {
-			return intVal
-		}
-	}
-	return defaultValue
-}
-
-// registerServiceRoutes registers all service routes with reverse proxies.
-func registerServiceRoutes(mux *http.ServeMux, cfg *Config, jwtManager *jwt.Manager, auditLogger *middleware.AuditLogger) {
-	// Auth service routes - handle authentication separately
-	authMux := http.NewServeMux()
-	authMux.HandleFunc("/health", forwardTo(cfg.AuthServiceURL))
-	authMux.HandleFunc("/", forwardTo(cfg.AuthServiceURL))
-	mux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-
-	// Registry service routes - requires auth
-	registryAuth := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
-		SecretKey:  cfg.JWTSecret,
-		JWTManager: jwtManager,
-		SkipPaths:  []string{"/health"},
-	})
-	registryProxy := registryAuth(forwardTo(cfg.RegistryServiceURL))
-	mux.Handle("/registry/", http.StripPrefix("/registry", registryProxy))
-
-	// Job service routes - requires auth
-	jobAuth := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
-		SecretKey:  cfg.JWTSecret,
-		JWTManager: jwtManager,
-		SkipPaths:  []string{"/health"},
-	})
-	jobProxy := jobAuth(forwardTo(cfg.JobServiceURL))
-	mux.Handle("/jobs/", http.StripPrefix("/jobs", jobProxy))
-
-	// Storage service routes - requires auth
-	storageAuth := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
-		SecretKey:  cfg.JWTSecret,
-		JWTManager: jwtManager,
-		SkipPaths:  []string{"/health"},
-	})
-	storageProxy := storageAuth(forwardTo(cfg.StorageServiceURL))
-	mux.Handle("/storage/", http.StripPrefix("/storage", storageProxy))
-
-	// Notification service routes - requires auth for WebSocket upgrades
-	notificationAuth := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
-		SecretKey:  cfg.JWTSecret,
-		JWTManager: jwtManager,
-		SkipPaths:  []string{"/health"},
-	})
-	notificationProxy := notificationAuth(forwardTo(cfg.NotificationServiceURL))
-	mux.Handle("/notifications/", http.StripPrefix("/notifications", notificationProxy))
-
-	// API v1 routes - map to appropriate services
-	// Auth endpoints (public)
-	mux.HandleFunc("/api/v1/auth/login", forwardTo(cfg.AuthServiceURL))
-	mux.HandleFunc("/api/v1/auth/register", forwardTo(cfg.AuthServiceURL))
-	mux.HandleFunc("/api/v1/auth/logout", forwardTo(cfg.AuthServiceURL))
-	mux.HandleFunc("/api/v1/auth/refresh", forwardTo(cfg.AuthServiceURL))
-	mux.HandleFunc("/api/v1/auth/me", forwardTo(cfg.AuthServiceURL))
-
-	// SSO endpoints (public)
-	mux.HandleFunc("/api/v1/auth/sso/", forwardTo(cfg.AuthServiceURL))
-
-	// Agent endpoints (public for registration, auth for others)
-	mux.HandleFunc("/api/v1/agents/register", forwardTo(cfg.AuthServiceURL))
-
-	// Common JWT auth config for protected routes
-	jwtAuthCfg := middleware.JWTAuthConfig{
-		SecretKey:  cfg.JWTSecret,
-		JWTManager: jwtManager,
-	}
-
-	// Auth-protected agent endpoints - all authenticated users
-	protectedAgentHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.RegistryServiceURL))
-	mux.Handle("/api/v1/agents/", protectedAgentHandler)
-
-	// Printer endpoints - all authenticated users (backend scopes per-user)
-	protectedPrinterHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.RegistryServiceURL))
-	mux.Handle("/api/v1/printers/", protectedPrinterHandler)
-	mux.Handle("/api/v1/printers", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.RegistryServiceURL)))
-
-	// Job endpoints - all authenticated users (backend scopes per-user)
-	protectedJobHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL))
-	mux.Handle("/api/v1/jobs/", protectedJobHandler)
-	mux.Handle("/api/v1/jobs", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
-
-	// Document/storage endpoints - all authenticated users (backend scopes per-user)
-	protectedStorageHandler := middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.StorageServiceURL))
-	mux.Handle("/api/v1/documents/", protectedStorageHandler)
-	mux.Handle("/api/v1/documents", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.StorageServiceURL)))
-
-	// Follow-Me endpoints - all authenticated users
-	mux.Handle("/api/v1/follow-me/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
-
-	// Secure Print / Print Release endpoints - all authenticated users
-	mux.Handle("/api/v1/releases/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
-
-	// Notification WebSocket + REST - all authenticated users
-	mux.Handle("/api/v1/notifications/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.NotificationServiceURL)))
-
-	// User self-service endpoints (profile, password)
-	mux.Handle("/api/v1/users/", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.AuthServiceURL)))
-
-	// User's own quota - any authenticated user
-	mux.Handle("/api/v1/quotas/me", middleware.JWTAuthMiddleware(jwtAuthCfg)(forwardTo(cfg.JobServiceURL)))
-
-	// --- Admin-only endpoints (require admin, owner, org_admin, or platform_admin) ---
-	adminRoles := []string{"admin", "owner", "org_admin", "platform_admin"}
-	adminAuthMw := func(target string) http.Handler {
-		return middleware.Chain(
-			middleware.JWTAuthMiddleware(jwtAuthCfg),
-			middleware.RequireRole(adminRoles...),
-		)(forwardTo(target))
-	}
-
-	// Analytics - admin only
-	mux.Handle("/api/v1/analytics/", adminAuthMw(cfg.JobServiceURL))
-
-	// Organization management - admin only
-	mux.Handle("/api/v1/organizations/", adminAuthMw(cfg.AuthServiceURL))
-	mux.Handle("/api/v1/organizations", adminAuthMw(cfg.AuthServiceURL))
-
-	// Quota management (org-wide, per-user) - admin only
-	mux.Handle("/api/v1/quotas/organization", adminAuthMw(cfg.JobServiceURL))
-	mux.Handle("/api/v1/quotas/users/", adminAuthMw(cfg.JobServiceURL))
-	mux.Handle("/api/v1/quotas/periods", adminAuthMw(cfg.JobServiceURL))
-	mux.Handle("/api/v1/quotas/", adminAuthMw(cfg.JobServiceURL))
-	mux.Handle("/api/v1/quotas", adminAuthMw(cfg.JobServiceURL))
-
-	// Print policies - admin only
-	mux.Handle("/api/v1/policies/", adminAuthMw(cfg.JobServiceURL))
-	mux.Handle("/api/v1/policies", adminAuthMw(cfg.JobServiceURL))
-
-	// Audit logs - admin only
-	mux.Handle("/api/v1/audit-logs", adminAuthMw(cfg.AuthServiceURL))
-
-	// Email-to-print config - admin only
-	mux.Handle("/api/v1/email-to-print/", adminAuthMw(cfg.JobServiceURL))
-
-	// Guest printing tokens - admin only
-	mux.Handle("/api/v1/guest/", adminAuthMw(cfg.AuthServiceURL))
-
-	// Webhooks - admin only
-	mux.Handle("/api/v1/webhooks/", adminAuthMw(cfg.NotificationServiceURL))
-	mux.Handle("/api/v1/webhooks", adminAuthMw(cfg.NotificationServiceURL))
-
-	// Supply management alerts - admin only
-	mux.Handle("/api/v1/supplies/", adminAuthMw(cfg.RegistryServiceURL))
-
-	// Driver management - admin only
-	mux.Handle("/api/v1/drivers/", adminAuthMw(cfg.RegistryServiceURL))
-	mux.Handle("/api/v1/drivers", adminAuthMw(cfg.RegistryServiceURL))
-
-	// User groups - admin only
-	mux.Handle("/api/v1/groups/", adminAuthMw(cfg.AuthServiceURL))
-	mux.Handle("/api/v1/groups", adminAuthMw(cfg.AuthServiceURL))
-
-	// --- Platform Admin endpoints (platform_admin only) ---
-	platformAdminHandler := middleware.Chain(
-		middleware.JWTAuthMiddleware(jwtAuthCfg),
-		middleware.RequireRole("platform_admin"),
-	)(forwardTo(cfg.RegistryServiceURL))
-	mux.Handle("/api/v1/admin/", http.StripPrefix("/api/v1/admin", platformAdminHandler))
-}
-
-// forwardTo creates a reverse proxy handler for the given target URL.
-func forwardTo(targetURL string) http.HandlerFunc {
-	target, err := url.Parse(targetURL)
-	if err != nil {
-		log.Fatalf("Failed to parse target URL %s: %v", targetURL, err)
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(target)
-
-	// Customize the director to preserve original host and headers
-	originalDirector := proxy.Director
-	proxy.Director = func(req *http.Request) {
-		originalDirector(req)
-		// Preserve the original Host header
-		req.Host = req.URL.Host
-		// Add X-Forwarded headers
-		req.Header.Set("X-Forwarded-Host", req.Host)
-		req.Header.Set("X-Forwarded-Proto", scheme(req))
-		// Add forwarded for header with client IP
-		if req.RemoteAddr != "" {
-			ip, _, err := net.SplitHostPort(req.RemoteAddr)
-			if err != nil {
-				ip = req.RemoteAddr
-			}
-			req.Header.Set("X-Forwarded-For", ip)
-		}
-	}
-
-	// Customize error handler
-	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		log.Printf("Proxy error: %v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadGateway)
-		fmt.Fprintf(w, `{"code":"SERVICE_UNAVAILABLE","message":"Backend service unavailable"}`)
-	}
-
-	// Customize transport to handle connection pooling
-	proxy.Transport = &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		proxy.ServeHTTP(w, r)
-	}
-}
-
-// scheme returns the scheme of the request (http or https).
-func scheme(r *http.Request) string {
-	if r.TLS != nil {
-		return "https"
-	}
-	if scheme := r.Header.Get("X-Forwarded-Proto"); scheme != "" {
-		return scheme
-	}
-	return "http"
-}
-
-// serviceHealth holds the result of a single service health check.
-type serviceHealth struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	URL    string `json:"url,omitempty"`
-	Error  string `json:"error,omitempty"`
-}
-
-// aggregatedHealthHandler probes all downstream services concurrently.
-func aggregatedHealthHandler(cfg *Config) http.HandlerFunc {
-	services := []struct {
-		name string
-		url  string
-	}{
-		{"auth-service", cfg.AuthServiceURL},
-		{"registry-service", cfg.RegistryServiceURL},
-		{"job-service", cfg.JobServiceURL},
-		{"storage-service", cfg.StorageServiceURL},
-		{"notification-service", cfg.NotificationServiceURL},
-	}
-
-	client := &http.Client{Timeout: 3 * time.Second}
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		results := make([]serviceHealth, len(services))
-		var wg sync.WaitGroup
-
-		for i, svc := range services {
-			wg.Add(1)
-			go func(idx int, name, baseURL string) {
-				defer wg.Done()
-				healthURL := baseURL + "/health"
-				resp, err := client.Get(healthURL)
-				if err != nil {
-					results[idx] = serviceHealth{Name: name, Status: "unhealthy", Error: err.Error()}
-					return
-				}
-				resp.Body.Close()
-				if resp.StatusCode == http.StatusOK {
-					results[idx] = serviceHealth{Name: name, Status: "healthy"}
-				} else {
-					results[idx] = serviceHealth{Name: name, Status: "unhealthy", Error: fmt.Sprintf("status %d", resp.StatusCode)}
-				}
-			}(i, svc.name, svc.url)
-		}
-
-		wg.Wait()
-
-		overallStatus := "healthy"
-		for _, r := range results {
-			if r.Status != "healthy" {
-				overallStatus = "degraded"
-				break
-			}
-		}
-
-		response := map[string]interface{}{
-			"status":    overallStatus,
-			"service":   "gateway",
-			"timestamp": time.Now().Format(time.RFC3339),
-			"services":  results,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if overallStatus != "healthy" {
-			w.WriteHeader(http.StatusServiceUnavailable)
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
-		json.NewEncoder(w).Encode(response)
-	}
-}
-
-// securityHeadersMiddleware adds security headers to responses.
-func securityHeadersMiddleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Prevent MIME type sniffing
-			w.Header().Set("X-Content-Type-Options", "nosniff")
-			// Prevent clickjacking
-			w.Header().Set("X-Frame-Options", "DENY")
-			// Enable XSS filter (legacy browsers)
-			w.Header().Set("X-XSS-Protection", "1; mode=block")
-			// HSTS for HTTPS enforcement
-			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-			// Control referrer information
-			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// corsMiddleware handles CORS headers.
-func corsMiddleware() func(http.Handler) http.Handler {
-	allowedOrigins := strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "*"), ",")
-	allowedMethods := []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"}
-	allowedHeaders := []string{"Content-Type", "Authorization", "X-Request-ID"}
-
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			origin := r.Header.Get("Origin")
-
-			// Check if origin is allowed
-			for _, allowedOrigin := range allowedOrigins {
-				if allowedOrigin == "*" || allowedOrigin == origin {
-					w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-					break
-				}
-			}
-
-			w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
-			w.Header().Set("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ", "))
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Max-Age", "86400")
-
-			// Handle preflight requests
-			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusNoContent)
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	}
+	return middleware.Chain(
+		middleware.RateLimitMiddleware(&middleware.RateLimiterConfig{
+			RequestsPerMinute: cfg.RequestsPerMinute,
+			CleanupInterval:   5 * time.Minute,
+		}),
+		middleware.AuditMiddleware(auditLogger),
+		securityHeadersMiddleware(),
+		corsMiddleware(),
+	)(mux)
 }
 
 // NewHandler creates a new gateway handler with the given config.
 // This is useful for testing and embedding.
 func NewHandler(cfg *Config, jwtManager *jwt.Manager, auditLogger *middleware.AuditLogger) http.Handler {
-	mux := http.NewServeMux()
-	registerServiceRoutes(mux, cfg, jwtManager, auditLogger)
-	mux.HandleFunc("/health", aggregatedHealthHandler(cfg))
-	return mux
+	return newGatewayHandler(cfg, jwtManager, auditLogger)
 }
