@@ -668,17 +668,26 @@ func agentToResponse(agent *repository.Agent) map[string]interface{} {
 	}
 }
 
+
 func printerToResponse(printer *repository.Printer) map[string]interface{} {
 	return map[string]interface{}{
-		"printer_id": printer.ID,
+		"id":          printer.ID,
 		"name":       printer.Name,
-		"agent_id":   printer.AgentID,
-		"status":     printer.Status,
-		"created_at": printer.CreatedAt.Format(time.RFC3339),
+		"agentId":    printer.AgentID,
+		"orgId":      printer.OrganizationID,
+		"type":       "network",
+		"isActive":   true,
+		"isOnline":   printer.Status == "online",
+		"lastSeen":   printer.UpdatedAt.Format(time.RFC3339),
+		"createdAt":  printer.CreatedAt.Format(time.RFC3339),
+		"capabilities": map[string]interface{}{
+			"supportsColor":     true,
+			"supportsDuplex":    true,
+			"supportedPaperSizes": []string{"A4", "Letter"},
+			"resolution":        "600x600",
+		},
 	}
 }
-
-// AgentStatusUpdate represents a real-time agent status update sent over WebSocket.
 type AgentStatusUpdate struct {
 	AgentID        string                 `json:"agent_id"`
 	Name           string                 `json:"name"`
@@ -1096,3 +1105,4 @@ func respondError(w http.ResponseWriter, err error) {
 		"message": "An internal error occurred",
 	})
 }
+// Updated at Fri Mar  6 08:56:03 AM UTC 2026

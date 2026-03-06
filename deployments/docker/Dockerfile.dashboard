@@ -13,7 +13,9 @@ RUN npm ci
 # Copy source code
 COPY web/dashboard/ ./
 
-# Build the application
+# Build the application with API URL as build arg (empty = use relative paths)
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
 RUN npm run build
 
 # Final stage - use nginx to serve static files and proxy API
