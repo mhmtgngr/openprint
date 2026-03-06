@@ -656,38 +656,36 @@ func (h *Handler) ListPrinters(w http.ResponseWriter, r *http.Request) {
 
 func agentToResponse(agent *repository.Agent) map[string]interface{} {
 	return map[string]interface{}{
-		"agent_id":       agent.ID,
-		"name":           agent.Name,
-		"version":        agent.Version,
-		"os":             agent.OS,
-		"architecture":   agent.Architecture,
-		"hostname":       agent.Hostname,
-		"status":         agent.Status,
-		"last_heartbeat": agent.LastHeartbeat.Format(time.RFC3339),
-		"created_at":     agent.CreatedAt.Format(time.RFC3339),
-	}
-}
-
-
-func printerToResponse(printer *repository.Printer) map[string]interface{} {
-	return map[string]interface{}{
-		"id":          printer.ID,
-		"name":       printer.Name,
-		"agentId":    printer.AgentID,
-		"orgId":      printer.OrganizationID,
-		"type":       "network",
-		"isActive":   true,
-		"isOnline":   printer.Status == "online",
-		"lastSeen":   printer.UpdatedAt.Format(time.RFC3339),
-		"createdAt":  printer.CreatedAt.Format(time.RFC3339),
+		"id":              agent.ID,
+		"name":            agent.Name,
+		"orgId":           agent.OrganizationID,
+		"status":          agent.Status,
+		"platform":        agent.OS,
+		"platformVersion": agent.Version,
+		"agentVersion":    agent.Version,
+		"ipAddress":       "",
+		"lastHeartbeat":   agent.LastHeartbeat.Format(time.RFC3339),
+		"createdAt":       agent.CreatedAt.Format(time.RFC3339),
 		"capabilities": map[string]interface{}{
-			"supportsColor":     true,
-			"supportsDuplex":    true,
-			"supportedPaperSizes": []string{"A4", "Letter"},
-			"resolution":        "600x600",
+			"supportedFormats": []string{"PDF", "PNG", "JPEG"},
+			"maxJobSize":       104857600,
+			"supportsColor":    true,
+			"supportsDuplex":   true,
 		},
 	}
 }
+
+func printerToResponse(printer *repository.Printer) map[string]interface{} {
+	return map[string]interface{}{
+		"printer_id": printer.ID,
+		"name":       printer.Name,
+		"agent_id":   printer.AgentID,
+		"status":     printer.Status,
+		"created_at": printer.CreatedAt.Format(time.RFC3339),
+	}
+}
+
+// AgentStatusUpdate represents a real-time agent status update sent over WebSocket.
 type AgentStatusUpdate struct {
 	AgentID        string                 `json:"agent_id"`
 	Name           string                 `json:"name"`
@@ -1105,4 +1103,3 @@ func respondError(w http.ResponseWriter, err error) {
 		"message": "An internal error occurred",
 	})
 }
-// Updated at Fri Mar  6 08:56:03 AM UTC 2026
