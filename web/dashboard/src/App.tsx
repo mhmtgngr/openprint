@@ -4,6 +4,7 @@ import { useRequireAuth, useAuth } from './hooks/useAuth';
 import { PublicLayout } from './layouts/PublicLayout';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { PageLoadingFallback } from './components/LoadingFallback';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded page components for code-splitting
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
@@ -37,6 +38,7 @@ const FollowMe = lazy(() => import('./pages/FollowMe').then(m => ({ default: m.F
 const SupplyManagement = lazy(() => import('./pages/SupplyManagement').then(m => ({ default: m.SupplyManagement })));
 const DriverManagement = lazy(() => import('./pages/DriverManagement').then(m => ({ default: m.DriverManagement })));
 const UserGroups = lazy(() => import('./pages/UserGroups').then(m => ({ default: m.UserGroups })));
+const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 
 // Platform Admin routes (multi-tenancy)
 const OrganizationsList = lazy(() => import('./pages/admin/OrganizationsList').then(m => ({ default: m.OrganizationsList })));
@@ -44,7 +46,9 @@ const OrganizationDetail = lazy(() => import('./pages/admin/OrganizationDetail')
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoadingFallback />}>
-    {children}
+    <ErrorBoundary>
+      {children}
+    </ErrorBoundary>
   </Suspense>
 );
 
@@ -80,7 +84,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!isAuthenticated || !hasRole(['admin', 'owner'])) {
+  if (!isAuthenticated || !hasRole(['admin', 'owner', 'platform_admin'])) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -99,7 +103,6 @@ const PlatformAdminRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Check if user is a platform admin
   const isPlatformAdmin = user?.role === 'platform_admin' || user?.isPlatformAdmin;
 
   if (!isAuthenticated || !isPlatformAdmin) {
@@ -111,333 +114,342 @@ const PlatformAdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <Suspense fallback={<PageLoadingFallback />}>
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicLayout>
-              <SuspenseWrapper>
-                <Login />
-              </SuspenseWrapper>
-            </PublicLayout>
-          }
-        />
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={
+              <PublicLayout>
+                <SuspenseWrapper>
+                  <Login />
+                </SuspenseWrapper>
+              </PublicLayout>
+            }
+          />
 
-        {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <Dashboard />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/printers"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <Printers />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/jobs"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <Jobs />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/documents"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <Documents />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <Settings />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Analytics />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/organization"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Organization />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/agents"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <Agents />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agents/:id"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <AgentDetailPage />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/discovered-printers"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <DiscoveredPrintersPage />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/job-assignments"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <JobAssignmentsPage />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/quotas"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Quotas />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/policies"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Policies />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/audit-logs"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <AuditLogs />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/email-to-print"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <EmailToPrint />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/print-release"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <PrintReleasePage />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/compliance"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Compliance />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/microsoft365"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Microsoft365 />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/secure-print"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <SecurePrint />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/policy-engine"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <PoliciesEngine />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/metrics"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <MetricsDashboard />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/monitoring"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <Monitoring />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/observability"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <ObservabilityHub />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
+          {/* Protected routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <Dashboard />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/printers"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <Printers />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <Jobs />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <Documents />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <Settings />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Analytics />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/organization"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Organization />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/agents"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <Agents />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agents/:id"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <AgentDetailPage />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discovered-printers"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <DiscoveredPrintersPage />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-assignments"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <JobAssignmentsPage />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/quotas"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Quotas />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/policies"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Policies />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <AuditLogs />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/email-to-print"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <EmailToPrint />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/print-release"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <PrintReleasePage />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/compliance"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Compliance />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/microsoft365"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Microsoft365 />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/secure-print"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <SecurePrint />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/policy-engine"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <PoliciesEngine />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/metrics"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <MetricsDashboard />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/monitoring"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <Monitoring />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/observability"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <ObservabilityHub />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
 
-        {/* New feature routes */}
-        <Route
-          path="/guest-printing"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <GuestPrinting />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/follow-me"
-          element={
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <FollowMe />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/supplies"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <SupplyManagement />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/drivers"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <DriverManagement />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/groups"
-          element={
-            <AdminRoute>
-              <SuspenseWrapper>
-                <UserGroups />
-              </SuspenseWrapper>
-            </AdminRoute>
-          }
-        />
+          {/* New feature routes */}
+          <Route
+            path="/guest-printing"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <GuestPrinting />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/follow-me"
+            element={
+              <ProtectedRoute>
+                <SuspenseWrapper>
+                  <FollowMe />
+                </SuspenseWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplies"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <SupplyManagement />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/drivers"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <DriverManagement />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/groups"
+            element={
+              <AdminRoute>
+                <SuspenseWrapper>
+                  <UserGroups />
+                </SuspenseWrapper>
+              </AdminRoute>
+            }
+          />
 
-        {/* Platform Admin routes (multi-tenancy) */}
-        <Route
-          path="/admin/organizations"
-          element={
-            <PlatformAdminRoute>
-              <SuspenseWrapper>
-                <OrganizationsList />
-              </SuspenseWrapper>
-            </PlatformAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/organizations/:orgId"
-          element={
-            <PlatformAdminRoute>
-              <SuspenseWrapper>
-                <OrganizationDetail />
-              </SuspenseWrapper>
-            </PlatformAdminRoute>
-          }
-        />
+          {/* Platform Admin routes (multi-tenancy) */}
+          <Route
+            path="/admin/organizations"
+            element={
+              <PlatformAdminRoute>
+                <SuspenseWrapper>
+                  <OrganizationsList />
+                </SuspenseWrapper>
+              </PlatformAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/organizations/:orgId"
+            element={
+              <PlatformAdminRoute>
+                <SuspenseWrapper>
+                  <OrganizationDetail />
+                </SuspenseWrapper>
+              </PlatformAdminRoute>
+            }
+          />
 
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Default redirect */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Catch all - redirect to dashboard */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Suspense>
+          {/* 404 - Not Found */}
+          <Route
+            path="*"
+            element={
+              <SuspenseWrapper>
+                <NotFound />
+              </SuspenseWrapper>
+            }
+          />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

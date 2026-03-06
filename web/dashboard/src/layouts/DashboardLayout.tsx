@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { QuickPrintDialog } from '@/components/QuickPrintDialog';
 import {
@@ -69,7 +70,14 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { setTheme, resolvedTheme } = useTheme();
   const [showQuickPrint, setShowQuickPrint] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const filteredNavItems = navItems.filter(
     (item) => user && item.roles.includes(user.role)
@@ -77,25 +85,51 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-10">
+      <aside
+        className={`
+          fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-30
+          transform transition-transform duration-200 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}
+      >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center gap-2 p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                />
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                  />
+                </svg>
+              </div>
+              <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                OpenPrint
+              </span>
+            </Link>
+            {/* Close button (mobile only) */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              OpenPrint
-            </span>
-          </Link>
+            </button>
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -161,13 +195,24 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </aside>
 
       {/* Main content */}
-      <div className="ml-64">
+      <div className="lg:ml-64">
         {/* Header */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-8 py-4">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
-            </h1>
+            <div className="flex items-center gap-3">
+              {/* Hamburger menu (mobile) */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              </button>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
+              </h1>
+            </div>
             <div className="flex items-center gap-2">
               {/* Quick Print button */}
               <button
@@ -177,7 +222,23 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                Quick Print
+                <span className="hidden sm:inline">Quick Print</span>
+              </button>
+              {/* Dark mode toggle */}
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {resolvedTheme === 'dark' ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                  </svg>
+                )}
               </button>
               {/* Notification Center */}
               <NotificationCenter />
@@ -186,7 +247,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page content */}
-        <main className="p-8">
+        <main className="p-4 sm:p-8">
           {children}
         </main>
       </div>

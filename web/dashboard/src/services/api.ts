@@ -80,6 +80,18 @@ const clearTokens = (): void => {
   localStorage.removeItem('auth_tokens');
 };
 
+// Global auth failure event — fired when token refresh fails on a 401
+const AUTH_FAILURE_EVENT = 'openprint:auth_failure';
+
+const fireAuthFailure = (): void => {
+  window.dispatchEvent(new CustomEvent(AUTH_FAILURE_EVENT));
+};
+
+export const onAuthFailure = (handler: () => void): (() => void) => {
+  window.addEventListener(AUTH_FAILURE_EVENT, handler);
+  return () => window.removeEventListener(AUTH_FAILURE_EVENT, handler);
+};
+
 const refreshAccessToken = async (): Promise<boolean> => {
   if (!refreshToken) {
     clearTokens();
@@ -131,6 +143,8 @@ const fetchWithAuth = async (
         Authorization: `Bearer ${token}`,
       };
       response = await fetch(url, options);
+    } else {
+      fireAuthFailure();
     }
   }
 
