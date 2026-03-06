@@ -90,6 +90,66 @@ scrape_configs:
         target_label: instance
         replacement: 'notification-service'
 
+  # OpenPrint Analytics Service
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['analytics-service:9096']
+        labels:
+          service: 'analytics-service'
+          component: 'analytics'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'analytics-service'
+
+  # OpenPrint Organization Service
+  - job_name: 'organization-service'
+    static_configs:
+      - targets: ['organization-service:9097']
+        labels:
+          service: 'organization-service'
+          component: 'organization-management'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'organization-service'
+
+  # OpenPrint Policy Service
+  - job_name: 'policy-service'
+    static_configs:
+      - targets: ['policy-service:9098']
+        labels:
+          service: 'policy-service'
+          component: 'policy-engine'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'policy-service'
+
+  # OpenPrint Compliance Service
+  - job_name: 'compliance-service'
+    static_configs:
+      - targets: ['compliance-service:9099']
+        labels:
+          service: 'compliance-service'
+          component: 'compliance'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'compliance-service'
+
+  # OpenPrint M365 Integration Service
+  - job_name: 'm365-integration-service'
+    static_configs:
+      - targets: ['m365-integration-service:9101']
+        labels:
+          service: 'm365-integration-service'
+          component: 'microsoft-365'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'm365-integration-service'
+
   # PostgreSQL Exporter (if using postgres_exporter) - optional
   # Uncomment when using postgres_exporter sidecar
   # - job_name: 'postgresql'

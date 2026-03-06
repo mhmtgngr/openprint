@@ -273,7 +273,6 @@ func (r *OrganizationRepository) AddPermission(ctx context.Context, perm *Permis
 	)
 
 	if err != nil {
-		// Table might not exist, try using user role instead
 		return fmt.Errorf("add permission: %w", err)
 	}
 
@@ -310,10 +309,6 @@ func (r *OrganizationRepository) ListPermissions(ctx context.Context, orgID stri
 
 	rows, err := r.db.Query(ctx, query, orgID)
 	if err != nil {
-		// Table might not exist, return empty list
-		if isTableNotExistError(err) {
-			return []*Permission{}, nil
-		}
 		return nil, fmt.Errorf("list permissions: %w", err)
 	}
 	defer rows.Close()
@@ -379,8 +374,3 @@ func (r *OrganizationRepository) scanPermission(row interface{ Scan(...interface
 	return &perm, err
 }
 
-// isTableNotExistError checks if the error is a "table does not exist" error.
-func isTableNotExistError(err error) bool {
-	return err != nil && (err.Error() == "ERROR: relation \"organization_permissions\" does not exist" ||
-		err.Error() == `ERROR: relation "public.organization_permissions" does not exist`)
-}

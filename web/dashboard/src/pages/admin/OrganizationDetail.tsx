@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { platformAdminApi, orgUsersApi, usageReportApi, quotaApi } from '@/services/platformAdminApi';
-import type { UsagePeriod } from '@/types';
+import type { UsagePeriod, OrgRole, UpdateOrganizationRequest, Organization } from '@/types';
 import { QuotaCard } from '@/components/organization/QuotaCard';
 import { OrgUserCard } from '@/components/organization/OrgUserCard';
 import { UsageReportChart } from '@/components/organization/UsageReportChart';
@@ -85,6 +85,9 @@ export const OrganizationDetail = () => {
 
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<OrgRole>('member');
   const [usagePeriod, setUsagePeriod] = useState<UsagePeriod>('monthly');
 
   // Fetch organization details
@@ -117,7 +120,7 @@ export const OrganizationDetail = () => {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: any) => platformAdminApi.updateOrganization(orgId!, data),
+    mutationFn: (data: UpdateOrganizationRequest) => platformAdminApi.updateOrganization(orgId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', orgId] });
       setShowEditModal(false);
@@ -153,9 +156,19 @@ export const OrganizationDetail = () => {
     }
   };
 
+  // Invite user mutation
+  const inviteMutation = useMutation({
+    mutationFn: () => orgUsersApi.inviteUser(orgId!, inviteEmail, inviteRole),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationUsers', orgId] });
+      setShowInviteModal(false);
+      setInviteEmail('');
+      setInviteRole('member');
+    },
+  });
+
   const handleInviteUser = () => {
-    // TODO: Implement invite modal
-    console.log('Invite user');
+    setShowInviteModal(true);
   };
 
   if (orgLoading) {
@@ -395,9 +408,27 @@ export const OrganizationDetail = () => {
           {/* Audit Tab */}
           {activeTab === 'audit' && (
             <div className="space-y-4">
-              <div className="text-center py-12">
-                <ClockIcon />
-                <p className="text-gray-500 dark:text-gray-400 mt-4">Audit trail coming soon</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h3>
+                <div className="space-y-3">
+                  {organization?.createdAt && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <ClockIcon />
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Organization created on {new Date(organization.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Full audit trail is available via the Audit Logs page.
+                  </p>
+                  <button
+                    onClick={() => navigate('/audit-logs')}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    View full audit logs
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -416,7 +447,7 @@ export const OrganizationDetail = () => {
             <div className="p-6">
               <OrganizationForm
                 mode="edit"
-                organization={organization as any}
+                organization={organization as unknown as Organization}
                 onSubmit={async (data) => {
                   await updateMutation.mutateAsync(data);
                 }}
@@ -424,6 +455,80 @@ export const OrganizationDetail = () => {
                 isLoading={updateMutation.isPending}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite User Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Invite User
+              </h2>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                inviteMutation.mutate();
+              }}
+              className="p-6 space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as OrgRole)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="viewer">Viewer</option>
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                  <option value="owner">Owner</option>
+                </select>
+              </div>
+              {inviteMutation.isError && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Failed to send invitation. Please try again.
+                </p>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setInviteEmail('');
+                    setInviteRole('member');
+                  }}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={inviteMutation.isPending || !inviteEmail}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

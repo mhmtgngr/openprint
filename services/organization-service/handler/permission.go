@@ -4,7 +4,9 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
+	"github.com/google/uuid"
 	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/services/organization-service/repository"
 )
@@ -31,16 +33,23 @@ type PermissionResponse struct {
 // - POST   /api/v1/organizations/:id/permissions - create permission
 // - DELETE /api/v1/organizations/:id/permissions/:user_id - revoke permission
 func (h *Handler) PermissionsHandler(w http.ResponseWriter, r *http.Request, orgID string) {
+	// Extract user_id from path for deletion
+	// Path format: /api/v1/organizations/:id/permissions/:user_id
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/organizations/"+orgID+"/permissions")
+	path = strings.TrimPrefix(path, "/")
+	userID := strings.Split(path, "/")[0]
+
 	switch r.Method {
 	case http.MethodGet:
 		h.ListPermissions(w, r, orgID)
 	case http.MethodPost:
 		h.CreatePermission(w, r, orgID)
 	case http.MethodDelete:
-		// Extract user_id from path for deletion
-		// Path format: /api/v1/organizations/:id/permissions/:user_id
-		// This is handled by the main router
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		if userID == "" {
+			respondError(w, apperrors.New("user_id is required for permission revocation", http.StatusBadRequest))
+			return
+		}
+		h.RevokePermission(w, r, orgID, userID)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -144,7 +153,5 @@ func permissionToResponse(perm *repository.Permission) PermissionResponse {
 }
 
 func generateUUID() string {
-	// Simple UUID generation for now
-	// In production, use github.com/google/uuid consistently
-	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+	return uuid.New().String()
 }
