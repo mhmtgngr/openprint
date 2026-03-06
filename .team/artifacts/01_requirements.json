@@ -1,125 +1,142 @@
 {
-  "project_name": "compliance-service-test-fixes",
-  "summary": "Fix failing tests in compliance-service by addressing UUID handling, database foreign key constraints, and adding comprehensive test fixtures for compliance tables",
+  "project_name": "compliance-service-test-fix",
+  "summary": "Fix timing out TestHandlers_ListControls_WithPagination test in compliance-service. The 2-minute timeout with panic suggests blocking database operations without proper timeout context, potentially from lock contention or connection pool exhaustion during pagination queries.",
   "user_stories": [
     {
       "id": "US-001",
       "as_a": "developer",
-      "i_want": "proper test fixtures for compliance tables (compliance_controls, audit_logs, compliance_reports, data_breaches, remediation_plans, compliance_findings, compliance_evidence)",
-      "so_that": "tests can run reliably without foreign key constraint violations",
-      "priority": "high",
+      "i_want": "all compliance-service tests to pass consistently without timing out",
+      "so_that": "I can confidently make changes to the compliance service",
+      "priority": "critical",
       "acceptance_criteria": [
-        "All compliance tables have valid test data fixtures",
-        "Foreign key constraints are properly satisfied",
-        "UUIDs are valid and reference existing records where required"
+        "TestHandlers_ListControls_WithPagination completes within 10 seconds",
+        "All handlers_test.go tests pass",
+        "No test database connection leaks occur",
+        "Tests can run in parallel without blocking"
       ]
     },
     {
       "id": "US-002",
       "as_a": "developer",
-      "i_want": "the compliance_reports.generated_by column to be nullable or have a system user handling",
-      "so_that": "reports can be generated without a valid user session",
+      "i_want": "proper timeout handling in all database operations",
+      "so_that": "tests fail fast with clear error messages instead of hanging",
       "priority": "critical",
       "acceptance_criteria": [
-        "compliance_reports.generated_by accepts NULL values",
-        "OR a special system user record exists for auto-generated reports",
-        "Tests verify report generation without user context"
+        "All database queries use context.WithTimeout",
+        "Timeout values are configurable via environment variable",
+        "Default timeout is 30 seconds for queries",
+        "Timeout errors are logged with context"
       ]
     },
     {
       "id": "US-003",
       "as_a": "developer",
-      "i_want": "audit_log table to work with compliance service tests",
-      "so_that": "audit events can be created during compliance testing",
-      "priority": "medium",
-      "acceptance_criteria": [
-        "audit_log retention_date column is properly handled",
-        "Tests can create audit events without violating foreign key constraints",
-        "Audit event queries work correctly with test data"
-      ]
-    },
-    {
-      "id": "US-004",
-      "as_a": "developer",
-      "i_want": "migrations to run before tests execute via internal/testutil",
-      "so_that": "all required tables exist when tests run",
+      "i_want": "proper test cleanup to prevent resource exhaustion",
+      "so_that": "multiple tests can run without database lock issues",
       "priority": "high",
       "acceptance_criteria": [
-        "Migration 000032 is executed during test setup",
-        "All compliance tables exist in test database",
-        "Triggers and functions are created"
-      ]
-    },
-    {
-      "id": "US-005",
-      "as_a": "developer",
-      "i_want": "test coverage for nullable foreign key columns in compliance tables",
-      "so_that": "we ensure NULL values are handled correctly throughout the service",
-      "priority": "medium",
-      "acceptance_criteria": [
-        "Tests verify NULL values work for user_id references",
-        "Tests verify NULL values work for organization_id references",
-        "Repository layer handles NULL values correctly"
+        "setupHandlerTest properly cleans up database state",
+        "HTTP test server is closed after each test",
+        "Connection pool is not exhausted between tests",
+        "TruncateAllTables completes within timeout"
       ]
     }
   ],
   "functional_requirements": [
     {
       "id": "FR-001",
-      "title": "Fix compliance_reports.generated_by Foreign Key",
-      "description": "The generated_by column in compliance_reports table is NOT NULL but references users(id). This prevents report generation without a valid user. Need to either make it nullable or create a system user.",
+      "title": "Add context timeout to database operations",
+      "description": "All database operations in compliance-service must use a context with explicit timeout to prevent indefinite blocking. The handlers must wrap request contexts with appropriate timeouts.",
       "service": "compliance-service"
     },
     {
       "id": "FR-002",
-      "title": "Add Compliance Test Fixtures",
-      "description": "Create test fixture functions in internal/testutil/fixtures.go for compliance tables: compliance_controls, data_breaches, remediation_plans, compliance_findings, compliance_evidence, compliance_reports, audit_log entries.",
-      "service": "internal/testutil"
+      "title": "Add database query logging and debugging",
+      "description": "Add debug logging before and after database queries in ListControls to identify blocking operations. Log query execution time.",
+      "service": "compliance-service"
     },
     {
       "id": "FR-003",
-      "title": "Update TruncateAllTables for Compliance Tables",
-      "description": "Add compliance tables to the TruncateAllTables function in internal/testutil/db.go to enable proper cleanup between tests.",
-      "service": "internal/testutil"
+      "title": "Fix test setup cleanup",
+      "description": "Ensure setupHandlerTest properly truncates all compliance tables and closes resources to prevent state leakage between tests.",
+      "service": "compliance-service"
     },
     {
       "id": "FR-004",
-      "title": "Verify Migration Execution",
-      "description": "Ensure migration 000032_create_compliance_tables.up.sql is executed during test setup via RunMigrations.",
+      "title": "Add connection pool configuration for tests",
+      "description": "Configure the connection pool with appropriate MaxConns and MinConns for test environment to prevent exhaustion.",
       "service": "compliance-service"
     },
     {
       "id": "FR-005",
-      "title": "Add Test for Report Generation",
-      "description": "Add test for generateReportHandler to ensure compliance_reports table insertion works correctly with the generated_by constraint.",
+      "title": "Add health check to test database setup",
+      "description": "Verify database connection is healthy before running each test to catch issues early.",
       "service": "compliance-service"
+    },
+    {
+      "id": "FR-M006",
+      "title": "One-click compliance report generation",
+      "description": "Generate SOC2, GDPR, HIPAA compliance reports on demand",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Matches PaperCut's key differentiator"
+    },
+    {
+      "id": "FR-M007",
+      "title": "99.99% uptime SLA with monitoring dashboard",
+      "description": "Guaranteed uptime with real-time monitoring and auto-failover",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Enterprise requirement for compliance"
+    },
+    {
+      "id": "FR-M008",
+      "title": "Secure print release mobile app",
+      "description": "Mobile app for releasing print jobs with authentication",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Matches competitor BYOD capabilities"
+    },
+    {
+      "id": "FR-M009",
+      "title": "Advanced print workflow engine",
+      "description": "Conditional routing based on document content, user, department",
+      "service": "identity",
+      "source": "market_research",
+      "competitive_advantage": "Matches YSoft workflow capabilities"
     }
   ],
   "non_functional_requirements": [
     {
       "id": "NFR-001",
-      "category": "security",
-      "requirement": "All foreign key constraints must be satisfied for test data",
-      "metric": "100% of tests pass without FK violations"
+      "category": "performance",
+      "requirement": "All tests must complete within 30 seconds",
+      "metric": "Test execution time < 30s per test"
     },
     {
       "id": "NFR-002",
-      "category": "reliability",
-      "requirement": "Tests must be deterministic and independent",
-      "metric": "Tests can run in any order and pass"
+      "category": "performance",
+      "requirement": "Database queries must have configurable timeout",
+      "metric": "Default query timeout = 30s, configurable via DB_QUERY_TIMEOUT env var"
     },
     {
       "id": "NFR-003",
-      "category": "maintainability",
-      "requirement": "Test fixtures must be reusable across services",
-      "metric": "Fixtures in internal/testutil shared by compliance and other services"
+      "category": "reliability",
+      "requirement": "Tests must not leave database locks or connections",
+      "metric": "Zero connection leaks, all tables truncated between tests"
+    },
+    {
+      "id": "NFR-004",
+      "category": "reliability",
+      "requirement": "Handler responses within timeout or return error",
+      "metric": "95th percentile response time < 5s for ListControls"
     }
   ],
   "api_endpoints": [
     {
-      "method": "POST",
-      "path": "/api/v1/reports/generate",
-      "description": "Generate compliance report - needs to handle NULL generated_by",
+      "method": "GET",
+      "path": "/api/v1/controls",
+      "description": "List compliance controls with pagination",
       "roles": [
         "admin",
         "compliance_officer"
@@ -127,8 +144,8 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/audit",
-      "description": "Create audit event - needs to handle NULL user_id",
+      "path": "/api/v1/controls",
+      "description": "Create a new compliance control",
       "roles": [
         "admin",
         "compliance_officer"
@@ -136,102 +153,122 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/controls",
-      "description": "List compliance controls",
+      "path": "/health",
+      "description": "Health check endpoint",
       "roles": [
-        "admin",
-        "compliance_officer",
-        "auditor"
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/breaches",
-      "description": "Record data breach incident",
-      "roles": [
-        "admin",
-        "compliance_officer"
+        "any"
       ]
     }
   ],
   "database_changes": [
     {
-      "table": "compliance_reports",
+      "table": "compliance_controls",
       "action": "alter",
       "columns": [
-        "generated_by UUID NULL REFERENCES users(id)"
-      ]
-    },
-    {
-      "table": "compliance_findings",
-      "action": "alter",
-      "columns": [
-        "created_by UUID NULL REFERENCES users(id)",
-        "closed_by UUID NULL REFERENCES users(id)"
-      ]
-    },
-    {
-      "table": "compliance_evidence",
-      "action": "alter",
-      "columns": [
-        "collected_by UUID NULL REFERENCES users(id)"
+        "(existing) - no schema change needed, query execution optimization required"
       ]
     }
   ],
   "affected_services": [
-    "compliance-service",
-    "internal/testutil"
+    "compliance-service"
   ],
   "risks": [
     {
-      "risk": "Foreign key constraint violations when inserting test data without valid users",
-      "mitigation": "Create user fixtures first, or make FK columns nullable"
+      "risk": "Database connection pool exhaustion during test execution",
+      "mitigation": "Configure adequate MaxConns (5-10) for test environment, add connection lifecycle logging"
     },
     {
-      "risk": "Report generation fails when generated_by is 'system' (not a valid UUID)",
-      "mitigation": "Make generated_by nullable or create a system user record"
+      "risk": "Table lock contention from TRUNCATE TABLE operations",
+      "mitigation": "Use smaller batches for truncate, add timeout to truncate operations, consider transaction isolation level"
     },
     {
-      "risk": "Tests pass locally but fail in CI due to migration order issues",
-      "mitigation": "Ensure migrations run in correct order via testutil"
+      "risk": "Context propagation issues causing indefinite blocking",
+      "mitigation": "Always create derived context with timeout for DB ops, ensure parent context cancellation propagates"
+    },
+    {
+      "risk": "Test ordering dependencies causing state pollution",
+      "mitigation": "Each test should be independent, use t.Cleanup for guaranteed cleanup, run tests with -parallel flag"
     }
   ],
   "implementation_phases": [
     {
       "phase": 1,
-      "name": "Schema Fixes",
+      "name": "Diagnosis and Logging",
       "tasks": [
-        "Create migration to make generated_by nullable in compliance_reports",
-        "Create migration to make created_by, closed_by nullable in compliance_findings",
-        "Create migration to make collected_by nullable in compliance_evidence"
+        "Add debug logging to ListControls handler",
+        "Add query execution time logging",
+        "Run failing test with verbose logging",
+        "Identify exact blocking point"
       ]
     },
     {
       "phase": 2,
-      "name": "Test Fixture Creation",
+      "name": "Add Timeout Contexts",
       "tasks": [
-        "Add CreateTestComplianceControl to internal/testutil/fixtures.go",
-        "Add CreateTestDataBreach to internal/testutil/fixtures.go",
-        "Add CreateTestComplianceReport to internal/testutil/fixtures.go",
-        "Add CreateTestAuditEvent to internal/testutil/fixtures.go"
+        "Add context.WithTimeout to listControlsHandler",
+        "Update ListControls repository method to respect context timeout",
+        "Add timeout to all other database operations",
+        "Make timeout configurable via environment variable"
       ]
     },
     {
       "phase": 3,
-      "name": "Test Utilities Update",
+      "name": "Fix Test Cleanup",
       "tasks": [
-        "Update TruncateAllTables to include compliance tables",
-        "Verify migration 000032 is executed in test setup"
+        "Review setupHandlerTest cleanup",
+        "Add t.Cleanup for guaranteed resource cleanup",
+        "Ensure TruncateAllTables handles compliance tables",
+        "Add connection pool health check"
       ]
     },
     {
       "phase": 4,
-      "name": "Test Enhancement",
+      "name": "Optimize Queries",
       "tasks": [
-        "Add test for report generation endpoint",
-        "Add test for audit log creation with nullable user_id",
-        "Add test for compliance findings with nullable created_by/closed_by"
+        "Review ListControls query for N+1 issues",
+        "Add appropriate indexes if needed",
+        "Ensure rows.Close() is called on all queries",
+        "Add connection pool metrics"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Verify and Validate",
+      "tasks": [
+        "Run all compliance-service tests",
+        "Run with -race flag to detect race conditions",
+        "Run with -count=10 to check for flakiness",
+        "Verify no connection leaks in production code"
       ]
     }
-  ]
+  ],
+  "market_context": {
+    "competitors_analyzed": [
+      "PaperCut",
+      "YSoft SafeQ",
+      "PrinterLogic"
+    ],
+    "key_gaps": [
+      "Carbon footprint tracking and sustainability reporting",
+      "Biometric multi-factor authentication",
+      "One-click compliance report generation",
+      "Mobile app for print release",
+      "99.99% uptime SLA guarantee"
+    ],
+    "trends": [
+      "Serverless print management",
+      "ESG/sustainability reporting",
+      "Zero-trust print security",
+      "BYOD mobile printing",
+      "Service mesh for microservices"
+    ],
+    "unique_selling_points": [
+      "Modern microservices architecture vs competitors' legacy monolithic designs",
+      "Built-in multi-tenancy from ground up (competitors require enterprise editions)",
+      "Open source with potential for community contributions",
+      "Microsoft 365 native integration service",
+      "Event-driven architecture using Redis for real-time processing",
+      "Comprehensive API with developer portal"
+    ]
+  }
 }

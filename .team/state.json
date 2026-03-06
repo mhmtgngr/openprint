@@ -2,63 +2,22 @@
   "phases": {
     "requirements": {
       "status": "done",
-      "_updated": "2026-03-04T05:07:49.806087"
+      "_updated": "2026-03-05T10:05:25.026021"
     },
     "market_research": {
       "status": "done",
-      "_updated": "2026-03-04T05:12:14.571683"
+      "_updated": "2026-03-05T10:13:44.999424"
     },
     "design": {
       "status": "done",
-      "_updated": "2026-03-04T05:13:26.822468"
+      "_updated": "2026-03-05T10:14:45.660965"
     },
     "backend": {
-      "status": "done",
-      "_updated": "2026-03-04T08:49:50.481154"
-    },
-    "frontend": {
-      "status": "done",
-      "_updated": "2026-03-04T08:54:52.079062"
-    },
-    "testing": {
-      "status": "done",
-      "_updated": "2026-03-04T17:51:12.373291",
-      "write_tests": "done",
-      "unit_tests": "failed",
-      "e2e": "skipped"
-    },
-    "qa": {
-      "status": "done",
-      "_updated": "2026-03-04T17:51:15.283232",
-      "verdict": "APPROVE"
-    },
-    "security": {
-      "status": "done",
-      "_updated": "2026-03-04T17:51:18.407574",
-      "verdict": "APPROVE"
-    },
-    "deploy": {
-      "status": "done",
-      "_updated": "2026-03-04T18:00:46.698600"
-    },
-    "ci": {
-      "status": "done",
-      "_updated": "2026-03-04T18:00:59.716540"
-    },
-    "perf": {
-      "status": "done",
-      "_updated": "2026-03-04T18:01:16.736723"
-    },
-    "docs": {
-      "status": "done",
-      "_updated": "2026-03-04T18:01:29.646636"
-    },
-    "e2e_gen": {
       "status": "running",
-      "_updated": "2026-03-04T18:01:29.696729"
+      "_updated": "2026-03-05T10:14:45.774351"
     }
   },
-  "project": "Fix failing tests in services/compliance-service/main_test.go. Tests show similar issues to policy-service with UUID handling and database constraints. Verify compliance-service has proper test fixtures, valid UUID generation in test data, and correct handling of nullable foreign key columns. Ensure migrations run before tests execute via internal/testutil. Add missing test data for audit_logs, compliance_reports, and control_mappings tables if needed.",
-  "branch": "team/fix-failing-tests-in-servicescompliance--1772600773",
-  "current_phase": "e2e_gen"
+  "project": "Fix the failing compliance-service test: `TestHandlers_ListControls_WithPagination` is timing out after 2 minutes with a panic. Investigate the ListControls handler in services/compliance-service/handlers/. The timeout suggests either: 1) an infinite loop or blocking operation in the pagination logic, 2) database connection hanging without proper timeout, 3) missing test cleanup causing resource exhaustion. Add context timeouts to database operations, ensure proper test teardown, and add debugging logs to identify the blocking call. Verify all compliance-service tests pass after fix.",
+  "branch": "team/fix-the-failing-compliance-service-test--1772705050",
+  "current_phase": "backend"
 }

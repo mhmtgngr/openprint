@@ -4910,27 +4910,9 @@ show_help() { cat << 'HELP'
 HELP
 }
 
-# ── Handle --fg and --skip-health-check flags before command parsing ──
-FOREGROUND=false
-SKIP_HEALTH_CHECK=false
-_ARGS=()
-
-for arg in "$@"; do 
-  if [ "$arg" = "--fg" ]; then 
-    FOREGROUND=true
-  elif [ "$arg" = "--skip-health-check" ]; then
-    SKIP_HEALTH_CHECK=true
-  else
-    _ARGS+=("$arg")
-  fi
-done
-
-# Set CMD from first non-flag argument
-CMD="${_ARGS[0]:-}"
+# Strip -- prefix so both "status" and "--status" work
+CMD="${1:-}"
 CMD="${CMD#--}"
-
-# Reset positional params to remaining args (skip command name)
-set -- "${_ARGS[@]:1}"
 
 # ── Preflight checks (only for commands that need tools) ──
 case "$CMD" in
@@ -4946,6 +4928,14 @@ case "$CMD" in
     fi
     ;;
 esac
+
+# ── Handle background dispatch for long-running commands ──
+FOREGROUND=false
+# Check if --fg is anywhere in args
+for arg in "$@"; do [ "$arg" = "--fg" ] && FOREGROUND=true; done
+# Check if --skip-health-check is anywhere in args
+for arg in "$@"; do [ "$arg" = "--skip-health-check" ] && SKIP_HEALTH_CHECK=true; done
+
 case "$CMD" in
   start)
     [ -z "${2:-}" ] && { err "Usage: ./dev.sh start \"project description\""; exit 1; }
@@ -4967,7 +4957,7 @@ case "$CMD" in
     BRANCH=$(state_get _meta branch); PROJECT=$(state_get _meta project)
     [ -z "$BRANCH" ] && { err "Nothing to resume"; exit 1; }
     cd "$REPO_DIR"; git checkout "$BRANCH" 2>/dev/null || true
-    cur=$(current_phase); log "Resuming: $cur"
+    local cur; cur=$(current_phase); log "Resuming: $cur"
     case "$cur" in
       requirements) phase_requirements "$PROJECT" ;& market_research) phase_market_research ;& design) phase_design ;& backend) phase_backend ;&
       frontend) phase_frontend ;& testing) phase_testing ;& qa) phase_qa ;&
@@ -5015,8 +5005,8 @@ case "$CMD" in
 
   # ── 2025 Quick Wins ──
   fleet)
-    _task_file="${2:-}"
-    _max_parallel="${3:-3}"
+    local task_file="${2:-}"
+    local max_parallel="${3:-3}"
     if [ -z "$task_file" ]; then
       echo "Usage: ./dev.sh fleet <tasks_file> [max_parallel]"
       echo "Example: echo -e 'task1\ntask2\ntask3' | ./dev.sh fleet /dev/stdin 3"
@@ -5025,12 +5015,12 @@ case "$CMD" in
     fleet_mode "$task_file" "$max_parallel"
     ;;
   ci-recover|ci_fix)
-    _ci_log="${2:-.team/logs/go_test.log}"
-    _max_retries="${3:-3}"
+    local ci_log="${2:-.team/logs/go_test.log}"
+    local max_retries="${3:-3}"
     ci_recover "$ci_log" "$max_retries"
     ;;
   priority|queue)
-    _action="${2:-show}"
+    local action="${2:-show}"
     priority_queue "$action" "${3:-}" "${4:-}" "${5:-}" "${6:-}"
     ;;
 
@@ -5147,8 +5137,8 @@ PYEOF
   # CLOUD-STYLE COMMANDS (enhanced AI management)                              
   # ═══════════════════════════════════════════════════════════════════════════════
   close-gaps|cloud-improve)
-    _threshold="${2:-80}"
-    _max_cycles="${3:-5}"
+    local threshold="${2:-80}"
+    local max_cycles="${3:-5}"
     close_gaps "$threshold" "$max_cycles"
     ;;
   ai-cycle|ai-management)
@@ -5158,7 +5148,7 @@ PYEOF
     analyze_gaps_deep
     ;;
   ci-cycle|ci-pipeline)
-    _max_cycles="${2:-5}"
+    local max_cycles="${2:-5}"
     ci_cycle_with_recovery "$max_cycles"
     ;;
 
@@ -5715,6 +5705,7 @@ else:
 
 print(json.dumps(decision))
 PYEOF
+)
     
     slog "  🎯 Decision: $(echo "$decision" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['action'])")"
     slog "  📝 Reason: $(echo "$decision" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['reason'])")"

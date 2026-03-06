@@ -1,4 +1,4 @@
-# 🎬 Demo Report — 2026-03-02 21:06
+# 🎬 Demo Report — 2026-03-06 17:18
 
 ## Service Health
 ```
@@ -75,42 +75,70 @@
     <script nomodule crossorigin id="vite-legacy-entry" data-src="./static/index-legacy-CpL7BSIU.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
   </body>
 </html>
-  ❌ :18001 → UNREACHABLE
-  ❌ :18005 → UNREACHABLE
-  ❌ :3000 → UNREACHABLE
+  ✅ :18001 → {"status":"healthy","service":"auth-service"}
+  ✅ :18005 → {"status":"healthy","service":"notification-service"}
+  ✅ :3000 → <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon-DqYfaDoO.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenPrint Cloud</title>
+    <script type="module" crossorigin src="/assets/js/index-COQYgrPN.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/js/vendor-react-CZqGU4pI.js">
+    <link rel="modulepreload" crossorigin href="/assets/js/vendor-state-BrQ-Wpjh.js">
+    <link rel="stylesheet" crossorigin href="/assets/css/index-CAyraQC6.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
   ✅ :3001 → <a href="/login">Found</a>.
   ❌ :6831 → UNREACHABLE
   ❌ :6832 → UNREACHABLE
-  ❌ :8002 → UNREACHABLE
-  ❌ :8003 → UNREACHABLE
-  ❌ :8004 → UNREACHABLE
+  ✅ :8000 → {"status":"healthy","service":"api-gateway"}
+  ✅ :8002 → {"status":"healthy","service":"registry-service"}
+  ✅ :8003 → {"status":"healthy","service":"job-service"}
+  ✅ :8004 → {"status":"healthy","service":"storage-service"}
+  ✅ :8006 → {"status":"healthy","service":"analytics-service"}
+  ✅ :8007 → {"status":"healthy","service":"organization-service"}
+  ✅ :8008 → {"service":"compliance-service","status":"healthy"}
+  ✅ :8010 → {"service":"policy-service","status":"healthy"}
+  ✅ :8011 → {"service":"m365-integration-service","status":"healthy"}
   ❌ :9090 → UNREACHABLE
-  ❌ :9091 → UNREACHABLE
-  ❌ :9092 → UNREACHABLE
   ❌ :9093 → UNREACHABLE
-  ❌ :9094 → UNREACHABLE
-  ❌ :9095 → UNREACHABLE
+  ✅ :9101 → {"status":"healthy","service":"auth-service"}
+  ✅ :9102 → {"status":"healthy","service":"registry-service"}
+  ❌ :9103 → UNREACHABLE
+  ❌ :9104 → UNREACHABLE
+  ❌ :9105 → UNREACHABLE
+  ❌ :9106 → UNREACHABLE
+  ❌ :9107 → UNREACHABLE
+  ❌ :9108 → UNREACHABLE
+  ❌ :9109 → UNREACHABLE
+  ❌ :9110 → UNREACHABLE
+  ❌ :9111 → UNREACHABLE
 ```
 ## Test Results
 ```
-2026/03/02 21:07:18 setup_test.go:20: TestMain: Starting test database setup...
-2026/03/02 21:07:28 setup_test.go:25: Failed to setup test database: run migrations: execute migration 000028_create_rate_limit_tables.up.sql: ERROR: syntax error at or near "limit" (SQLSTATE 42601)
-FAIL	github.com/openprint/openprint/services/job-service/repository	10.586s
+FAIL	github.com/openprint/openprint/services/job-service/repository	6.458s
 ?   	github.com/openprint/openprint/services/m365-integration-service	[no test files]
 ?   	github.com/openprint/openprint/services/notification-service	[no test files]
-ok  	github.com/openprint/openprint/services/notification-service/websocket	0.025s
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.024s
 ?   	github.com/openprint/openprint/services/organization-service	[no test files]
 ?   	github.com/openprint/openprint/services/organization-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/organization-service/repository	[no test files]
-?   	github.com/openprint/openprint/services/policy-service	[no test files]
+2026/03/06 17:18:11 main_test.go:25: TestMain: Starting test database setup...
+2026/03/06 17:18:16 main_test.go:30: Failed to setup test database: create postgres container: create container: container create: Error response from daemon: container create: creating container storage: the container name "reaper_acf6047c834c3805e7e97e7eb9346d1353d49e8a90232765c9365b12e76f41ec" is already in use by 61e52db47c7b027cbec4e089e242c47549abb2c3081b95a657bed18871111bfc. You have to remove that container to be able to reuse that name: that name is already in use: creating reaper failed
+FAIL	github.com/openprint/openprint/services/policy-service	5.236s
 ?   	github.com/openprint/openprint/services/registry-service	[no test files]
 ?   	github.com/openprint/openprint/services/registry-service/handler	[no test files]
 ?   	github.com/openprint/openprint/services/registry-service/handlers	[no test files]
-ok  	github.com/openprint/openprint/services/registry-service/repository	0.008s
+ok  	github.com/openprint/openprint/services/registry-service/repository	0.023s
 ?   	github.com/openprint/openprint/services/storage-service	[no test files]
-ok  	github.com/openprint/openprint/services/storage-service/handler	0.012s
+ok  	github.com/openprint/openprint/services/storage-service/handler	0.021s
 ?   	github.com/openprint/openprint/services/storage-service/handlers	[no test files]
-ok  	github.com/openprint/openprint/services/storage-service/storage	0.236s
-ok  	github.com/openprint/openprint/tests/testutil	0.196s
+ok  	github.com/openprint/openprint/services/storage-service/storage	0.281s
+ok  	github.com/openprint/openprint/tests/testutil	0.207s
 FAIL
 ```

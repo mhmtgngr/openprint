@@ -117,6 +117,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/agents/register", h.RegisterAgent)
+	mux.HandleFunc("/agents/heartbeat", h.HeartbeatFromBody)
 	mux.HandleFunc("/agents/", h.AgentHandler)
 	mux.HandleFunc("/agents", h.ListAgents)
 	mux.HandleFunc("/printers/register", h.RegisterPrinter)

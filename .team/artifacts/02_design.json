@@ -1,294 +1,193 @@
 {
   "architecture_decisions": [
     {
-      "decision": "Create migration 000037 to make user FK columns nullable in compliance tables",
-      "rationale": "Tests fail because compliance_reports.generated_by, compliance_findings.created_by/closed_by, and compliance_evidence.collected_by are NOT NULL with FK to users(id). Making them nullable allows tests to create compliance records without first creating users."
+      "decision": "Add context.WithTimeout wrapper to all database operations in handlers",
+      "rationale": "Prevents indefinite blocking on database queries; 30-second default timeout allows operations to complete while catching deadlocks or slow queries early"
     },
     {
-      "decision": "Add compliance test fixtures to internal/testutil/fixtures.go",
-      "rationale": "Provides reusable test data creation functions for compliance controls, data breaches, findings, and audit events, reducing test code duplication and ensuring consistent test data."
+      "decision": "Create DB query middleware with execution time logging",
+      "rationale": "Enables diagnosis of slow queries; execution time tracking helps identify N+1 problems or missing indexes"
     },
     {
-      "decision": "Update TruncateAllTables to include compliance tables",
-      "rationale": "Tests need to clean up compliance tables between test runs. Currently the TruncateAllTables function doesn't include the new compliance tables added in migration 032."
+      "decision": "Add configurable connection pool settings for tests",
+      "rationale": "Tests can exhaust connection pools; separate pool config for tests prevents resource contention between test cleanup and test execution"
     },
     {
-      "decision": "Create dedicated compliance repository test file",
-      "rationale": "Separates repository layer tests from handler tests, following the pattern in other services and making tests more focused and maintainable."
+      "decision": "Implement t.Cleanup for guaranteed test resource cleanup",
+      "rationale": "Even if test fails, cleanup runs; prevents state leakage between tests that could cause timeouts"
+    },
+    {
+      "decision": "Add health check middleware for test database setup",
+      "rationale": "Verifies database is ready before running tests; prevents timeouts from stale connections or unresponsive database"
     }
   ],
   "backend_tasks": [
     {
       "order": 1,
-      "file": "migrations/000037_make_compliance_user_fields_nullable.up.sql",
+      "file": "services/compliance-service/context_timeout.go",
       "action": "create",
-      "purpose": "Make generated_by, created_by, closed_by, collected_by nullable in compliance tables",
+      "purpose": "Centralized timeout configuration for all database operations",
       "key_functions": [
-        "ALTER TABLE compliance_reports ALTER COLUMN generated_by DROP NOT NULL",
-        "ALTER TABLE compliance_findings ALTER COLUMN created_by DROP NOT NULL",
-        "ALTER TABLE compliance_findings ALTER COLUMN closed_by DROP NOT NULL",
-        "ALTER TABLE compliance_evidence ALTER COLUMN collected_by DROP NOT NULL"
+        "WithQueryTimeout",
+        "WithDbTimeout",
+        "GetDefaultTimeout",
+        "SetDefaultTimeout"
       ]
     },
     {
       "order": 2,
-      "file": "migrations/000037_make_compliance_user_fields_nullable.down.sql",
-      "action": "create",
-      "purpose": "Rollback migration by making user FK columns NOT NULL again",
+      "file": "services/compliance-service/compliance.go",
+      "action": "modify",
+      "purpose": "Add timeout contexts to all repository methods and query logging",
       "key_functions": [
-        "ALTER TABLE compliance_reports ALTER COLUMN generated_by SET NOT NULL",
-        "ALTER TABLE compliance_findings ALTER COLUMN created_by SET NOT NULL",
-        "ALTER TABLE compliance_findings ALTER COLUMN closed_by SET NOT NULL",
-        "ALTER TABLE compliance_evidence ALTER COLUMN collected_by SET NOT NULL"
+        "ListControls",
+        "GetControl",
+        "UpdateControlStatus",
+        "QueryAuditEvents",
+        "CreateAuditEvent",
+        "RecordDataBreach",
+        "GetPendingReviews"
       ]
     },
     {
       "order": 3,
-      "file": "internal/testutil/fixtures.go",
+      "file": "services/compliance-service/handlers.go",
       "action": "modify",
-      "purpose": "Add CreateTestComplianceControl, CreateTestDataBreach, CreateTestComplianceFinding, CreateTestComplianceReport, CreateTestAuditEvent functions",
+      "purpose": "Wrap handler database calls with timeout contexts",
       "key_functions": [
-        "CreateTestComplianceControl",
-        "CreateTestDataBreach",
-        "CreateTestComplianceFinding",
-        "CreateTestComplianceReport",
-        "CreateTestComplianceEvidence"
+        "listControlsHandler",
+        "controlByIDHandler",
+        "auditLogHandler",
+        "generateReportHandler"
       ]
     },
     {
       "order": 4,
       "file": "internal/testutil/db.go",
       "action": "modify",
-      "purpose": "Update TruncateAllTables to include compliance tables",
+      "purpose": "Add health check function and improve connection pool config for tests",
       "key_functions": [
-        "TruncateAllTables - add compliance_controls, compliance_findings, compliance_evidence, compliance_reports, data_breaches, remediation_plans"
+        "HealthCheck",
+        "SetupTestPool",
+        "TruncateAllTablesWithRetry"
       ]
     },
     {
       "order": 5,
-      "file": "services/compliance-service/repository_test.go",
-      "action": "create",
-      "purpose": "Add comprehensive repository layer tests for compliance service",
+      "file": "services/compliance-service/handlers_test.go",
+      "action": "modify",
+      "purpose": "Add t.Cleanup, health checks, and improved test isolation",
       "key_functions": [
-        "TestRepository_GetControl",
-        "TestRepository_ListControls",
-        "TestRepository_UpdateControlStatus",
-        "TestRepository_CreateAuditEvent",
-        "TestRepository_RecordDataBreach",
-        "TestRepository_GetPendingReviews"
+        "setupHandlerTest",
+        "TestHandlers_ListControls_WithPagination"
       ]
     },
     {
       "order": 6,
-      "file": "services/compliance-service/handlers.go",
-      "action": "create",
-      "purpose": "Extract HTTP handlers from main.go into separate file for testability",
+      "file": "services/compliance-service/main.go",
+      "action": "modify",
+      "purpose": "Add query metrics middleware for production observability",
       "key_functions": [
-        "healthHandler",
-        "listControlsHandler",
-        "controlByIDHandler",
-        "updateControlStatusHandler",
-        "breachesHandler",
-        "pendingReviewsHandler",
-        "summaryHandler",
-        "generateReportHandler"
-      ]
-    },
-    {
-      "order": 7,
-      "file": "services/compliance-service/handlers_test.go",
-      "action": "create",
-      "purpose": "Add HTTP handler tests with proper test fixtures",
-      "key_functions": [
-        "TestListControlsHandler_WithResults",
-        "TestCreateControlHandler_Duplicate",
-        "TestUpdateControlStatusHandler_NotFound",
-        "TestGenerateReportHandler",
-        "TestSummaryHandler",
-        "TestExportAuditLogsHandler"
+        "NewWithMetrics",
+        "queryMetricsMiddleware"
       ]
     }
   ],
   "database_migrations": [
     {
-      "file": "migrations/000037_make_compliance_user_fields_nullable.up.sql",
-      "sql": "-- Make user foreign key columns nullable in compliance tables\n-- This allows creating compliance records without requiring a user\n\nALTER TABLE compliance_reports\nALTER COLUMN generated_by DROP NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN created_by DROP NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN closed_by DROP NOT NULL;\n\nALTER TABLE compliance_evidence\nALTER COLUMN collected_by DROP NOT NULL;"
-    },
-    {
-      "file": "migrations/000037_make_compliance_user_fields_nullable.down.sql",
-      "sql": "-- Rollback: Make user foreign key columns NOT NULL again\n\nALTER TABLE compliance_reports\nALTER COLUMN generated_by SET NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN created_by SET NOT NULL;\n\nALTER TABLE compliance_findings\nALTER COLUMN closed_by SET NOT NULL;\n\nALTER TABLE compliance_evidence\nALTER COLUMN collected_by SET NOT NULL;"
+      "file": "migrations/000014_add_query_performance_indexes.up.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_compliance_controls_framework_status ON compliance_controls(framework, status); CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC); CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);"
     }
   ],
   "api_contracts": [
     {
-      "method": "POST",
-      "path": "/api/v1/compliance/reports",
-      "request": {
-        "framework": "fedramp|hipaa|gdpr|soc2",
-        "period_start": "2024-01-01T00:00:00Z",
-        "period_end": "2024-12-31T23:59:59Z",
-        "generated_by": "UUID (optional)"
-      },
-      "response": {
-        "id": "UUID",
-        "framework": "fedramp",
-        "period_start": "2024-01-01T00:00:00Z",
-        "period_end": "2024-12-31T23:59:59Z",
-        "overall_status": "compliant|non_compliant|pending|unknown",
-        "compliant_count": 10,
-        "non_compliant_count": 2,
-        "pending_count": 1,
-        "total_controls": 13,
-        "high_risk_count": 1,
-        "findings": [],
-        "generated_at": "2024-01-15T10:30:00Z",
-        "generated_by": "UUID"
-      },
-      "status_codes": [
-        201,
-        400,
-        401,
-        500
-      ]
-    },
-    {
       "method": "GET",
-      "path": "/api/v1/compliance/audit",
+      "path": "/api/v1/controls",
       "request": {
-        "start_time": "2024-01-01T00:00:00Z",
-        "end_time": "2024-12-31T23:59:59Z",
-        "user_id": "UUID (optional)",
-        "event_type": "string (optional)",
-        "category": "string (optional)",
-        "limit": 50,
-        "offset": 0
+        "framework": "query",
+        "status": "query",
+        "page": "query",
+        "limit": "query"
       },
       "response": {
-        "events": [],
-        "total": 100
+        "controls": "array",
+        "page": "number",
+        "limit": "number",
+        "total": "number"
       },
       "status_codes": [
         200,
         400,
-        401
+        500,
+        504
       ]
     },
     {
       "method": "GET",
-      "path": "/api/v1/compliance/audit/export",
-      "request": {
-        "format": "json|csv",
-        "start_time": "2024-01-01T00:00:00Z",
-        "end_time": "2024-12-31T23:59:59Z"
+      "path": "/health/db",
+      "request": {},
+      "response": {
+        "status": "string",
+        "latency_ms": "number",
+        "pool_stats": "object"
       },
-      "response": "file download",
       "status_codes": [
         200,
-        400,
-        401
+        503
       ]
     }
   ],
   "test_plan": {
     "unit_tests": [
       {
-        "file": "services/compliance-service/repository_test.go",
+        "file": "services/compliance-service/context_timeout_test.go",
         "cases": [
-          "GetControl returns correct control",
-          "GetControl not found returns error",
-          "ListControls with framework filter",
-          "ListControls with status filter",
-          "UpdateControlStatus success",
-          "UpdateControlStatus not found",
-          "CreateAuditEvent with nullable user_id",
-          "CreateAuditEvent with user",
-          "QueryAuditEvents with filters",
-          "QueryAuditEvents pagination",
-          "RecordDataBreach success",
-          "GetPendingReviews returns upcoming reviews",
-          "GetPendingReviews empty when no reviews pending"
+          "TestWithQueryTimeout_Success",
+          "TestWithQueryTimeout_Exceeded",
+          "TestGetDefaultTimeout_EnvOverride"
         ]
       },
       {
-        "file": "services/compliance-service/service_test.go",
+        "file": "services/compliance-service/compliance_test.go",
         "cases": [
-          "GenerateReport for fedramp framework",
-          "GenerateReport calculates statistics correctly",
-          "GenerateReport creates findings for non-compliant controls",
-          "GetComplianceSummary returns all frameworks",
-          "GetComplianceSummary handles empty controls",
-          "ExportAuditLogs JSON format",
-          "ExportAuditLogs CSV format",
-          "ExportAuditLogs unsupported format"
-        ]
-      },
-      {
-        "file": "internal/testutil/fixtures_test.go",
-        "cases": [
-          "CreateTestComplianceControl creates valid record",
-          "CreateTestDataBreach creates valid record",
-          "CreateTestComplianceFinding creates valid record",
-          "CreateTestComplianceReport creates valid record",
-          "CreateTestAuditEvent creates valid record with nullable user"
+          "TestListControls_WithTimeout",
+          "TestListControls_ContextCanceled"
         ]
       }
     ],
     "e2e_tests": [
       {
-        "name": "Compliance report generation end-to-end",
+        "name": "TestDatabaseConnectionPoolExhaustion",
         "steps": [
-          "Create test organization and user",
-          "Create compliance controls with various statuses",
-          "Call GenerateReport API endpoint",
-          "Verify report contains correct statistics",
-          "Verify findings created for non-compliant controls"
+          "Create connection pool with max 2 connections",
+          "Spawn 5 concurrent queries",
+          "Verify context timeout prevents deadlock",
+          "Verify all connections released after timeout"
         ]
       },
       {
-        "name": "Audit log export workflow",
+        "name": "TestPaginationUnderLoad",
         "steps": [
-          "Create multiple audit events with different categories",
-          "Export audit logs as JSON",
-          "Export audit logs as CSV",
-          "Verify export contains all events",
-          "Verify retention date is calculated correctly"
-        ]
-      },
-      {
-        "name": "Data breach tracking workflow",
-        "steps": [
-          "Record a new data breach",
-          "Verify breach is stored correctly",
-          "Update breach containment status",
-          "Add resolution details",
-          "Verify breach can be queried"
-        ]
-      },
-      {
-        "name": "Compliance control lifecycle",
-        "steps": [
-          "Create new compliance control",
-          "Update control status to compliant",
-          "Schedule next review",
-          "Verify control appears in pending reviews before due date",
-          "Verify control doesn't appear after review date"
+          "Create 100 controls",
+          "Execute concurrent paginated requests",
+          "Verify all responses complete within timeout",
+          "Verify no connection leaks"
         ]
       }
     ]
   },
   "security_notes": [
-    "Ensure nullable user_id columns don't bypass authorization checks - service layer must validate user context",
-    "Audit event retention dates should be enforced by data retention policies",
-    "Compliance reports should be signed when generated for regulatory purposes",
-    "Export functionality should be rate-limited to prevent data exfiltration"
+    "Context timeouts should not bypass authorization checks",
+    "Query logging must sanitize sensitive data ( passwords, tokens )",
+    "Health check endpoint should not expose database structure"
   ],
   "docker_changes": [
-    "Add compliance service to docker-compose if not already present",
-    "Ensure TEST_MODE environment variable is available in compliance service container"
+    "Add DB_QUERY_TIMEOUT_MS environment variable to compliance-service",
+    "Add DB_POOL_MAX_CONNS and DB_POOL_MIN_CONNS environment variables"
   ],
   "market_driven_features": [
-    "Compliance report generation aligned with FedRAMP/HIPAA/GDPR/SOC2 requirements - similar to Microsoft Universal Print's built-in compliance features",
-    "Audit log export functionality matching competitor standards",
-    "Data breach tracking exceeding basic PaperCut MF capabilities - addresses enterprise gap in market analysis"
+    "One-click compliance report generation - existing in GenerateReport, add frontend UI endpoint",
+    "99.99% uptime SLA - health check monitoring supports this requirement",
+    "Secure print release mobile app - audit logging tracks release events for compliance"
   ]
 }

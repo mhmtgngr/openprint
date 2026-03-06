@@ -223,36 +223,6 @@ func (h *Handler) heartbeat(w http.ResponseWriter, r *http.Request, ctx context.
 	})
 }
 
-
-// HeartbeatFromBody handles heartbeat requests where agent_id is in the request body
-func (h *Handler) HeartbeatFromBody(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Limit request body size to prevent DoS
-
-	var req struct {
-		AgentID string `json:"agent_id"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, apperrors.Wrap(err, "invalid request body", http.StatusBadRequest))
-		return
-	}
-
-	if req.AgentID == "" {
-		respondError(w, apperrors.New("agent_id is required", http.StatusBadRequest))
-		return
-	}
-
-	h.heartbeat(w, r, ctx, req.AgentID)
-}
-
-
 // registerDiscoveredPrinters handles bulk printer registration from an agent.
 func (h *Handler) registerDiscoveredPrinters(w http.ResponseWriter, r *http.Request, ctx context.Context, agentID string) {
 	// Verify agent exists
@@ -686,22 +656,15 @@ func (h *Handler) ListPrinters(w http.ResponseWriter, r *http.Request) {
 
 func agentToResponse(agent *repository.Agent) map[string]interface{} {
 	return map[string]interface{}{
-		"id":              agent.ID,
-		"name":            agent.Name,
-		"orgId":           agent.OrganizationID,
-		"status":          agent.Status,
-		"platform":        agent.OS,
-		"platformVersion": agent.Version,
-		"agentVersion":    agent.Version,
-		"ipAddress":       "",
-		"lastHeartbeat":   agent.LastHeartbeat.Format(time.RFC3339),
-		"createdAt":       agent.CreatedAt.Format(time.RFC3339),
-		"capabilities": map[string]interface{}{
-			"supportedFormats": []string{"PDF", "PNG", "JPEG"},
-			"maxJobSize":       104857600,
-			"supportsColor":    true,
-			"supportsDuplex":   true,
-		},
+		"agent_id":       agent.ID,
+		"name":           agent.Name,
+		"version":        agent.Version,
+		"os":             agent.OS,
+		"architecture":   agent.Architecture,
+		"hostname":       agent.Hostname,
+		"status":         agent.Status,
+		"last_heartbeat": agent.LastHeartbeat.Format(time.RFC3339),
+		"created_at":     agent.CreatedAt.Format(time.RFC3339),
 	}
 }
 

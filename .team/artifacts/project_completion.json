@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-04T20:58:21.599639",
+  "timestamp": "2026-03-06T17:18:01.663408",
   "completion_pct": 95,
   "pr_ready": true,
   "dimension_scores": {
@@ -13,11 +13,11 @@
     "docker": 100
   },
   "counts": {
-    "backend_files": "56/7",
+    "backend_files": "56/6",
     "frontend_files": "0/0",
-    "tests": "109/7",
-    "endpoints": "6/3",
-    "migrations": "76/2",
+    "tests": "109/4",
+    "endpoints": "6/2",
+    "migrations": "78/1",
     "todos": 20,
     "build": true,
     "tests_pass": false
@@ -26,8 +26,8 @@
     {
       "type": "tests",
       "priority": "critical",
-      "item": "2 failing packages",
-      "description": "Fix 2 failing test packages"
+      "item": "4 failing packages",
+      "description": "Fix 4 failing test packages"
     },
     {
       "type": "todos",
