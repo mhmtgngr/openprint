@@ -5,12 +5,14 @@ package main
 
 import (
 	"context"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"os"
@@ -21,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	gjwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
@@ -72,6 +75,8 @@ type AgentConfig struct {
 	ReceiptPrinterName string `json:"receipt_printer_name"`
 	// ReceiptListenPort is the TCP port for the receipt virtual printer.
 	ReceiptListenPort int `json:"receipt_listen_port"`
+	// JWTSecret is the shared secret for generating JWT tokens for service authentication.
+	JWTSecret string `json:"jwt_secret"`
 }
 
 // Agent represents the print agent.
@@ -433,6 +438,52 @@ func (a *Agent) getReceiptListenPort() int {
 		return a.config.ReceiptListenPort
 	}
 	return 9101
+}
+
+// generateServiceJWT generates a JWT token for authenticating with storage and job services.
+func (a *Agent) generateServiceJWT() (string, error) {
+	if a.config.JWTSecret == "" {
+		return "", fmt.Errorf("jwt_secret not configured")
+	}
+
+	now := time.Now()
+	claims := gjwt.MapClaims{
+		"user_id":    "agent:" + a.config.AgentID,
+		"email":      "agent@openprint.local",
+		"org_id":     a.config.OrganizationID,
+		"role":       "agent",
+		"token_type": "access",
+		"iss":        "openprint.cloud",
+		"sub":        "agent:" + a.config.AgentID,
+		"aud":        gjwt.ClaimStrings{"openprint.cloud", "api.openprint.cloud"},
+		"exp":        gjwt.NewNumericDate(now.Add(1 * time.Hour)),
+		"iat":        gjwt.NewNumericDate(now),
+		"nbf":        gjwt.NewNumericDate(now),
+		"jti":        uuid.New().String(),
+	}
+
+	token := gjwt.NewWithClaims(gjwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(a.config.JWTSecret))
+}
+
+// authenticatedPost makes an HTTP POST with JWT Authorization header.
+func (a *Agent) authenticatedPost(url, contentType string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+
+	if a.config.JWTSecret != "" {
+		token, err := a.generateServiceJWT()
+		if err != nil {
+			log.Printf("WARNING: Failed to generate JWT: %v", err)
+		} else {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+	}
+
+	return a.client.Do(req)
 }
 
 // virtualPrinterDrivers is the preference order for virtual printer drivers.
@@ -837,12 +888,42 @@ func (a *Agent) resolveUserEmail(username string) string {
 			var result struct {
 				Email string `json:"user_email"`
 			}
-			if json.NewDecoder(resp.Body).Decode(&result) == nil {
+			if json.NewDecoder(resp.Body).Decode(&result) == nil && result.Email != "" {
 				return result.Email
 			}
 		}
 	}
 
+	// Last resort: construct email from username using domain
+	if a.domain != "" {
+		return username + "@" + strings.ToLower(a.domain)
+	}
+
+	return username + "@openprint.local"
+}
+
+// resolveRegisteredPrinterID looks up the printer UUID from the registry by name.
+func (a *Agent) resolveRegisteredPrinterID(printerName string) string {
+	url := fmt.Sprintf("%s/printers?agent_id=%s", a.registryURL, a.config.AgentID)
+	resp, err := a.client.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data []struct {
+			PrinterID string `json:"printer_id"`
+			Name      string `json:"name"`
+		} `json:"data"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&result) == nil {
+		for _, p := range result.Data {
+			if p.Name == printerName {
+				return p.PrinterID
+			}
+		}
+	}
 	return ""
 }
 
@@ -858,13 +939,19 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 
 	log.Printf("Document uploaded: id=%s checksum=%s", documentID, checksum)
 
-	// Step 2: Create a print job in the job service that will be routed to the user's client agent
-	// Use printer type-specific routing: __user_default__ for standard, __user_default_receipt__ for receipt
-	printerID := "__user_default__"
+	// Step 2: Resolve the virtual printer to its registered UUID
 	mediaType := "a4"
+	var printerName string
 	if captured.PrinterType == "receipt" {
-		printerID = "__user_default_receipt__"
+		printerName = a.getReceiptPrinterName()
 		mediaType = "receipt"
+	} else {
+		printerName = a.getVirtualPrinterName()
+	}
+
+	printerID := a.resolveRegisteredPrinterID(printerName)
+	if printerID == "" {
+		return fmt.Errorf("printer '%s' not found in registry", printerName)
 	}
 
 	jobReq := map[string]interface{}{
@@ -887,7 +974,7 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 	}
 
 	body, _ := json.Marshal(jobReq)
-	resp, err := a.client.Post(a.jobURL+"/jobs", "application/json", strings.NewReader(string(body)))
+	resp, err := a.authenticatedPost(a.jobURL+"/jobs", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return fmt.Errorf("failed to create job: %w", err)
 	}
@@ -915,35 +1002,43 @@ func (a *Agent) uploadDocumentToStorage(storageURL string, captured *CapturedPri
 	}
 	defer f.Close()
 
-	// Read file content
+	// Read file content for checksum
 	fileData, err := io.ReadAll(f)
 	if err != nil {
 		return "", "", err
 	}
 
-	// Compute checksum
 	hash := sha256.New()
 	hash.Write(fileData)
 	checksum := hex.EncodeToString(hash.Sum(nil))
 
-	// Use the detected content type for proper handling on the client side
-	contentType := captured.ContentType
-	if contentType == "" {
-		contentType = "application/octet-stream"
+	// Build multipart form
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	// Determine filename
+	fileName := captured.Title
+	if fileName == "" {
+		fileName = filepath.Base(captured.FilePath)
 	}
 
-	// Build the request body for the upload
-	uploadReq := map[string]interface{}{
-		"name":         captured.Title,
-		"content_type": contentType,
-		"size":         captured.Size,
-		"checksum":     checksum,
-		"user_email":   captured.UserEmail,
-		"data":         fileData,
+	// Add file field
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create form file: %w", err)
+	}
+	if _, err := part.Write(fileData); err != nil {
+		return "", "", fmt.Errorf("failed to write file data: %w", err)
 	}
 
-	reqBody, _ := json.Marshal(uploadReq)
-	resp, err := a.client.Post(storageURL+"/documents", "application/json", strings.NewReader(string(reqBody)))
+	// Add user_email field
+	if captured.UserEmail != "" {
+		writer.WriteField("user_email", captured.UserEmail)
+	}
+
+	writer.Close()
+
+	resp, err := a.authenticatedPost(storageURL+"/documents", writer.FormDataContentType(), &buf)
 	if err != nil {
 		return "", "", err
 	}
@@ -960,6 +1055,11 @@ func (a *Agent) uploadDocumentToStorage(storageURL string, captured *CapturedPri
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
 		return "", "", err
+	}
+
+	// Use server checksum if available, otherwise our computed one
+	if uploadResp.Checksum == "" {
+		uploadResp.Checksum = checksum
 	}
 
 	return uploadResp.DocumentID, uploadResp.Checksum, nil
