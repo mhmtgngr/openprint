@@ -11,6 +11,11 @@ import {
   MetricsIcon,
   BellIcon,
   PulseIcon,
+  UsersIcon,
+  ChartIcon,
+  CheckCircleIcon,
+  EnvelopeIcon,
+  CloudIcon,
 } from '@/components/icons';
 
 interface NavItem {
@@ -21,14 +26,36 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  // Main navigation (all users)
   { path: '/dashboard', icon: HomeIcon, label: 'Dashboard', roles: ['user', 'admin', 'owner'] },
   { path: '/printers', icon: PrinterIcon, label: 'Devices', roles: ['user', 'admin', 'owner'] },
   { path: '/jobs', icon: DocumentIcon, label: 'Jobs', roles: ['user', 'admin', 'owner'] },
   { path: '/documents', icon: FolderIcon, label: 'Documents', roles: ['user', 'admin', 'owner'] },
+
+  // Print management
+  { path: '/print-release', icon: ShieldIcon, label: 'Print Release', roles: ['user', 'admin', 'owner'] },
+  { path: '/secure-print', icon: ShieldIcon, label: 'Secure Print', roles: ['user', 'admin', 'owner'] },
+
+  // Admin only
+  { path: '/agents', icon: UsersIcon, label: 'Agents', roles: ['admin', 'owner'] },
+  { path: '/analytics', icon: ChartIcon, label: 'Analytics', roles: ['admin', 'owner'] },
+  { path: '/organization', icon: UsersIcon, label: 'Organization', roles: ['admin', 'owner'] },
+  { path: '/quotas', icon: MetricsIcon, label: 'Quotas', roles: ['admin', 'owner'] },
+  { path: '/policies', icon: ShieldIcon, label: 'Policies', roles: ['admin', 'owner'] },
+  { path: '/policy-engine', icon: ShieldIcon, label: 'Policy Engine', roles: ['admin', 'owner'] },
+  { path: '/audit-logs', icon: DocumentIcon, label: 'Audit Logs', roles: ['admin', 'owner'] },
+  { path: '/compliance', icon: CheckCircleIcon, label: 'Compliance', roles: ['admin', 'owner'] },
+
+  // Integrations
+  { path: '/email-to-print', icon: EnvelopeIcon, label: 'Email-to-Print', roles: ['admin', 'owner'] },
+  { path: '/microsoft365', icon: CloudIcon, label: 'Microsoft 365', roles: ['admin', 'owner'] },
+
+  // Observability
   { path: '/metrics', icon: MetricsIcon, label: 'Metrics', roles: ['admin', 'owner'] },
   { path: '/monitoring', icon: BellIcon, label: 'Monitoring', roles: ['admin', 'owner'] },
   { path: '/observability', icon: PulseIcon, label: 'Tracing', roles: ['admin', 'owner'] },
-  { path: '/compliance', icon: ShieldIcon, label: 'Compliance', roles: ['admin', 'owner'] },
+
+  // Settings
   { path: '/settings', icon: CogIcon, label: 'Settings', roles: ['user', 'admin', 'owner'] },
 ];
 
@@ -67,7 +94,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </Link>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto" data-testid="sidebar-nav">
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path ||
@@ -77,6 +104,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <Link
                   key={item.path}
                   to={item.path}
+                  data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                     ${isActive
