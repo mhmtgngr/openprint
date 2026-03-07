@@ -291,11 +291,9 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 
 func respondError(w http.ResponseWriter, err error) {
 	var appErr *apperrors.AppError
-	if err, ok := err.(*apperrors.AppError); ok {
-		appErr = err
+	if ae, ok := err.(*apperrors.AppError); ok {
+		appErr = ae
 	} else {
-		// Try to convert using errors.As
-		// For now, just wrap as a generic error
 		appErr = apperrors.New(err.Error(), http.StatusInternalServerError)
 	}
 

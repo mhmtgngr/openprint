@@ -332,3 +332,4 @@ func (r *costRepository) GetCostByPrinter(ctx context.Context, organizationID, p
 
 	return summaries, nil
 }
+

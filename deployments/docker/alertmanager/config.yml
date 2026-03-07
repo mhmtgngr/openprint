@@ -62,7 +62,7 @@ receivers:
   # Default receiver - logs alerts
   - name: 'default'
     webhook_configs:
-      - url: 'http://localhost:5001/alerts'
+      - url: 'http://notification-service:8005/alerts'
         send_resolved: true
 
   # Critical alerts - email and webhook
@@ -73,7 +73,7 @@ receivers:
           Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
         html: '{{ template "email.default.html" . }}'
     webhook_configs:
-      - url: 'http://localhost:5001/alerts'
+      - url: 'http://notification-service:8005/alerts'
         send_resolved: true
 
   # Security alerts - email to security team

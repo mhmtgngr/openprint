@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authApi, clearTokens, getAccessToken } from '@/services/api';
+import { authApi, clearTokens, getAccessToken, onAuthFailure } from '@/services/api';
 import { wsService } from '@/services/websocket';
 import type { User, UserRole, AuthContextValue } from '@/types/auth';
 
@@ -40,6 +40,20 @@ export const useAuth = (): AuthContextValue => {
       listeners.delete(listener);
     };
   }, []);
+
+  // Listen for global auth failure (401 after token refresh fails)
+  useEffect(() => {
+    return onAuthFailure(() => {
+      wsService.disconnect();
+      setAuthState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+      });
+      navigate('/login');
+    });
+  }, [navigate]);
 
   useEffect(() => {
     const initAuth = async () => {

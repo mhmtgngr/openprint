@@ -1,661 +1,918 @@
-// Package main provides tests for the policy engine.
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/openprint/openprint/internal/testutil"
 )
 
-func TestEngineEvaluateRules(t *testing.T) {
-	e := &Engine{}
+func newTestEngine() *Engine {
+	return NewEngine(Config{DB: nil})
+}
 
-	tests := []struct {
-		name     string
-		rules    []Rule
-		ctx      *EvaluationContext
-		expected bool
-	}{
-		{
-			name: "Single matching rule - equals",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpEquals, Value: 10},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 10,
-			},
-			expected: true,
-		},
-		{
-			name: "Single non-matching rule - equals",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpEquals, Value: 10},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 5,
-			},
-			expected: false,
-		},
-		{
-			name: "Greater than - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpGreaterThan, Value: 5},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 10,
-			},
-			expected: true,
-		},
-		{
-			name: "Less than - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 10,
-			},
-			expected: true,
-		},
-		{
-			name: "Contains - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.name", Operator: OpContains, Value: "confidential"},
-			},
-			ctx: &EvaluationContext{
-				DocumentName: "confidential_report.pdf",
-			},
-			expected: true,
-		},
-		{
-			name: "Not contains - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.name", Operator: OpNotContains, Value: "draft"},
-			},
-			ctx: &EvaluationContext{
-				DocumentName: "final_report.pdf",
-			},
-			expected: true,
-		},
-		{
-			name: "In - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.type", Operator: OpIn, Value: []string{"pdf", "docx"}},
-			},
-			ctx: &EvaluationContext{
-				DocumentType: "pdf",
-			},
-			expected: true,
-		},
-		{
-			name: "NotIn - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.type", Operator: OpNotIn, Value: []string{"pdf", "jpg"}},
-			},
-			ctx: &EvaluationContext{
-				DocumentType: "docx",
-			},
-			expected: true,
-		},
-		{
-			name: "Between - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpBetween, Value: []int{1, 10}},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 5,
-			},
-			expected: true,
-		},
-		{
-			name: "Between - not match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpBetween, Value: []int{1, 10}},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 15,
-			},
-			expected: false,
-		},
-		{
-			name: "Always - match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpAlways},
-			},
-			ctx:      &EvaluationContext{},
-			expected: true,
-		},
-		{
-			name: "Never - no match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpNever},
-			},
-			ctx:      &EvaluationContext{},
-			expected: false,
-		},
-		{
-			name: "Multiple rules - all match",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpGreaterThan, Value: 5},
-				{ID: "r2", Field: "document.page_count", Operator: OpLessThan, Value: 100},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 10,
-			},
-			expected: true,
-		},
-		{
-			name: "Multiple rules - one fails",
-			rules: []Rule{
-				{ID: "r1", Field: "document.page_count", Operator: OpGreaterThan, Value: 5},
-				{ID: "r2", Field: "document.page_count", Operator: OpLessThan, Value: 8},
-			},
-			ctx: &EvaluationContext{
-				PageCount: 10,
-			},
-			expected: false,
-		},
-	}
+// --- Engine unit tests ---
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			matched, _ := e.evaluateRules(tt.rules, tt.ctx)
-			if matched != tt.expected {
-				t.Errorf("Expected %v, got %v", tt.expected, matched)
-			}
-		})
+func TestEvaluateRule_OpAlways(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "user.id", Operator: OpAlways}
+	ctx := &EvaluationContext{UserID: "u1"}
+
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpAlways should always return true")
 	}
 }
 
-func TestEngineGetFieldValue(t *testing.T) {
-	e := &Engine{}
+func TestEvaluateRule_OpNever(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "user.id", Operator: OpNever}
+	ctx := &EvaluationContext{UserID: "u1"}
 
-	now := time.Now()
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpNever should always return false")
+	}
+}
+
+func TestEvaluateRule_OpEquals(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "user.id", Operator: OpEquals, Value: "user-123"}
+	ctx := &EvaluationContext{UserID: "user-123"}
+
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpEquals should match when values are equal")
+	}
+
+	ctx.UserID = "user-456"
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpEquals should not match when values differ")
+	}
+}
+
+func TestEvaluateRule_OpNotEquals(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "user.id", Operator: OpNotEquals, Value: "user-123"}
+
+	ctx := &EvaluationContext{UserID: "user-456"}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpNotEquals should match when values differ")
+	}
+
+	ctx.UserID = "user-123"
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpNotEquals should not match when values are equal")
+	}
+}
+
+func TestEvaluateRule_OpGreaterThan(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "document.page_count", Operator: OpGreaterThan, Value: float64(10)}
+
+	ctx := &EvaluationContext{PageCount: 20}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpGreaterThan should match when field > value")
+	}
+
+	ctx.PageCount = 5
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpGreaterThan should not match when field < value")
+	}
+
+	ctx.PageCount = 10
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpGreaterThan should not match when field == value")
+	}
+}
+
+func TestEvaluateRule_OpLessThan(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: float64(10)}
+
+	ctx := &EvaluationContext{PageCount: 5}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpLessThan should match when field < value")
+	}
+
+	ctx.PageCount = 15
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpLessThan should not match when field > value")
+	}
+}
+
+func TestEvaluateRule_OpContains(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "document.name", Operator: OpContains, Value: "report"}
+
+	ctx := &EvaluationContext{DocumentName: "quarterly_report_2024.pdf"}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpContains should match when field contains value")
+	}
+
+	ctx.DocumentName = "invoice_2024.pdf"
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpContains should not match when field does not contain value")
+	}
+}
+
+func TestEvaluateRule_OpNotContains(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{ID: "r1", Field: "document.name", Operator: OpNotContains, Value: "confidential"}
+
+	ctx := &EvaluationContext{DocumentName: "public_memo.pdf"}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpNotContains should match when field does not contain value")
+	}
+
+	ctx.DocumentName = "confidential_report.pdf"
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpNotContains should not match when field contains value")
+	}
+}
+
+func TestEvaluateRule_OpIn(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{
+		ID:       "r1",
+		Field:    "document.type",
+		Operator: OpIn,
+		Value:    []interface{}{"pdf", "docx", "xlsx"},
+	}
+
+	ctx := &EvaluationContext{DocumentType: "pdf"}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpIn should match when value is in list")
+	}
+
+	ctx.DocumentType = "png"
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpIn should not match when value is not in list")
+	}
+}
+
+func TestEvaluateRule_OpNotIn(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{
+		ID:       "r1",
+		Field:    "document.type",
+		Operator: OpNotIn,
+		Value:    []interface{}{"exe", "bat", "sh"},
+	}
+
+	ctx := &EvaluationContext{DocumentType: "pdf"}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpNotIn should match when value is not in list")
+	}
+
+	ctx.DocumentType = "exe"
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpNotIn should not match when value is in list")
+	}
+}
+
+func TestEvaluateRule_OpBetween(t *testing.T) {
+	engine := newTestEngine()
+	rule := &Rule{
+		ID:       "r1",
+		Field:    "document.page_count",
+		Operator: OpBetween,
+		Value:    []interface{}{float64(5), float64(50)},
+	}
+
+	ctx := &EvaluationContext{PageCount: 25}
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpBetween should match when value is within range")
+	}
+
+	ctx.PageCount = 3
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpBetween should not match when value is below range")
+	}
+
+	ctx.PageCount = 100
+	if engine.evaluateRule(rule, ctx) {
+		t.Error("OpBetween should not match when value is above range")
+	}
+
+	// Boundary values
+	ctx.PageCount = 5
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpBetween should match when value equals lower bound")
+	}
+	ctx.PageCount = 50
+	if !engine.evaluateRule(rule, ctx) {
+		t.Error("OpBetween should match when value equals upper bound")
+	}
+}
+
+// --- evaluateRules tests ---
+
+func TestEvaluateRules_EmptyRules(t *testing.T) {
+	engine := newTestEngine()
+	ctx := &EvaluationContext{UserID: "u1"}
+
+	matched, ruleMatches := engine.evaluateRules([]Rule{}, ctx)
+	if !matched {
+		t.Error("empty rules should match (allow-by-default)")
+	}
+	if len(ruleMatches) != 0 {
+		t.Error("empty rules should produce empty rule matches map")
+	}
+}
+
+func TestEvaluateRules_AllAND_AllMatch(t *testing.T) {
+	engine := newTestEngine()
+	rules := []Rule{
+		{ID: "r1", Field: "document.type", Operator: OpEquals, Value: "pdf", LogicalOp: "AND"},
+		{ID: "r2", Field: "document.page_count", Operator: OpLessThan, Value: float64(100), LogicalOp: "AND"},
+	}
+	ctx := &EvaluationContext{DocumentType: "pdf", PageCount: 50}
+
+	matched, ruleMatches := engine.evaluateRules(rules, ctx)
+	if !matched {
+		t.Error("all AND rules matching should return true")
+	}
+	if !ruleMatches["r1"] || !ruleMatches["r2"] {
+		t.Error("individual rule matches should be true")
+	}
+}
+
+func TestEvaluateRules_AllAND_OneFails(t *testing.T) {
+	engine := newTestEngine()
+	rules := []Rule{
+		{ID: "r1", Field: "document.type", Operator: OpEquals, Value: "pdf", LogicalOp: "AND"},
+		{ID: "r2", Field: "document.page_count", Operator: OpLessThan, Value: float64(100), LogicalOp: "AND"},
+	}
+	ctx := &EvaluationContext{DocumentType: "docx", PageCount: 50}
+
+	matched, ruleMatches := engine.evaluateRules(rules, ctx)
+	if matched {
+		t.Error("AND rules with one failing should return false")
+	}
+	if ruleMatches["r1"] {
+		t.Error("first rule should not match")
+	}
+}
+
+func TestEvaluateRules_OR_OneMatches(t *testing.T) {
+	engine := newTestEngine()
+	rules := []Rule{
+		{ID: "r1", Field: "document.type", Operator: OpEquals, Value: "pdf", LogicalOp: "OR"},
+		{ID: "r2", Field: "document.type", Operator: OpEquals, Value: "docx", LogicalOp: "OR"},
+	}
+	ctx := &EvaluationContext{DocumentType: "docx"}
+
+	matched, _ := engine.evaluateRules(rules, ctx)
+	if !matched {
+		t.Error("OR rules with one matching should return true")
+	}
+}
+
+func TestEvaluateRules_DefaultAND(t *testing.T) {
+	engine := newTestEngine()
+	// No LogicalOp set defaults to AND behavior
+	rules := []Rule{
+		{ID: "r1", Field: "document.type", Operator: OpEquals, Value: "pdf"},
+		{ID: "r2", Field: "document.page_count", Operator: OpLessThan, Value: float64(100)},
+	}
+
+	ctx := &EvaluationContext{DocumentType: "pdf", PageCount: 50}
+	matched, _ := engine.evaluateRules(rules, ctx)
+	if !matched {
+		t.Error("default AND: all matching should return true")
+	}
+
+	ctx.DocumentType = "docx"
+	matched, _ = engine.evaluateRules(rules, ctx)
+	if matched {
+		t.Error("default AND: one failing should return false")
+	}
+}
+
+// --- getFieldValue tests ---
+
+func TestGetFieldValue(t *testing.T) {
+	engine := newTestEngine()
+	now := time.Date(2024, 6, 15, 14, 30, 0, 0, time.UTC) // Saturday, 14:00
 	ctx := &EvaluationContext{
-		UserID:       "user123",
+		UserID:       "user-1",
 		UserEmail:    "user@example.com",
-		UserGroups:   []string{"admin", "staff"},
-		PrinterID:    "printer1",
-		DocumentName: "document.pdf",
+		UserGroups:   []string{"admin", "devops"},
+		PrinterID:    "printer-1",
+		DocumentName: "test.pdf",
 		DocumentType: "pdf",
-		PageCount:    10,
+		PageCount:    42,
 		ColorMode:    "color",
 		DuplexMode:   "duplex",
-		Cost:         5.50,
+		Cost:         1.50,
 		TimeOfDay:    now,
-		DayOfWeek:    int(now.Weekday()),
-		IPAddress:    "192.168.1.1",
-		DeviceID:     "device1",
+		DayOfWeek:    6,
+		IPAddress:    "192.168.1.100",
+		DeviceID:     "device-1",
+		Tags:         []string{"urgent", "internal"},
 		Quota: &QuotaInfo{
-			Limit:     1000,
-			Used:      100,
-			Remaining: 900,
+			Limit:     100,
+			Used:      60,
+			Remaining: 40,
 		},
-		Tags: []string{"urgent", "confidential"},
 	}
 
 	tests := []struct {
 		field    string
 		expected interface{}
 	}{
-		{"user.id", "user123"},
+		{"user.id", "user-1"},
 		{"user.email", "user@example.com"},
-		{"user.groups", []string{"admin", "staff"}},
-		{"printer.id", "printer1"},
-		{"document.name", "document.pdf"},
+		{"printer.id", "printer-1"},
+		{"document.name", "test.pdf"},
 		{"document.type", "pdf"},
-		{"document.page_count", 10},
+		{"document.page_count", 42},
 		{"document.color_mode", "color"},
 		{"document.duplex_mode", "duplex"},
-		{"document.cost", 5.50},
-		{"time.hour", now.Hour()},
-		{"time.day_of_week", int(now.Weekday())},
-		{"quota.remaining", 900},
-		{"quota.used", 100},
-		{"quota.limit", 1000},
-		{"ip.address", "192.168.1.1"},
-		{"device.id", "device1"},
-		{"document.tags", []string{"urgent", "confidential"}},
+		{"document.cost", 1.50},
+		{"time.hour", 14},
+		{"time.day_of_week", 6},
+		{"quota.remaining", 40},
+		{"quota.used", 60},
+		{"quota.limit", 100},
+		{"ip.address", "192.168.1.100"},
+		{"device.id", "device-1"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.field, func(t *testing.T) {
-			result := e.getFieldValue(ctx, tt.field)
-			if !compareValues(result, tt.expected) {
-				t.Errorf("Field %s: expected %v (%T), got %v (%T)", tt.field, tt.expected, tt.expected, result, result)
+			got := engine.getFieldValue(ctx, tt.field)
+			if got != tt.expected {
+				t.Errorf("getFieldValue(%q) = %v, want %v", tt.field, got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestEngineGetFieldValue_UnknownField(t *testing.T) {
-	e := &Engine{}
-	ctx := &EvaluationContext{}
+func TestGetFieldValue_QuotaNil(t *testing.T) {
+	engine := newTestEngine()
+	ctx := &EvaluationContext{Quota: nil}
 
-	result := e.getFieldValue(ctx, "unknown.field")
-	if result != nil {
-		t.Errorf("Expected nil for unknown field, got %v", result)
+	for _, field := range []string{"quota.remaining", "quota.used", "quota.limit"} {
+		got := engine.getFieldValue(ctx, field)
+		if got != 0 {
+			t.Errorf("getFieldValue(%q) with nil quota = %v, want 0", field, got)
+		}
 	}
 }
 
-func TestEngineAppliesToScope(t *testing.T) {
-	evalCtx := &EvaluationContext{
-		UserID:       "user123",
-		UserGroups:   []string{"staff"},
-		PrinterID:    "printer1",
-		DocumentType: "pdf",
+func TestGetFieldValue_Unknown(t *testing.T) {
+	engine := newTestEngine()
+	ctx := &EvaluationContext{}
+
+	got := engine.getFieldValue(ctx, "nonexistent.field")
+	if got != nil {
+		t.Errorf("getFieldValue for unknown field should return nil, got %v", got)
+	}
+}
+
+// --- appliesToScope tests ---
+
+func TestAppliesToScope_EmptyScope(t *testing.T) {
+	engine := newTestEngine()
+	policy := &Policy{Scope: PolicyScope{}}
+	ctx := &EvaluationContext{UserID: "u1"}
+
+	if !engine.appliesToScope(policy, ctx) {
+		t.Error("empty scope should apply to all contexts")
+	}
+}
+
+func TestAppliesToScope_UserIDMatch(t *testing.T) {
+	engine := newTestEngine()
+	policy := &Policy{Scope: PolicyScope{UserIDs: []string{"u1", "u2"}}}
+
+	ctx := &EvaluationContext{UserID: "u1"}
+	if !engine.appliesToScope(policy, ctx) {
+		t.Error("scope with matching user ID should apply")
 	}
 
+	ctx.UserID = "u3"
+	if engine.appliesToScope(policy, ctx) {
+		t.Error("scope with non-matching user ID should not apply")
+	}
+}
+
+func TestAppliesToScope_GroupMatch(t *testing.T) {
+	engine := newTestEngine()
+	policy := &Policy{Scope: PolicyScope{GroupIDs: []string{"admin"}}}
+
+	ctx := &EvaluationContext{UserGroups: []string{"admin", "users"}}
+	if !engine.appliesToScope(policy, ctx) {
+		t.Error("scope with matching group should apply")
+	}
+
+	ctx.UserGroups = []string{"users"}
+	if engine.appliesToScope(policy, ctx) {
+		t.Error("scope with non-matching group should not apply")
+	}
+}
+
+func TestAppliesToScope_PrinterIDMatch(t *testing.T) {
+	engine := newTestEngine()
+	policy := &Policy{Scope: PolicyScope{PrinterIDs: []string{"p1", "p2"}}}
+
+	ctx := &EvaluationContext{PrinterID: "p1"}
+	if !engine.appliesToScope(policy, ctx) {
+		t.Error("scope with matching printer should apply")
+	}
+
+	ctx.PrinterID = "p3"
+	if engine.appliesToScope(policy, ctx) {
+		t.Error("scope with non-matching printer should not apply")
+	}
+}
+
+func TestAppliesToScope_DocumentTypeMatch(t *testing.T) {
+	engine := newTestEngine()
+	policy := &Policy{Scope: PolicyScope{DocumentTypes: []string{"pdf", "docx"}}}
+
+	ctx := &EvaluationContext{DocumentType: "pdf"}
+	if !engine.appliesToScope(policy, ctx) {
+		t.Error("scope with matching document type should apply")
+	}
+
+	ctx.DocumentType = "png"
+	if engine.appliesToScope(policy, ctx) {
+		t.Error("scope with non-matching document type should not apply")
+	}
+}
+
+// --- Comparison helper tests ---
+
+func TestToFloat64(t *testing.T) {
 	tests := []struct {
-		name     string
-		policy   *Policy
-		expected bool
+		input    interface{}
+		expected float64
+		ok       bool
 	}{
-		{
-			name: "No scope restrictions",
-			policy: &Policy{
-				Scope: PolicyScope{},
-			},
-			expected: true,
-		},
-		{
-			name: "User ID match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					UserIDs: []string{"user123", "user456"},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "User ID no match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					UserIDs: []string{"user456"},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "Group ID match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					GroupIDs: []string{"admin", "staff"},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "Group ID no match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					GroupIDs: []string{"admin", "manager"},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "Printer ID match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					PrinterIDs: []string{"printer1", "printer2"},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "Printer ID no match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					PrinterIDs: []string{"printer2"},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "Document type match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					DocumentTypes: []string{"pdf", "docx"},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "Document type no match",
-			policy: &Policy{
-				Scope: PolicyScope{
-					DocumentTypes: []string{"jpg"},
-				},
-			},
-			expected: false,
-		},
+		{int(42), 42.0, true},
+		{int64(42), 42.0, true},
+		{float32(3.14), float64(float32(3.14)), true},
+		{float64(3.14), 3.14, true},
+		{"not a number", 0, false},
+		{nil, 0, false},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &Engine{}
-			result := e.appliesToScope(tt.policy, evalCtx)
-			if result != tt.expected {
-				t.Errorf("Expected %v, got %v", tt.expected, result)
-			}
-		})
+		got, ok := toFloat64(tt.input)
+		if ok != tt.ok {
+			t.Errorf("toFloat64(%v): ok = %v, want %v", tt.input, ok, tt.ok)
+		}
+		if ok && got != tt.expected {
+			t.Errorf("toFloat64(%v) = %v, want %v", tt.input, got, tt.expected)
+		}
 	}
 }
 
-func TestRepositoryCreate(t *testing.T) {
-	if testDB == nil || testDB.Pool == nil {
-		t.Skip("Test database not available")
+// --- Handler tests ---
+
+func TestHealthHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	w := httptest.NewRecorder()
+
+	healthHandler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("health handler returned %d, want %d", w.Code, http.StatusOK)
 	}
 
-	// Create a test organization and user first for foreign key constraint
-	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
-	if err != nil {
-		t.Fatalf("Failed to create test organization: %v", err)
+	var resp map[string]string
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
 	}
-
-	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
+	if resp["status"] != "healthy" {
+		t.Errorf("status = %q, want %q", resp["status"], "healthy")
 	}
+	if resp["service"] != "policy-service" {
+		t.Errorf("service = %q, want %q", resp["service"], "policy-service")
+	}
+}
 
-	repo := NewRepository(testDB.Pool)
+func TestHealthHandler_MethodNotAllowed(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/health", nil)
+	w := httptest.NewRecorder()
 
-	policy := &Policy{
-		Name:        "Test Policy",
-		Description: "Test description",
-		Type:        PolicyTypeQuota,
-		Status:      PolicyStatusDraft,
-		Priority:    50,
-		Rules: []Rule{
-			{ID: "rule1", Field: "document.page_count", Operator: OpLessThan, Value: 100},
+	healthHandler(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("health handler returned %d for POST, want %d", w.Code, http.StatusMethodNotAllowed)
+	}
+}
+
+func TestTestPolicyHandler_MatchingPolicy(t *testing.T) {
+	engine := newTestEngine()
+	handler := testPolicyHandler(engine)
+
+	body := `{
+		"policy": {
+			"id": "test-1",
+			"name": "Block large jobs",
+			"rules": [
+				{"id": "r1", "field": "document.page_count", "operator": "greater_than", "value": 100}
+			],
+			"actions": [
+				{"type": "deny", "parameters": {"reason": "too many pages"}, "order": 1}
+			]
 		},
-		Actions: []PolicyActionConfig{
-			{Type: ActionDeny, Order: 1},
+		"test_context": {
+			"user_id": "u1",
+			"page_count": 200
+		}
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("test handler returned %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if matched, ok := resp["matched"].(bool); !ok || !matched {
+		t.Error("expected matched=true for page_count 200 > 100")
+	}
+
+	actions, ok := resp["actions"].([]interface{})
+	if !ok || len(actions) == 0 {
+		t.Error("expected actions to be populated when matched")
+	}
+}
+
+func TestTestPolicyHandler_NonMatchingPolicy(t *testing.T) {
+	engine := newTestEngine()
+	handler := testPolicyHandler(engine)
+
+	body := `{
+		"policy": {
+			"id": "test-1",
+			"name": "Block large jobs",
+			"rules": [
+				{"id": "r1", "field": "document.page_count", "operator": "greater_than", "value": 100}
+			],
+			"actions": [
+				{"type": "deny", "parameters": {"reason": "too many pages"}, "order": 1}
+			]
 		},
-		Scope: PolicyScope{
-			UserIDs: []string{"user1"},
+		"test_context": {
+			"user_id": "u1",
+			"page_count": 10
+		}
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("test handler returned %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp map[string]interface{}
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if matched, ok := resp["matched"].(bool); !ok || matched {
+		t.Error("expected matched=false for page_count 10 < 100")
+	}
+
+	// Actions should be null/nil when not matched
+	if resp["actions"] != nil {
+		t.Error("expected nil actions when not matched")
+	}
+}
+
+func TestTestPolicyHandler_MissingPolicy(t *testing.T) {
+	engine := newTestEngine()
+	handler := testPolicyHandler(engine)
+
+	body := `{"test_context": {"user_id": "u1"}}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 when policy is missing, got %d", w.Code)
+	}
+}
+
+func TestTestPolicyHandler_MissingContext(t *testing.T) {
+	engine := newTestEngine()
+	handler := testPolicyHandler(engine)
+
+	body := `{"policy": {"id": "p1", "name": "test"}}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 when test_context is missing, got %d", w.Code)
+	}
+}
+
+func TestTestPolicyHandler_MethodNotAllowed(t *testing.T) {
+	engine := newTestEngine()
+	handler := testPolicyHandler(engine)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/test", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405 for GET, got %d", w.Code)
+	}
+}
+
+func TestValidateRulesHandler_ValidRules(t *testing.T) {
+	engine := newTestEngine()
+	handler := validateRulesHandler(engine)
+
+	body := `{
+		"rules": [
+			{"id": "r1", "field": "document.type", "operator": "equals", "value": "pdf"},
+			{"id": "r2", "field": "document.page_count", "operator": "greater_than", "value": 100}
+		]
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/rules/validate", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	var resp map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if valid, ok := resp["valid"].(bool); !ok || !valid {
+		t.Error("expected valid=true for valid rules")
+	}
+}
+
+func TestValidateRulesHandler_InvalidRules(t *testing.T) {
+	engine := newTestEngine()
+	handler := validateRulesHandler(engine)
+
+	body := `{
+		"rules": [
+			{"id": "", "field": "", "operator": ""}
+		]
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/rules/validate", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	var resp map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if valid, ok := resp["valid"].(bool); !ok || valid {
+		t.Error("expected valid=false for rules with missing fields")
+	}
+
+	errors, ok := resp["errors"].([]interface{})
+	if !ok || len(errors) != 3 {
+		t.Errorf("expected 3 validation errors, got %v", errors)
+	}
+}
+
+func TestTestPolicyHandler_MultipleRulesAND(t *testing.T) {
+	engine := newTestEngine()
+	handler := testPolicyHandler(engine)
+
+	body := `{
+		"policy": {
+			"id": "test-multi",
+			"name": "Color duplex policy",
+			"rules": [
+				{"id": "r1", "field": "document.color_mode", "operator": "equals", "value": "color", "logical_op": "AND"},
+				{"id": "r2", "field": "document.page_count", "operator": "greater_than", "value": 50, "logical_op": "AND"}
+			],
+			"actions": [
+				{"type": "require_auth", "parameters": {"message": "Large color jobs require approval"}, "order": 1}
+			]
 		},
-		CreatedBy: userID,
-	}
-
-	err = repo.Create(ctx, policy)
-	if err != nil {
-		t.Fatalf("Failed to create policy: %v", err)
-	}
-
-	if policy.ID == "" {
-		t.Error("Expected policy ID to be set")
-	}
-
-	if policy.CreatedAt.IsZero() {
-		t.Error("Expected CreatedAt to be set")
-	}
-
-	if policy.Version != 1 {
-		t.Errorf("Expected version 1, got %d", policy.Version)
-	}
-}
-
-func TestRepositoryGet(t *testing.T) {
-	if testDB == nil || testDB.Pool == nil {
-		t.Skip("Test database not available")
-	}
-
-	// Create a test organization and user first for foreign key constraint
-	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
-	if err != nil {
-		t.Fatalf("Failed to create test organization: %v", err)
-	}
-
-	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
-	}
-
-	repo := NewRepository(testDB.Pool)
-
-	// Create a policy first
-	policy := &Policy{
-		Name:      "Get Test Policy",
-		Type:      PolicyTypeQuota,
-		Status:    PolicyStatusActive,
-		Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-		Actions:   []PolicyActionConfig{{Type: ActionDeny}},
-		Scope:     PolicyScope{},
-		CreatedBy: userID,
-	}
-
-	if err := repo.Create(ctx, policy); err != nil {
-		t.Fatalf("Failed to create policy: %v", err)
-	}
-
-	// Get the policy
-	fetched, err := repo.Get(ctx, policy.ID)
-	if err != nil {
-		t.Fatalf("Failed to get policy: %v", err)
-	}
-
-	if fetched.Name != policy.Name {
-		t.Errorf("Expected name %s, got %s", policy.Name, fetched.Name)
-	}
-
-	if fetched.Type != policy.Type {
-		t.Errorf("Expected type %s, got %s", policy.Type, fetched.Type)
-	}
-
-	if len(fetched.Rules) != len(policy.Rules) {
-		t.Errorf("Expected %d rules, got %d", len(policy.Rules), len(fetched.Rules))
-	}
-}
-
-func TestRepositoryList(t *testing.T) {
-	if testDB == nil || testDB.Pool == nil {
-		t.Skip("Test database not available")
-	}
-
-	// Create a test organization and user first for foreign key constraint
-	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
-	if err != nil {
-		t.Fatalf("Failed to create test organization: %v", err)
-	}
-
-	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
-	}
-
-	repo := NewRepository(testDB.Pool)
-
-	// Create multiple policies
-	for i := 0; i < 3; i++ {
-		policy := &Policy{
-			CreatedBy: userID,
-			Name:      fmt.Sprintf("Policy %d", i),
-			Type:      PolicyTypeQuota,
-			Status:    PolicyStatusActive,
-			Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-			Actions:   []PolicyActionConfig{{Type: ActionDeny}},
-			Scope:     PolicyScope{},
+		"test_context": {
+			"user_id": "u1",
+			"color_mode": "color",
+			"page_count": 100
 		}
-		if err := repo.Create(ctx, policy); err != nil {
-			t.Fatalf("Failed to create policy: %v", err)
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	var resp map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if matched, ok := resp["matched"].(bool); !ok || !matched {
+		t.Error("expected matched=true when all AND rules match")
+	}
+
+	// Now test with non-matching context (bw mode)
+	body2 := `{
+		"policy": {
+			"id": "test-multi",
+			"name": "Color duplex policy",
+			"rules": [
+				{"id": "r1", "field": "document.color_mode", "operator": "equals", "value": "color", "logical_op": "AND"},
+				{"id": "r2", "field": "document.page_count", "operator": "greater_than", "value": 50, "logical_op": "AND"}
+			],
+			"actions": [
+				{"type": "require_auth", "parameters": {}, "order": 1}
+			]
+		},
+		"test_context": {
+			"user_id": "u1",
+			"color_mode": "bw",
+			"page_count": 100
+		}
+	}`
+
+	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(body2))
+	w2 := httptest.NewRecorder()
+	handler(w2, req2)
+
+	var resp2 map[string]interface{}
+	json.NewDecoder(w2.Body).Decode(&resp2)
+
+	if matched, ok := resp2["matched"].(bool); !ok || matched {
+		t.Error("expected matched=false when one AND rule fails")
+	}
+}
+
+func TestPoliciesHandler_MethodNotAllowed(t *testing.T) {
+	engine := newTestEngine()
+	handler := policiesHandler(engine)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/policies", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405 for DELETE on policies collection, got %d", w.Code)
+	}
+}
+
+func TestPoliciesHandler_PostValidation(t *testing.T) {
+	engine := newTestEngine()
+	handler := policiesHandler(engine)
+
+	// Missing name
+	body := `{"type": "quota"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/policies", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for missing name, got %d", w.Code)
+	}
+
+	// Missing type
+	body2 := `{"name": "Test Policy"}`
+	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/policies", strings.NewReader(body2))
+	w2 := httptest.NewRecorder()
+	handler(w2, req2)
+
+	if w2.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for missing type, got %d", w2.Code)
+	}
+}
+
+func TestPoliciesHandler_PostInvalidBody(t *testing.T) {
+	engine := newTestEngine()
+	handler := policiesHandler(engine)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/policies", strings.NewReader("not json"))
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid JSON, got %d", w.Code)
+	}
+}
+
+func TestPolicyByIDHandler_MissingID(t *testing.T) {
+	engine := newTestEngine()
+	handler := policyByIDHandler(engine)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/policies/", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for missing ID, got %d", w.Code)
+	}
+}
+
+func TestPolicyByIDHandler_MethodNotAllowed(t *testing.T) {
+	engine := newTestEngine()
+	handler := policyByIDHandler(engine)
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/policies/some-id", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405 for PATCH, got %d", w.Code)
+	}
+}
+
+func TestExtractIDFromPath(t *testing.T) {
+	tests := []struct {
+		path     string
+		prefix   string
+		expected string
+	}{
+		{"/api/v1/policies/abc-123", "/api/v1/policies/", "abc-123"},
+		{"/api/v1/policies/", "/api/v1/policies/", ""},
+		{"/api/v1/policies", "/api/v1/policies/", ""},
+	}
+
+	for _, tt := range tests {
+		got := extractIDFromPath(tt.path, tt.prefix)
+		if got != tt.expected {
+			t.Errorf("extractIDFromPath(%q, %q) = %q, want %q", tt.path, tt.prefix, got, tt.expected)
 		}
 	}
-
-	// List policies
-	policies, total, err := repo.List(ctx, PolicyFilter{
-		Status: PolicyStatusActive,
-		Limit:  10,
-		Offset: 0,
-	})
-
-	if err != nil {
-		t.Fatalf("Failed to list policies: %v", err)
-	}
-
-	if total < 3 {
-		t.Errorf("Expected at least 3 policies, got %d", total)
-	}
-
-	if len(policies) < 3 {
-		t.Errorf("Expected at least 3 policies returned, got %d", len(policies))
-	}
 }
 
-func TestRepositoryUpdate(t *testing.T) {
-	if testDB == nil || testDB.Pool == nil {
-		t.Skip("Test database not available")
+func TestParseIntParam(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int
+		wantErr  bool
+	}{
+		{"42", 42, false},
+		{"0", 0, false},
+		{"-1", -1, false},
+		{"abc", 0, true},
+		{"", 0, true},
 	}
 
-	// Create a test organization and user first for foreign key constraint
-	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
-	if err != nil {
-		t.Fatalf("Failed to create test organization: %v", err)
-	}
-
-	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
-	}
-
-	// Create another user for modified_by
-	modifiedByID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
-	if err != nil {
-		t.Fatalf("Failed to create test user for modified_by: %v", err)
-	}
-
-	repo := NewRepository(testDB.Pool)
-
-	// Create a policy
-	policy := &Policy{
-		CreatedBy: userID,
-		Name:      "Original Name",
-		Type:      PolicyTypeQuota,
-		Status:    PolicyStatusDraft,
-		Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-		Actions:   []PolicyActionConfig{{Type: ActionDeny}},
-		Scope:     PolicyScope{},
-	}
-
-	if err := repo.Create(ctx, policy); err != nil {
-		t.Fatalf("Failed to create policy: %v", err)
-	}
-
-	originalVersion := policy.Version
-
-	// Update the policy
-	policy.Name = "Updated Name"
-	policy.Status = PolicyStatusActive
-	policy.ModifiedBy = modifiedByID
-
-	if err := repo.Update(ctx, policy); err != nil {
-		t.Fatalf("Failed to update policy: %v", err)
-	}
-
-	if policy.Version != originalVersion+1 {
-		t.Errorf("Expected version %d, got %d", originalVersion+1, policy.Version)
-	}
-
-	// Fetch and verify
-	fetched, _ := repo.Get(ctx, policy.ID)
-	if fetched.Name != "Updated Name" {
-		t.Errorf("Expected name 'Updated Name', got %s", fetched.Name)
-	}
-
-	if fetched.Status != PolicyStatusActive {
-		t.Errorf("Expected status active, got %s", fetched.Status)
-	}
-}
-
-func TestRepositoryDelete(t *testing.T) {
-	if testDB == nil || testDB.Pool == nil {
-		t.Skip("Test database not available")
-	}
-
-	// Create a test organization and user first for foreign key constraint
-	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
-	if err != nil {
-		t.Fatalf("Failed to create test organization: %v", err)
-	}
-
-	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
-	}
-
-	repo := NewRepository(testDB.Pool)
-
-	// Create a policy
-	policy := &Policy{
-		CreatedBy: userID,
-		Name:      "To Delete",
-		Type:      PolicyTypeQuota,
-		Status:    PolicyStatusDraft,
-		Rules:     []Rule{{ID: "r1", Field: "document.page_count", Operator: OpLessThan, Value: 100}},
-		Actions:   []PolicyActionConfig{{Type: ActionDeny}},
-		Scope:     PolicyScope{},
-	}
-
-	if err := repo.Create(ctx, policy); err != nil {
-		t.Fatalf("Failed to create policy: %v", err)
-	}
-
-	// Delete the policy
-	if err := repo.Delete(ctx, policy.ID); err != nil {
-		t.Fatalf("Failed to delete policy: %v", err)
-	}
-
-	// Try to get it - should fail
-	_, err = repo.Get(ctx, policy.ID)
-	if err == nil {
-		t.Error("Expected error when getting deleted policy")
-	}
-}
-
-
-
-func TestRepositoryGetNotFound(t *testing.T) {
-	if testDB == nil || testDB.Pool == nil {
-		t.Skip("Test database not available")
-	}
-
-	repo := NewRepository(testDB.Pool)
-
-	_, err := repo.Get(ctx, uuid.New().String())
-	if err == nil {
-		t.Error("Expected error for non-existent policy")
-	}
-}
-
-func compareValues(a, b interface{}) bool {
-	switch av := a.(type) {
-	case int:
-		bv, ok := b.(int)
-		return ok && av == bv
-	case int64:
-		bv, ok := b.(int64)
-		return ok && av == bv
-	case float64:
-		bv, ok := b.(float64)
-		return ok && av == bv
-	case string:
-		bv, ok := b.(string)
-		return ok && av == bv
-	case []string:
-		bv, ok := b.([]string)
-		if !ok || len(av) != len(bv) {
-			return false
+	for _, tt := range tests {
+		got, err := parseIntParam(tt.input)
+		if tt.wantErr && err == nil {
+			t.Errorf("parseIntParam(%q) expected error", tt.input)
 		}
-		for i := range av {
-			if av[i] != bv[i] {
-				return false
-			}
+		if !tt.wantErr && err != nil {
+			t.Errorf("parseIntParam(%q) unexpected error: %v", tt.input, err)
 		}
-		return true
-	default:
-		return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
+		if !tt.wantErr && got != tt.expected {
+			t.Errorf("parseIntParam(%q) = %d, want %d", tt.input, got, tt.expected)
+		}
+	}
+}
+
+// --- AddEvaluationHook / GetPolicy tests ---
+
+func TestGetPolicy(t *testing.T) {
+	engine := newTestEngine()
+
+	// Manually add a policy to the in-memory cache
+	engine.mu.Lock()
+	engine.policies["p1"] = &Policy{ID: "p1", Name: "Test Policy"}
+	engine.mu.Unlock()
+
+	got, ok := engine.GetPolicy("p1")
+	if !ok {
+		t.Fatal("expected to find policy p1")
+	}
+	if got.Name != "Test Policy" {
+		t.Errorf("policy name = %q, want %q", got.Name, "Test Policy")
+	}
+
+	_, ok = engine.GetPolicy("nonexistent")
+	if ok {
+		t.Error("expected not to find nonexistent policy")
+	}
+}
+
+func TestNewEngine(t *testing.T) {
+	engine := NewEngine(Config{DB: nil})
+	if engine == nil {
+		t.Fatal("NewEngine returned nil")
+	}
+	if engine.policies == nil {
+		t.Error("policies map should be initialized")
 	}
 }

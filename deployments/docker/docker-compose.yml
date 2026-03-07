@@ -56,7 +56,7 @@ services:
     container_name: openprint-auth-service
     environment:
       SERVER_ADDR: ":8001"
-      METRICS_PORT: "9101"
+      METRICS_PORT: "9091"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -67,7 +67,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18001:8001"
-      - "9101:9101"
+      - "9091:9091"
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,7 +91,7 @@ services:
     container_name: openprint-registry-service
     environment:
       SERVER_ADDR: ":8002"
-      METRICS_PORT: "9102"
+      METRICS_PORT: "9092"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
@@ -101,7 +101,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8002:8002"
-      - "9102:9102"
+      - "9092:9092"
     depends_on:
       postgres:
         condition: service_healthy
@@ -125,7 +125,7 @@ services:
     container_name: openprint-job-service
     environment:
       SERVER_ADDR: ":8003"
-      METRICS_PORT: "9103"
+      METRICS_PORT: "9093"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -137,7 +137,7 @@ services:
       PROCESSOR_WORKERS: 10
     ports:
       - "8003:8003"
-      - "9103:9103"
+      - "19093:9093"
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,7 +165,7 @@ services:
     container_name: openprint-storage-service
     environment:
       SERVER_ADDR: ":8004"
-      METRICS_PORT: "9104"
+      METRICS_PORT: "9094"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_BUCKET: ${S3_BUCKET:-openprint-documents}
@@ -182,7 +182,7 @@ services:
       MAX_UPLOAD_MB: 100
     ports:
       - "8004:8004"
-      - "9104:9104"
+      - "9094:9094"
     volumes:
       - storage_data:/data/storage
     depends_on:
@@ -208,7 +208,7 @@ services:
     container_name: openprint-notification-service
     environment:
       SERVER_ADDR: ":8005"
-      METRICS_PORT: "9105"
+      METRICS_PORT: "9095"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       REDIS_URL: redis://:openprint@redis:6379
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
@@ -218,7 +218,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "18005:8005"
-      - "9105:9105"
+      - "9095:9095"
     depends_on:
       postgres:
         condition: service_healthy
@@ -236,46 +236,17 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # ============================================
-  # Extended Services
-  # ============================================
-
-  # API Gateway (Port 8000) - Main entry point
-  api-gateway:
+  # Dashboard Web App (Port 3000)
+  dashboard:
     build:
       context: ../..
-      dockerfile: deployments/docker/Dockerfile.api-gateway
-    container_name: openprint-api-gateway
+      dockerfile: deployments/docker/Dockerfile.dashboard
+    container_name: openprint-dashboard
     environment:
-      SERVER_ADDR: ":8000"
-      METRICS_PORT: "9106"
-      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      REDIS_URL: redis://:openprint@redis:6379
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: api-gateway
-      ENABLE_TRACING: "true"
-      ENABLE_METRICS: "true"
-      ENVIRONMENT: ${ENVIRONMENT:-development}
-      # Backend service URLs
-      AUTH_SERVICE_URL: http://auth-service:8001
-      REGISTRY_SERVICE_URL: http://registry-service:8002
-      JOB_SERVICE_URL: http://job-service:8003
-      STORAGE_SERVICE_URL: http://storage-service:8004
-      NOTIFICATION_SERVICE_URL: http://notification-service:8005
-      ANALYTICS_SERVICE_URL: http://analytics-service:8006
-      ORGANIZATION_SERVICE_URL: http://organization-service:8007
-      COMPLIANCE_SERVICE_URL: http://compliance-service:8008
-      POLICY_SERVICE_URL: http://policy-service:8010
-      M365_INTEGRATION_SERVICE_URL: http://m365-integration-service:8011
+      NODE_ENV: production
     ports:
-      - "8000:8000"
-      - "9106:9106"
+      - "3000:3000"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       registry-service:
@@ -287,7 +258,7 @@ services:
       notification-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -304,9 +275,8 @@ services:
     container_name: openprint-analytics-service
     environment:
       SERVER_ADDR: ":8006"
-      METRICS_PORT: "9107"
+      METRICS_PORT: "9096"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: analytics-service
@@ -315,11 +285,9 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8006:8006"
-      - "9107:9107"
+      - "9096:9096"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       auth-service:
         condition: service_healthy
@@ -341,9 +309,8 @@ services:
     container_name: openprint-organization-service
     environment:
       SERVER_ADDR: ":8007"
-      METRICS_PORT: "9108"
+      METRICS_PORT: "9097"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
       SERVICE_NAME: organization-service
@@ -352,11 +319,9 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8007:8007"
-      - "9108:9108"
+      - "9097:9097"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       auth-service:
         condition: service_healthy
@@ -370,25 +335,25 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # Compliance Service (Port 8008)
-  compliance-service:
+  # Policy Service (Port 8008)
+  policy-service:
     build:
       context: ../..
-      dockerfile: deployments/docker/Dockerfile.compliance-service
-    container_name: openprint-compliance-service
+      dockerfile: deployments/docker/Dockerfile.policy-service
+    container_name: openprint-policy-service
     environment:
       SERVER_ADDR: ":8008"
-      METRICS_PORT: "9109"
+      METRICS_PORT: "9098"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: compliance-service
+      SERVICE_NAME: policy-service
       ENABLE_TRACING: "true"
       ENABLE_METRICS: "true"
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8008:8008"
-      - "9109:9109"
+      - "9098:9098"
     depends_on:
       postgres:
         condition: service_healthy
@@ -404,30 +369,65 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # Policy Service (Port 8010)
-  policy-service:
+  # Compliance Service (Port 8009)
+  compliance-service:
     build:
       context: ../..
-      dockerfile: deployments/docker/Dockerfile.policy-service
-    container_name: openprint-policy-service
+      dockerfile: deployments/docker/Dockerfile.compliance-service
+    container_name: openprint-compliance-service
     environment:
-      SERVER_ADDR: ":8010"
-      METRICS_PORT: "9110"
+      SERVER_ADDR: ":8009"
+      METRICS_PORT: "9099"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: policy-service
+      SERVICE_NAME: compliance-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8009:8009"
+      - "9099:9099"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8009/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # M365 Integration Service (Port 8010)
+  m365-integration-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.m365-integration-service
+    container_name: openprint-m365-integration-service
+    environment:
+      SERVER_ADDR: ":8010"
+      METRICS_PORT: "9101"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      M365_TENANT_ID: ${M365_TENANT_ID:-}
+      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-http://localhost:3000/auth/m365/callback}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
+      SERVICE_NAME: m365-integration-service
       ENABLE_TRACING: "true"
       ENABLE_METRICS: "true"
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8010:8010"
-      - "9110:9110"
+      - "9101:9101"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       auth-service:
         condition: service_healthy
@@ -441,82 +441,35 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # M365 Integration Service (Port 8011)
-  m365-integration-service:
+  # API Gateway (Port 8080)
+  api-gateway:
     build:
       context: ../..
-      dockerfile: deployments/docker/Dockerfile.m365-integration-service
-    container_name: openprint-m365-integration-service
+      dockerfile: deployments/docker/Dockerfile.api-gateway
+    container_name: openprint-api-gateway
     environment:
-      SERVER_ADDR: ":8011"
-      METRICS_PORT: "9111"
+      SERVER_ADDR: ":8080"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      REDIS_URL: redis://:openprint@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: m365-integration-service
-      ENABLE_TRACING: "true"
-      ENABLE_METRICS: "true"
+      AUTH_SERVICE_URL: http://auth-service:8001
+      REGISTRY_SERVICE_URL: http://registry-service:8002
+      JOB_SERVICE_URL: http://job-service:8003
+      STORAGE_SERVICE_URL: http://storage-service:8004
+      NOTIFICATION_SERVICE_URL: http://notification-service:8005
+      ANALYTICS_SERVICE_URL: http://analytics-service:8006
+      ORGANIZATION_SERVICE_URL: http://organization-service:8007
+      POLICY_SERVICE_URL: http://policy-service:8008
+      COMPLIANCE_SERVICE_URL: http://compliance-service:8009
+      M365_SERVICE_URL: http://m365-integration-service:8010
+      REDIS_URL: redis://:openprint@redis:6379
       ENVIRONMENT: ${ENVIRONMENT:-development}
-      M365_STORAGE_PATH: /var/lib/openprint/m365
     ports:
-      - "8011:8011"
-      - "9111:9111"
-    volumes:
-      - m365_data:/var/lib/openprint/m365
+      - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    networks:
-      - openprint-network
-    restart: unless-stopped
-
-  # ============================================
-  # Dashboard Web App (Port 3000)
-  # ============================================
-  dashboard:
-    build:
-      context: ../..
-      dockerfile: deployments/docker/Dockerfile.dashboard
-    container_name: openprint-dashboard
-    environment:
-      NODE_ENV: production
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
-    ports:
-      - "3000:80"
-    depends_on:
-      api-gateway:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-      registry-service:
-        condition: service_healthy
-      job-service:
-        condition: service_healthy
-      storage-service:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-      analytics-service:
-        condition: service_healthy
-      organization-service:
-        condition: service_healthy
-      compliance-service:
-        condition: service_healthy
-      policy-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -594,6 +547,8 @@ services:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
       - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC (used by services)
+      - "4318:4318"    # OTLP HTTP
       - "14268:14268"  # Jaeger collector HTTP
       - "14250:14250"  # Jaeger collector gRPC
       - "6831:6831/udp" # Jaeger agent compact
@@ -616,8 +571,6 @@ volumes:
     name: openprint-redis-data
   storage_data:
     name: openprint-storage-data
-  m365_data:
-    name: openprint-m365-data
   prometheus_data:
     name: openprint-prometheus-data
   alertmanager_data:

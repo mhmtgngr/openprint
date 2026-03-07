@@ -17,6 +17,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/openprint/openprint/internal/auth/jwt"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 	"github.com/openprint/openprint/internal/shared/middleware"
 	"github.com/openprint/openprint/internal/shared/telemetry"
 )
@@ -148,7 +149,7 @@ func loadServerConfig() *ServerConfig {
 	}
 
 	return &ServerConfig{
-		ServerAddr:     getEnv("SERVER_ADDR", ":8010"),
+		ServerAddr:     getEnv("SERVER_ADDR", ":8007"),
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		JWTSecret:      jwtSecret,
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
@@ -177,199 +178,110 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// policiesHandler handles GET/POST /api/v1/policies
 func policiesHandler(engine *Engine) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		repo := NewRepository(engine.db)
 
 		switch r.Method {
 		case http.MethodGet:
-			// Parse query parameters
-			policyType := r.URL.Query().Get("type")
-			status := r.URL.Query().Get("status")
-			orgID := r.URL.Query().Get("organization_id")
-
-			// Parse pagination
-			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-			if page < 1 {
-				page = 1
+			// Parse query parameters for filtering
+			q := r.URL.Query()
+			filter := PolicyFilter{
+				Limit:  50,
+				Offset: 0,
 			}
-			limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-			if limit < 1 || limit > 100 {
-				limit = 20
+			if t := q.Get("type"); t != "" {
+				filter.Type = PolicyType(t)
 			}
-			offset := (page - 1) * limit
+			if s := q.Get("status"); s != "" {
+				filter.Status = PolicyStatus(s)
+			}
+			if orgID := q.Get("organization_id"); orgID != "" {
+				filter.OrganizationID = orgID
+			}
+			if l := q.Get("limit"); l != "" {
+				if parsed, err := parseIntParam(l); err == nil && parsed > 0 {
+					filter.Limit = parsed
+				}
+			}
+			if o := q.Get("offset"); o != "" {
+				if parsed, err := parseIntParam(o); err == nil && parsed >= 0 {
+					filter.Offset = parsed
+				}
+			}
 
-			repo := NewRepository(engine.db)
-			policies, total, err := repo.List(ctx, PolicyFilter{
-				Type:           PolicyType(policyType),
-				Status:         PolicyStatus(status),
-				OrganizationID: orgID,
-				Limit:          limit,
-				Offset:         offset,
-			})
+			policies, total, err := repo.List(ctx, filter)
 			if err != nil {
-				log.Printf("Error listing policies: %v", err)
 				http.Error(w, "failed to list policies", http.StatusInternalServerError)
 				return
 			}
 
-			// Ensure policies is never nil for JSON encoding
-			if policies == nil {
-				policies = []*Policy{}
-			}
-
 			respondJSON(w, http.StatusOK, map[string]interface{}{
 				"policies": policies,
-				"page":     page,
-				"limit":    limit,
 				"total":    total,
 			})
-
 		case http.MethodPost:
+			// Create policy
 			var req Policy
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				http.Error(w, "invalid request body", http.StatusBadRequest)
 				return
 			}
 
-			// Validate policy type
-			validTypes := map[PolicyType]bool{
-				PolicyTypeQuota:       true,
-				PolicyTypeAccess:      true,
-				PolicyTypeContent:     true,
-				PolicyTypeRouting:     true,
-				PolicyTypeWatermark:   true,
-				PolicyTypeRetention:   true,
-				PolicyTypeCostCenter:  true,
+			// Validate required fields
+			if req.Name == "" {
+				http.Error(w, "name is required", http.StatusBadRequest)
+				return
 			}
-			if req.Type == "" || !validTypes[req.Type] {
-				respondJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "invalid policy type",
-					"valid_types": "quota, access, content, routing, watermark, retention, cost_center",
-				})
+			if req.Type == "" {
+				http.Error(w, "type is required", http.StatusBadRequest)
 				return
 			}
 
-			// Validate status
-			validStatuses := map[PolicyStatus]bool{
-				PolicyStatusActive:   true,
-				PolicyStatusInactive: true,
-				PolicyStatusDraft:    true,
-			}
+			// Set defaults
 			if req.Status == "" {
 				req.Status = PolicyStatusDraft
-			} else if !validStatuses[req.Status] {
-				respondJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "invalid status",
-					"valid_statuses": "active, inactive, draft",
-				})
-				return
 			}
+			req.CreatedBy = middleware.GetUserID(r)
 
-			// Set default priority if not provided
-			if req.Priority == 0 {
-				req.Priority = 50
-			}
-
-			// Set default scope if not provided
-			if req.Scope.UserIDs == nil {
-				req.Scope.UserIDs = []string{}
-			}
-			if req.Scope.GroupIDs == nil {
-				req.Scope.GroupIDs = []string{}
-			}
-			if req.Scope.PrinterIDs == nil {
-				req.Scope.PrinterIDs = []string{}
-			}
-			if req.Scope.DocumentTypes == nil {
-				req.Scope.DocumentTypes = []string{}
-			}
-
-			// Validate rules
-			for i, rule := range req.Rules {
-				if rule.ID == "" {
-					respondJSON(w, http.StatusBadRequest, map[string]string{
-						"error": fmt.Sprintf("rule %d: missing ID", i),
-					})
-					return
-				}
-				if rule.Field == "" {
-					respondJSON(w, http.StatusBadRequest, map[string]string{
-						"error": fmt.Sprintf("rule %d: missing field", i),
-					})
-					return
-				}
-				if rule.Operator == "" {
-					respondJSON(w, http.StatusBadRequest, map[string]string{
-						"error": fmt.Sprintf("rule %d: missing operator", i),
-					})
-					return
-				}
-			}
-
-			// Validate actions
-			for i, action := range req.Actions {
-				validActions := map[PolicyAction]bool{
-					ActionAllow:       true,
-					ActionDeny:        true,
-					ActionRequireAuth: true,
-					ActionRouteTo:     true,
-					ActionWatermark:   true,
-					ActionLog:         true,
-					ActionNotify:      true,
-				}
-				if action.Type == "" || !validActions[action.Type] {
-					respondJSON(w, http.StatusBadRequest, map[string]string{
-						"error": fmt.Sprintf("action %d: invalid type", i),
-					})
-					return
-				}
-			}
-
-			repo := NewRepository(engine.db)
 			if err := repo.Create(ctx, &req); err != nil {
-				log.Printf("Error creating policy: %v", err)
 				http.Error(w, "failed to create policy", http.StatusInternalServerError)
 				return
 			}
 
-			// Reload policies into memory
+			// Reload policies into engine cache
 			_ = engine.LoadPolicies(ctx)
 
-			respondJSON(w, http.StatusCreated, map[string]string{
-				"id":      req.ID,
-				"message": "Policy created",
-			})
-
+			respondJSON(w, http.StatusCreated, req)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	}
 }
 
-// policyByIDHandler handles GET/PUT/DELETE /api/v1/policies/{id}
 func policyByIDHandler(engine *Engine) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		policyID := extractIDFromPath(r.URL.Path, "/api/v1/policies/")
-
 		if policyID == "" {
-			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "policy ID required"})
+			http.Error(w, "missing policy ID", http.StatusBadRequest)
 			return
 		}
+		repo := NewRepository(engine.db)
 
 		switch r.Method {
 		case http.MethodGet:
-			repo := NewRepository(engine.db)
 			policy, err := repo.Get(ctx, policyID)
 			if err != nil {
-				log.Printf("Error getting policy: %v", err)
-				http.Error(w, "policy not found", http.StatusNotFound)
+				if err == apperrors.ErrNotFound {
+					http.Error(w, "policy not found", http.StatusNotFound)
+					return
+				}
+				http.Error(w, "failed to get policy", http.StatusInternalServerError)
 				return
 			}
 			respondJSON(w, http.StatusOK, policy)
-
 		case http.MethodPut:
 			var req Policy
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -377,54 +289,57 @@ func policyByIDHandler(engine *Engine) http.HandlerFunc {
 				return
 			}
 
-			req.ID = policyID
-
-			// Validate at least one rule or action
-			if len(req.Rules) == 0 && len(req.Actions) == 0 {
-				respondJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "policy must have at least one rule or action",
-				})
+			// Fetch existing policy to preserve immutable fields
+			existing, err := repo.Get(ctx, policyID)
+			if err != nil {
+				if err == apperrors.ErrNotFound {
+					http.Error(w, "policy not found", http.StatusNotFound)
+					return
+				}
+				http.Error(w, "failed to get policy", http.StatusInternalServerError)
 				return
 			}
 
-			repo := NewRepository(engine.db)
-			if err := repo.Update(ctx, &req); err != nil {
-				log.Printf("Error updating policy: %v", err)
+			// Apply updates
+			existing.Name = req.Name
+			existing.Description = req.Description
+			existing.Type = req.Type
+			existing.Status = req.Status
+			existing.Priority = req.Priority
+			existing.Rules = req.Rules
+			existing.Actions = req.Actions
+			existing.Scope = req.Scope
+			existing.ModifiedBy = middleware.GetUserID(r)
+
+			if err := repo.Update(ctx, existing); err != nil {
 				http.Error(w, "failed to update policy", http.StatusInternalServerError)
 				return
 			}
 
-			// Reload policies into memory
+			// Reload policies into engine cache
 			_ = engine.LoadPolicies(ctx)
 
-			respondJSON(w, http.StatusOK, map[string]string{
-				"id":      policyID,
-				"message": "Policy updated",
-			})
-
+			respondJSON(w, http.StatusOK, existing)
 		case http.MethodDelete:
-			repo := NewRepository(engine.db)
 			if err := repo.Delete(ctx, policyID); err != nil {
-				log.Printf("Error deleting policy: %v", err)
+				if err == apperrors.ErrNotFound {
+					http.Error(w, "policy not found", http.StatusNotFound)
+					return
+				}
 				http.Error(w, "failed to delete policy", http.StatusInternalServerError)
 				return
 			}
 
-			// Reload policies into memory
+			// Reload policies into engine cache
 			_ = engine.LoadPolicies(ctx)
 
-			respondJSON(w, http.StatusOK, map[string]string{
-				"id":      policyID,
-				"message": "Policy deleted",
-			})
-
+			w.WriteHeader(http.StatusNoContent)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	}
 }
 
-// evaluateHandler handles POST /api/v1/evaluate
 func evaluateHandler(engine *Engine) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -438,49 +353,19 @@ func evaluateHandler(engine *Engine) http.HandlerFunc {
 			return
 		}
 
-		// Set current time if not provided
-		if evalCtx.TimeOfDay.IsZero() {
-			evalCtx.TimeOfDay = time.Now()
-			evalCtx.DayOfWeek = int(evalCtx.TimeOfDay.Weekday())
-		}
-
 		// Evaluate policies
 		results, err := engine.Evaluate(r.Context(), &evalCtx)
 		if err != nil {
-			log.Printf("Error evaluating policies: %v", err)
 			http.Error(w, "evaluation failed", http.StatusInternalServerError)
 			return
 		}
 
-		// Determine final action based on all results
-		finalAction := ActionAllow
-		finalMessage := "No policies matched - allowed by default"
-		var matchedPolicies []*EvaluationResult
-
-		for _, result := range results {
-			if result.Matched {
-				matchedPolicies = append(matchedPolicies, result)
-				if result.Action == ActionDeny {
-					finalAction = ActionDeny
-					finalMessage = "Print denied by policy"
-					break // Deny takes precedence
-				} else if result.Action != ActionAllow && finalAction == ActionAllow {
-					finalAction = result.Action
-					finalMessage = result.Message
-				}
-			}
-		}
-
 		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"action":          finalAction,
-			"message":         finalMessage,
-			"matched_policies": matchedPolicies,
-			"total_evaluated": len(results),
+			"results": results,
 		})
 	}
 }
 
-// validateRulesHandler handles POST /api/v1/rules/validate
 func validateRulesHandler(engine *Engine) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -500,24 +385,6 @@ func validateRulesHandler(engine *Engine) http.HandlerFunc {
 		// Validate rules
 		valid := true
 		errors := []string{}
-		warnings := []string{}
-
-		validFields := map[string]bool{
-			"user.id": true, "user.email": true, "user.groups": true,
-			"printer.id": true,
-			"document.name": true, "document.type": true, "document.page_count": true,
-			"document.color_mode": true, "document.duplex_mode": true, "document.cost": true,
-			"time.hour": true, "time.day_of_week": true,
-			"quota.remaining": true, "quota.used": true, "quota.limit": true,
-			"ip.address": true, "device.id": true, "document.tags": true,
-		}
-
-		validOperators := map[Operator]bool{
-			OpEquals: true, OpNotEquals: true, OpGreaterThan: true, OpLessThan: true,
-			OpContains: true, OpNotContains: true, OpMatches: true,
-			OpIn: true, OpNotIn: true, OpBetween: true,
-			OpAlways: true, OpNever: true,
-		}
 
 		for i, rule := range req.Rules {
 			if rule.ID == "" {
@@ -527,31 +394,20 @@ func validateRulesHandler(engine *Engine) http.HandlerFunc {
 			if rule.Field == "" {
 				errors = append(errors, fmt.Sprintf("rule %d: missing field", i))
 				valid = false
-			} else if !validFields[rule.Field] {
-				warnings = append(warnings, fmt.Sprintf("rule %d: unknown field '%s'", i, rule.Field))
 			}
 			if rule.Operator == "" {
 				errors = append(errors, fmt.Sprintf("rule %d: missing operator", i))
-				valid = false
-			} else if !validOperators[rule.Operator] {
-				errors = append(errors, fmt.Sprintf("rule %d: invalid operator '%s'", i, rule.Operator))
-				valid = false
-			}
-			if rule.Value == nil && rule.Operator != OpAlways && rule.Operator != OpNever {
-				errors = append(errors, fmt.Sprintf("rule %d: missing value for operator '%s'", i, rule.Operator))
 				valid = false
 			}
 		}
 
 		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"valid":   valid,
-			"errors":  errors,
-			"warnings": warnings,
+			"valid":  valid,
+			"errors": errors,
 		})
 	}
 }
 
-// testPolicyHandler handles POST /api/v1/test
 func testPolicyHandler(engine *Engine) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -561,7 +417,7 @@ func testPolicyHandler(engine *Engine) http.HandlerFunc {
 
 		var req struct {
 			Policy      *Policy            `json:"policy"`
-			TestContext *EvaluationContext `json:"test_context"`
+			TestContext *EvaluationContext  `json:"test_context"`
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -570,46 +426,37 @@ func testPolicyHandler(engine *Engine) http.HandlerFunc {
 		}
 
 		if req.Policy == nil {
-			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "policy is required"})
+			http.Error(w, "policy is required", http.StatusBadRequest)
 			return
 		}
-
 		if req.TestContext == nil {
-			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "test_context is required"})
+			http.Error(w, "test_context is required", http.StatusBadRequest)
 			return
 		}
 
-		// Set current time if not provided
-		if req.TestContext.TimeOfDay.IsZero() {
-			req.TestContext.TimeOfDay = time.Now()
-			req.TestContext.DayOfWeek = int(req.TestContext.TimeOfDay.Weekday())
-		}
+		// Evaluate the policy rules against the test context using the engine
+		matched, ruleMatches := engine.evaluateRules(req.Policy.Rules, req.TestContext)
 
-		// Test policy against context using engine's rule evaluation
-		e := Engine{}
-		matched, ruleMatches := e.evaluateRules(req.Policy.Rules, req.TestContext)
-
-		// Determine actions
-		actions := []string{}
-		parameters := map[string]interface{}{}
-		if matched && len(req.Policy.Actions) > 0 {
-			for _, action := range req.Policy.Actions {
-				actions = append(actions, string(action.Type))
-				if action.Parameters != nil {
-					parameters = action.Parameters
-				}
-			}
-		} else if !matched {
-			actions = append(actions, string(ActionAllow))
+		// Collect triggered actions
+		var actions []PolicyActionConfig
+		if matched {
+			actions = req.Policy.Actions
 		}
 
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"matched":      matched,
 			"actions":      actions,
-			"parameters":   parameters,
 			"rule_matches": ruleMatches,
 		})
 	}
+}
+
+func parseIntParam(s string) (int, error) {
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
 }
 
 func extractIDFromPath(path, prefix string) string {
@@ -622,12 +469,5 @@ func extractIDFromPath(path, prefix string) string {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-
-	// Ensure empty slices are encoded as [] instead of null
-	// by using a custom encoder
-	encoder := json.NewEncoder(w)
-	encoder.SetEscapeHTML(false)
-	if err := encoder.Encode(data); err != nil {
-		log.Printf("Error encoding JSON response: %v", err)
-	}
+	json.NewEncoder(w).Encode(data)
 }

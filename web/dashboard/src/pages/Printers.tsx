@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printersApi } from '@/services/api';
 import { PrinterCard, PrinterIcon } from '@/components/PrinterCard';
 import { PlusIcon, SearchIcon, FilterIcon } from '@/components/icons';
+import type { PrinterSupply } from '@/types';
 
 export const Printers = () => {
   const queryClient = useQueryClient();
@@ -17,6 +18,27 @@ export const Printers = () => {
     queryFn: () => printersApi.list(),
     staleTime: 10000, // Consider printers data fresh for 10 seconds
   });
+
+  // Fetch supplies for all printers
+  const supplyQueries = useQueries({
+    queries: (printers || []).map((printer) => ({
+      queryKey: ['printer-supplies', printer.id],
+      queryFn: () => printersApi.getSupplies(printer.id).catch(() => [] as PrinterSupply[]),
+      staleTime: 60000, // Cache for 1 minute
+      enabled: printer.isOnline,
+    })),
+  });
+
+  const suppliesByPrinter = (printers || []).reduce<Record<string, PrinterSupply[]>>(
+    (acc, printer, index) => {
+      const data = supplyQueries[index]?.data;
+      if (data && data.length > 0) {
+        acc[printer.id] = data;
+      }
+      return acc;
+    },
+    {}
+  );
 
   const createMutation = useMutation({
     mutationFn: (data: { name: string; agentId: string }) =>
@@ -201,6 +223,7 @@ export const Printers = () => {
             <PrinterCard
               key={printer.id}
               printer={printer}
+              supplies={suppliesByPrinter[printer.id]}
               onToggle={() => toggleMutation.mutate({ id: printer.id, isActive: printer.isActive })}
               onDelete={() => handleDeletePrinter(printer.id, printer.name)}
             />
@@ -240,15 +263,27 @@ export const Printers = () => {
                 will automatically discover and register your printers.
               </p>
               <div className="mt-4 flex gap-3">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <a
+                  href="/downloads/openprint-agent-windows.msi"
+                  download
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium inline-block text-center"
+                >
                   Download for Windows
-                </button>
-                <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
+                </a>
+                <a
+                  href="/downloads/openprint-agent-macos.pkg"
+                  download
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium inline-block text-center"
+                >
                   Download for macOS
-                </button>
-                <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
+                </a>
+                <a
+                  href="/downloads/openprint-agent-linux.deb"
+                  download
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium inline-block text-center"
+                >
                   Download for Linux
-                </button>
+                </a>
               </div>
             </div>
           </div>

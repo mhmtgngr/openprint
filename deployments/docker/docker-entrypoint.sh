@@ -24,6 +24,12 @@ add_host_if_missing "registry-service"
 add_host_if_missing "job-service"
 add_host_if_missing "storage-service"
 add_host_if_missing "notification-service"
+add_host_if_missing "analytics-service"
+add_host_if_missing "organization-service"
+add_host_if_missing "policy-service"
+add_host_if_missing "compliance-service"
+add_host_if_missing "m365-integration-service"
+add_host_if_missing "api-gateway"
 
 # Execute the main command
 exec "$@"
