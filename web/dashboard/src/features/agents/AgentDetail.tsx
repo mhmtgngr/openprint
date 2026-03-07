@@ -192,7 +192,7 @@ export const AgentDetail = ({ agent, isLoading }: AgentDetailProps) => {
         <div className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
-              {agent.capabilities.supportsColor ? (
+              {agent.capabilities?.supportsColor ? (
                 <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -212,7 +212,7 @@ export const AgentDetail = ({ agent, isLoading }: AgentDetailProps) => {
               <span className="text-sm text-gray-700 dark:text-gray-300">Color Printing</span>
             </div>
             <div className="flex items-center gap-2">
-              {agent.capabilities.supportsDuplex ? (
+              {agent.capabilities?.supportsDuplex ? (
                 <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -232,7 +232,7 @@ export const AgentDetail = ({ agent, isLoading }: AgentDetailProps) => {
               <span className="text-sm text-gray-700 dark:text-gray-300">Duplex Printing</span>
             </div>
             <div className="flex items-center gap-2">
-              {agent.capabilities.supportsLargeFormat ? (
+              {agent.capabilities?.supportsLargeFormat ? (
                 <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"

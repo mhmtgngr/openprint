@@ -357,18 +357,18 @@ export const DiscoveredPrinterList = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex flex-wrap gap-1">
-                      {printer.capabilities.supportsColor && (
+                      {printer.capabilities?.supportsColor && (
                         <span className="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 rounded">
                           Color
                         </span>
                       )}
-                      {printer.capabilities.supportsDuplex && (
+                      {printer.capabilities?.supportsDuplex && (
                         <span className="px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300 rounded">
                           Duplex
                         </span>
                       )}
                       <span className="px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded">
-                        {printer.capabilities.resolution}
+                        {printer.capabilities?.resolution || 'Unknown'}
                       </span>
                     </div>
                   </td>

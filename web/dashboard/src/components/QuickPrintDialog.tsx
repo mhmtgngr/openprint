@@ -198,7 +198,7 @@ export const QuickPrintDialog = ({ onClose }: QuickPrintDialogProps) => {
                   <option value="">Select a printer...</option>
                   {onlinePrinters.map((p: Printer) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} {p.capabilities.supportsColor ? '(Color)' : '(B&W)'}
+                      {p.name} {p.capabilities?.supportsColor ? '(Color)' : '(B&W)'}
                     </option>
                   ))}
                 </select>

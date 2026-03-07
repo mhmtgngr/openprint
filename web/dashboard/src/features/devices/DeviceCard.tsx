@@ -154,14 +154,14 @@ export const DeviceCard = ({
             <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
               <span>Capabilities</span>
               <div className="flex gap-2">
-                {(device as DevicePrinter).capabilities.supportsColor && (
+                {(device as DevicePrinter).capabilities?.supportsColor && (
                   <span
                     className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs"
                   >
                     Color
                   </span>
                 )}
-                {(device as DevicePrinter).capabilities.supportsDuplex && (
+                {(device as DevicePrinter).capabilities?.supportsDuplex && (
                   <span
                     className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs"
                   >

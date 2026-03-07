@@ -89,7 +89,7 @@ export const Printers = () => {
   };
 
   const filteredPrinters = printers?.filter((printer) => {
-    const matchesSearch = printer.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (printer.name || '').toLowerCase().includes(search.toLowerCase());
     const matchesFilter =
       filter === 'all' ||
       (filter === 'online' && printer.isOnline) ||

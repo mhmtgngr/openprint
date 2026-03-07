@@ -44,8 +44,8 @@ export const Jobs = () => {
   };
 
   const filteredJobs = jobs.filter((job) =>
-    job.documentName.toLowerCase().includes(search.toLowerCase()) ||
-    job.printer?.name.toLowerCase().includes(search.toLowerCase())
+    (job.documentName?.toLowerCase() || '').includes(search.toLowerCase()) ||
+    (job.printer?.name?.toLowerCase() || '').includes(search.toLowerCase())
   );
 
   return (

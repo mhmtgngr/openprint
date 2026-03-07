@@ -54,17 +54,17 @@ export const PrinterCard = ({ printer, supplies, onClick, onToggle, onDelete, is
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {capabilities.supportsColor && (
+          {capabilities?.supportsColor && (
             <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
               Color
             </span>
           )}
-          {capabilities.supportsDuplex && (
+          {capabilities?.supportsDuplex && (
             <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
               Duplex
             </span>
           )}
-          {capabilities.supportedPaperSizes?.slice(0, 2).map((size) => (
+          {capabilities?.supportedPaperSizes?.slice(0, 2).map((size) => (
             <span
               key={size}
               className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
@@ -72,7 +72,7 @@ export const PrinterCard = ({ printer, supplies, onClick, onToggle, onDelete, is
               {size}
             </span>
           ))}
-          {capabilities.resolution && (
+          {capabilities?.resolution && (
             <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
               {capabilities.resolution}
             </span>
@@ -83,13 +83,14 @@ export const PrinterCard = ({ printer, supplies, onClick, onToggle, onDelete, is
         {supplies && supplies.length > 0 && (
           <div className="mt-3 space-y-1.5">
             {supplies.slice(0, 4).map((supply) => {
+              const type = (supply.supplyType || '').toLowerCase();
               const levelColor =
                 supply.status === 'empty' ? 'bg-red-500'
                 : supply.status === 'low' ? 'bg-amber-500'
-                : supply.supplyType.toLowerCase().includes('cyan') ? 'bg-cyan-500'
-                : supply.supplyType.toLowerCase().includes('magenta') ? 'bg-pink-500'
-                : supply.supplyType.toLowerCase().includes('yellow') ? 'bg-yellow-400'
-                : supply.supplyType.toLowerCase().includes('black') ? 'bg-gray-800 dark:bg-gray-300'
+                : type.includes('cyan') ? 'bg-cyan-500'
+                : type.includes('magenta') ? 'bg-pink-500'
+                : type.includes('yellow') ? 'bg-yellow-400'
+                : type.includes('black') ? 'bg-gray-800 dark:bg-gray-300'
                 : 'bg-blue-500';
 
               return (

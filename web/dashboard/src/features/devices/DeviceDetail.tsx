@@ -265,19 +265,19 @@ export const DeviceDetail = ({
                 />
                 <DetailItem
                   label="Max Job Size"
-                  value={`${(device as DeviceAgent).capabilities.maxJobSize / 1024 / 1024} MB`}
+                  value={`${(device as DeviceAgent).capabilities?.maxJobSize ? `${(device as DeviceAgent).capabilities.maxJobSize / 1024 / 1024} MB` : 'Unknown'}`}
                 />
                 <DetailItem
                   label="Supports Color"
-                  value={(device as DeviceAgent).capabilities.supportsColor ? 'Yes' : 'No'}
+                  value={(device as DeviceAgent).capabilities?.supportsColor ? 'Yes' : 'No'}
                 />
                 <DetailItem
                   label="Supports Duplex"
-                  value={(device as DeviceAgent).capabilities.supportsDuplex ? 'Yes' : 'No'}
+                  value={(device as DeviceAgent).capabilities?.supportsDuplex ? 'Yes' : 'No'}
                 />
                 <DetailItem
                   label="Supported Formats"
-                  value={(device as DeviceAgent).capabilities.supportedFormats.join(', ')}
+                  value={(device as DeviceAgent).capabilities?.supportedFormats?.join(', ') || 'Unknown'}
                 />
               </>
             )}
@@ -303,19 +303,19 @@ export const DeviceDetail = ({
                 />
                 <DetailItem
                   label="Supports Color"
-                  value={(device as DevicePrinter).capabilities.supportsColor ? 'Yes' : 'No'}
+                  value={(device as DevicePrinter).capabilities?.supportsColor ? 'Yes' : 'No'}
                 />
                 <DetailItem
                   label="Supports Duplex"
-                  value={(device as DevicePrinter).capabilities.supportsDuplex ? 'Yes' : 'No'}
+                  value={(device as DevicePrinter).capabilities?.supportsDuplex ? 'Yes' : 'No'}
                 />
                 <DetailItem
                   label="Resolution"
-                  value={(device as DevicePrinter).capabilities.resolution}
+                  value={(device as DevicePrinter).capabilities?.resolution || 'Unknown'}
                 />
                 <DetailItem
                   label="Paper Sizes"
-                  value={(device as DevicePrinter).capabilities.supportedPaperSizes.join(', ')}
+                  value={(device as DevicePrinter).capabilities?.supportedPaperSizes?.join(', ') || 'Unknown'}
                 />
               </>
             )}

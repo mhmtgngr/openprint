@@ -11,6 +11,14 @@ interface JobListProps {
   onJobSelect?: (jobId: string) => void;
 }
 
+// Safe date formatting helper
+const formatJobDate = (dateString: string | undefined): string => {
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid date';
+  return formatDistanceToNow(date, { addSuffix: true });
+};
+
 export const JobList = ({ jobs, isLoading, onJobClick, selectedJobs = new Set(), onJobSelect }: JobListProps) => {
   const cancelJobMutation = useCancelJob();
   const retryJobMutation = useRetryJob();
@@ -151,7 +159,7 @@ export const JobList = ({ jobs, isLoading, onJobClick, selectedJobs = new Set(),
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                    {formatJobDate(job.createdAt)}
                   </span>
                 </div>
                 {job.errorMessage && (

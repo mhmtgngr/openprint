@@ -1,0 +1,1 @@
+import{h as r}from"./index-CKMmhA4F.js";const e={async list(t){return r.get("/jobs",t)},async get(t){return r.get(`/jobs/${t}`)},async create(t){return r.post("/jobs",t)},async cancel(t){return r.post(`/jobs/${t}/cancel`)},async retry(t){return r.post(`/jobs/${t}/retry`)},async getHistory(t){return r.get(`/jobs/${t}/history`)}};export{e as j};

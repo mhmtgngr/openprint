@@ -245,7 +245,7 @@ services:
     environment:
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       auth-service:
         condition: service_healthy

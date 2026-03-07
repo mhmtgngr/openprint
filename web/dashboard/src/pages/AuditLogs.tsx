@@ -25,9 +25,9 @@ export const AuditLogs = () => {
 
   const filteredBySearch = searchTerm
     ? filteredLogs.filter((log) =>
-        log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.resourceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.details?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        (log.action?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (log.resourceType?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (log.details?.toString().toLowerCase() || '').includes(searchTerm.toLowerCase())
       )
     : filteredLogs;
 

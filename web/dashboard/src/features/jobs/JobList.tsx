@@ -18,6 +18,14 @@ interface JobListProps {
   emptyDescription?: string;
 }
 
+// Safe date formatting helper
+const formatJobDate = (dateString: string | undefined): string => {
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid date';
+  return formatDistanceToNow(date, { addSuffix: true });
+};
+
 export const JobList = ({
   jobs,
   isLoading = false,
@@ -291,7 +299,7 @@ export const JobList = ({
                 </td>
                 <td className="px-4 py-4">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                    {formatJobDate(job.createdAt)}
                   </span>
                 </td>
                 <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
