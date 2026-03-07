@@ -11,6 +11,7 @@ export class BasePage {
 
   // Common locators
   readonly sidebar: Locator;
+  readonly sidebarNav: Locator;
   readonly logoutButton: Locator;
   readonly userInfo: Locator;
   readonly navigationLinks: Locator;
@@ -21,10 +22,11 @@ export class BasePage {
     this.baseURL = baseURL;
 
     // Initialize common locators
-    this.sidebar = page.locator('nav aside, [data-testid="sidebar"], .sidebar');
+    this.sidebar = page.locator('aside, [data-testid="sidebar"], .sidebar');
+    this.sidebarNav = page.locator('[data-testid="sidebar-nav"]');
     this.logoutButton = page.locator('button:has-text("Logout"), [data-testid="logout-button"]');
     this.userInfo = page.locator('[data-testid="user-info"], .user-info');
-    this.navigationLinks = page.locator('nav a, [data-testid="nav-link"]');
+    this.navigationLinks = page.locator('[data-testid^="nav-"], nav a');
     this.spinner = page.locator('.spinner, [data-testid="spinner"], .loading');
   }
 

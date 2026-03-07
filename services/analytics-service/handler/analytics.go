@@ -130,6 +130,55 @@ func (h *Handler) UsersAnalyticsHandler(w http.ResponseWriter, r *http.Request) 
 	respondJSON(w, http.StatusOK, stats)
 }
 
+// EnvironmentReport represents the environment impact report
+type EnvironmentReport struct {
+	PagesPrinted int     `json:"pagesPrinted"`
+	Co2Grams     float64 `json:"co2Grams"`
+	TreesSaved   float64 `json:"treesSaved"`
+	Period       string  `json:"period"`
+}
+
+// EnvironmentHandler handles GET /api/v1/analytics/environment
+func (h *Handler) EnvironmentHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse period parameter (default to 30d)
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = "30d"
+	}
+
+	// Parse days from period string (e.g., "30d" -> 30, "7d" -> 7)
+	days := 30
+	if len(period) > 1 && period[len(period)-1] == 'd' {
+		if parsed, err := strconv.Atoi(period[:len(period)-1]); err == nil && parsed > 0 {
+			days = parsed
+		}
+	}
+
+	// Get job statistics for the period
+	stats, err := h.aggregator.AggregateJobsByDate(ctx, days)
+	if err != nil {
+		http.Error(w, "Failed to get environment statistics", http.StatusInternalServerError)
+		return
+	}
+
+	// Calculate environmental impact
+	// CO2: approximately 10 grams per page (industry average)
+	// Trees saved: approximately 8,333 pages per tree
+	co2Grams := float64(stats.TotalPages) * 10.0
+	treesSaved := float64(stats.TotalPages) / 8333.0
+
+	report := EnvironmentReport{
+		PagesPrinted: stats.TotalPages,
+		Co2Grams:     co2Grams,
+		TreesSaved:   treesSaved,
+		Period:       period,
+	}
+
+	respondJSON(w, http.StatusOK, report)
+}
+
 // calculateTrends calculates trend percentages from daily stats
 func (h *Handler) calculateTrends(dailyStats []processor.DailyJobCount) processor.Trends {
 	if len(dailyStats) < 2 {

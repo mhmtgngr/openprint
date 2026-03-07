@@ -15,8 +15,14 @@ class WebSocketService {
 
   constructor() {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = import.meta.env.VITE_WS_URL || `${wsProtocol}//${window.location.host}/ws`;
-    this.url = wsHost;
+    const wsPath = import.meta.env.VITE_WS_URL || '/ws';
+
+    // Handle relative paths by constructing absolute URL
+    if (wsPath.startsWith('/')) {
+      this.url = `${wsProtocol}//${window.location.host}${wsPath}`;
+    } else {
+      this.url = wsPath;
+    }
   }
 
   connect(token: string): void {

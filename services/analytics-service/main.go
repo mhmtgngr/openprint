@@ -73,6 +73,7 @@ func main() {
 	mux.HandleFunc("GET /api/v1/analytics/jobs", h.JobsAnalyticsHandler)
 	mux.HandleFunc("GET /api/v1/analytics/printers", h.PrintersAnalyticsHandler)
 	mux.HandleFunc("GET /api/v1/analytics/users", h.UsersAnalyticsHandler)
+	mux.HandleFunc("GET /api/v1/analytics/environment", h.EnvironmentHandler)
 
 	// Build middleware chain
 	middlewareChain := middleware.Chain(

@@ -41,8 +41,15 @@ const statusConfig: Record<
   },
 };
 
+const unknownStatusConfig = {
+  label: 'Unknown',
+  bgColor: 'bg-gray-100 dark:bg-gray-800',
+  textColor: 'text-gray-700 dark:text-gray-300',
+  dotColor: 'bg-gray-400',
+};
+
 export const JobStatusBadge = ({ status, className = '' }: JobStatusBadgeProps) => {
-  const config = statusConfig[status];
+  const config = statusConfig[status] || unknownStatusConfig;
 
   return (
     <span
