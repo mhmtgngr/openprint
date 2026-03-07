@@ -372,7 +372,8 @@ func TestHandlers_UpdateControlStatus(t *testing.T) {
 	assert.Equal(t, "compliant", result["status"])
 
 	// Verify the update was persisted
-	resp2, _ := http.Get(server.URL + "/api/v1/controls/" + controlID)
+	resp2, err2 := http.Get(server.URL + "/api/v1/controls/" + controlID)
+	require.NoError(t, err2)
 	defer resp2.Body.Close()
 
 	var control map[string]interface{}
@@ -1036,7 +1037,8 @@ func TestHandlers_Integration_FullWorkflow(t *testing.T) {
 	controlID := createdControl["id"].(string)
 
 	// 2. Get the control
-	resp2, _ := http.Get(server.URL + "/api/v1/controls/" + controlID)
+	resp2, err := http.Get(server.URL + "/api/v1/controls/" + controlID)
+	require.NoError(t, err)
 	defer resp2.Body.Close()
 	assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
@@ -1052,12 +1054,14 @@ func TestHandlers_Integration_FullWorkflow(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	resp3, _ := client.Do(req)
+	resp3, err := client.Do(req)
+	require.NoError(t, err)
 	defer resp3.Body.Close()
 	assert.Equal(t, http.StatusOK, resp3.StatusCode)
 
 	// 4. List controls to verify
-	resp4, _ := http.Get(server.URL + "/api/v1/controls?framework=fedramp")
+	resp4, err := http.Get(server.URL + "/api/v1/controls?framework=fedramp")
+	require.NoError(t, err)
 	defer resp4.Body.Close()
 
 	var listResult map[string]interface{}
@@ -1072,13 +1076,16 @@ func TestHandlers_Integration_FullWorkflow(t *testing.T) {
 	}
 
 	body3, _ := json.Marshal(reportReq)
-	resp5, _ := http.Post(server.URL+"/api/v1/reports/generate", "application/json", bytes.NewBuffer(body3))
+	resp5, err := http.Post(server.URL+"/api/v1/reports/generate", "application/json", bytes.NewBuffer(body3))
+	require.NoError(t, err)
 	defer resp5.Body.Close()
 	assert.Equal(t, http.StatusOK, resp5.StatusCode)
 
 	// 6. Create an audit event tracking the changes
-	orgID, _ := testutil.CreateTestOrganization(ctx, testDB.Pool)
-	userID, _ := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	orgID, err := testutil.CreateTestOrganization(ctx, testDB.Pool)
+	require.NoError(t, err)
+	userID, err := testutil.CreateTestUser(ctx, testDB.Pool, orgID)
+	require.NoError(t, err)
 
 	event := map[string]interface{}{
 		"user_id":       userID,
@@ -1093,7 +1100,8 @@ func TestHandlers_Integration_FullWorkflow(t *testing.T) {
 	}
 
 	body4, _ := json.Marshal(event)
-	resp6, _ := http.Post(server.URL+"/api/v1/audit", "application/json", bytes.NewBuffer(body4))
+	resp6, err := http.Post(server.URL+"/api/v1/audit", "application/json", bytes.NewBuffer(body4))
+	require.NoError(t, err)
 	defer resp6.Body.Close()
 	assert.Equal(t, http.StatusCreated, resp6.StatusCode)
 }

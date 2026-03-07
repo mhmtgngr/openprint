@@ -246,7 +246,8 @@ func (ct *ContextTracker) GetTracked(name string) context.Context {
 	}
 
 	// Return a new context that will be tracked
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	_ = cancel // cancel is managed by the tracker via the tracked context
 	ct.Track(name, ctx)
 	return ctx
 }

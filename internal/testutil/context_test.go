@@ -378,7 +378,8 @@ func TestContextTracker_Track(t *testing.T) {
 func TestContextTracker_Timeout(t *testing.T) {
 	ct := NewContextTracker()
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
 	ct.Track("timeout-ctx", ctx)
 
 	// Wait for timeout
@@ -399,7 +400,8 @@ func TestContextTracker_GetTracked(t *testing.T) {
 func TestContextTracker_CleanupTracker(t *testing.T) {
 	ct := NewContextTracker()
 
-	ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 	ct.Track("test", ctx)
 
 	ct.CleanupTracker()
