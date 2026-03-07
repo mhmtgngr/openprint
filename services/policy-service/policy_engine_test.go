@@ -472,7 +472,7 @@ func TestToFloat64(t *testing.T) {
 
 // --- Handler tests ---
 
-func TestHealthHandler(t *testing.T) {
+func TestHealthHandler_Unit(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 
@@ -494,7 +494,7 @@ func TestHealthHandler(t *testing.T) {
 	}
 }
 
-func TestHealthHandler_MethodNotAllowed(t *testing.T) {
+func TestHealthHandler_MethodNotAllowed_Unit(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/health", nil)
 	w := httptest.NewRecorder()
 
