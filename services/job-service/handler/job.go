@@ -233,7 +233,7 @@ func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request, ctx context.C
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"data":   response,
+		"jobs":   response,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,

@@ -332,11 +332,3 @@ func (r *costRepository) GetCostByPrinter(ctx context.Context, organizationID, p
 
 	return summaries, nil
 }
-
-// nullIfEmpty returns nil if string is empty, otherwise returns the string.
-func nullIfEmpty(s string) interface{} {
-	if s == "" {
-		return nil
-	}
-	return s
-}

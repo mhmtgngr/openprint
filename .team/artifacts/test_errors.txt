@@ -1,0 +1,40 @@
+?   	github.com/openprint/openprint/internal/agent	[no test files]
+ok  	github.com/openprint/openprint/internal/auth/jwt	0.020s
+ok  	github.com/openprint/openprint/internal/auth/oidc	0.006s
+ok  	github.com/openprint/openprint/internal/auth/password	3.308s
+ok  	github.com/openprint/openprint/internal/auth/saml	0.013s
+?   	github.com/openprint/openprint/internal/middleware	[no test files]
+ok  	github.com/openprint/openprint/internal/shared/errors	0.009s
+?   	github.com/openprint/openprint/internal/shared/middleware	[no test files]
+ok  	github.com/openprint/openprint/internal/shared/telemetry	0.034s
+ok  	github.com/openprint/openprint/internal/testutil	1.208s
+?   	github.com/openprint/openprint/services/analytics-service	[no test files]
+?   	github.com/openprint/openprint/services/analytics-service/handler	[no test files]
+?   	github.com/openprint/openprint/services/analytics-service/processor	[no test files]
+?   	github.com/openprint/openprint/services/api-gateway	[no test files]
+?   	github.com/openprint/openprint/services/api-gateway/handlers	[no test files]
+?   	github.com/openprint/openprint/services/api-gateway/middleware	[no test files]
+?   	github.com/openprint/openprint/services/auth-service	[no test files]
+?   	github.com/openprint/openprint/services/auth-service/handler	[no test files]
+ok  	github.com/openprint/openprint/services/auth-service/repository	0.016s
+?   	github.com/openprint/openprint/services/gateway	[no test files]
+?   	github.com/openprint/openprint/services/gateway/middleware	[no test files]
+?   	github.com/openprint/openprint/services/job-service	[no test files]
+ok  	github.com/openprint/openprint/services/job-service/handler	0.013s
+?   	github.com/openprint/openprint/services/job-service/handlers	[no test files]
+ok  	github.com/openprint/openprint/services/job-service/processor	0.005s
+ok  	github.com/openprint/openprint/services/job-service/repository	9.877s
+?   	github.com/openprint/openprint/services/notification-service	[no test files]
+ok  	github.com/openprint/openprint/services/notification-service/websocket	0.033s
+?   	github.com/openprint/openprint/services/organization-service	[no test files]
+?   	github.com/openprint/openprint/services/organization-service/handler	[no test files]
+?   	github.com/openprint/openprint/services/organization-service/repository	[no test files]
+?   	github.com/openprint/openprint/services/registry-service	[no test files]
+?   	github.com/openprint/openprint/services/registry-service/handler	[no test files]
+?   	github.com/openprint/openprint/services/registry-service/handlers	[no test files]
+ok  	github.com/openprint/openprint/services/registry-service/repository	0.008s
+?   	github.com/openprint/openprint/services/storage-service	[no test files]
+ok  	github.com/openprint/openprint/services/storage-service/handler	0.010s
+?   	github.com/openprint/openprint/services/storage-service/handlers	[no test files]
+ok  	github.com/openprint/openprint/services/storage-service/storage	0.263s
+ok  	github.com/openprint/openprint/tests/testutil	0.196s
