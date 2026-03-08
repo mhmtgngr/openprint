@@ -6,12 +6,18 @@ import type { PolicyStatus, PolicySort, PolicyFilterOptions } from './types';
 interface PolicyListProps {
   onCreatePolicy?: () => void;
   onEditPolicy?: (policyId: string) => void;
+  onExportPolicy?: (policyId: string) => void;
+  onViewHistory?: (policyId: string) => void;
+  exportingPolicyId?: string | null;
   filters?: PolicyFilterOptions;
 }
 
 export const PolicyList: FC<PolicyListProps> = ({
   onCreatePolicy,
   onEditPolicy,
+  onExportPolicy,
+  onViewHistory,
+  exportingPolicyId,
   filters = {},
 }) => {
   const { data: policies, isLoading, error } = usePolicies();
@@ -201,8 +207,11 @@ export const PolicyList: FC<PolicyListProps> = ({
               onDelete={() => deleteMutation.mutate(policy.id)}
               onToggle={(enabled) => toggleMutation.mutate({ id: policy.id, isEnabled: enabled })}
               onDuplicate={() => duplicateMutation.mutate({ id: policy.id })}
+              onExport={() => onExportPolicy?.(policy.id)}
+              onViewHistory={() => onViewHistory?.(policy.id)}
               isDeleting={deleteMutation.isPending}
               isToggling={toggleMutation.isPending}
+              isExporting={exportingPolicyId === policy.id}
             />
           ))
         )}

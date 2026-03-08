@@ -1,0 +1,1 @@
+import{h as e}from"./index-BJbkVtPc.js";const a={async getUsage(t){return e.get("/analytics/usage",{start_date:t?.startDate,end_date:t?.endDate,group_by:t?.groupBy})},async getEnvironment(t="30d"){return e.get("/analytics/environment",{period:t})},async getAuditLogs(t){return e.get("/analytics/audit-logs",t)}};export{a};

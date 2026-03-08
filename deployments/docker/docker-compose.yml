@@ -301,14 +301,14 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # Organization Service (Port 8007)
+  # Organization Service (Port 8009)
   organization-service:
     build:
       context: ../..
       dockerfile: deployments/docker/Dockerfile.organization-service
     container_name: openprint-organization-service
     environment:
-      SERVER_ADDR: ":8007"
+      SERVER_ADDR: ":8009"
       METRICS_PORT: "9097"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
@@ -318,76 +318,8 @@ services:
       ENABLE_METRICS: "true"
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
-      - "8007:8007"
-      - "9097:9097"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    networks:
-      - openprint-network
-    restart: unless-stopped
-
-  # Policy Service (Port 8008)
-  policy-service:
-    build:
-      context: ../..
-      dockerfile: deployments/docker/Dockerfile.policy-service
-    container_name: openprint-policy-service
-    environment:
-      SERVER_ADDR: ":8008"
-      METRICS_PORT: "9098"
-      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: policy-service
-      ENABLE_TRACING: "true"
-      ENABLE_METRICS: "true"
-      ENVIRONMENT: ${ENVIRONMENT:-development}
-    ports:
-      - "8008:8008"
-      - "9098:9098"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    networks:
-      - openprint-network
-    restart: unless-stopped
-
-  # Compliance Service (Port 8009)
-  compliance-service:
-    build:
-      context: ../..
-      dockerfile: deployments/docker/Dockerfile.compliance-service
-    container_name: openprint-compliance-service
-    environment:
-      SERVER_ADDR: ":8009"
-      METRICS_PORT: "9099"
-      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: compliance-service
-      ENABLE_TRACING: "true"
-      ENABLE_METRICS: "true"
-      ENVIRONMENT: ${ENVIRONMENT:-development}
-    ports:
       - "8009:8009"
-      - "9099:9099"
+      - "9097:9097"
     depends_on:
       postgres:
         condition: service_healthy
@@ -403,29 +335,25 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # M365 Integration Service (Port 8010)
-  m365-integration-service:
+  # Policy Service (Port 8010)
+  policy-service:
     build:
       context: ../..
-      dockerfile: deployments/docker/Dockerfile.m365-integration-service
-    container_name: openprint-m365-integration-service
+      dockerfile: deployments/docker/Dockerfile.policy-service
+    container_name: openprint-policy-service
     environment:
       SERVER_ADDR: ":8010"
-      METRICS_PORT: "9101"
+      METRICS_PORT: "9098"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
-      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
-      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
-      M365_TENANT_ID: ${M365_TENANT_ID:-}
-      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-http://localhost:3000/auth/m365/callback}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
-      SERVICE_NAME: m365-integration-service
+      SERVICE_NAME: policy-service
       ENABLE_TRACING: "true"
       ENABLE_METRICS: "true"
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "8010:8010"
-      - "9101:9101"
+      - "9098:9098"
     depends_on:
       postgres:
         condition: service_healthy
@@ -441,14 +369,86 @@ services:
       - openprint-network
     restart: unless-stopped
 
-  # API Gateway (Port 8080)
+  # Compliance Service (Port 8008)
+  compliance-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.compliance-service
+    container_name: openprint-compliance-service
+    environment:
+      SERVER_ADDR: ":8008"
+      METRICS_PORT: "9099"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
+      SERVICE_NAME: compliance-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8008:8008"
+      - "9099:9099"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # M365 Integration Service (Port 8011)
+  m365-integration-service:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.m365-integration-service
+    container_name: openprint-m365-integration-service
+    environment:
+      SERVER_ADDR: ":8011"
+      METRICS_PORT: "9101"
+      DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      M365_TENANT_ID: ${M365_TENANT_ID:-}
+      M365_REDIRECT_URI: ${M365_REDIRECT_URI:-http://localhost:3000/auth/m365/callback}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT:-jaeger:4317}
+      SERVICE_NAME: m365-integration-service
+      ENABLE_TRACING: "true"
+      ENABLE_METRICS: "true"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8011:8011"
+      - "9101:9101"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - openprint-network
+    restart: unless-stopped
+
+  # API Gateway (Port 8000)
   api-gateway:
     build:
       context: ../..
       dockerfile: deployments/docker/Dockerfile.api-gateway
     container_name: openprint-api-gateway
     environment:
-      SERVER_ADDR: ":8080"
+      SERVER_ADDR: ":8000"
       DATABASE_URL: postgres://openprint:openprint@postgres:5432/openprint
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production-min-32-chars}
       AUTH_SERVICE_URL: http://auth-service:8001
@@ -457,19 +457,19 @@ services:
       STORAGE_SERVICE_URL: http://storage-service:8004
       NOTIFICATION_SERVICE_URL: http://notification-service:8005
       ANALYTICS_SERVICE_URL: http://analytics-service:8006
-      ORGANIZATION_SERVICE_URL: http://organization-service:8007
-      POLICY_SERVICE_URL: http://policy-service:8008
-      COMPLIANCE_SERVICE_URL: http://compliance-service:8009
-      M365_SERVICE_URL: http://m365-integration-service:8010
+      COMPLIANCE_SERVICE_URL: http://compliance-service:8008
+      ORGANIZATION_SERVICE_URL: http://organization-service:8009
+      POLICY_SERVICE_URL: http://policy-service:8010
+      M365_SERVICE_URL: http://m365-integration-service:8011
       REDIS_URL: redis://:openprint@redis:6379
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
-      - "8080:8080"
+      - "8000:8000"
     depends_on:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 5s
       retries: 3

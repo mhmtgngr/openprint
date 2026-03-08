@@ -90,21 +90,78 @@ type AgentRegistrationHandler struct {
 }
 
 // NewAgentRegistrationHandler creates a new agent registration handler.
+// If CA certificate and key are not provided, a self-signed CA will be generated automatically.
 func NewAgentRegistrationHandler(cfg AgentRegistrationConfig) *AgentRegistrationHandler {
 	// Validate JWT secret is provided
 	if cfg.JWTSecret == "" {
 		panic("JWTSecret is required in AgentRegistrationConfig")
 	}
+
+	caPrivateKey := cfg.CAPrivateKey
+	caCertificate := cfg.CACertificate
+
+	// Auto-generate a CA certificate if not provided
+	if caPrivateKey == nil || caCertificate == nil {
+		generatedPrivKey, generatedCert, err := generateSelfSignedCA()
+		if err != nil {
+			panic(fmt.Errorf("failed to generate self-signed CA: %w", err))
+		}
+		caPrivateKey = generatedPrivKey
+		caCertificate = generatedCert
+	}
+
 	return &AgentRegistrationHandler{
 		agentRepo:           cfg.AgentRepo,
 		certRepo:            cfg.CertRepo,
 		enrollmentTokenRepo: cfg.EnrollmentTokenRepo,
-		caPrivateKey:        cfg.CAPrivateKey,
-		caCertificate:       cfg.CACertificate,
+		caPrivateKey:        caPrivateKey,
+		caCertificate:       caCertificate,
 		tokenValidity:       cfg.TokenValidity,
 		certValidity:        cfg.CertValidity,
 		jwtSecret:           cfg.JWTSecret,
 	}
+}
+
+// generateSelfSignedCA generates a self-signed CA certificate for agent certificate issuance.
+func generateSelfSignedCA() (*rsa.PrivateKey, *x509.Certificate, error) {
+	// Generate a 2048-bit RSA key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generate RSA key: %w", err)
+	}
+
+	// Create certificate template
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, nil, fmt.Errorf("generate serial number: %w", err)
+	}
+
+	template := &x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"OpenPrint"},
+			CommonName:   "OpenPrint Agent CA",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0), // 10 years validity
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            1,
+	}
+
+	// Create self-signed certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create certificate: %w", err)
+	}
+
+	cert, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse certificate: %w", err)
+	}
+
+	return privateKey, cert, nil
 }
 
 // RegisterAgent handles new agent registration requests.
@@ -602,8 +659,8 @@ func (h *AgentRegistrationHandler) getServerPublicKey() []byte {
 		})
 	}
 
-	// Return a placeholder
-	return []byte("-----BEGIN PUBLIC KEY-----\nPLACEHOLDER\n-----END PUBLIC KEY-----")
+	// This should never happen since we auto-generate a CA in NewAgentRegistrationHandler
+	panic("CA certificate not available - this is a configuration error")
 }
 
 func (h *AgentRegistrationHandler) getSecret() string {

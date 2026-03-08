@@ -16,6 +16,8 @@ import {
   PulseIcon,
   ChartIcon,
   UsersIcon,
+  AgentIcon,
+  ShieldIcon,
 } from '@/components/icons';
 
 const allRoles = ['user', 'admin', 'owner', 'platform_admin'];
@@ -34,6 +36,8 @@ const navItems: NavItem[] = [
   // --- User section ---
   { path: '/dashboard', icon: HomeIcon, label: 'Dashboard', roles: allRoles },
   { path: '/printers', icon: PrinterIcon, label: 'Devices', roles: allRoles },
+  { path: '/agents', icon: AgentIcon, label: 'Agents', roles: allRoles },
+  { path: '/permissions', icon: ShieldIcon, label: 'Permissions', roles: allRoles },
   { path: '/jobs', icon: DocumentIcon, label: 'Jobs', roles: allRoles },
   { path: '/follow-me', icon: PrinterIcon, label: 'Follow-Me', roles: allRoles },
   { path: '/documents', icon: FolderIcon, label: 'Documents', roles: allRoles },

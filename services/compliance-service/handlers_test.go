@@ -959,25 +959,47 @@ func TestHandlers_Summary(t *testing.T) {
 	assert.True(t, frameworkMap["soc2"])
 }
 
-// TestHandlers_ControlByIDMethodNotAllowed tests that DELETE returns not implemented.
-func TestHandlers_ControlByIDMethodNotAllowed(t *testing.T) {
+// TestHandlers_ControlByID_Delete tests DELETE endpoint for compliance controls.
+func TestHandlers_ControlByID_Delete(t *testing.T) {
 	testDB, server := setupHandlerTest(t)
 	defer server.Close()
 
 	ctx := context.Background()
 
-	// Create a test control
-	controlID, err := testutil.CreateTestComplianceControl(ctx, testDB.Pool, "fedramp")
-	require.NoError(t, err)
+	t.Run("successfully delete existing control", func(t *testing.T) {
+		// Create a test control
+		controlID, err := testutil.CreateTestComplianceControl(ctx, testDB.Pool, "fedramp")
+		require.NoError(t, err)
 
-	// Try DELETE
-	req, _ := http.NewRequest("DELETE", server.URL+"/api/v1/controls/"+controlID, nil)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
+		// Delete the control
+		req, _ := http.NewRequest("DELETE", server.URL+"/api/v1/controls/"+controlID, nil)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
+		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		// Verify the control is deleted
+		req2, _ := http.NewRequest("GET", server.URL+"/api/v1/controls/"+controlID, nil)
+		resp2, err := client.Do(req2)
+		require.NoError(t, err)
+		defer resp2.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp2.StatusCode)
+	})
+
+	t.Run("return not found for non-existent control", func(t *testing.T) {
+		fakeID := "00000000-0000-0000-0000-000000000000"
+
+		req, _ := http.NewRequest("DELETE", server.URL+"/api/v1/controls/"+fakeID, nil)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
 }
 
 // TestHandlers_InvalidJSON tests sending invalid JSON to POST endpoints.

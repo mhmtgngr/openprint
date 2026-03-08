@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	apperrors "github.com/openprint/openprint/internal/shared/errors"
 )
 
 // HandlerDependencies provides dependencies for HTTP handlers.
@@ -82,8 +83,16 @@ func controlByIDHandler(svc *Service) http.HandlerFunc {
 			respondJSON(w, http.StatusOK, map[string]string{"id": controlID, "status": "updated"})
 
 		case http.MethodDelete:
-			// Not implemented in repository yet
-			respondJSON(w, http.StatusNotImplemented, map[string]string{"error": "delete not implemented"})
+			if err := repo.DeleteControl(ctx, controlID); err != nil {
+				if err == apperrors.ErrNotFound {
+					http.Error(w, "control not found", http.StatusNotFound)
+				} else {
+					log.Printf("Error deleting control: %v", err)
+					http.Error(w, "failed to delete control", http.StatusInternalServerError)
+				}
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
 
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

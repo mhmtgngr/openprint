@@ -84,7 +84,8 @@ export const agentApi = {
     const response = await fetchWithAuth(
       `${API_BASE_URL}/agents${queryString ? `?${queryString}` : ''}`
     );
-    return handleResponse<Agent[]>(response);
+    const result = await handleResponse<{ agents: Agent[]; limit: number; offset: number; total: number }>(response);
+    return result.agents || [];
   },
 
   /**

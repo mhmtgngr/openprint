@@ -7,8 +7,11 @@ interface PolicyCardProps {
   onDelete?: () => void;
   onToggle?: (enabled: boolean) => void;
   onDuplicate?: () => void;
+  onExport?: () => void;
+  onViewHistory?: () => void;
   isDeleting?: boolean;
   isToggling?: boolean;
+  isExporting?: boolean;
 }
 
 export const PolicyCard: FC<PolicyCardProps> = memo(({
@@ -17,8 +20,11 @@ export const PolicyCard: FC<PolicyCardProps> = memo(({
   onDelete,
   onToggle,
   onDuplicate,
+  onExport,
+  onViewHistory,
   isDeleting = false,
   isToggling = false,
+  isExporting = false,
 }) => {
   const getPriorityColor = (priority: number) => {
     if (priority <= 2) return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800';
@@ -159,6 +165,43 @@ export const PolicyCard: FC<PolicyCardProps> = memo(({
                     strokeLinejoin="round"
                     strokeWidth={2}
                     d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Export Button */}
+            {onExport && (
+              <button
+                onClick={onExport}
+                disabled={isExporting}
+                className="p-2 text-gray-500 hover:text-green-600 dark:hover:text-green-400 transition-colors disabled:opacity-50"
+                title="Export as JSON"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* History Button */}
+            {onViewHistory && (
+              <button
+                onClick={onViewHistory}
+                className="p-2 text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                title="View History"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
               </button>

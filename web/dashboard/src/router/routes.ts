@@ -22,6 +22,7 @@ export const routes: RouteConfig[] = [
 
   // Authenticated user routes
   { path: '/dashboard', auth: 'authenticated', component: lazyPage(() => import('@/pages/Dashboard'), 'Dashboard') },
+  { path: '/permissions', auth: 'authenticated', component: lazyPage(() => import('@/pages/Permissions'), 'PermissionsPage') },
   { path: '/printers', auth: 'authenticated', component: lazyPage(() => import('@/pages/Printers'), 'Printers') },
   { path: '/jobs', auth: 'authenticated', component: lazyPage(() => import('@/pages/Jobs'), 'Jobs') },
   { path: '/documents', auth: 'authenticated', component: lazyPage(() => import('@/pages/Documents'), 'Documents') },

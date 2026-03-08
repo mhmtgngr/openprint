@@ -20,6 +20,7 @@ type Agent struct {
 	Architecture   string
 	Hostname       string
 	OrganizationID string
+	OwnerUserID    string // User who owns/manages this agent (optional)
 	Status         string // "online", "offline"
 	LastHeartbeat  time.Time
 	CreatedAt      time.Time
@@ -44,8 +45,8 @@ func (r *AgentRepository) Create(ctx context.Context, agent *Agent) error {
 	agent.LastHeartbeat = now
 
 	query := `
-		INSERT INTO agents (id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::uuid, $8, $9, $10, $11)
+		INSERT INTO agents (id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::uuid, NULLIF($8, '')::uuid, $9, $10, $11, $12)
 		RETURNING id
 	`
 
@@ -57,6 +58,7 @@ func (r *AgentRepository) Create(ctx context.Context, agent *Agent) error {
 		agent.Architecture,
 		agent.Hostname,
 		agent.OrganizationID,
+		agent.OwnerUserID,
 		agent.Status,
 		agent.LastHeartbeat,
 		agent.CreatedAt,
@@ -73,7 +75,7 @@ func (r *AgentRepository) Create(ctx context.Context, agent *Agent) error {
 // FindByID retrieves an agent by ID.
 func (r *AgentRepository) FindByID(ctx context.Context, id string) (*Agent, error) {
 	query := `
-		SELECT id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
 		FROM agents
 		WHERE id = $1
 	`
@@ -92,7 +94,7 @@ func (r *AgentRepository) FindByID(ctx context.Context, id string) (*Agent, erro
 // FindByHostname retrieves an agent by hostname.
 func (r *AgentRepository) FindByHostname(ctx context.Context, hostname string) (*Agent, error) {
 	query := `
-		SELECT id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
 		FROM agents
 		WHERE hostname = $1
 		ORDER BY created_at DESC
@@ -113,7 +115,7 @@ func (r *AgentRepository) FindByHostname(ctx context.Context, hostname string) (
 // FindByStatus retrieves all agents with a given status.
 func (r *AgentRepository) FindByStatus(ctx context.Context, status string) ([]*Agent, error) {
 	query := `
-		SELECT id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
 		FROM agents
 		WHERE status = $1
 		ORDER BY last_heartbeat DESC
@@ -140,7 +142,7 @@ func (r *AgentRepository) FindByStatus(ctx context.Context, status string) ([]*A
 // FindByOrganization retrieves all agents for an organization.
 func (r *AgentRepository) FindByOrganization(ctx context.Context, orgID string) ([]*Agent, error) {
 	query := `
-		SELECT id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
 		FROM agents
 		WHERE organization_id = $1
 		ORDER BY created_at DESC
@@ -164,6 +166,41 @@ func (r *AgentRepository) FindByOrganization(ctx context.Context, orgID string) 
 	return agents, rows.Err()
 }
 
+// FindByOwner retrieves all agents owned by a specific user.
+func (r *AgentRepository) FindByOwner(ctx context.Context, ownerUserID string, limit, offset int) ([]*Agent, int, error) {
+	// Get total count
+	var total int
+	if err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM agents WHERE owner_user_id = $1", ownerUserID).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count agents by owner: %w", err)
+	}
+
+	// Get agents
+	query := `
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
+		FROM agents
+		WHERE owner_user_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.Query(ctx, query, ownerUserID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("find agents by owner: %w", err)
+	}
+	defer rows.Close()
+
+	var agents []*Agent
+	for rows.Next() {
+		agent, err := r.scanAgent(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		agents = append(agents, agent)
+	}
+
+	return agents, total, rows.Err()
+}
+
 // List retrieves all agents with pagination.
 func (r *AgentRepository) List(ctx context.Context, limit, offset int) ([]*Agent, int, error) {
 	// Get total count
@@ -174,7 +211,7 @@ func (r *AgentRepository) List(ctx context.Context, limit, offset int) ([]*Agent
 
 	// Get agents
 	query := `
-		SELECT id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
 		FROM agents
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -205,7 +242,7 @@ func (r *AgentRepository) Update(ctx context.Context, agent *Agent) error {
 	query := `
 		UPDATE agents
 		SET name = $2, version = $3, os = $4, architecture = $5, hostname = $6,
-		    organization_id = NULLIF($7, '')::uuid, status = $8, updated_at = $9
+		    organization_id = NULLIF($7, '')::uuid, owner_user_id = NULLIF($8, '')::uuid, status = $9, updated_at = $10
 		WHERE id = $1
 	`
 
@@ -217,6 +254,7 @@ func (r *AgentRepository) Update(ctx context.Context, agent *Agent) error {
 		agent.Architecture,
 		agent.Hostname,
 		agent.OrganizationID,
+		agent.OwnerUserID,
 		agent.Status,
 		agent.UpdatedAt,
 	)
@@ -314,7 +352,7 @@ func (r *AgentRepository) CountByStatus(ctx context.Context, status string) (int
 // GetStaleAgents returns agents that haven't sent a heartbeat since the given time.
 func (r *AgentRepository) GetStaleAgents(ctx context.Context, since time.Time) ([]*Agent, error) {
 	query := `
-		SELECT id, name, version, os, architecture, hostname, organization_id, status, last_heartbeat, created_at, updated_at
+		SELECT id, name, version, os, architecture, hostname, organization_id, owner_user_id, status, last_heartbeat, created_at, updated_at
 		FROM agents
 		WHERE last_heartbeat < $1 AND status = 'online'
 		ORDER BY last_heartbeat ASC
@@ -375,8 +413,9 @@ func (r *AgentRepository) RegisterOrFindByHostname(ctx context.Context, name, ve
 // scanAgent scans an agent from a database row.
 func (r *AgentRepository) scanAgent(row interface{ Scan(...interface{}) error }) (*Agent, error) {
 	var agent Agent
-	// Use a pointer for organization_id to handle NULL values
+	// Use pointers for nullable fields
 	var orgID *string
+	var ownerUserID *string
 	err := row.Scan(
 		&agent.ID,
 		&agent.Name,
@@ -385,6 +424,7 @@ func (r *AgentRepository) scanAgent(row interface{ Scan(...interface{}) error })
 		&agent.Architecture,
 		&agent.Hostname,
 		&orgID,
+		&ownerUserID,
 		&agent.Status,
 		&agent.LastHeartbeat,
 		&agent.CreatedAt,
@@ -393,9 +433,12 @@ func (r *AgentRepository) scanAgent(row interface{ Scan(...interface{}) error })
 	if err != nil {
 		return nil, err
 	}
-	// Convert pointer to string, defaulting to empty string if NULL
+	// Convert pointers to strings, defaulting to empty string if NULL
 	if orgID != nil {
 		agent.OrganizationID = *orgID
+	}
+	if ownerUserID != nil {
+		agent.OwnerUserID = *ownerUserID
 	}
 	return &agent, nil
 }

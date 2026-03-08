@@ -152,6 +152,8 @@ type AgentInfo struct {
 	Username string `json:"username,omitempty"`
 	// OrganizationID is the organization this agent belongs to
 	OrganizationID string `json:"organization_id,omitempty"`
+	// OwnerUserID is the user who owns/manages this agent (optional, for access control)
+	OwnerUserID string `json:"owner_user_id,omitempty"`
 	// Status is the current agent status
 	Status AgentStatus `json:"status"`
 	// SessionState is the current session state

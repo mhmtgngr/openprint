@@ -691,3 +691,19 @@ func (r *Repository) GetPendingReviews(ctx context.Context, within time.Duration
 
 	return controls, rows.Err()
 }
+
+// DeleteControl deletes a compliance control by ID.
+func (r *Repository) DeleteControl(ctx context.Context, controlID string) error {
+	query := `DELETE FROM compliance_controls WHERE id = $1`
+
+	cmdTag, err := r.db.Exec(ctx, query, controlID)
+	if err != nil {
+		return fmt.Errorf("delete control: %w", err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return apperrors.ErrNotFound
+	}
+
+	return nil
+}

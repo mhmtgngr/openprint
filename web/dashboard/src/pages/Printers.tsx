@@ -20,8 +20,9 @@ export const Printers = () => {
   });
 
   // Fetch supplies for all printers
+  const validPrinters = (printers || []).filter((printer) => printer.id && printer.isOnline);
   const supplyQueries = useQueries({
-    queries: (printers || []).map((printer) => ({
+    queries: validPrinters.map((printer) => ({
       queryKey: ['printer-supplies', printer.id],
       queryFn: () => printersApi.getSupplies(printer.id).catch(() => [] as PrinterSupply[]),
       staleTime: 60000, // Cache for 1 minute
@@ -29,16 +30,14 @@ export const Printers = () => {
     })),
   });
 
-  const suppliesByPrinter = (printers || []).reduce<Record<string, PrinterSupply[]>>(
-    (acc, printer, index) => {
-      const data = supplyQueries[index]?.data;
-      if (data && data.length > 0) {
-        acc[printer.id] = data;
-      }
-      return acc;
-    },
-    {}
-  );
+  // Map supplies by printer ID using the original printers array
+  const suppliesByPrinter = validPrinters.reduce<Record<string, PrinterSupply[]>>((acc, printer, index) => {
+    const data = supplyQueries[index]?.data;
+    if (data && data.length > 0) {
+      acc[printer.id] = data;
+    }
+    return acc;
+  }, {});
 
   const createMutation = useMutation({
     mutationFn: (data: { name: string; agentId: string }) =>

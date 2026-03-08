@@ -22,6 +22,7 @@ import (
 type Config struct {
 	AgentRepo        *repository.AgentRepository
 	PrinterRepo      *repository.PrinterRepository
+	AgentGroupRepo   *repository.AgentGroupRepository
 	HeartbeatTimeout time.Duration
 	Metrics          *prometheus.Metrics
 	ServiceName      string
@@ -31,6 +32,7 @@ type Config struct {
 type Handler struct {
 	agentRepo        *repository.AgentRepository
 	printerRepo      *repository.PrinterRepository
+	agentGroupRepo   *repository.AgentGroupRepository
 	heartbeatTimeout time.Duration
 	metrics          *prometheus.Metrics
 	serviceName      string
@@ -45,6 +47,7 @@ func New(cfg Config) *Handler {
 	return &Handler{
 		agentRepo:        cfg.AgentRepo,
 		printerRepo:      cfg.PrinterRepo,
+		agentGroupRepo:   cfg.AgentGroupRepo,
 		heartbeatTimeout: cfg.HeartbeatTimeout,
 		metrics:          cfg.Metrics,
 		serviceName:      serviceName,
@@ -311,6 +314,8 @@ func (h *Handler) ListAgents(w http.ResponseWriter, r *http.Request) {
 	// Parse pagination params
 	limit := 100
 	offset := 0
+	ownerUserID := r.URL.Query().Get("owner_user_id")
+	orgID := r.URL.Query().Get("organization_id")
 
 	if l := r.URL.Query().Get("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
@@ -319,8 +324,34 @@ func (h *Handler) ListAgents(w http.ResponseWriter, r *http.Request) {
 		fmt.Sscanf(o, "%d", &offset)
 	}
 
-	// Get agents
-	agents, total, err := h.agentRepo.List(ctx, limit, offset)
+	var agents []*repository.Agent
+	var total int
+	var err error
+
+	// Filter by owner_user_id if provided (users see only their owned agents)
+	if ownerUserID != "" {
+		agents, total, err = h.agentRepo.FindByOwner(ctx, ownerUserID, limit, offset)
+	} else if orgID != "" {
+		count, listErr := h.agentRepo.FindByOrganization(ctx, orgID)
+		if listErr != nil {
+			respondError(w, apperrors.Wrap(listErr, "failed to list agents", http.StatusInternalServerError))
+			return
+		}
+		// Apply pagination
+		if offset < len(count) {
+			end := offset + limit
+			if end > len(count) {
+				end = len(count)
+			}
+			agents = count[offset:end]
+		} else {
+			agents = []*repository.Agent{}
+		}
+		total = len(count)
+	} else {
+		agents, total, err = h.agentRepo.List(ctx, limit, offset)
+	}
+
 	if err != nil {
 		respondError(w, apperrors.Wrap(err, "failed to list agents", http.StatusInternalServerError))
 		return
@@ -662,6 +693,7 @@ func agentToResponse(agent *repository.Agent) map[string]interface{} {
 		"os":            agent.OS,
 		"architecture":  agent.Architecture,
 		"hostname":      agent.Hostname,
+		"owner_user_id": agent.OwnerUserID,
 		"status":        agent.Status,
 		"last_heartbeat": agent.LastHeartbeat.Format(time.RFC3339),
 		"created_at":    agent.CreatedAt.Format(time.RFC3339),

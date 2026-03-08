@@ -6,6 +6,7 @@ import {
   PolicyEvaluation,
   PolicyHistory,
 } from '@/features/policies';
+import { policyApi } from '@/features/policies/api';
 import type { PrintPolicy } from '@/types';
 
 export const Policies = () => {
@@ -14,6 +15,7 @@ export const Policies = () => {
   const [viewingHistoryForId, setViewingHistoryForId] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showEvaluation, setShowEvaluation] = useState(false);
+  const [exportingPolicyId, setExportingPolicyId] = useState<string | null>(null);
 
   const handleCreatePolicy = () => {
     setIsCreating(true);
@@ -33,15 +35,46 @@ export const Policies = () => {
     setEditingPolicyId(null);
   };
 
-  // TODO: implement export functionality
-  // TODO: add history button to policy cards
-  // @ts-expect-error - Will be used when history button is added
   const handleViewHistory = (policyId: string) => {
     setViewingHistoryForId(policyId);
   };
-  // const handleExportPolicy = async (policyId: string) => {
-  //   await exportPolicy(policyId, `policy-${policyId}.json`);
-  // };
+
+  const handleExportPolicy = async (policyId: string) => {
+    setExportingPolicyId(policyId);
+    try {
+      const blob = await policyApi.export(policyId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `policy-${policyId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export policy:', error);
+    } finally {
+      setExportingPolicyId(null);
+    }
+  };
+
+  const handleExportAllPolicies = async () => {
+    try {
+      const policies = await policyApi.list();
+      const blob = new Blob([JSON.stringify(policies, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const timestamp = new Date().toISOString().slice(0, 10);
+      a.download = `print-policies-${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export policies:', error);
+    }
+  };
 
   return (
     <div className="space-y-6" data-testid="policies-page">
@@ -59,6 +92,16 @@ export const Policies = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportAllPolicies}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+            title="Export all policies as JSON"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export All
+          </button>
           <button
             onClick={() => setShowEvaluation(!showEvaluation)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
@@ -126,6 +169,9 @@ export const Policies = () => {
         <PolicyList
           onCreatePolicy={handleCreatePolicy}
           onEditPolicy={handleEditPolicy}
+          onExportPolicy={handleExportPolicy}
+          onViewHistory={handleViewHistory}
+          exportingPolicyId={exportingPolicyId}
         />
       </div>
 

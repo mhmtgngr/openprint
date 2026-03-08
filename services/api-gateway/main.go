@@ -25,18 +25,21 @@ import (
 
 // Config holds service configuration.
 type Config struct {
-	ServerAddr          string
-	DatabaseURL         string
-	JWTSecret           string
-	JaegerEndpoint      string
-	ServiceName         string
-	AuthServiceURL      string
-	JobServiceURL       string
-	RegistryServiceURL  string
-	StorageServiceURL   string
+	ServerAddr             string
+	DatabaseURL            string
+	JWTSecret              string
+	JaegerEndpoint         string
+	ServiceName            string
+	AuthServiceURL         string
+	JobServiceURL          string
+	RegistryServiceURL     string
+	StorageServiceURL      string
 	NotificationServiceURL string
-	AnalyticsServiceURL string
+	AnalyticsServiceURL    string
+	ComplianceServiceURL   string
 	OrganizationServiceURL string
+	PolicyServiceURL       string
+	M365ServiceURL         string
 }
 
 func main() {
@@ -211,7 +214,10 @@ func loadConfig() *Config {
 		StorageServiceURL:      getEnv("STORAGE_SERVICE_URL", "http://localhost:8004"),
 		NotificationServiceURL: getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8005"),
 		AnalyticsServiceURL:    getEnv("ANALYTICS_SERVICE_URL", "http://localhost:8006"),
-		OrganizationServiceURL: getEnv("ORGANIZATION_SERVICE_URL", "http://localhost:8007"),
+		ComplianceServiceURL:   getEnv("COMPLIANCE_SERVICE_URL", "http://localhost:8008"),
+		OrganizationServiceURL: getEnv("ORGANIZATION_SERVICE_URL", "http://localhost:8009"),
+		PolicyServiceURL:       getEnv("POLICY_SERVICE_URL", "http://localhost:8010"),
+		M365ServiceURL:         getEnv("M365_SERVICE_URL", "http://localhost:8011"),
 	}
 }
 

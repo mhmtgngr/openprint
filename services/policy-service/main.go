@@ -149,7 +149,7 @@ func loadServerConfig() *ServerConfig {
 	}
 
 	return &ServerConfig{
-		ServerAddr:     getEnv("SERVER_ADDR", ":8007"),
+		ServerAddr:     getEnv("SERVER_ADDR", ":8010"),
 		DatabaseURL:    getEnv("DATABASE_URL", "postgres://openprint:openprint@localhost:5432/openprint"),
 		JWTSecret:      jwtSecret,
 		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", ""),
