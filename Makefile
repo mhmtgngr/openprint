@@ -23,7 +23,7 @@ DOCKER_COMPOSE := docker compose
 
 # Project configuration
 MODULE := github.com/openprint/openprint
-SERVICES := auth-service registry-service job-service storage-service notification-service analytics-service organization-service policy-service compliance-service m365-integration-service api-gateway gateway
+SERVICES := auth-service registry-service job-service storage-service notification-service analytics-service organization-service policy-service compliance-service m365-integration-service api-gateway
 
 # Test configuration
 TEST_TIMEOUT := 10m
@@ -174,12 +174,6 @@ build-api-gateway: ## Build API gateway
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/api-gateway ./services/api-gateway
 
-.PHONY: build-gateway
-build-gateway: ## Build gateway
-	@echo "$(BLUE)Building gateway...$(NC)"
-	@mkdir -p $(BUILD_DIR)
-	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/gateway ./services/gateway
-
 # ============================================================================
 # Test Targets
 # ============================================================================
@@ -304,11 +298,6 @@ test-m365-integration-service: ## Run M365 integration service tests
 test-api-gateway: ## Run API gateway tests
 	@echo "$(BLUE)Running api-gateway tests...$(NC)"
 	$(GO) test -timeout $(TEST_TIMEOUT) ./services/api-gateway/...
-
-.PHONY: test-gateway
-test-gateway: ## Run gateway tests
-	@echo "$(BLUE)Running gateway tests...$(NC)"
-	$(GO) test -timeout $(TEST_TIMEOUT) ./services/gateway/...
 
 .PHONY: test-bench
 test-bench: ## Run benchmarks

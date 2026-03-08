@@ -701,12 +701,24 @@ func agentToResponse(agent *repository.Agent) map[string]interface{} {
 }
 
 func printerToResponse(printer *repository.Printer) map[string]interface{} {
+	// Determine isOnline from status
+	isOnline := printer.Status == "online"
+
 	return map[string]interface{}{
-		"printer_id": printer.ID,
+		"id":         printer.ID,
 		"name":       printer.Name,
-		"agent_id":   printer.AgentID,
+		"agentId":    printer.AgentID,
 		"status":     printer.Status,
-		"created_at": printer.CreatedAt.Format(time.RFC3339),
+		"isOnline":   isOnline,
+		"isActive":   true, // Default to active unless explicitly marked inactive
+		"createdAt":  printer.CreatedAt.Format(time.RFC3339),
+		"type":       "network", // Default type, can be enhanced
+		"capabilities": map[string]interface{}{
+			"supportsColor":       true,
+			"supportsDuplex":      true,
+			"supportedPaperSizes": []string{"A4", "Letter"},
+			"resolution":          "600x600",
+		},
 	}
 }
 

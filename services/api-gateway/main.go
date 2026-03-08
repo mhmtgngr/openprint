@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -120,32 +121,60 @@ func main() {
 	mux.HandleFunc("/api/v1/developer/webhooks/", devHandler.WebhookHandler)
 
 	// Service routes (reverse proxy)
+	// Register both with and without /api/v1 prefix, and with/without trailing slash
+	// to avoid Go ServeMux redirects
 	mux.HandleFunc("/auth/", withServiceProxy(authProxy, "auth"))
+	mux.HandleFunc("/auth", withServiceProxy(authProxy, "auth"))
 	mux.HandleFunc("/api/v1/auth/", withServiceProxy(authProxy, "auth"))
+	mux.HandleFunc("/api/v1/auth", withServiceProxy(authProxy, "auth"))
 	mux.HandleFunc("/jobs/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/jobs", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/api/v1/jobs/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/api/v1/jobs", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/quota/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/quota", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/api/v1/quota/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/api/v1/quota", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/cost/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/cost", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/api/v1/cost/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/api/v1/cost", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/reports/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/reports", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/api/v1/reports/", withServiceProxy(jobProxy, "job"))
+	mux.HandleFunc("/api/v1/reports", withServiceProxy(jobProxy, "job"))
 	mux.HandleFunc("/printers/", withServiceProxy(registryProxy, "registry"))
+	mux.HandleFunc("/printers", withServiceProxy(registryProxy, "registry"))
 	mux.HandleFunc("/api/v1/printers/", withServiceProxy(registryProxy, "registry"))
+	mux.HandleFunc("/api/v1/printers", withServiceProxy(registryProxy, "registry"))
 	mux.HandleFunc("/agents/", withServiceProxy(registryProxy, "registry"))
+	mux.HandleFunc("/agents", withServiceProxy(registryProxy, "registry"))
 	mux.HandleFunc("/api/v1/agents/", withServiceProxy(registryProxy, "registry"))
+	mux.HandleFunc("/api/v1/agents", withServiceProxy(registryProxy, "registry"))
 	mux.HandleFunc("/devices/", withServiceProxy(registryProxy, "registry"))
+	mux.HandleFunc("/devices", withServiceProxy(registryProxy, "registry"))
 	mux.HandleFunc("/api/v1/devices/", withServiceProxy(registryProxy, "registry"))
+	mux.HandleFunc("/api/v1/devices", withServiceProxy(registryProxy, "registry"))
 	mux.HandleFunc("/documents/", withServiceProxy(storageProxy, "storage"))
+	mux.HandleFunc("/documents", withServiceProxy(storageProxy, "storage"))
 	mux.HandleFunc("/api/v1/documents/", withServiceProxy(storageProxy, "storage"))
+	mux.HandleFunc("/api/v1/documents", withServiceProxy(storageProxy, "storage"))
 	mux.HandleFunc("/watermarks/", withServiceProxy(storageProxy, "storage"))
+	mux.HandleFunc("/watermarks", withServiceProxy(storageProxy, "storage"))
 	mux.HandleFunc("/api/v1/watermarks/", withServiceProxy(storageProxy, "storage"))
+	mux.HandleFunc("/api/v1/watermarks", withServiceProxy(storageProxy, "storage"))
 	mux.HandleFunc("/notifications/", withServiceProxy(notificationProxy, "notification"))
+	mux.HandleFunc("/notifications", withServiceProxy(notificationProxy, "notification"))
 	mux.HandleFunc("/api/v1/notifications/", withServiceProxy(notificationProxy, "notification"))
+	mux.HandleFunc("/api/v1/notifications", withServiceProxy(notificationProxy, "notification"))
 	mux.HandleFunc("/analytics/", withServiceProxy(analyticsProxy, "analytics"))
+	mux.HandleFunc("/analytics", withServiceProxy(analyticsProxy, "analytics"))
 	mux.HandleFunc("/api/v1/analytics/", withServiceProxy(analyticsProxy, "analytics"))
+	mux.HandleFunc("/api/v1/analytics", withServiceProxy(analyticsProxy, "analytics"))
 	mux.HandleFunc("/organizations/", withServiceProxy(organizationProxy, "organization"))
+	mux.HandleFunc("/organizations", withServiceProxy(organizationProxy, "organization"))
 	mux.HandleFunc("/api/v1/organizations/", withServiceProxy(organizationProxy, "organization"))
+	mux.HandleFunc("/api/v1/organizations", withServiceProxy(organizationProxy, "organization"))
 
 	// Build middleware chain
 	middlewareChain := middleware.Chain(
@@ -266,8 +295,44 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // createReverseProxy creates a reverse proxy for the given service URL.
+// It strips the /api/v1 prefix from requests before forwarding to backend services.
 func createReverseProxy(target *url.URL, serviceName string) *httputil.ReverseProxy {
 	proxy := httputil.NewSingleHostReverseProxy(target)
+
+	// Create a custom director that strips /api/v1 prefix
+	originalDirector := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		originalDirector(req) // First apply the standard director (sets scheme/host/etc)
+
+		// Strip /api/v1 prefix from the path before forwarding to backend
+		// The backend services expect paths like /printers, /agents, etc.
+		// not /api/v1/printers
+		if strings.HasPrefix(req.URL.Path, "/api/v1/") {
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
+			// Also update RawPath if it was set
+			if req.URL.RawPath != "" {
+				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, "/api/v1")
+			}
+		}
+
+		// Strip trailing slash for list endpoints (but not for IDs like /printers/{id})
+		// Backend services use: /printers for list, /printers/ for specific printer
+		// We want /api/v1/printers -> /printers (list), not /printers/ (specific)
+		if req.URL.Path != "/" && strings.HasSuffix(req.URL.Path, "/") {
+			// Check if this is a list endpoint (no ID after the resource)
+			// by counting path segments
+			parts := strings.Split(strings.Trim(req.URL.Path, "/"), "/")
+			if len(parts) == 1 {
+				// This is a list endpoint like /printers/, /agents/, etc.
+				// Strip the trailing slash
+				req.URL.Path = strings.TrimSuffix(req.URL.Path, "/")
+				if req.URL.RawPath != "" {
+					req.URL.RawPath = strings.TrimSuffix(req.URL.RawPath, "/")
+				}
+			}
+		}
+	}
+
 	proxy.Transport = createTransport(serviceName)
 	return proxy
 }
