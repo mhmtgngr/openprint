@@ -10,10 +10,38 @@ import type {
   DiscoveredPrinter,
   JobAssignment,
   JobAssignmentRequest,
+  AgentStatus,
+  AgentSessionState,
 } from '@/types/agents';
 import type { PaginatedResponse } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+// Transform backend agent response to frontend Agent type
+const transformAgent = (backendAgent: Record<string, unknown>): Agent => {
+  return {
+    id: (backendAgent.agent_id as string) || (backendAgent.id as string) || '',
+    name: backendAgent.name as string,
+    userId: (backendAgent.owner_user_id as string) || undefined,
+    orgId: (backendAgent.organization_id as string) || '',
+    status: (backendAgent.status as AgentStatus) || 'offline',
+    platform: (backendAgent.os as string) || (backendAgent.platform as string) || 'Unknown',
+    platformVersion: backendAgent.version as string | undefined,
+    agentVersion: backendAgent.version as string | undefined,
+    ipAddress: backendAgent.ip_address as string | undefined,
+    lastHeartbeat: backendAgent.last_heartbeat as string | undefined,
+    capabilities: {
+      supportedFormats: ['PDF'],
+      maxJobSize: 100 * 1024 * 1024, // 100MB default
+      supportsColor: true,
+      supportsDuplex: true,
+    },
+    printerCount: backendAgent.printer_count as number | undefined,
+    jobQueueDepth: backendAgent.job_queue_depth as number | undefined,
+    sessionState: backendAgent.session_state as AgentSessionState | undefined,
+    createdAt: backendAgent.created_at as string || new Date().toISOString(),
+  };
+};
 
 const getAccessToken = (): string | null => {
   const stored = localStorage.getItem('auth_tokens');
@@ -84,8 +112,8 @@ export const agentApi = {
     const response = await fetchWithAuth(
       `${API_BASE_URL}/agents${queryString ? `?${queryString}` : ''}`
     );
-    const result = await handleResponse<{ agents: Agent[]; limit: number; offset: number; total: number }>(response);
-    return result.agents || [];
+    const result = await handleResponse<{ agents: unknown[]; limit: number; offset: number; total: number }>(response);
+    return (result.agents || []).map((agent) => transformAgent(agent as Record<string, unknown>));
   },
 
   /**
@@ -94,7 +122,8 @@ export const agentApi = {
    */
   async getDetail(id: string): Promise<AgentDetail> {
     const response = await fetchWithAuth(`${API_BASE_URL}/agents/${id}/detail`);
-    return handleResponse<AgentDetail>(response);
+    const data = await handleResponse<Record<string, unknown>>(response);
+    return transformAgent(data) as AgentDetail;
   },
 
   /**
@@ -103,7 +132,8 @@ export const agentApi = {
    */
   async get(id: string): Promise<Agent> {
     const response = await fetchWithAuth(`${API_BASE_URL}/agents/${id}`);
-    return handleResponse<Agent>(response);
+    const data = await handleResponse<Record<string, unknown>>(response);
+    return transformAgent(data);
   },
 
   /**
