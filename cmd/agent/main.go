@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -11,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"os"
@@ -21,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	gjwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
@@ -72,6 +75,8 @@ type AgentConfig struct {
 	ReceiptPrinterName string `json:"receipt_printer_name"`
 	// ReceiptListenPort is the TCP port for the receipt virtual printer.
 	ReceiptListenPort int `json:"receipt_listen_port"`
+	// JWTSecret is the shared secret for generating JWT tokens for service authentication.
+	JWTSecret string `json:"jwt_secret"`
 }
 
 // Agent represents the print agent.
@@ -84,6 +89,8 @@ type Agent struct {
 	storageURL     string
 	printers       map[string]*DiscoveredPrinter
 	printersMutex  sync.RWMutex
+	completedJobs  map[string]bool
+	completedMutex sync.Mutex
 	hostname       string
 	version        string
 	architecture   string
@@ -124,6 +131,7 @@ type DiscoveredPrinter struct {
 	ShareName       string            `json:"share_name,omitempty"`
 	Location        string            `json:"location,omitempty"`
 	Capabilities    *PrinterCaps      `json:"capabilities,omitempty"`
+	RegisteredID    string            `json:"-"` // Server-assigned printer ID
 }
 
 // PrinterCaps represents printer capabilities.
@@ -294,6 +302,7 @@ func initializeAgent() (*Agent, error) {
 		jobURL:        jobURL,
 		storageURL:    storageURL,
 		printers:      make(map[string]*DiscoveredPrinter),
+		completedJobs: make(map[string]bool),
 		hostname:      hostname,
 		version:       "1.0.0",
 		architecture:  runtime.GOARCH,
@@ -433,6 +442,51 @@ func (a *Agent) getReceiptListenPort() int {
 		return a.config.ReceiptListenPort
 	}
 	return 9101
+}
+
+// generateServiceJWT generates a JWT token for authenticating with storage and job services.
+func (a *Agent) generateServiceJWT() (string, error) {
+	if a.config.JWTSecret == "" {
+		return "", fmt.Errorf("jwt_secret not configured")
+	}
+
+	now := time.Now()
+	claims := gjwt.MapClaims{
+		"user_id":    "agent:" + a.config.AgentID,
+		"email":      "agent@openprint.local",
+		"role":       "agent",
+		"token_type": "access",
+		"iss":        "openprint.cloud",
+		"sub":        "agent:" + a.config.AgentID,
+		"aud":        gjwt.ClaimStrings{"openprint.cloud", "api.openprint.cloud"},
+		"exp":        gjwt.NewNumericDate(now.Add(1 * time.Hour)),
+		"iat":        gjwt.NewNumericDate(now),
+		"nbf":        gjwt.NewNumericDate(now),
+		"jti":        uuid.New().String(),
+	}
+
+	token := gjwt.NewWithClaims(gjwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(a.config.JWTSecret))
+}
+
+// authenticatedPost makes an HTTP POST with JWT Authorization header.
+func (a *Agent) authenticatedPost(url, contentType string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+
+	if a.config.JWTSecret != "" {
+		token, err := a.generateServiceJWT()
+		if err != nil {
+			log.Printf("WARNING: Failed to generate JWT: %v", err)
+		} else {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+	}
+
+	return a.client.Do(req)
 }
 
 // virtualPrinterDrivers is the preference order for virtual printer drivers.
@@ -837,12 +891,74 @@ func (a *Agent) resolveUserEmail(username string) string {
 			var result struct {
 				Email string `json:"user_email"`
 			}
-			if json.NewDecoder(resp.Body).Decode(&result) == nil {
+			if json.NewDecoder(resp.Body).Decode(&result) == nil && result.Email != "" {
 				return result.Email
 			}
 		}
 	}
 
+	// Last resort: construct email from username using domain
+	if a.domain != "" {
+		return username + "@" + strings.ToLower(a.domain)
+	}
+
+	return username + "@openprint.local"
+}
+
+// resolveLocalPrinterName looks up the local printer name from the registry by printer UUID.
+func (a *Agent) resolveLocalPrinterName(printerID string) string {
+	url := fmt.Sprintf("%s/printers?agent_id=%s", a.registryURL, a.config.AgentID)
+	resp, err := a.client.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data []struct {
+			PrinterID string `json:"printer_id"`
+			ID        string `json:"id"`
+			Name      string `json:"name"`
+		} `json:"data"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&result) == nil {
+		for _, p := range result.Data {
+			if p.PrinterID == printerID || p.ID == printerID {
+				// Cache the mapping
+				a.printersMutex.Lock()
+				if lp, ok := a.printers[p.Name]; ok {
+					lp.RegisteredID = printerID
+				}
+				a.printersMutex.Unlock()
+				return p.Name
+			}
+		}
+	}
+	return ""
+}
+
+// resolveRegisteredPrinterID looks up the printer UUID from the registry by name.
+func (a *Agent) resolveRegisteredPrinterID(printerName string) string {
+	url := fmt.Sprintf("%s/printers?agent_id=%s", a.registryURL, a.config.AgentID)
+	resp, err := a.client.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data []struct {
+			PrinterID string `json:"printer_id"`
+			Name      string `json:"name"`
+		} `json:"data"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&result) == nil {
+		for _, p := range result.Data {
+			if p.Name == printerName {
+				return p.PrinterID
+			}
+		}
+	}
 	return ""
 }
 
@@ -858,13 +974,19 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 
 	log.Printf("Document uploaded: id=%s checksum=%s", documentID, checksum)
 
-	// Step 2: Create a print job in the job service that will be routed to the user's client agent
-	// Use printer type-specific routing: __user_default__ for standard, __user_default_receipt__ for receipt
-	printerID := "__user_default__"
+	// Step 2: Resolve the virtual printer to its registered UUID
 	mediaType := "a4"
+	var printerName string
 	if captured.PrinterType == "receipt" {
-		printerID = "__user_default_receipt__"
+		printerName = a.getReceiptPrinterName()
 		mediaType = "receipt"
+	} else {
+		printerName = a.getVirtualPrinterName()
+	}
+
+	printerID := a.resolveRegisteredPrinterID(printerName)
+	if printerID == "" {
+		return fmt.Errorf("printer '%s' not found in registry", printerName)
 	}
 
 	jobReq := map[string]interface{}{
@@ -887,7 +1009,7 @@ func (a *Agent) uploadCapturedJob(ctx context.Context, captured *CapturedPrintJo
 	}
 
 	body, _ := json.Marshal(jobReq)
-	resp, err := a.client.Post(a.jobURL+"/jobs", "application/json", strings.NewReader(string(body)))
+	resp, err := a.authenticatedPost(a.jobURL+"/jobs", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return fmt.Errorf("failed to create job: %w", err)
 	}
@@ -915,35 +1037,43 @@ func (a *Agent) uploadDocumentToStorage(storageURL string, captured *CapturedPri
 	}
 	defer f.Close()
 
-	// Read file content
+	// Read file content for checksum
 	fileData, err := io.ReadAll(f)
 	if err != nil {
 		return "", "", err
 	}
 
-	// Compute checksum
 	hash := sha256.New()
 	hash.Write(fileData)
 	checksum := hex.EncodeToString(hash.Sum(nil))
 
-	// Use the detected content type for proper handling on the client side
-	contentType := captured.ContentType
-	if contentType == "" {
-		contentType = "application/octet-stream"
+	// Build multipart form
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	// Determine filename
+	fileName := captured.Title
+	if fileName == "" {
+		fileName = filepath.Base(captured.FilePath)
 	}
 
-	// Build the request body for the upload
-	uploadReq := map[string]interface{}{
-		"name":         captured.Title,
-		"content_type": contentType,
-		"size":         captured.Size,
-		"checksum":     checksum,
-		"user_email":   captured.UserEmail,
-		"data":         fileData,
+	// Add file field
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create form file: %w", err)
+	}
+	if _, err := part.Write(fileData); err != nil {
+		return "", "", fmt.Errorf("failed to write file data: %w", err)
 	}
 
-	reqBody, _ := json.Marshal(uploadReq)
-	resp, err := a.client.Post(storageURL+"/documents", "application/json", strings.NewReader(string(reqBody)))
+	// Add user_email field
+	if captured.UserEmail != "" {
+		writer.WriteField("user_email", captured.UserEmail)
+	}
+
+	writer.Close()
+
+	resp, err := a.authenticatedPost(storageURL+"/documents", writer.FormDataContentType(), &buf)
 	if err != nil {
 		return "", "", err
 	}
@@ -960,6 +1090,11 @@ func (a *Agent) uploadDocumentToStorage(storageURL string, captured *CapturedPri
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
 		return "", "", err
+	}
+
+	// Use server checksum if available, otherwise our computed one
+	if uploadResp.Checksum == "" {
+		uploadResp.Checksum = checksum
 	}
 
 	return uploadResp.DocumentID, uploadResp.Checksum, nil
@@ -1124,33 +1259,63 @@ func (a *Agent) getPrintersViaPowerShell() ([]*DiscoveredPrinter, error) {
 	return printers, nil
 }
 
-// pollForJobs polls the server for pending print jobs.
+// pollForJobs polls the server for pending print jobs with retry on transient auth errors.
 func (a *Agent) pollForJobs() ([]PrintJob, error) {
-	req := map[string]interface{}{
-		"agent_id": a.config.AgentID,
-		"limit":    10,
-	}
+	pollURL := fmt.Sprintf("%s/jobs?status=pending_agent&limit=10", a.jobURL)
 
-	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.jobURL+"/agents/jobs/poll", "application/json", strings.NewReader(string(body)))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		req, err := http.NewRequest("GET", pollURL, nil)
+		if err != nil {
+			return nil, err
+		}
+		if a.config.JWTSecret != "" {
+			if token, err := a.generateServiceJWT(); err == nil {
+				req.Header.Set("Authorization", "Bearer "+token)
+			}
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("poll failed with status %d", resp.StatusCode)
-	}
+		resp, err := a.client.Do(req)
+		if err != nil {
+			return nil, err
+		}
 
-	var pollResp struct {
-		Jobs []PrintJob `json:"jobs"`
-	}
+		if resp.StatusCode == http.StatusOK {
+			var pollResp struct {
+				Data []PrintJob `json:"data"`
+				Jobs []PrintJob `json:"jobs"`
+			}
+			err = json.NewDecoder(resp.Body).Decode(&pollResp)
+			resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
 
-	if err := json.NewDecoder(resp.Body).Decode(&pollResp); err != nil {
-		return nil, err
-	}
+			jobs := pollResp.Data
+			if len(jobs) == 0 {
+				jobs = pollResp.Jobs
+			}
 
-	return pollResp.Jobs, nil
+			// Build document_url from storage service if not provided
+			for i := range jobs {
+				if jobs[i].DocumentURL == "" && jobs[i].DocumentID != "" {
+					jobs[i].DocumentURL = fmt.Sprintf("%s/documents/%s", a.storageURL, jobs[i].DocumentID)
+				}
+			}
+			return jobs, nil
+		}
+
+		resp.Body.Close()
+		lastErr = fmt.Errorf("poll failed with status %d", resp.StatusCode)
+
+		// Retry on 401 (transient auth errors from load balancer)
+		if resp.StatusCode == http.StatusUnauthorized && attempt < 2 {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+		break
+	}
+	return nil, lastErr
 }
 
 // processJobs processes the given print jobs.
@@ -1160,9 +1325,21 @@ func (a *Agent) processJobs(ctx context.Context, jobs []PrintJob) {
 		case <-ctx.Done():
 			return
 		default:
+			// Skip already processed jobs
+			a.completedMutex.Lock()
+			if a.completedJobs[job.JobID] {
+				a.completedMutex.Unlock()
+				continue
+			}
+			a.completedMutex.Unlock()
+
 			if err := a.processJob(ctx, job); err != nil {
 				log.Printf("Failed to process job %s: %v", job.JobID, err)
 				a.updateJobStatus(job, "failed", err.Error(), 0)
+				// Mark failed jobs too to avoid infinite retry
+				a.completedMutex.Lock()
+				a.completedJobs[job.JobID] = true
+				a.completedMutex.Unlock()
 			}
 		}
 	}
@@ -1207,18 +1384,23 @@ func (a *Agent) processJob(ctx context.Context, job PrintJob) error {
 	// Update status
 	a.updateJobStatus(job, "in_progress", "Printing", 0)
 
-	// Execute print
+	// Execute print - resolve printer name from ID or name
 	printerName := job.PrinterName
 	if printerName == "" {
-		// Look up printer by ID
+		// Check local cache by registered ID or name
 		a.printersMutex.RLock()
 		for _, p := range a.printers {
-			if p.Name == job.PrinterID {
+			if p.RegisteredID == job.PrinterID || p.Name == job.PrinterID {
 				printerName = p.Name
 				break
 			}
 		}
 		a.printersMutex.RUnlock()
+	}
+
+	// If not found locally, query registry service for printer name
+	if printerName == "" {
+		printerName = a.resolveLocalPrinterName(job.PrinterID)
 	}
 
 	if printerName == "" {
@@ -1233,30 +1415,55 @@ func (a *Agent) processJob(ctx context.Context, job PrintJob) error {
 	// Update to completed
 	a.updateJobStatus(job, "completed", "Printed successfully", 0)
 
+	// Mark as completed locally to prevent re-processing
+	a.completedMutex.Lock()
+	a.completedJobs[job.JobID] = true
+	a.completedMutex.Unlock()
+
 	log.Printf("Job %s completed", job.JobID)
 	return nil
 }
 
-// downloadDocument downloads a document from the server.
-func (a *Agent) downloadDocument(url, destPath string) error {
-	resp, err := a.client.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+// downloadDocument downloads a document from the server with JWT auth and retry.
+func (a *Agent) downloadDocument(docURL, destPath string) error {
+	var lastErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		req, err := http.NewRequest("GET", docURL, nil)
+		if err != nil {
+			return err
+		}
+		if a.config.JWTSecret != "" {
+			if token, err := a.generateServiceJWT(); err == nil {
+				req.Header.Set("Authorization", "Bearer "+token)
+			}
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed with status %d", resp.StatusCode)
-	}
+		resp, err := a.client.Do(req)
+		if err != nil {
+			return err
+		}
 
-	f, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+		if resp.StatusCode == http.StatusOK {
+			f, err := os.Create(destPath)
+			if err != nil {
+				resp.Body.Close()
+				return err
+			}
+			_, err = io.Copy(f, resp.Body)
+			resp.Body.Close()
+			f.Close()
+			return err
+		}
 
-	_, err = io.Copy(f, resp.Body)
-	return err
+		resp.Body.Close()
+		lastErr = fmt.Errorf("download failed with status %d", resp.StatusCode)
+		if resp.StatusCode == http.StatusUnauthorized && attempt < 4 {
+			time.Sleep(time.Duration(500+attempt*300) * time.Millisecond)
+			continue
+		}
+		break
+	}
+	return lastErr
 }
 
 // printDocument prints a document using Windows print commands.
@@ -1454,20 +1661,34 @@ func (a *Agent) updateJobStatus(job PrintJob, status, message string, pagesPrint
 	}
 
 	body, _ := json.Marshal(update)
-	url := fmt.Sprintf("%s/agents/%s/jobs/%s/status", a.registryURL, a.config.AgentID, job.JobID)
+	// Use job service for status updates
+	statusURL := fmt.Sprintf("%s/jobs/status/%s", a.jobURL, job.JobID)
 
-	req, _ := http.NewRequest("PUT", url, strings.NewReader(string(body)))
-	req.Header.Set("Content-Type", "application/json")
+	for attempt := 0; attempt < 5; attempt++ {
+		req, _ := http.NewRequest("PUT", statusURL, strings.NewReader(string(body)))
+		req.Header.Set("Content-Type", "application/json")
+		if a.config.JWTSecret != "" {
+			if token, err := a.generateServiceJWT(); err == nil {
+				req.Header.Set("Authorization", "Bearer "+token)
+			}
+		}
 
-	resp, err := a.client.Do(req)
-	if err != nil {
-		log.Printf("Failed to update job status: %v", err)
-		return
-	}
-	defer resp.Body.Close()
+		resp, err := a.client.Do(req)
+		if err != nil {
+			log.Printf("Failed to update job status: %v", err)
+			return
+		}
+		resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusOK {
+			return
+		}
+		if resp.StatusCode == http.StatusUnauthorized && attempt < 4 {
+			time.Sleep(time.Duration(500+attempt*300) * time.Millisecond)
+			continue
+		}
 		log.Printf("Job status update failed with status %d", resp.StatusCode)
+		return
 	}
 }
 
@@ -1487,7 +1708,7 @@ func (a *Agent) sendHeartbeat() error {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.registryURL+"/agents/heartbeat", "application/json", strings.NewReader(string(body)))
+	resp, err := a.authenticatedPost(a.registryURL+"/agents/"+a.config.AgentID+"/heartbeat", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return err
 	}
@@ -1503,9 +1724,8 @@ func (a *Agent) sendHeartbeat() error {
 // registerPrinters registers discovered printers with the server.
 func (a *Agent) registerPrinters() {
 	a.printersMutex.RLock()
-	defer a.printersMutex.RUnlock()
-
 	if len(a.printers) == 0 {
+		a.printersMutex.RUnlock()
 		return
 	}
 
@@ -1525,6 +1745,7 @@ func (a *Agent) registerPrinters() {
 			"capabilities":    p.Capabilities,
 		})
 	}
+	a.printersMutex.RUnlock()
 
 	req := map[string]interface{}{
 		"agent_id": a.config.AgentID,
@@ -1534,7 +1755,7 @@ func (a *Agent) registerPrinters() {
 	}
 
 	body, _ := json.Marshal(req)
-	resp, err := a.client.Post(a.registryURL+"/agents/printers/discover", "application/json", strings.NewReader(string(body)))
+	resp, err := a.authenticatedPost(a.registryURL+"/agents/"+a.config.AgentID+"/printers/discover", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		log.Printf("Failed to register printers: %v", err)
 		return
@@ -1542,6 +1763,22 @@ func (a *Agent) registerPrinters() {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
+		// Parse response to get server-assigned printer IDs
+		var regResp struct {
+			Printers []struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"printers"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&regResp); err == nil && len(regResp.Printers) > 0 {
+			a.printersMutex.Lock()
+			for _, rp := range regResp.Printers {
+				if p, ok := a.printers[rp.Name]; ok {
+					p.RegisteredID = rp.ID
+				}
+			}
+			a.printersMutex.Unlock()
+		}
 		log.Printf("Registered %d printers", len(printers))
 	}
 }
